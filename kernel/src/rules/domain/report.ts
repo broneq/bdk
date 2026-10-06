@@ -80,39 +80,11 @@ export interface PruneItem {
   readonly detail: string;
 }
 
-export interface ImportedFile {
-  /** Relative to the project root. */
-  readonly from: string;
-  readonly rules: readonly string[];
-  readonly applies?: readonly string[] | undefined;
-}
-
-export interface ImportReport {
-  readonly imported: readonly ImportedFile[];
-  readonly skipped: readonly { readonly from: string; readonly why: string }[];
-  readonly dryRun: boolean;
-  /** The projection files the import rewrote or deleted. */
-  readonly projection: readonly string[];
-}
-
-interface ExportedFile {
-  readonly path: string;
-  readonly rules: number;
-  readonly paths?: readonly string[] | undefined;
-  readonly changed: boolean;
-}
-
-export interface ExportReport {
-  readonly files: readonly ExportedFile[];
-}
-
 export interface AcceptReport {
   readonly id: string;
   /** Relative to the project root. */
   readonly path: string;
   readonly origin: string;
-  /** The projection files the adoption rewrote. */
-  readonly projection: readonly string[];
 }
 
 export interface RecurringItem {

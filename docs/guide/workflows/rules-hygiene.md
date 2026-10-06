@@ -37,7 +37,7 @@ bdk rules accept "Keep the pending state in the form's own store." \
   --from 2026-09-25-login/L-00000012
 ```
 
-`rules accept` is the only way besides `rules import` that creates a rule file. It writes `.bdk/rules/FORM-<n>.md` with the next free number (tombstones included), records the entries of `--from` as its `origin` and `evidence`, and regenerates the `.claude/rules/bdk-generated*.md` projection. Other flags: `--kind knowledge` with `--source` and `--verified`, `--severity`, and `--role` to name the roles that read it.
+`rules accept` is the only way to create a rule file. It writes `.bdk/rules/FORM-<n>.md` with the next free number (tombstones included), and records the entries of `--from` as its `origin` and `evidence`. Other flags: `--kind knowledge` with `--source` and `--verified`, `--severity`, and `--role` to name the roles that read it.
 
 ## Remove what no longer pays
 
@@ -49,11 +49,11 @@ bdk rules prune
 
 ## Hand-written `.claude/rules/`
 
-Files you wrote in `.claude/rules/` still load in an interactive session, but the kernel does not select them for agents and nobody can cite them. `bdk doctor` lists them; `bdk rules import` turns them into rule files, one per top-level bullet, with `applies` from their `paths:`. Then delete the originals: the generated projection carries the rules.
+Files you wrote in `.claude/rules/` are Claude Code's, not BDK's: they load in a session by their `paths:`, and BDK never reads, writes or reports them. BDK agents do not see them in their packages and cannot cite them. When an agent must follow one of them, adopt that one rule with `bdk rules accept`, scoped with the narrowest `--applies` glob.
 
 ## Let the skill run it
 
-`/bdk:rules` runs this cycle with you. `/bdk:rules audit` (the default) reads `bdk rules stats --entries`, groups the recurring lessons by meaning, drops what is not a rule and says why, proposes the rest, adopts the ones you accept with `bdk rules accept --from`, and then offers what `bdk rules prune` lists for removal. `/bdk:rules capture <lesson>` records one lesson as a `learning` entry of the active Change, or, without a Change, proposes it as a rule. `/bdk:rules check` runs `bdk rules check` and the projection check of `bdk rules export --claude`. The skill removes a project rule only as the tombstone above, and only after you approve it.
+`/bdk:rules` runs this cycle with you. `/bdk:rules audit` (the default) reads `bdk rules stats --entries`, groups the recurring lessons by meaning, drops what is not a rule and says why, proposes the rest, adopts the ones you accept with `bdk rules accept --from`, and then offers what `bdk rules prune` lists for removal. `/bdk:rules capture <lesson>` records one lesson as a `learning` entry of the active Change, or, without a Change, proposes it as a rule. `/bdk:rules check` runs `bdk rules check`. The skill removes a project rule only as the tombstone above, and only after you approve it.
 
 ## A working rhythm
 
@@ -66,11 +66,10 @@ Files you wrote in `.claude/rules/` still load in an interactive session, but th
 
 ## What you get
 
-| Artifact                | Path                                                        |
-| ----------------------- | ----------------------------------------------------------- |
-| Lessons                 | `learning` entries in `.bdk/changes/<id>/log/`              |
-| Project rules           | `.bdk/rules/<ID>.md`                                        |
-| Projection for the host | `.claude/rules/bdk-generated.md`, `bdk-generated-scoped.md` |
+| Artifact      | Path                                           |
+| ------------- | ---------------------------------------------- |
+| Lessons       | `learning` entries in `.bdk/changes/<id>/log/` |
+| Project rules | `.bdk/rules/<ID>.md`                           |
 
 ## Next step
 

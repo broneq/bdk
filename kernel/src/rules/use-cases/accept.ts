@@ -1,7 +1,6 @@
 // `bdk rules accept` (`kernel-cli/rules`; design D-6 of v3-t31): the user's
-// explicit adoption, the only path by which a rule file is created outside
-// an import. It runs no model and proposes nothing, needs no active Change,
-// and regenerates the projection after the write.
+// explicit adoption, the only path by which a rule file is created. It runs
+// no model and proposes nothing and needs no active Change.
 import { refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import { CHANGE_ID_PATTERN } from "../../shared/ids/index.ts";
@@ -12,10 +11,9 @@ import {
   refreshAll,
   withIndex,
 } from "../../shared/store/index.ts";
-import { prefixProblem } from "../domain/import.ts";
 import type { AcceptReport } from "../domain/report.ts";
+import { prefixProblem } from "../domain/rule.ts";
 import type { RulesDeps } from "./deps.ts";
-import { regenerate } from "./export.ts";
 import { loadContext } from "./settings.ts";
 import {
   draftProblem,
@@ -112,7 +110,5 @@ export async function acceptRule(
   if (problem !== undefined) return ruleFormat(`${id}: ${problem}`, "fix the flag named");
   ensureFormatterGuard(deps.store, projectRoot);
   const path = writeRule(deps.store, projectRoot, draft);
-  const after = loadContext(deps, projectRoot, globalDir);
-  if ("refused" in after) return after;
-  return { id, path, origin, projection: regenerate(deps.store, projectRoot, after) };
+  return { id, path, origin };
 }

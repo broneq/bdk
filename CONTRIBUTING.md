@@ -12,7 +12,7 @@ BDK ships no MCP server (see `docs/adr/0001-remove-bundled-mcp-servers.md`). Ski
 
 ### Development rules
 
-BDK's own development rules live in `.bdk/rules/`, one file per rule, as in any project that uses BDK; `.claude/rules/` holds only the projection `bdk rules export --claude` writes, and a contract test fails on any other file there. Adopt a new rule with `bdk rules accept "<rule>" --prefix <PREFIX> [--applies <glob>]` once it passes the admission test: it survives a refactor that changes no decision, an agent would make a wrong change without it, the trap is invisible where the mistake is made, and no code, type or failing test tells it. A definition of how BDK works belongs in the spec that owns it, and a procedure in this file.
+BDK's own development rules are hand-written bullets in `.claude/rules/`, one file per area, scoped by `paths:`, so every Claude Code session that edits BDK loads them. Add a rule only once it passes the admission test: it survives a refactor that changes no decision, an agent would make a wrong change without it, the trap is invisible where the mistake is made, and no code, type or failing test tells it. A definition of how BDK works belongs in the spec that owns it, and a procedure in this file.
 
 ---
 

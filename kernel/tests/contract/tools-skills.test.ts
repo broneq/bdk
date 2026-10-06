@@ -235,17 +235,19 @@ describe("rules audits, captures and checks rules through the kernel", () => {
     }
   });
 
-  it("removes a rule as a tombstone and regenerates the projection", () => {
+  it("removes a rule as a tombstone and checks it", () => {
     const { body } = skill();
     expect(body).toContain("`removed`");
     expect(body).toMatch(/keep[s]? the body/i);
     expect(body).toContain("bdk rules check");
-    expect(body).toContain("bdk rules export --claude");
   });
 
-  it("checks with rules check and the projection check", () => {
+  it("checks with rules check and never touches .claude/rules/", () => {
     const { body } = skill();
-    expect(body).toContain("bdk rules export --claude --check");
+    expect(body).toContain("bdk rules check --json");
+    for (const needle of ["bdk rules export", "bdk rules import", ".claude/rules/", "projection"]) {
+      expect(body, needle).not.toContain(needle);
+    }
     expect(SKILL_CONTEXT.rules).toContainEqual({ kind: "fragment", id: "decision" });
   });
 });
@@ -274,6 +276,8 @@ describe("doctor walks the findings of bdk doctor", () => {
     expect(body).toContain("bdk doctor --json");
     expect(body).toContain("bdk doctor --fix --json");
     expect(body).toMatch(/system change[^.]*only after the user agrees/i);
+    expect(body).not.toContain("bdk rules import");
+    expect(body).not.toContain("bdk rules export");
   });
 });
 

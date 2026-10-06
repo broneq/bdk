@@ -39,7 +39,7 @@ Validate every request body against its schema before the handler reads it.
 | `id`                 | `<PREFIX>-<n>`. `BDK-` ids belong to the shipped pack; your project picks its own prefixes. |
 | `kind`               | `house` or `knowledge`.                                                                     |
 | `severity`           | `critical`, `high`, `medium` or `low`.                                                      |
-| `origin`             | `bdk`, `user`, `import`, or the entry or ticket the rule was adopted from.                  |
+| `origin`             | `bdk`, `user`, or the entry or ticket the rule was adopted from.                            |
 | `applies`            | Globs of the files the rule is about. Without it the rule is global.                        |
 | `roles`              | The roles that read the rule, when the default for its prefix does not fit.                 |
 | `source`, `verified` | Required for a `knowledge` rule.                                                            |
@@ -70,10 +70,9 @@ languages: [typescript, react]
 
 ## Your project's rules
 
-Your own rules live in `.bdk/rules/`, one file per rule, committed with the code. The easiest ways to create them:
+Your own rules live in `.bdk/rules/`, one file per rule, committed with the code. `bdk rules accept "<text>" --prefix API` writes the next free id of a prefix, for example after an audit of learnings (see [Rules hygiene](../workflows/rules-hygiene.md)). It is the only command that creates a rule file.
 
-- `bdk rules import` turns hand-written `.claude/rules/*.md` files into rule files, one per top-level bullet, with `applies` taken from `paths:`.
-- `bdk rules accept "<text>" --prefix API` writes the next free id of a prefix, for example after an audit of learnings (see [Rules hygiene](../workflows/rules-hygiene.md)).
+`.bdk/rules/` and Claude Code's `.claude/rules/` are separate. BDK agents read the rules under `.bdk/rules/` through their packages. Claude Code loads your hand-written `.claude/rules/*.md` files into a session by their `paths:`. BDK never reads, writes or reports a file under `.claude/rules/`, so keep the conventions you want in every session there, and adopt into `.bdk/rules/` only the rules BDK agents must follow and cite.
 
 To switch a rule off, shipped ones included, list its id:
 
@@ -100,9 +99,14 @@ bdk rules explain src/api/users.ts --role reviewer
 
 ## Checking the rules
 
-`bdk rules check` validates every rule file, shipped and project, and refuses a duplicate id. `bdk doctor` reports hand-written `.claude/rules/` files without an id, invalid rule files, and a generated projection that is out of date.
+`bdk rules check` validates every rule file, shipped and project, and refuses a duplicate id. `bdk doctor` reports an invalid rule file under `.bdk/rules/` with the same first problem.
 
-`bdk rules export --claude` writes `.claude/rules/bdk-generated.md` and `.claude/rules/bdk-generated-scoped.md` from your project rules, so an interactive Claude Code session sees them too. The files are generated: `--check` fails when someone edited them by hand.
+### After an earlier `rules import`
+
+Earlier v3 previews had a `rules import` command, which copied `.claude/rules/` into `.bdk/rules/`, and a `rules export --claude` command, which wrote `.claude/rules/bdk-generated.md` and `bdk-generated-scoped.md`. Both are gone. If your project used them:
+
+- Each imported rule carries `origin: import`, which `bdk rules check` now refuses. Delete the rules you do not need BDK agents to follow, and set `origin: user` in the ones you keep.
+- Delete `.claude/rules/bdk-generated.md` and `.claude/rules/bdk-generated-scoped.md`. Nothing updates them any more, and Claude Code would keep loading them.
 
 ## Related
 

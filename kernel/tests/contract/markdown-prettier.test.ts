@@ -8,7 +8,6 @@ import { format } from "prettier";
 import { describe, expect, it } from "vitest";
 
 import { answered, bdk, read } from "../support/repo.ts";
-import { fileStore } from "../../src/shared/store/index.ts";
 import { creating, reviewed } from "../../src/spec/tests/e2e-support.ts";
 
 /** Paths the kernel writes; plan parts, design files and deltas are the host's. */
@@ -18,7 +17,6 @@ const KERNEL_WRITTEN = [
   /^\.bdk\/changes\/[^/]+\/(plan|design)\/index\.md$/,
   /^\.bdk\/rules\/[^/]+\.md$/,
   /^\.bdk\/specs\/.+\/spec\.md$/,
-  /^\.claude\/rules\/bdk-generated(-scoped)?\.md$/,
 ];
 
 function kernelMarkdown(root: string): string[] {
@@ -28,7 +26,7 @@ function kernelMarkdown(root: string): string[] {
     .sort();
 }
 
-/** A reviewed Change with its living spec merged, rules adopted and imported, entries with and without a body. */
+/** A reviewed Change with its living spec merged, a global and a scoped rule adopted, entries with and without a body. */
 function project(): string {
   const change = reviewed({ deltas: { "auth/login": creating(["Magic link sent", ["sent"]]) } });
   const { root } = change;
@@ -58,12 +56,22 @@ function project(): string {
     bdk(["rules", "accept", "Use the shared serializer", "--prefix", "API", "--json"], root),
     "output/rules-accept.json",
   );
-  fileStore().write(
-    join(root, "imported/api-style.md"),
-    "---\npaths: ['src/**']\n---\n\n- Name handlers after their route.\n- Return typed errors.\n",
+  answered(
+    bdk(
+      [
+        "rules",
+        "accept",
+        "Return typed errors",
+        "--prefix",
+        "API",
+        "--applies",
+        "src/**",
+        "--json",
+      ],
+      root,
+    ),
+    "output/rules-accept.json",
   );
-  answered(bdk(["rules", "import", "imported", "--json"], root), "output/rules-import.json");
-  answered(bdk(["rules", "export", "--claude", "--json"], root), "output/rules-export.json");
   return root;
 }
 
@@ -85,9 +93,8 @@ describe("kernel Markdown is Prettier-stable", () => {
       /\/reports\//,
       /\/plan\/index\.md$/,
       /^\.bdk\/rules\/API-1\.md$/,
-      /^\.bdk\/rules\/API-STYLE-1\.md$/,
+      /^\.bdk\/rules\/API-2\.md$/,
       /^\.bdk\/specs\/auth\/login\/spec\.md$/,
-      /^\.claude\/rules\/bdk-generated\.md$/,
     ];
     for (const kind of kinds)
       expect(

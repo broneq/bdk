@@ -68,3 +68,25 @@ export function numberOf(id: string): number {
 export function familyOf(rule: Pick<LoadedRule, "prefix" | "scope">): string {
   return rule.scope === "bundle" ? rule.prefix.slice(BUNDLE_PREFIX.length) : rule.prefix;
 }
+
+const PROJECT_PREFIX = /^[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*$/;
+
+/** Why a project prefix is refused, or undefined when it is valid. */
+export function prefixProblem(prefix: string): string | undefined {
+  if (!PROJECT_PREFIX.test(prefix)) {
+    return `${prefix} is no rule prefix: [A-Z][A-Z0-9]*(-[A-Z][A-Z0-9]*)*`;
+  }
+  if (prefix === "BDK" || prefix.startsWith(BUNDLE_PREFIX)) {
+    return `${prefix}: BDK ids belong to the shipped pack; pick a project prefix`;
+  }
+  return undefined;
+}
+
+/** `- [<id>] <text>`, continuation lines indented, ` (applies: ...)` after a scoped rule. */
+export function ruleLine(rule: Pick<LoadedRule, "id" | "text" | "applies">): string {
+  const applies =
+    rule.applies === undefined || rule.applies.length === 0
+      ? ""
+      : ` (applies: ${rule.applies.join(", ")})`;
+  return `- [${rule.id}] ${rule.text.replace(/\n/g, "\n  ")}${applies}\n`;
+}

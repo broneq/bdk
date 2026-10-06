@@ -1,7 +1,7 @@
-// The kernel side of the rules audit (`kernel-cli/rules`; design D-6, D-8 of
+// The kernel side of the rules audit (`kernel-cli/rules`; design D-6 of
 // v3-t31) on a memory store with the in-memory index: recurrence across
 // distinct Changes, the raw entry list and its cap, `rules.disabled` naming
-// an unknown id, and the pure parts of import and export.
+// an unknown id, and the pure rule helpers of the domain.
 import { describe, expect, it } from "vitest";
 
 import {
@@ -16,8 +16,7 @@ import { settingsRegistry } from "../../registrations.ts";
 import { fixedClock } from "../../shared/clock/index.ts";
 import { memoryIndex, memoryRegistry, writeDocument } from "../../shared/store/index.ts";
 import type { Store } from "../../shared/store/index.ts";
-import { prefixFromName, prefixProblem, ruleTexts } from "../domain/import.ts";
-import { projectionFiles } from "../domain/projection.ts";
+import { prefixProblem, ruleLine } from "../domain/rule.ts";
 import type { LoadedRule } from "../domain/rule.ts";
 import { rulesRegistrations } from "../index.ts";
 import { rulesCheckOutput, rulesStatsOutput } from "../schema/outputs.ts";
@@ -198,56 +197,27 @@ describe("rules check", () => {
   });
 });
 
-describe("import parsing", () => {
-  it("derives the prefix from the file name", () => {
-    expect(prefixFromName("api-style.md")).toBe("API-STYLE");
-    expect(prefixFromName("Naming_Rules.md")).toBe("NAMING-RULES");
-    expect(prefixFromName("2fa.md")).toBeUndefined();
+describe("rule domain", () => {
+  it("refuses a malformed prefix and the bundle's own", () => {
     expect(prefixProblem("BDK")).toContain("shipped pack");
     expect(prefixProblem("BDK-X")).toContain("shipped pack");
     expect(prefixProblem("api")).toContain("no rule prefix");
     expect(prefixProblem("BDKX")).toBeUndefined();
+    expect(prefixProblem("API-STYLE")).toBeUndefined();
   });
 
-  it("takes one rule per top-level bullet with its continuation, else the whole body", () => {
-    const body =
-      "# Heading\n\nIntro paragraph.\n\n- First rule.\n  More of it.\n  - nested stays\n* Second rule.\n\nTrailing prose.\n";
-    expect(ruleTexts(body)).toStrictEqual([
-      "First rule.\nMore of it.\n- nested stays",
-      "Second rule.",
-    ]);
-    expect(ruleTexts("Just one paragraph.\n")).toStrictEqual(["Just one paragraph."]);
-    expect(ruleTexts("\n\n")).toStrictEqual([]);
-  });
-});
-
-describe("projection", () => {
-  const rule = (id: string, applies?: string[]): LoadedRule => ({
-    id,
-    prefix: id.replace(/-\d+$/, ""),
-    number: Number(id.replace(/^.*-/, "")),
-    scope: "project",
-    file: `.bdk/rules/${id}.md`,
-    kind: "house",
-    severity: "medium",
-    origin: "user",
-    since: "2026-09-30",
-    text: `Text of ${id}.`,
-    ...(applies === undefined ? {} : { applies }),
-  });
-
-  it("writes no file for an empty side", () => {
-    const [global, scoped] = projectionFiles([rule("NAMING-1")]);
-    expect(global.body).toContain("- [NAMING-1] Text of NAMING-1.\n");
-    expect(scoped).toMatchObject({ rules: 0, paths: [], body: undefined });
-  });
-
-  it("quotes every glob of paths:, sorted and without duplicates", () => {
-    const [, scoped] = projectionFiles([
-      rule("UI-2", ["web/**", "*.tsx"]),
-      rule("API-1", ["web/**"]),
-    ]);
-    expect(scoped.frontmatter).toBe('paths:\n  - "*.tsx"\n  - "web/**"\n');
+  it("prints a rule line with indented continuation and its applies", () => {
+    const rule: Pick<LoadedRule, "id" | "text" | "applies"> = {
+      id: "API-1",
+      text: "First line.\nSecond line.",
+      applies: ["src/api/**", "web/**"],
+    };
+    expect(ruleLine(rule)).toBe(
+      "- [API-1] First line.\n  Second line. (applies: src/api/**, web/**)\n",
+    );
+    expect(ruleLine({ id: "NAMING-1", text: "Name it.", applies: [] })).toBe(
+      "- [NAMING-1] Name it.\n",
+    );
   });
 });
 

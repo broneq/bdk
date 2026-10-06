@@ -225,14 +225,11 @@ describe("close", () => {
     expect(meta["disallowed-tools"]).toBe("Edit Write NotebookEdit");
   });
 
-  it("closes through the kernel, regenerates drifted rules and leaves the PR to the user", () => {
+  it("closes through the kernel and leaves the PR to the user", () => {
     const { body } = readSkill("close");
     for (const needle of [
       "bdk next --json",
       "bdk change close --dry-run --json",
-      "bdk rules export --claude --check --json",
-      "bdk rules export --claude --json",
-      "policy/generated-drift",
       "bdk change close --json",
       "policy/git-hook-failed",
       "`gatesByPolicy`",
@@ -331,6 +328,16 @@ describe("gates passed by policy are named by id (T42 run probe)", () => {
       expect(finish).toMatch(/gates passed by policy[^\n]*by its id \(`gate:(design|review)`\)/);
     },
   );
+});
+
+describe("close and setup leave .claude/rules/ to the project", () => {
+  it.each(["close", "setup"])("%s names no rule import, export or projection", (name) => {
+    const { meta, body } = readSkill(name);
+    const text = `${String(meta.description)}\n${body}`;
+    for (const needle of ["bdk rules import", "bdk rules export", ".claude/rules/", "projection"]) {
+      expect(text, needle).not.toContain(needle);
+    }
+  });
 });
 
 describe("setup proposes the tracker (T42)", () => {

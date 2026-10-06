@@ -362,7 +362,7 @@ The kernel SHALL refuse a key that v2 had and v3 dropped or renamed with `policy
 | `test-tools`                 | `tools.test`                                                                                      |
 | `lint-tools`                 | `tools.lint`                                                                                      |
 | `build-tools`                | `tools.build`                                                                                     |
-| `quality`                    | project rules in `.bdk/rules/` (`bdk rules import`), BDK rules switched off with `rules.disabled` |
+| `quality`                    | project rules in `.bdk/rules/` (`bdk rules accept`), BDK rules switched off with `rules.disabled` |
 | `language-rules`             | the bundle's language packs selected by `languages`, project rules with `applies`                 |
 | `features.caveman`           | no consumer in v3 (#39)                                                                           |
 | `features.serena`            | removed with the bundled MCP servers (ADR-0001)                                                   |

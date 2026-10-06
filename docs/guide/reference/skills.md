@@ -10,11 +10,11 @@ BDK works in Changes: one unit of work on one branch, whose intent, design, plan
 
 ## /bdk:setup
 
-**Purpose.** Bring a project to a working BDK layout: `.bdk/settings.yaml` with the project's languages and its test, lint and build commands (detected from the project files and confirmed with you), Lavish, your hand-written `.claude/rules/` as BDK rules, and the migration of a BDK 2 project. Settings are written only with `bdk config set`, which validates every value. See [Project setup](../getting-started/setup.md).
+**Purpose.** Bring a project to a working BDK layout: `.bdk/settings.yaml` with the project's languages and its test, lint and build commands (detected from the project files and confirmed with you), Lavish, and the migration of a BDK 2 project. Settings are written only with `bdk config set`, which validates every value. See [Project setup](../getting-started/setup.md).
 
 **Arguments:** `[what to change, e.g. 'add the e2e suite']` - with none, the whole setup; with a request, only that.
 
-**Artifact:** `.bdk/settings.yaml` (tracked), `.bdk/rules/` when rules were imported, `.bdk/.machine/` (ignored). A v2 project's `.bdk/settings.json`, `plans/`, `design/`, `runs/` and `verify-plan/` are deleted after you confirm.
+**Artifact:** `.bdk/settings.yaml` (tracked), `.bdk/.machine/` (ignored). A v2 project's `.bdk/settings.json`, `plans/`, `design/`, `runs/` and `verify-plan/` are deleted after you confirm.
 
 **When to use.** Once per project, after cloning, or when the session start or `bdk doctor` reports missing settings or a v2 layout. Claude does not start it on its own.
 
@@ -94,11 +94,11 @@ BDK works in Changes: one unit of work on one branch, whose intent, design, plan
 
 ## /bdk:close
 
-**Purpose.** Close the reviewed Change. It checks the close with `bdk change close --dry-run` and stops on what the kernel refuses (an open ticket, a spec conflict), regenerates `.claude/rules/bdk-generated*.md` when the project's rules changed, then runs `bdk change close`: the spec deltas are merged into `.bdk/specs/`, the Change is archived under `.bdk/changes/archive/<changeId>/` and committed as `chore(bdk): close <changeId>`. It ends with the PR summary from the ledger (intent, decisions, assumptions, risks, open findings, merged capabilities), the gates passed by policy rather than by you, and the regenerated rule files for you to commit. It asks nothing, edits no file and opens no PR: publishing the PR is your step.
+**Purpose.** Close the reviewed Change. It checks the close with `bdk change close --dry-run` and stops on what the kernel refuses (an open ticket, a spec conflict), then runs `bdk change close`: the spec deltas are merged into `.bdk/specs/`, the Change is archived under `.bdk/changes/archive/<changeId>/` and committed as `chore(bdk): close <changeId>`. It ends with the PR summary from the ledger (intent, decisions, assumptions, risks, open findings, merged capabilities), the gates passed by policy rather than by you, and the regenerated rule files for you to commit. It asks nothing, edits no file and opens no PR: publishing the PR is your step.
 
 **Arguments:** none.
 
-**Artifact:** `.bdk/changes/archive/<changeId>/`, the merged `.bdk/specs/`, the close commit, and the regenerated rule projection when the rules changed.
+**Artifact:** `.bdk/changes/archive/<changeId>/`, the merged `.bdk/specs/` and the close commit.
 
 **When to use.** After `/bdk:cr`, when the review gate is ready; typing `/bdk:close` passes it. Claude starts it only inside a `/bdk:run` of your session.
 
@@ -184,11 +184,11 @@ One skill turns lessons into project rules through the kernel - see [Rules hygie
 
 ## /bdk:rules
 
-**Purpose.** Keep the project's rules under `.bdk/rules/` small and current. `audit` (the default) reads `bdk rules stats --entries`, groups the recurring lessons by meaning, drops what is not a rule, proposes the rest and adopts the ones you accept with `bdk rules accept`, then offers the rules `bdk rules prune` lists for removal. `capture <lesson>` records one lesson as a `learning` entry of the active Change, or, without a Change, proposes it as a rule. `check` runs `bdk rules check` and the projection check of `bdk rules export --claude`. "Nothing is a rule here" is a frequent, correct output.
+**Purpose.** Keep the project's rules under `.bdk/rules/` small and current. `audit` (the default) reads `bdk rules stats --entries`, groups the recurring lessons by meaning, drops what is not a rule, proposes the rest and adopts the ones you accept with `bdk rules accept`, then offers the rules `bdk rules prune` lists for removal. `capture <lesson>` records one lesson as a `learning` entry of the active Change, or, without a Change, proposes it as a rule. `check` runs `bdk rules check`. "Nothing is a rule here" is a frequent, correct output.
 
 **Arguments:** `[audit | capture <lesson> | check]`
 
-**Artifact:** Rule files under `.bdk/rules/`, created only by `bdk rules accept`; a removed rule stays as a tombstone with `removed: <reason>`. The generated `.claude/rules/bdk-generated*.md` files are regenerated with `bdk rules export --claude`.
+**Artifact:** Rule files under `.bdk/rules/`, created only by `bdk rules accept`; a removed rule stays as a tombstone with `removed: <reason>`.
 
 **When to use.** "Add a rule", "capture this as a rule", "clean up rules", or when repeated findings should become a rule.
 

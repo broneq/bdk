@@ -12,8 +12,6 @@ import {
   renderAccept,
   renderCheck,
   renderExplain,
-  renderExport,
-  renderImport,
   renderPrune,
   renderStats,
 } from "../render/outputs.ts";
@@ -22,8 +20,6 @@ import type { AcceptInput } from "../use-cases/accept.ts";
 import { checkRules } from "../use-cases/check.ts";
 import type { RulesDeps } from "../use-cases/deps.ts";
 import { explainRules } from "../use-cases/explain.ts";
-import { exportRules } from "../use-cases/export.ts";
-import { importRules } from "../use-cases/import.ts";
 import { pruneRules } from "../use-cases/prune.ts";
 import { ruleStats } from "../use-cases/stats.ts";
 
@@ -92,30 +88,6 @@ export function pruneCommand(deps: RulesDeps): Handler {
       uncited,
     );
     return isRefusal(page) ? page : { data: page, text: capLines(renderPrune(page)) };
-  };
-}
-
-export function importCommand(deps: RulesDeps): Handler {
-  return (context) => {
-    const report = importRules(deps, projectRoot(deps, context), globalDir(context.runtime), {
-      cwd: context.cwd,
-      dir: context.positionals["<dir>"],
-      dryRun: context.flags["--dry-run"] === true,
-      prefix: text(context.flags["--prefix"]),
-    });
-    return isRefusal(report) ? report : { data: report, text: capLines(renderImport(report)) };
-  };
-}
-
-export function exportCommand(deps: RulesDeps): Handler {
-  return (context) => {
-    const report = exportRules(
-      deps,
-      projectRoot(deps, context),
-      globalDir(context.runtime),
-      context.flags["--check"] === true,
-    );
-    return isRefusal(report) ? report : { data: report, text: renderExport(report) };
   };
 }
 

@@ -69,6 +69,10 @@ const MENTION_ALLOWLIST = new Map([
   ],
   ["design done", "Approach B command; Approach B was rejected"],
   ["import", "removed by v3-t41-setup-change: /bdk:setup migrates a v2 project"],
+  [
+    "rules import",
+    "removed by v3-152-remove-rules-export-import: .claude/rules/ belongs to the project",
+  ],
   ["review open", "Approach B command; Approach B was rejected"],
   ["execute --wave N", "plan wording for the headless runner, dropped by T23-D6"],
   ["run", "plan wording for the headless runner, dropped by T23-D6; /bdk:run is a skill"],

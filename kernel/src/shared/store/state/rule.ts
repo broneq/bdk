@@ -27,9 +27,9 @@ export const ruleKind = {
       applies: z.array(glob).optional().meta({ description: "Absent: every file." }),
       roles: z.array(role).optional().meta({ description: "Absent: every role." }),
       severity,
-      origin: z.union([z.enum(["bdk", "import", "user"]), adoptedFrom]).meta({
+      origin: z.union([z.enum(["bdk", "user"]), adoptedFrom]).meta({
         description:
-          "The shipped pack, `rules import`, `rules accept` without `--from`, or the entry or attempt it was adopted from.",
+          "The shipped pack, `rules accept` without `--from`, or the entry or attempt it was adopted from.",
       }),
       evidence: z
         .array(adoptedFrom)

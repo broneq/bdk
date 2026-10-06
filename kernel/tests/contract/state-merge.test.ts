@@ -266,7 +266,7 @@ function work(root: string, branch: string, at: string, rule: string, capability
       id: rule,
       kind: "house",
       severity: "low",
-      origin: "import",
+      origin: "user",
       since: "2026-09-27",
     },
     body: `Rule accepted on ${branch}.\n`,

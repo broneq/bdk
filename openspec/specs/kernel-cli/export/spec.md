@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Host exports (`export`). Generators for host-specific files. `agents` writes a host's adapter files from the kernel's adapter definitions and the per-host tool map (`role-contracts`, Adapters); `rules export` (in the `rules` group) writes the rule projection.
+Host exports (`export`). Generators for host-specific files. `agents` writes a host's adapter files from the kernel's adapter definitions and the per-host tool map (`role-contracts`, Adapters).
 
 Common rules, not repeated per requirement: every command may emit `input/unknown-command`, `input/unknown-flag`, `input/missing-argument`, `input/invalid-argument`, `runtime/node-version`, `runtime/not-a-repo`; every Change-scoped command additionally `policy/no-active-change`, `state/corrupted-index`, `state/ledger-invalid`, `state/change-dir-missing`. Their meaning and exit codes are in `kernel-cli`, Exit codes and the error object; a command's `exits` in the index is derived from the classes of its specific and common rules.
 

@@ -4,8 +4,6 @@ import type {
   AcceptReport,
   CheckReport,
   ExplainReport,
-  ExportReport,
-  ImportReport,
   PruneItem,
   StatsReport,
 } from "../domain/report.ts";
@@ -30,31 +28,8 @@ export function renderPrune(page: { readonly items: readonly PruneItem[] }): str
   return `${page.items.map((item) => `${item.id} ${item.reason}: ${item.detail}`).join("\n")}\n`;
 }
 
-export function renderImport(report: ImportReport): string {
-  const verb = report.dryRun ? "would import" : "imported";
-  const lines = report.imported.map(
-    (file) =>
-      `${verb} ${file.from}: ${file.rules.join(", ")}${file.applies === undefined ? "" : ` (applies: ${file.applies.join(", ")})`}`,
-  );
-  for (const file of report.skipped) lines.push(`skipped ${file.from}: ${file.why}`);
-  for (const path of report.projection) lines.push(`regenerated ${path}`);
-  if (report.imported.length > 0 && !report.dryRun) {
-    lines.push("Remove the imported files: the generated projection now carries their rules.");
-  }
-  if (lines.length === 0) lines.push("Nothing to import.");
-  return `${lines.join("\n")}\n`;
-}
-
-export function renderExport(report: ExportReport): string {
-  return `${report.files
-    .map((file) => `${file.path}: ${String(file.rules)} rules${file.changed ? ", changed" : ""}`)
-    .join("\n")}\n`;
-}
-
 export function renderAccept(report: AcceptReport): string {
-  const lines = [`accepted ${report.id}: ${report.path} (origin ${report.origin})`];
-  for (const path of report.projection) lines.push(`regenerated ${path}`);
-  return `${lines.join("\n")}\n`;
+  return `accepted ${report.id}: ${report.path} (origin ${report.origin})\n`;
 }
 
 export function renderStats(report: StatsReport): string {

@@ -1,4 +1,4 @@
-// Writing a project rule file, shared by `rules accept` and `rules import`:
+// Writing a project rule file for `rules accept`:
 // the next free number of a prefix (tombstones included, so a number is
 // never reused), the frontmatter checked against the rule schema before any
 // write, and the refusal when the prefix already carries a duplicate id.
