@@ -1,7 +1,9 @@
 // `docs-site`, Site describes only shipped mechanisms: no page names the
 // removed tool layer, the v2 settings file's hook and renderer, or a Python
-// script or hook of BDK. The include pages are skipped: `CHANGELOG.md` records
-// removals by name, and both included files have checks of their own.
+// script or hook of BDK, and neither the site nor `README.md` names a v2
+// workflow outside the migration page. The include pages are skipped:
+// `CHANGELOG.md` records removals by name, and both included files have checks
+// of their own.
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -60,5 +62,43 @@ describe("site describes only shipped mechanisms", () => {
 
   it.each(sources)("$name names no removed mechanism", ({ text }) => {
     expect(named(text)).toStrictEqual([]);
+  });
+});
+
+// Scenario "v2 workflow outside the migration page": the one page that maps
+// the v2 skills and paths to v3 is the only place that names them.
+const MIGRATION_PAGE = "getting-started/migration-from-v2.md";
+
+const V2_WORKFLOW =
+  /create-plan|subagent-execute-plan|refine-rules|add-rule|\.bdk\/(?:plans|design|runs|verify-plan)\//g;
+
+const workflowSources = [
+  { name: "README.md", text: readFileSync(join(REPO_ROOT, "README.md"), "utf8") },
+  ...sources.filter(({ name }) => name.endsWith(".md") && name !== MIGRATION_PAGE),
+];
+
+/** `line: match` for every v2 skill or path that `text` names. */
+function v2Mentions(text: string): string[] {
+  return text
+    .split("\n")
+    .flatMap((line, index) =>
+      [...line.matchAll(V2_WORKFLOW)].map((match) => `${String(index + 1)}: ${match[0]}`),
+    );
+}
+
+describe("no v2 workflow outside the migration page", () => {
+  it.each([
+    ["run `/bdk:create-plan`", "1: create-plan"],
+    ["plans live in `.bdk/plans/`", "1: .bdk/plans/"],
+  ])("flags %s", (text, mention) => {
+    expect(v2Mentions(text)).toStrictEqual([mention]);
+  });
+
+  it("does not flag the v3 paths", () => {
+    expect(v2Mentions("`.bdk/changes/<id>/plan/parts/` and `.bdk/rules/`")).toStrictEqual([]);
+  });
+
+  it.each(workflowSources)("$name names no v2 skill or path", ({ text }) => {
+    expect(v2Mentions(text), `the v2 workflow belongs on ${MIGRATION_PAGE}`).toStrictEqual([]);
   });
 });

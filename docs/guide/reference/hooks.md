@@ -1,9 +1,5 @@
 # Hooks reference
 
-::: warning Describes BDK v2
-This page describes BDK v2. The v3 documentation replaces it (T50).
-:::
-
 BDK registers hooks via `hooks/hooks.json`. This page lists every entry: the event it fires on, what it runs, what it prints, and when it blocks the session.
 
 ## SessionStart
@@ -97,9 +93,9 @@ Ends the session's `/bdk:run`, if one is running, then commits a checkpoint of t
 
 Five hooks keep the agent registry (`.bdk/.machine/agents.sqlite`), which `bdk agents list`, `show` and `wait` read. It records who started whom, which dispatch package each agent works on, and whether it still runs.
 
-### `hooks/guard/post-tool.sh` (PostToolUse)
+### `hooks/guard/post-tool.sh` (PostToolUse and PostToolUseFailure)
 
-Command: the `pre-tool.sh` form above with `post-tool.sh` and "this agent". For a subagent's call it writes `idle` to the heartbeat in the shell. It starts `bdk hooks post-tool` only in a BDK project and only for `Agent` (the parent links its child and the child's package) and `TaskStop` (an end).
+Command: the `pre-tool.sh` form above with `post-tool.sh` and "this agent", on both events, so a failed tool call moves the heartbeat too. For a subagent's call it writes `idle` to the heartbeat in the shell. It starts `bdk hooks post-tool` only in a BDK project and only for `Agent` (the parent links its child and the child's package) and `TaskStop` (an end).
 
 ### `bdk hooks subagent-start`, `subagent-stop` and `stop`
 
@@ -112,7 +108,7 @@ An agent that is cut off without a hook (`maxTurns`, a kill) turns `suspect` onc
 
 ## Skill frontmatter hooks
 
-A skill that delegates to another plugin's skill checks for it with its own `UserPromptSubmit` hook (see `.claude/rules/skills.md`).
+A skill that delegates to another plugin's skill checks for it with its own `UserPromptSubmit` hook.
 
 ### `bdk hooks skill-exists <name>`
 

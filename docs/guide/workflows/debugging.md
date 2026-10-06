@@ -18,7 +18,7 @@ Describe the defect to `/bdk:change`:
 /bdk:change The date filter shows entries of the previous evening for users in New York
 ```
 
-`/bdk:change` opens a Change of kind `bug` when the intent reports a defect: something that worked, or should work, and does not. A bug Change skips the design stage and goes straight to `/bdk:plan`, then `/bdk:execute` and `/bdk:cr`, as in [the standard workflow](standard.md). `/bdk:run` carries it through these stages for you.
+`/bdk:change` opens a Change of kind `bug` when the intent reports a defect: something that worked, or should work, and does not. A bug Change skips the design stage and goes straight to `/bdk:plan`, then `/bdk:execute` and `/bdk:cr`, as in [a small Change](small.md). `/bdk:run` carries it through these stages for you.
 
 With `bdk-craft` installed, every implementer package of a bug Change has a `Craft` section that names two skills, `debugging` and then `tdd`, and the command that prints each one:
 

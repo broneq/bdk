@@ -107,4 +107,4 @@ bdk rules explain src/api/users.ts --role reviewer
 ## Related
 
 - [Rules hygiene](../workflows/rules-hygiene.md) for the audit that turns lessons into rules.
-- [The shared foundation](shared-foundation.md) for how rules reach subagents.
+- [Context](context.md#dispatch-packages) for how rules reach subagents.

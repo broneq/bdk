@@ -41,13 +41,13 @@
 
 ## 6. Guide v3
 
-- [ ] 6.1 Extend `kernel/tests/docs/shipped.test.ts` with the v2 workflow scenario over `README.md` and the site (migration page excepted) and add drift guard 6 (every `bdk <command>` named resolves to a registry command); verify both fail and name the current stale pages and mentions.
-- [ ] 6.2 Write the failing test that `reference/configuration.md` names every key of the configuration registry; write the page; verify the test passes.
-- [ ] 6.3 Write `getting-started/migration-from-v2.md` (hard cut, steps, removed skill and artifact maps, what is not migrated), move the v2 tables out of `reference/skills.md`, `reference/artifacts.md` and `getting-started/setup.md`; verify `pnpm docs:build` passes.
-- [ ] 6.4 Rewrite `index`, `getting-started/installation` and `getting-started/first-feature` for v3; verify the build passes and the pages leave the stale lists of 6.1.
-- [ ] 6.5 Rename and rewrite `workflows/trivial`, `workflows/standard`, `workflows/full-pipeline` as `workflows/tiny`, `workflows/small`, `workflows/large`; update `sidebar.ts` and inbound links; verify the build and the drift guards pass for these pages.
-- [ ] 6.6 Replace `concepts/plan-pipeline` with `concepts/change-pipeline` (including the README sections it absorbs, D8), `concepts/shared-foundation` with `concepts/context`, and rewrite `concepts/verification-scoping`; verify the build and the drift guards pass for these pages.
-- [ ] 6.7 Check `workflows/docs-and-decisions`, `reference/skills`, `reference/hooks`, `reference/artifacts` and `troubleshooting` against the code and fix what differs; verify the tests of 6.1 pass for the whole site.
+- [x] 6.1 Extend `kernel/tests/docs/shipped.test.ts` with the v2 workflow scenario over `README.md` and the site (migration page excepted) and add drift guard 6 (every `bdk <command>` named resolves to a registry command); verify both fail and name the current stale pages and mentions.
+- [x] 6.2 Write the failing test that `reference/configuration.md` names every key of the configuration registry; write the page; verify the test passes.
+- [x] 6.3 Write `getting-started/migration-from-v2.md` (hard cut, steps, removed skill and artifact maps, what is not migrated), move the v2 tables out of `reference/skills.md`, `reference/artifacts.md` and `getting-started/setup.md`; verify `pnpm docs:build` passes.
+- [x] 6.4 Rewrite `index`, `getting-started/installation` and `getting-started/first-feature` for v3; verify the build passes and the pages leave the stale lists of 6.1.
+- [x] 6.5 Rename and rewrite `workflows/trivial`, `workflows/standard`, `workflows/full-pipeline` as `workflows/tiny`, `workflows/small`, `workflows/large`; update `sidebar.ts` and inbound links; verify the build and the drift guards pass for these pages.
+- [x] 6.6 Replace `concepts/plan-pipeline` with `concepts/change-pipeline` (including the README sections it absorbs, D8), `concepts/shared-foundation` with `concepts/context`, and rewrite `concepts/verification-scoping`; verify the build and the drift guards pass for these pages.
+- [x] 6.7 Check `workflows/docs-and-decisions`, `reference/skills`, `reference/hooks`, `reference/artifacts` and `troubleshooting` against the code and fix what differs; verify the tests of 6.1 pass for the whole site.
 - [ ] 6.8 Delete `kernel/tests/docs/banner.test.ts` and every banner, update the docs map for every moved page; verify `pnpm test:contract` and `pnpm docs:build` pass and no page under `docs/guide/` contains "Describes BDK v2".
 
 ## 7. README v3

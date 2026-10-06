@@ -1,9 +1,5 @@
 # Troubleshooting
 
-::: warning Describes BDK v2
-This page describes BDK v2. The v3 documentation replaces it (T50).
-:::
-
 Symptom, cause, and fix for the messages BDK can actually show you, grouped by the hook or script that prints them. Message text is quoted verbatim from source.
 
 When a run went wrong and no message explains why, analyze the session: see [Diagnostics](workflows/diagnostics.md).
@@ -27,7 +23,7 @@ fail bdk-ignored: .gitignore ignores .bdk/settings.yaml with /.bdk/ (line 2), so
 
 **Cause:** BDK 2 wrote `/.bdk/` into `.gitignore`. BDK 3 commits `.bdk/settings.yaml`, `.bdk/rules/` and the Changes, and that rule keeps all of them out of git, so the team never sees them.
 
-**Fix:** run `/bdk:setup`. It shows the rule, replaces it after you confirm with the two paths BDK 3 keeps out of git (`/.bdk/.machine/`, `/.bdk/settings.local.yaml`), and commits `.gitignore` on its own. See [Artifacts](reference/artifacts.md#the-bdk-2-ignore-rule).
+**Fix:** run `/bdk:setup`. It shows the rule, replaces it after you confirm with the two paths BDK 3 keeps out of git (`/.bdk/.machine/`, `/.bdk/settings.local.yaml`), and commits `.gitignore` on its own. See [Migration from v2](getting-started/migration-from-v2.md#the-v2-ignore-rule).
 
 ## Skill dependency missing
 

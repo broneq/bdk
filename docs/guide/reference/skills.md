@@ -1,20 +1,12 @@
 # Skills
 
-::: warning Describes BDK v2
-This page describes BDK v2. The v3 documentation replaces it (T50).
-:::
-
-::: info BDK 3
-[Stage skills](#stage-skills) describes BDK 3.
-:::
-
 Every skill is invoked as `/bdk:<name>`. This page lists one section per user-invocable skill - purpose, arguments, the artifact it writes, when to reach for it, and the skills it works with. Skills whose frontmatter carries `user-invocable: false` (the role skills and `swarm`) are loaded by agents and orchestrators, never typed as a slash command, so they get one collective paragraph near the end instead of individual sections.
 
-For the deeper "why" behind the pipeline these skills form, see the [tier table](../index.md#how-you-work-with-it), [The full pipeline](../workflows/full-pipeline.md), and [Plan pipeline](../concepts/plan-pipeline.md).
+For the pipeline these skills form, see [The Change pipeline](../concepts/change-pipeline.md) and the [profiles](../index.md#how-you-work-with-it).
 
 ## Stage skills
 
-BDK 3 works in Changes: one unit of work on one branch, whose intent, design, plan, ledger and progress the kernel keeps. A stage skill runs one step of a Change and ends by naming the command to type next; you type it, so every stage starts from your decision. `/bdk:run` types them for you, one stage after another, and stops where a gate needs you. Stage skills write only through kernel commands (`bdk ...`) and follow a kernel refusal's `instead` rather than working around it.
+BDK works in Changes: one unit of work on one branch, whose intent, design, plan, ledger and progress the kernel keeps. A stage skill runs one step of a Change and ends by naming the command to type next; you type it, so every stage starts from your decision. `/bdk:run` types them for you, one stage after another, and stops where a gate needs you. Stage skills write only through kernel commands (`bdk ...`) and follow a kernel refusal's `instead` rather than working around it.
 
 ## /bdk:setup
 
@@ -271,24 +263,6 @@ With `bdk` installed, every implementer package has a `Craft` section that names
 
 ## Role skills
 
-The skills under `skills/roles/` and `swarm` carry `user-invocable: false` and are never typed as `/bdk:<name>`. A role skill is the contract of one role (implementer, simplifier, verifier, design-verifier, reviewer, integration-reviewer, pr-reviewer, runner, scout, lead): what the agent reads, does, writes and returns. A dispatch package embeds its role's section, and the [agents](agents.md) run it. `swarm` holds how an orchestrator dispatches packages and waits for their agents. BDK 3 removed the eight `bdk-*` meta-skills that BDK 2 preloaded into agents; see [Shared foundation](../concepts/shared-foundation.md) for how an agent gets its context now.
+The skills under `skills/roles/` and `swarm` carry `user-invocable: false` and are never typed as `/bdk:<name>`. A role skill is the contract of one role (implementer, simplifier, verifier, design-verifier, reviewer, integration-reviewer, pr-reviewer, runner, scout, lead): what the agent reads, does, writes and returns. A dispatch package embeds its role's section, and the [agents](agents.md) run it. `swarm` holds how an orchestrator dispatches packages and waits for their agents. BDK 3 removed the eight `bdk-*` meta-skills that BDK 2 preloaded into agents; see [Context](../concepts/context.md#dispatch-packages) for how an agent gets its context now.
 
-## Removed skills
-
-Claude Code removed the `TaskCreate` / `TaskUpdate` / `TaskList` tools, which several skills used as their only state mechanism. Those skills are gone rather than patched:
-
-| Removed                                           | Use instead                                                                                                                                         |
-| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/bdk:execute-plan`, `/bdk:subagent-execute-plan` | `/bdk:execute`                                                                                                                                      |
-| `/bdk:save-progress`, `/bdk:restore-progress`     | Nothing to invoke. The Change's ledger and the task commits' trailers hold the state; `/bdk:execute` resumes from `bdk next`                        |
-| `/bdk:create-tasks`, `/bdk:refactor`              | `/bdk:plan`                                                                                                                                         |
-| `/bdk:audit-prompt`                               | Nothing                                                                                                                                             |
-| `/bdk:graphviz-docs-compiler`                     | Nothing to invoke. Mermaid diagrams render natively wherever the doc is viewed - `/bdk:docs` and `/bdk:adr` embed Mermaid directly, no compile step |
-| `/bdk:brainstorming`                              | `/bdk:design`                                                                                                                                       |
-| `/bdk:brainstorm-architecture`                    | `/bdk:design`                                                                                                                                       |
-| `/bdk:explain-complex-code`, `/bdk:update-docs`   | `/bdk:docs`                                                                                                                                         |
-| `/bdk:create-adr`                                 | `/bdk:adr`                                                                                                                                          |
-| `/bdk:add-rule`, `/bdk:refine-rules`              | `/bdk:rules`                                                                                                                                        |
-| `/bdk:test-driven-development`                    | `/bdk-craft:tdd`                                                                                                                                    |
-| `/bdk:debug`                                      | `/bdk-craft:debugging`; a `bug` Change from `/bdk:change` when the fix needs a plan and a review                                                    |
-| `/bdk:mermaid-drawer`                             | `/bdk-craft:mermaid-drawer`                                                                                                                         |
+The v2 skills BDK 3 removed, and what replaced each, are on [Migration from v2](../getting-started/migration-from-v2.md#skills).

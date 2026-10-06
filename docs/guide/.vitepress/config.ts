@@ -20,8 +20,8 @@ export default defineConfig({
   themeConfig: {
     nav: [
       { text: "Getting started", link: "/getting-started/installation" },
-      { text: "Workflows", link: "/workflows/full-pipeline" },
-      { text: "Concepts", link: "/concepts/shared-foundation" },
+      { text: "Workflows", link: "/workflows/small" },
+      { text: "Concepts", link: "/concepts/change-pipeline" },
       { text: "Reference", link: "/reference/skills" },
     ],
     sidebar,
