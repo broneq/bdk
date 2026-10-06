@@ -18,48 +18,46 @@ These indexes are where to start, not where to stop. Every entry is a claim
 someone wrote down once and may have got wrong; a page's real content always
 outranks what this file predicts about it.
 
-Until T50 rewrites the site for v3, every page carries the v2 banner and
-describes v2 on purpose. The v3 settings live in the Settings section of
-`README.md` and the v3 Change state (`.bdk/changes/`, the ledger, the index,
-the `change`, `log`, `measure` and `query` commands) in its Change state
-section, and the artifact graph (`pipeline/pipeline.yaml`, `policy.gates`, the
-`next`, `explain`, `validate` and `done` commands) in its Artifact graph
-section, and the plan part format with the `part` commands in its Plan parts
-section with `bdk commit`, and the tickets, budgets and escalation ladder with the `attempt`
-commands in its Loops and attempts section; the site has pages for none of
-them until T50.
+`README.md` is a synopsis: what BDK is, installation, the quick start, the
+pipeline in brief and the skills table. Every reference detail (settings,
+Change state, the artifact graph, plan parts, tickets) lives on the site, so a
+source change re-checks the site page first and the README only when the
+synopsis itself moved.
 
 ---
 
 ## Reverse index: source -> pages at risk
 
-| You changed                                                                                                                                                                             | Re-check these pages                                                                                                                                                                                 |
-| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `skills/<name>/SKILL.md` frontmatter (name, `argument-hint`, `user-invocable`, `model`, `allowed-tools`, `disallowed-tools`)                                                            | `reference/skills.md` (the skill's own section), plus the workflow page that narrates it                                                                                                             |
-| A skill added, renamed, or retired under `skills/`                                                                                                                                      | `reference/skills.md`, `index.md` (pipeline diagram + tier table), `README.md` skills table, the owning workflow page                                                                                |
-| `skills/stages/design/`, `plan/`, `verify-plan/`, `execute/`, `skills/tools/cr/` bodies                                                                                                 | `workflows/full-pipeline.md`, `workflows/standard.md`, `getting-started/first-feature.md`, `concepts/plan-pipeline.md`                                                                               |
-| `skills/tools/cr/`, `skills/tools/pr-review/` (modes, flags, rounds, `disallowed-tools`)                                                                                                | `workflows/code-review.md`, `reference/skills.md`, `reference/agents.md` (read-only enforcement section)                                                                                             |
-| `plugins/bdk-craft/skills/debugging/`                                                                                                                                                   | `workflows/debugging.md`                                                                                                                                                                             |
-| `skills/tools/adr/`, `skills/tools/docs/`, `plugins/bdk-craft/skills/mermaid-drawer/`                                                                                                   | `workflows/docs-and-decisions.md`, `reference/skills.md`                                                                                                                                             |
-| `skills/tools/rules/`                                                                                                                                                                   | `workflows/rules-hygiene.md`, `reference/skills.md`                                                                                                                                                  |
-| `skills/stages/setup/`                                                                                                                                                                  | `getting-started/setup.md`, `getting-started/installation.md`                                                                                                                                        |
-| `skills/roles/` and `swarm` (the `user-invocable: false` set)                                                                                                                           | `reference/skills.md` (collective role-skill paragraph), `concepts/agents.md` (roles and adapters)                                                                                                   |
-| `agents/*.md` added, retired, or model/`tools:` changed                                                                                                                                 | `reference/agents.md` (the tables + the agent count), `concepts/agents.md`, `STARTUP_INSTRUCTIONS.md` agents table (regenerated by `bdk ctx startup`)                                                |
-| `STARTUP_INSTRUCTIONS.md`                                                                                                                                                               | `concepts/shared-foundation.md`, `concepts/verification-scoping.md`, `concepts/agents.md`, `workflows/trivial.md`                                                                                    |
-| `kernel/src/ctx/` (manifest, sections), `kernel/src/rules/`, `rules/<category>/`, `rules/languages/`, `fragments/`                                                                      | `concepts/quality-and-language-rules.md`, `concepts/shared-foundation.md` (the meta-skill example), `README.md` Settings section                                                                     |
-| `kernel/src/ctx/config.ts`, `schema/settings.json` (settings keys)                                                                                                                      | `README.md` Settings section, `getting-started/setup.md` (the feature flags), `concepts/verification-scoping.md`, `concepts/quality-and-language-rules.md`                                           |
-| `kernel/src/change/`, `log/`, `measure/`, `query/`, `service/` (`rebuild`), `kernel/src/shared/store/` (Change layout, index, markers, ignored paths, the checkpoint and rebuild cores) | `README.md` Change state section and the `config set` row of its Settings table; `reference/artifacts.md` and `getting-started/setup.md` still describe the v2 `/.bdk/` ignore rule under the banner |
-| `kernel/src/graph/`, `pipeline/` (nodes, kinds, templates, `policy.gates`, the four graph commands)                                                                                     | `README.md` Artifact graph section and its command table; `concepts/plan-pipeline.md` still describes the v2 pipeline under the banner                                                               |
-| `kernel/src/part/`, `kernel/src/commit/`, the plan task grammar (`kernel/src/shared/store/state/plan.ts`), BDK trailers (`kernel/src/shared/store/progress.ts`)                         | `README.md` Plan parts section and its command table; `concepts/plan-pipeline.md` still describes the v2 plan format under the banner                                                                |
-| `kernel/src/attempt/`, `log ingest` and the `bdk-entries` block (`kernel/src/log/use-cases/ingest.ts`, `block.ts`), `policy.budgets`, `policy.oscillation`, `policy.escalation`         | `README.md` Loops and attempts section and its command table, and the `policy` paragraph of its Settings section; `concepts/plan-pipeline.md` still describes the v2 retry rules under the banner    |
-| `hooks/hooks.json`, `hooks/guard/`, `kernel/src/hooks/`                                                                                                                                 | `reference/hooks.md`, `concepts/shared-foundation.md`, `workflows/trivial.md`, `troubleshooting.md`                                                                                                  |
-| `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`                                                                                                                         | `getting-started/installation.md`                                                                                                                                                                    |
-| `.gitignore` (the `.bdk/` entries)                                                                                                                                                      | `reference/artifacts.md`, `getting-started/setup.md` - both embed the tracked/untracked block                                                                                                        |
-| `docs/guide/.vitepress/`, `.github/workflows/docs.yml`                                                                                                                                  | `contributing/index.md` includes `CONTRIBUTING.md` - edit `CONTRIBUTING.md`, never the page                                                                                                          |
-| `CONTRIBUTING.md`                                                                                                                                                                       | nothing to edit under `docs/guide/` - `contributing/index.md` is a snippet include                                                                                                                   |
-| `evals/` (the `pnpm eval` commands and modes)                                                                                                                                           | `CONTRIBUTING.md` (Workflow step 4 and Adding a Skill step 5); no page under `docs/guide/` describes the harness                                                                                     |
-| `CHANGELOG.md`                                                                                                                                                                          | nothing, ever - auto-generated by release-please, and `changelog.md` is a snippet include                                                                                                            |
-| `README.md`                                                                                                                                                                             | `index.md` (they make overlapping claims and drift apart)                                                                                                                                            |
+| You changed                                                                                                                                                     | Re-check these pages                                                                                                                                                                                 |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `skills/<name>/SKILL.md` frontmatter (name, `argument-hint`, `user-invocable`, `model`, `allowed-tools`, `disallowed-tools`)                                    | `reference/skills.md` (the skill's own section), plus the workflow page that narrates it                                                                                                             |
+| A skill added, renamed, or retired under `skills/`                                                                                                              | `reference/skills.md`, `index.md` (pipeline diagram + profile table), `README.md` skills table, the owning workflow page, `getting-started/migration-from-v2.md` (Skills) when a v2 skill maps to it |
+| `skills/stages/change/`, `design/`, `plan/`, `verify-design/`, `verify-plan/`, `execute/`, `close/`, `run/`, `skills/tools/cr/` bodies                          | `workflows/tiny.md`, `workflows/small.md`, `workflows/large.md`, `getting-started/first-feature.md`, `concepts/change-pipeline.md`                                                                   |
+| `skills/tools/cr/`, `skills/tools/pr-review/` (modes, flags, rounds, `disallowed-tools`)                                                                        | `workflows/code-review.md`, `reference/skills.md`, `reference/agents.md` (read-only enforcement section)                                                                                             |
+| `plugins/bdk-craft/skills/debugging/`                                                                                                                           | `workflows/debugging.md`                                                                                                                                                                             |
+| `skills/tools/adr/`, `skills/tools/docs/`, `plugins/bdk-craft/skills/mermaid-drawer/`                                                                           | `workflows/docs-and-decisions.md`, `reference/skills.md`                                                                                                                                             |
+| `skills/tools/rules/`                                                                                                                                           | `workflows/rules-hygiene.md`, `reference/skills.md`                                                                                                                                                  |
+| `skills/tools/diagnose/`, `kernel/src/diagnostics/`                                                                                                             | `workflows/diagnostics.md`, `reference/configuration.md` (Diagnostics)                                                                                                                               |
+| `skills/stages/setup/` (including `references/v2-migration.md`)                                                                                                 | `getting-started/setup.md`, `getting-started/installation.md`, `getting-started/migration-from-v2.md`                                                                                                |
+| `skills/roles/` and `swarm` (the `user-invocable: false` set)                                                                                                   | `reference/skills.md` (collective role-skill paragraph), `concepts/agents.md` (roles and adapters)                                                                                                   |
+| `agents/*.md` added, retired, or model/`tools:` changed                                                                                                         | `reference/agents.md` (the tables + the agent count), `concepts/agents.md`, `STARTUP_INSTRUCTIONS.md` agents table (regenerated by `bdk ctx startup`)                                                |
+| `STARTUP_INSTRUCTIONS.md`                                                                                                                                       | `concepts/context.md`, `concepts/verification-scoping.md`, `concepts/agents.md`, `workflows/tiny.md`                                                                                                 |
+| `kernel/src/ctx/` (manifest, sections), `kernel/src/dispatch/` (packages), `fragments/`                                                                         | `concepts/context.md`, `reference/configuration.md` (Prompts)                                                                                                                                        |
+| `kernel/src/rules/`, `rules/`                                                                                                                                   | `concepts/quality-and-language-rules.md`, `workflows/rules-hygiene.md`, `reference/configuration.md` (Rules)                                                                                         |
+| `kernel/src/registrations.ts`, `schema/settings.json` (settings keys)                                                                                           | `reference/configuration.md` (every key; `kernel/tests/docs/configuration.test.ts` catches a missing one, not a wrong one), `getting-started/setup.md`, `concepts/verification-scoping.md`           |
+| `kernel/src/change/`, `log/`, `measure/`, `query/`, `service/` (`rebuild`), `kernel/src/shared/store/` (Change layout, index, markers, ignored paths)           | `concepts/change-pipeline.md` (The Change, Profiles, Two Changes at once), `reference/artifacts.md`, `getting-started/setup.md`                                                                      |
+| `kernel/src/graph/`, `pipeline/` (nodes, kinds, templates, `policy.gates`, the four graph commands)                                                             | `concepts/change-pipeline.md` (The artifact graph, Gates), `reference/hooks.md` (UserPromptExpansion)                                                                                                |
+| `kernel/src/part/`, `kernel/src/commit/`, the plan task grammar (`kernel/src/shared/store/state/plan.ts`), BDK trailers (`kernel/src/shared/store/progress.ts`) | `concepts/change-pipeline.md` (Plan parts), `concepts/verification-scoping.md`, `concepts/worktree-parts.md`                                                                                         |
+| `kernel/src/attempt/`, `kernel/src/dispatch/domain/checks.ts`, `log ingest`, `policy.budgets`, `policy.oscillation`, `policy.escalation`                        | `concepts/change-pipeline.md` (Tickets and the escalation ladder, Evidence), `concepts/verification-scoping.md`, `reference/configuration.md` (Pipeline)                                             |
+| `kernel/src/shared/store/worktree.ts`, `kernel/src/graph/domain/wave.ts` (isolation, merge back)                                                                | `concepts/worktree-parts.md`                                                                                                                                                                         |
+| `hooks/hooks.json`, `hooks/guard/`, `kernel/src/hooks/`                                                                                                         | `reference/hooks.md`, `concepts/context.md`, `workflows/tiny.md`, `troubleshooting.md`                                                                                                               |
+| `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`                                                                                                 | `getting-started/installation.md`, `getting-started/migration-from-v2.md` (Steps)                                                                                                                    |
+| `.gitignore` (the `.bdk/` entries)                                                                                                                              | `reference/artifacts.md`, `getting-started/setup.md` - both embed the tracked/untracked block                                                                                                        |
+| `docs/guide/.vitepress/`, `.github/workflows/docs.yml`                                                                                                          | `contributing/index.md` includes `CONTRIBUTING.md` - edit `CONTRIBUTING.md`, never the page                                                                                                          |
+| `CONTRIBUTING.md`                                                                                                                                               | nothing to edit under `docs/guide/` - `contributing/index.md` is a snippet include                                                                                                                   |
+| `evals/` (suites, the `pnpm eval` commands and modes, providers)                                                                                                | `contributing/evals.md` (`kernel/tests/docs/evals.test.ts` catches an unnamed suite), `evals/README.md` synopsis, `CONTRIBUTING.md`                                                                  |
+| `CHANGELOG.md`                                                                                                                                                  | nothing, ever - auto-generated by release-please, and `changelog.md` is a snippet include                                                                                                            |
+| `README.md`                                                                                                                                                     | `index.md` (they make overlapping claims and drift apart)                                                                                                                                            |
 
 ---
 
@@ -69,29 +67,37 @@ Format: page - what it is for - the files that decide whether it is true.
 
 ### Entry points
 
-- **`index.md`** - the pitch, the "Why BDK" bullet list, the tier mermaid, the tier table.
-  Truth: `skills/` directory listing, `STARTUP_INSTRUCTIONS.md`, `README.md`. Every bullet links into a
+- **`index.md`** - the pitch, the "Why BDK" bullet list, the pipeline mermaid, the profile table.
+  Truth: `skills/` directory listing, `pipeline/pipeline.yaml`, `README.md`. Every bullet links into a
   concept or workflow page, so a retired page breaks this one first.
-- **`getting-started/installation.md`** - prerequisites, the two install commands, configuring the
-  project, what you get.
-  Truth: `.claude-plugin/marketplace.json`, `.claude-plugin/plugin.json`, `hooks/hooks.json`.
-- **`getting-started/setup.md`** - `/bdk:setup` phases, the feature flags, what gets written to
+- **`getting-started/installation.md`** - Node, the two install commands, the `bdk` launcher, what
+  changes in your sessions.
+  Truth: `.claude-plugin/marketplace.json`, `.claude-plugin/plugin.json`, `bin/bdk`, `hooks/hooks.json`.
+- **`getting-started/setup.md`** - `/bdk:setup` phases, the toolchain it derives, what gets written to
   `.bdk/`, the tracked-vs-untracked block.
-  Truth: `skills/stages/setup/SKILL.md`, `kernel/src/ctx/config.ts`, `.gitignore`.
-- **`getting-started/first-feature.md`** - one change carried through the full tier, step by step,
-  with the output to expect at each stage.
-  Truth: the five pipeline skills' bodies. This page quotes actual prompts and artifact paths, so it
-  goes stale on any change to a skill's phases or artifact naming.
+  Truth: `skills/stages/setup/SKILL.md`, `kernel/src/registrations.ts`, `.gitignore`.
+- **`getting-started/first-feature.md`** - one `small` Change from `/bdk:change` to `/bdk:close`, with
+  what each stage leaves and where you decide.
+  Truth: the stage skills' bodies, `pipeline/pipeline.yaml`. It quotes artifact paths and the review
+  order, so it goes stale on any change to a stage's phases or artifact naming.
+- **`getting-started/migration-from-v2.md`** - the one-time move from BDK 2: steps, the v2 ignore rule,
+  the settings, skills, agents and artifacts maps, what is not migrated. The only page allowed to name
+  v2 skills and paths (`kernel/tests/docs/shipped.test.ts` enforces that).
+  Truth: `skills/stages/setup/references/v2-migration.md`, `skills/stages/setup/SKILL.md`, the
+  `skills/` and `agents/` listings.
 
 ### Workflows (narrative "how you use it")
 
-- **`workflows/full-pipeline.md`** - stages 1-5, the "seams are files" argument, plan immutability,
-  parallel worktrees.
-  Truth: the pipeline stage skills, `kernel/src/part/`, `kernel/src/commit/`.
-- **`workflows/standard.md`** - the standard tier, plus "when a standard run goes sideways".
-  Truth: `skills/stages/plan/`, `verify-plan/`, `execute/`, `skills/tools/cr/`.
-- **`workflows/trivial.md`** - why the trivial tier needs no skill.
-  Truth: `STARTUP_INSTRUCTIONS.md`, `hooks/hooks.json`, `skills/tools/cr/SKILL.md` (`--inline`).
+- **`workflows/tiny.md`** - when a Change is `tiny`, its stages, the measurement that flags an outgrown
+  one, raising the profile, an edit with no Change.
+  Truth: `skills/stages/change/`, `kernel/src/measure/`, `pipeline/pipeline.yaml`.
+- **`workflows/small.md`** - what each stage leaves, where you step in, "when it goes sideways", gates
+  on autopilot.
+  Truth: the stage skills, `kernel/src/graph/`, `hooks/hooks.json` (UserPromptExpansion).
+- **`workflows/large.md`** - how a Change becomes `large`, design parts, `spec-impact`, execution as a
+  tree of leads, the grouped review.
+  Truth: `skills/stages/design/`, `skills/stages/execute/`, `skills/roles/lead/`, `kernel/src/graph/`
+  (`execution.tree`), `kernel/src/review/domain/groups.ts`.
 - **`workflows/debugging.md`** - a bug Change, and the `bdk-craft` debugging process inside it.
   Truth: `plugins/bdk-craft/skills/debugging/SKILL.md`, `kernel/src/dispatch/` (the `Craft` section).
 - **`workflows/code-review.md`** - the review Change, the range, a round, triage and the fix loop, `--inline`, PR review.
@@ -100,23 +106,29 @@ Format: page - what it is for - the files that decide whether it is true.
   Truth: `skills/tools/adr/`, `skills/tools/docs/`, `plugins/bdk-craft/skills/mermaid-drawer/`.
 - **`workflows/rules-hygiene.md`** - learnings, the audit with `rules stats`, `rules accept`, `rules prune`,
   `rules import` of hand-written `.claude/rules/`.
-  Truth: `skills/tools/rules/`,
-  `STARTUP_INSTRUCTIONS.md` capture conventions table.
+  Truth: `skills/tools/rules/`, `kernel/src/rules/`, `STARTUP_INSTRUCTIONS.md` capture conventions table.
+- **`workflows/diagnostics.md`** - the run journal, the verbose log, `/bdk:diagnose`.
+  Truth: `skills/tools/diagnose/`, `kernel/src/diagnostics/`, `hooks/hooks.json`.
 
 ### Concepts (the "why")
 
-- **`concepts/shared-foundation.md`** - what SessionStart injects, why it is static, why subagents
-  do not inherit it.
+- **`concepts/change-pipeline.md`** - the Change and its directory, profiles, the artifact graph and
+  its commands, gates, plan parts and trailers, tickets and the escalation ladder, evidence, roles and
+  dispatch packages, living specs, two Changes at once.
+  Truth: `pipeline/pipeline.yaml`, `kernel/src/change/`, `kernel/src/graph/`, `kernel/src/part/`,
+  `kernel/src/commit/`, `kernel/src/attempt/`, `kernel/src/evidence/`, `kernel/src/spec/`,
+  `kernel/src/shared/store/`, `openspec/specs/`.
+- **`concepts/context.md`** - the session foundation, a skill's context lines, dispatch packages,
+  capture conventions.
   Truth: `STARTUP_INSTRUCTIONS.md`, `hooks/hooks.json`, `kernel/src/ctx/`, `kernel/src/dispatch/`.
-- **`concepts/verification-scoping.md`** - proportionality, the `Verification: none` class, tiers and
-  command forms, anti-patterns.
+- **`concepts/verification-scoping.md`** - proportionality, the `Verification: none` class, the
+  runner's checks and command forms, freshness, anti-patterns.
   Truth: `openspec/specs/kernel-state/spec.md` (Plan part and plan index: the `Verification: none`
   class), `openspec/specs/kernel-settings/spec.md` (Keys of evidence policy: the file-class
-  partition), `STARTUP_INSTRUCTIONS.md`, `skills/stages/plan/`, `skills/stages/execute/`,
-  `skills/roles/runner/`.
-- **`concepts/plan-pipeline.md`** - immutability stamp, commit trailers vs manifest, resume and
-  session guard, parallel worktrees, waves, one commit per group.
-  Truth: `kernel/src/part/`, `kernel/src/commit/`, `skills/stages/verify-plan/`, `skills/stages/execute/`.
+  partition), `kernel/src/dispatch/domain/checks.ts`, `kernel/src/evidence/`, `skills/roles/runner/`.
+- **`concepts/worktree-parts.md`** - when a part gets `isolation: worktree`, how it is built and merged
+  back.
+  Truth: `kernel/src/shared/store/worktree.ts`, `kernel/src/graph/domain/wave.ts`, `skills/stages/plan/`.
 - **`concepts/agents.md`** - roles and adapters, model-as-cost, read-only enforcement, how an agent
   reads its context, structured returns, `SendMessage` vs respawn, the tree.
   Truth: `agents/*.md`, `skills/roles/`, `kernel/src/export/domain/adapters.ts`, `STARTUP_INSTRUCTIONS.md`.
@@ -132,14 +144,21 @@ Format: page - what it is for - the files that decide whether it is true.
   Truth: every `skills/*/SKILL.md` frontmatter and body. The most drift-prone page in the site: a new
   skill that is never added here is invisible to users (the coverage guard catches a missing section,
   not a wrong one).
+- **`reference/configuration.md`** - the settings layers and how they merge, then every key by
+  section with its default.
+  Truth: `kernel/src/registrations.ts` and each slice's `config.ts`, `bdk config schema`. The guard
+  `kernel/tests/docs/configuration.test.ts` fails on a registered key the page does not name; a wrong
+  default or description it does not catch.
 - **`reference/agents.md`** - the agent count, the adapters and other agents tables, read-only enforcement.
   Truth: `agents/*.md` frontmatter, the `disallowed-tools` of `skills/stages/execute/`, `skills/stages/close/`,
   `skills/tools/cr/` and `skills/tools/pr-review/`. Contains an explicit count - count the files.
 - **`reference/hooks.md`** - the SessionStart, PreToolUse, UserPromptExpansion and SessionEnd entries
-  in order, the guard rules and gate outcomes.
+  in order, the agent hooks (SubagentStart, SubagentStop, PostToolUse, PostToolUseFailure, Stop), the
+  guard rules and gate outcomes.
   Truth: `hooks/hooks.json` (order matters and the page reproduces it), `hooks/*/`, the guard and
   gate tables of `openspec/specs/kernel-cli/hooks/spec.md`.
-- **`reference/artifacts.md`** - the `.bdk/` layout, run state, the tracked/untracked block.
+- **`reference/artifacts.md`** - the `.bdk/` layout, the Change directory, `.bdk/.machine/`, the
+  tracked/untracked block.
   Truth: `kernel/src/shared/store/` (Change layout, ignored paths), `.gitignore`.
 
 ### Standalone
@@ -154,6 +173,13 @@ Format: page - what it is for - the files that decide whether it is true.
 - **`changelog.md`** - `<!--@include: ../../CHANGELOG.md-->`. `CHANGELOG.md` is release-please output.
 - **`contributing/index.md`** - `<!--@include: ../../../CONTRIBUTING.md-->`. Edit `CONTRIBUTING.md` instead.
 
+### Contributing
+
+- **`contributing/evals.md`** - the measurement harness: when to measure, the suites, probe before the
+  full series, with-without, providers and their facts, committed results.
+  Truth: `evals/harness/`, `evals/suites/` (every suite named, enforced by
+  `kernel/tests/docs/evals.test.ts`), the `eval` scripts in `package.json`.
+
 ---
 
 ## Shared-facts index: stated in more than one place
@@ -165,19 +191,20 @@ auditing, put the copies side by side and compare them directly rather than
 checking each against the code in isolation. Site pages are named by their path
 under `docs/guide/`.
 
-| The fact                                                                                                       | Stated in                                                                                                | Decided by                                                                                                   |
-| -------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| The agent count and the fleet roster                                                                           | `README.md`, `reference/agents.md`, `concepts/agents.md`, `STARTUP_INSTRUCTIONS.md`                      | `agents/*.md`                                                                                                |
-| How review agents are made read-only (`tools:` allowlist, **not** `disallowed-tools`, which only skills carry) | `index.md`, `README.md`, `reference/agents.md`, `concepts/agents.md`                                     | `agents/*.md` frontmatter; `skills/tools/cr/SKILL.md`, `skills/tools/pr-review/SKILL.md`                     |
-| The three tiers and which skill each enters at                                                                 | `README.md`, `index.md`, `STARTUP_INSTRUCTIONS.md`                                                       | the pipeline skills                                                                                          |
-| Which quality rule sets ship and are injected                                                                  | `STARTUP_INSTRUCTIONS.md`, `concepts/quality-and-language-rules.md`, `workflows/trivial.md`, `README.md` | `rules/<category>/`, `kernel/src/ctx/use-cases/manifest.ts`, `kernel/src/dispatch/`                          |
-| The capture-conventions routing table                                                                          | `STARTUP_INSTRUCTIONS.md`, `index.md`, `concepts/shared-foundation.md`, `workflows/trivial.md`           | `skills/tools/rules/SKILL.md`                                                                                |
-| Verification proportionality and the `Verification: none` class                                                | `STARTUP_INSTRUCTIONS.md`, `concepts/verification-scoping.md`, `workflows/full-pipeline.md`              | `skills/stages/plan/SKILL.md`, `skills/stages/execute/`, `kernel/src/part/`, `plugins/bdk-craft/skills/tdd/` |
-| When `/bdk:cr --inline` is the right mode                                                                      | `workflows/trivial.md`, `workflows/code-review.md`, `workflows/debugging.md`                             | `skills/tools/cr/SKILL.md`                                                                                   |
-| The `.bdk/` tracked-vs-untracked block                                                                         | `getting-started/setup.md`, `reference/artifacts.md`                                                     | `.gitignore`                                                                                                 |
-| The two BDK paths kept out of git (`/.bdk/.machine/`, `/.bdk/settings.local.yaml`)                             | `README.md` (Change state section, `config set` row)                                                     | `kernel/src/shared/store/ignore.ts`                                                                          |
-| The feature flag names                                                                                         | `getting-started/setup.md`, `README.md`                                                                  | `kernel/src/ctx/config.ts`                                                                                   |
-| The groups of a `/bdk:cr` round                                                                                | `README.md`, `workflows/code-review.md`, `reference/skills.md`                                           | `kernel/src/review/domain/groups.ts`                                                                         |
+| The fact                                                                                                       | Stated in                                                                                                               | Decided by                                                                                                   |
+| -------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| The agent count and the fleet roster                                                                           | `reference/agents.md`, `concepts/agents.md`, `STARTUP_INSTRUCTIONS.md`                                                  | `agents/*.md`                                                                                                |
+| How review agents are made read-only (`tools:` allowlist, **not** `disallowed-tools`, which only skills carry) | `index.md`, `reference/agents.md`, `concepts/agents.md`                                                                 | `agents/*.md` frontmatter; `skills/tools/cr/SKILL.md`, `skills/tools/pr-review/SKILL.md`                     |
+| The three profiles, their thresholds and their stages                                                          | `README.md`, `index.md`, `concepts/change-pipeline.md`, `workflows/tiny.md`, `workflows/small.md`, `workflows/large.md` | `pipeline/pipeline.yaml`, `kernel/src/measure/`, `skills/stages/change/`                                     |
+| Which quality rule sets ship and are injected                                                                  | `STARTUP_INSTRUCTIONS.md`, `concepts/quality-and-language-rules.md`, `README.md`                                        | `rules/<category>/`, `kernel/src/ctx/use-cases/manifest.ts`, `kernel/src/dispatch/`                          |
+| The capture-conventions routing table                                                                          | `STARTUP_INSTRUCTIONS.md`, `concepts/context.md`, `workflows/rules-hygiene.md`                                          | `skills/tools/rules/SKILL.md`                                                                                |
+| Verification proportionality and the `Verification: none` class                                                | `STARTUP_INSTRUCTIONS.md`, `concepts/verification-scoping.md`, `concepts/change-pipeline.md`, `workflows/tiny.md`       | `skills/stages/plan/SKILL.md`, `skills/stages/execute/`, `kernel/src/part/`, `plugins/bdk-craft/skills/tdd/` |
+| When `/bdk:cr --inline` is the right mode                                                                      | `workflows/code-review.md`, `workflows/debugging.md`                                                                    | `skills/tools/cr/SKILL.md`                                                                                   |
+| The `.bdk/` tracked-vs-untracked block                                                                         | `getting-started/setup.md`, `reference/artifacts.md`                                                                    | `.gitignore`                                                                                                 |
+| The two BDK paths kept out of git (`/.bdk/.machine/`, `/.bdk/settings.local.yaml`)                             | `concepts/change-pipeline.md`, `reference/artifacts.md`, `reference/configuration.md` (Layers)                          | `kernel/src/shared/store/ignore.ts`                                                                          |
+| The four settings layers and their order                                                                       | `README.md`, `reference/configuration.md` (Layers)                                                                      | `kernel/src/config/`                                                                                         |
+| The gate mechanism (only a typed command or policy passes a gate)                                              | `index.md`, `README.md`, `concepts/change-pipeline.md`, `workflows/small.md`, `reference/hooks.md`                      | `kernel/src/hooks/`, `kernel/src/graph/`                                                                     |
+| The groups of a `/bdk:cr` round                                                                                | `workflows/code-review.md`, `workflows/large.md`, `reference/skills.md`                                                 | `kernel/src/review/domain/groups.ts`                                                                         |
 
 Two of these have already drifted at least once, which is why the index exists:
 the read-only mechanism row (`index.md` and `README.md` attributed it to
@@ -186,7 +213,7 @@ the read-only mechanism row (`index.md` and `README.md` attributed it to
 
 The "stated in" column is itself a claim that drifts. The rule-sets row was
 written with three locations and an audit turned up three more, including
-`workflows/trivial.md`. So when you verify a row, grep for a distinctive
+`workflows/trivial.md` (since retired). So when you verify a row, grep for a distinctive
 phrase from the fact rather than only visiting the listed files, and add what
 you find. A copy nobody knows about is the one that goes stale.
 
@@ -206,6 +233,8 @@ These hold across pages, and break the build or the navigation rather than one p
 4. **Mermaid blocks are fenced as ` ```mermaid `** and follow `/bdk-craft:mermaid-drawer` (node budget,
    the shared palette).
 5. **No em dash anywhere.** The site uses a plain `-`.
-6. **Every page opens with the v2 banner** until T50, enforced by `kernel/tests/docs/banner.test.ts`.
+6. **Every `bdk` command a page names exists**, enforced by `kernel/tests/docs/commands.test.ts`
+   against the command registry, and no page but `getting-started/migration-from-v2.md` names a v2
+   skill or path, enforced by `kernel/tests/docs/shipped.test.ts`.
 7. **CI builds the site** (`.github/workflows/docs.yml`) on every pull request, and runs the guards
    in the kernel job's contract step.
