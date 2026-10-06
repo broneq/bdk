@@ -313,12 +313,11 @@ describe("commit", () => {
       expect(h.git.committed).toStrictEqual([]);
     });
 
-    it("refuses policy/do-not-touch and commits nothing", async () => {
+    it("commits a path under a part's do-not-touch (#160)", async () => {
       const h = await fixing();
       h.git.status = ["src/util.ts", "src/billing/a.ts"];
-      const result = await h.run(["commit", CHANGE, "--json"]);
-      expect(refusal(result)).toMatchObject({ rule: "policy/do-not-touch" });
-      expect(h.git.committed).toStrictEqual([]);
+      const report = commitOutput.parse((await h.run(["commit", CHANGE, "--json"])).json);
+      expect(report.files).toStrictEqual(["src/billing/a.ts", "src/util.ts"]);
     });
 
     it("text output names the ticket", async () => {

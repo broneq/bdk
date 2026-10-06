@@ -266,6 +266,30 @@ describe("bdk commit <change-id>: a review fix (T42)", () => {
     answered(bdk(["rebuild", "--json"], change.root), "output/rebuild.json");
   });
 
+  it("commits a fix under the do-not-touch of a part (#160)", () => {
+    const change = executed(started());
+    const ticket = opened(change, "review-fix", change.id);
+    write(change, "src/billing/invoice.ts", "export const fixed = true;\n");
+
+    const report = answered(commit(change, change.id), "output/commit.json");
+    expect(report).toMatchObject({ ticket });
+    expect(git(change.root, "show", "--name-only", "--format=", "HEAD")).toContain(
+      "src/billing/invoice.ts",
+    );
+
+    write(change, "src/billing/tax.ts");
+    answered(
+      bdk(["log", "ingest", "--ticket", `${ticket}@merge`, "--json"], change.root, {
+        stdin: "---\nstatus: done\nfiles: []\nentries: []\nevidence: []\n---\nNo entries.\n",
+      }),
+      "output/log-ingest.json",
+    );
+    answered(
+      bdk(["attempt", "close", ticket, "fail", "--json"], change.root),
+      "output/attempt-close.json",
+    );
+  });
+
   it("refuses policy/no-open-ticket without an open review-fix ticket", () => {
     const change = executed(started());
     write(change, "src/util.ts");
