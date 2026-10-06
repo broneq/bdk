@@ -3,7 +3,7 @@
 // registry, the CLI output schemas whose zod exists and the state documents. `kernel/build.mjs` runs it after bundling the kernel. Git
 // tracks none of the output (`kernel-architecture`, Generated outputs); the
 // release job publishes it, so the output must be deterministic. The CLI files not listed here stay hand-written.
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, posix } from "node:path";
 import { format, resolveConfig } from "prettier";
 import * as z from "zod";
@@ -290,6 +290,11 @@ async function write(path: string, schema: Record<string, unknown>): Promise<voi
 }
 
 const root = process.cwd();
+// Both directories hold only generated files: clearing them drops the schema
+// of a removed command, which the CLI contract test reports as an orphan.
+for (const dir of ["schema/cli/output", "schema/state"]) {
+  rmSync(join(root, dir), { recursive: true, force: true });
+}
 await write(join(root, "schema/settings.json"), settingsJsonSchema(settingsRegistry()));
 await write(join(root, "schema/pipeline.json"), pipelineJsonSchema());
 for (const [path, schema] of Object.entries(cliSchemas())) {
