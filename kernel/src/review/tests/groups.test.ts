@@ -62,17 +62,55 @@ describe("reviewGroups", () => {
     expect(result[0]?.files).toStrictEqual(api);
   });
 
-  it("packs whole modules up to the limit and cuts a module above it into runs", () => {
+  it("packs whole modules up to the limit and cuts a flat module above the tolerance into even runs", () => {
     const big = files("src/big", 12);
     const small = [...files("src/a", 3), ...files("src/b", 4)];
     const result = groups([...big, ...small], [], 5);
     expect(result.map((group) => [group.id, group.files])).toStrictEqual([
       ["m1", files("src/a", 3)],
       ["m2", files("src/b", 4)],
-      ["m3-1", big.slice(0, 5)],
-      ["m3-2", big.slice(5, 10)],
-      ["m3-3", big.slice(10)],
+      ["m3", big.slice(0, 4)],
+      ["m4", big.slice(4, 8)],
+      ["m5", big.slice(8)],
       ["integration", [...small, ...big].sort()],
+    ]);
+  });
+
+  it("packs many one-file modules into few groups", () => {
+    const changed = Array.from(
+      { length: 44 },
+      (_, at) => `src/m${String(at).padStart(2, "0")}/a.ts`,
+    );
+    const result = groups(changed);
+    expect(result.map((group) => [group.id, group.files.length])).toStrictEqual([
+      ["m1", 30],
+      ["m2", 14],
+      ["integration", 44],
+    ]);
+  });
+
+  it("keeps a module up to a third above the limit whole", () => {
+    const result = groups([...files("src/a", 2), ...files("src/big", 35), ...files("src/z", 2)]);
+    expect(result.map((group) => [group.id, group.files.length])).toStrictEqual([
+      ["m1", 2],
+      ["m2", 35],
+      ["m3", 2],
+      ["integration", 39],
+    ]);
+  });
+
+  it("cuts a module above the tolerance at its sub-directory boundaries", () => {
+    const changed = [
+      ...files("src/big/api", 30),
+      ...files("src/big/db", 30),
+      ...files("src/big/ui", 24),
+    ];
+    const result = groups(changed);
+    expect(result.map((group) => [group.id, group.files])).toStrictEqual([
+      ["m1", files("src/big/api", 30)],
+      ["m2", files("src/big/db", 30)],
+      ["m3", files("src/big/ui", 24)],
+      ["integration", changed],
     ]);
   });
 
@@ -89,7 +127,7 @@ describe("reviewGroups", () => {
     ]);
   });
 
-  it("groups by module without plan parts", () => {
+  it("packs small modules into one group without plan parts", () => {
     expect(
       groups(["web/forms/a.ts", "src/auth/b.ts", "src/auth/c.ts", "README.md"]).map((group) => [
         group.id,
@@ -97,9 +135,7 @@ describe("reviewGroups", () => {
         group.files,
       ]),
     ).toStrictEqual([
-      ["m1", "module", ["README.md"]],
-      ["m2", "module", ["src/auth/b.ts", "src/auth/c.ts"]],
-      ["m3", "module", ["web/forms/a.ts"]],
+      ["m1", "module", ["README.md", "src/auth/b.ts", "src/auth/c.ts", "web/forms/a.ts"]],
       [
         "integration",
         "integration",

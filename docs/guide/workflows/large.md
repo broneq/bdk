@@ -57,7 +57,7 @@ A lead dispatches its part's tasks to background agents, waits for them with
 
 The review groups the range by plan part, so each reviewer reads one part's
 work, plus `unplanned` files no task names and an integration reviewer over the
-whole range. A group above `review.group.max-files` is split by module.
+whole range. A group more than a third above `review.group.max-files` is split by directory.
 
 ## Two large Changes at once
 

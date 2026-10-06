@@ -17,7 +17,7 @@ export const reviewGroupModule = defineConfigModule({
     .strictObject({
       "max-files": z.int().min(5).max(200).default(30).meta({
         description:
-          "A group above this many files is split by module; a plan part stays whole up to it.",
+          "The target size of a reviewer group. Small modules are packed together up to it; a module or plan part is kept whole up to a third above it, and only a larger one is cut, by directory.",
       }),
     })
     .prefault({}),
