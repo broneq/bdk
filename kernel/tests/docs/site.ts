@@ -8,8 +8,12 @@ import { createMarkdownRenderer } from "vitepress";
 import { markdown } from "../../../docs/guide/.vitepress/markdown.ts";
 import { sidebar } from "../../../docs/guide/.vitepress/sidebar.ts";
 import { REPO_ROOT } from "../support/run.ts";
+import { MIGRATION_PAGE_PATH } from "../support/user-facing.ts";
 
 const SITE_DIR = join(REPO_ROOT, "docs", "guide");
+
+/** The migration page, relative to the site: the one page that names v2. */
+export const MIGRATION_PAGE = MIGRATION_PAGE_PATH.slice("docs/guide/".length);
 
 /** Every `.md` page under docs/guide/, relative to it, sorted; `.vitepress/` is config, not pages. */
 export function sitePages(): string[] {

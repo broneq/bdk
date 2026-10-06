@@ -8,7 +8,7 @@ import { parse } from "yaml";
 
 import { SKILL_CONTEXT } from "../../src/ctx/use-cases/manifest.ts";
 import { REPO_ROOT } from "../support/run.ts";
-import { userFacingFiles, withoutRemovedSection } from "../support/user-facing.ts";
+import { userFacingFiles } from "../support/user-facing.ts";
 
 const PLUGIN = join(REPO_ROOT, "plugins", "bdk-craft");
 const SKILLS_DIR = join(PLUGIN, "skills");
@@ -168,9 +168,7 @@ describe("the v2 craft skills leave bdk", () => {
 
   it("nothing user-facing names a removed skill", () => {
     const stale = new RegExp(`(?<![\\w-])/?bdk:(${REMOVED.join("|")})(?![\\w-])`);
-    const hits = userFacingFiles().filter((path) =>
-      stale.test(withoutRemovedSection(readFileSync(path, "utf8"))),
-    );
+    const hits = userFacingFiles().filter((path) => stale.test(readFileSync(path, "utf8")));
     expect(hits.map((path) => relative(REPO_ROOT, path))).toStrictEqual([]);
   });
 });

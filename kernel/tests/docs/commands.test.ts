@@ -9,11 +9,9 @@ import { describe, expect, it } from "vitest";
 import commands from "../../../schema/cli/commands.json" with { type: "json" };
 import { loadIndex, resolve } from "../../src/shared/registry/index.ts";
 import { REPO_ROOT } from "../support/run.ts";
-import { isSnippetPage, readPage, sitePages } from "./site.ts";
+import { isSnippetPage, MIGRATION_PAGE, readPage, sitePages } from "./site.ts";
 
 const index = loadIndex(commands);
-
-const MIGRATION_PAGE = "getting-started/migration-from-v2.md";
 
 const sources = [
   { name: "README.md", text: readFileSync(join(REPO_ROOT, "README.md"), "utf8") },

@@ -9,7 +9,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { REPO_ROOT } from "../support/run.ts";
-import { isSnippetPage, readPage, sitePages } from "./site.ts";
+import { isSnippetPage, MIGRATION_PAGE, readPage, sitePages } from "./site.ts";
 
 const REMOVED: readonly (readonly [string, RegExp])[] = [
   ["the tool tiers", /tool-tiers|tool tier|choosing-a-tier/i],
@@ -67,7 +67,6 @@ describe("site describes only shipped mechanisms", () => {
 
 // Scenario "v2 workflow outside the migration page": the one page that maps
 // the v2 skills and paths to v3 is the only place that names them.
-const MIGRATION_PAGE = "getting-started/migration-from-v2.md";
 
 const V2_WORKFLOW =
   /create-plan|subagent-execute-plan|refine-rules|add-rule|\.bdk\/(?:plans|design|runs|verify-plan)\//g;
