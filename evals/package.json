@@ -2,7 +2,7 @@
   "name": "bdk-evals-tools",
   "private": true,
   "type": "module",
-  "description": "Pinned tools of the skill eval harness (evals/README.md). Installed by `pnpm eval`, not part of the root project.",
+  "description": "Pinned tools of the skill eval harness (docs/guide/contributing/evals.md). Installed by `pnpm eval`, not part of the root project.",
   "packageManager": "pnpm@10.22.0",
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "0.3.284",

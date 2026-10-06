@@ -4,7 +4,7 @@
 // (the bundle, schemas and adapters are not committed since T48), trimmed to the arm's skills and agents, with an optional
 // skill variant added, one skill removed, or one agent's model changed. The host scans the default
 // `skills/` directory in addition to the manifest's `skills` array
-// (evals/README.md, Provider facts), so trimming is what keeps other skills
+// (docs/guide/contributing/evals.md, Provider facts), so trimming is what keeps other skills
 // out of a session.
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";

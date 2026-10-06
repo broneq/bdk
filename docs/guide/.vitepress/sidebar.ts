@@ -50,6 +50,12 @@ export const sidebar = [
     ],
   },
   { text: "Troubleshooting", link: "/troubleshooting" },
-  { text: "Contributing", items: [{ text: "Overview", link: "/contributing/" }] },
+  {
+    text: "Contributing",
+    items: [
+      { text: "Overview", link: "/contributing/" },
+      { text: "Evals", link: "/contributing/evals" },
+    ],
+  },
   { text: "Changelog", link: "/changelog" },
 ] satisfies DefaultTheme.SidebarItem[];

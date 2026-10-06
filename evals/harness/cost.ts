@@ -27,7 +27,7 @@ interface ProviderResult {
   };
 }
 
-/** The cost a promptfoo result reports (evals/README.md, Provider facts). */
+/** The cost a promptfoo result reports (docs/guide/contributing/evals.md, Provider facts). */
 export function costOf(result: ProviderResult): number {
   const response = result.response;
   if (typeof response?.cost === "number") return response.cost;

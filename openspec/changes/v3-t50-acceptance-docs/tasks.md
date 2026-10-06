@@ -48,7 +48,7 @@
 - [x] 6.5 Rename and rewrite `workflows/trivial`, `workflows/standard`, `workflows/full-pipeline` as `workflows/tiny`, `workflows/small`, `workflows/large`; update `sidebar.ts` and inbound links; verify the build and the drift guards pass for these pages.
 - [x] 6.6 Replace `concepts/plan-pipeline` with `concepts/change-pipeline` (including the README sections it absorbs, D8), `concepts/shared-foundation` with `concepts/context`, and rewrite `concepts/verification-scoping`; verify the build and the drift guards pass for these pages.
 - [x] 6.7 Check `workflows/docs-and-decisions`, `reference/skills`, `reference/hooks`, `reference/artifacts` and `troubleshooting` against the code and fix what differs; verify the tests of 6.1 pass for the whole site.
-- [ ] 6.8 Delete `kernel/tests/docs/banner.test.ts` and every banner, update the docs map for every moved page; verify `pnpm test:contract` and `pnpm docs:build` pass and no page under `docs/guide/` contains "Describes BDK v2".
+- [x] 6.8 Delete `kernel/tests/docs/banner.test.ts` and every banner, update the docs map for every moved page; verify `pnpm test:contract` and `pnpm docs:build` pass and no page under `docs/guide/` contains "Describes BDK v2".
 
 ## 7. README v3
 
@@ -57,8 +57,8 @@
 
 ## 8. Eval documentation
 
-- [ ] 8.1 Add drift guard 7 (every directory under `evals/suites/` is named on `contributing/evals.md`); verify it fails while the page is missing.
-- [ ] 8.2 Write `docs/guide/contributing/evals.md` (D9), add it to the Contributing sidebar group, reduce `evals/README.md` to the synopsis and a link, add the page to the docs map; verify guard 7, the sidebar guard and `pnpm docs:build` pass.
+- [x] 8.1 Add drift guard 7 (every directory under `evals/suites/` is named on `contributing/evals.md`); verify it fails while the page is missing.
+- [x] 8.2 Write `docs/guide/contributing/evals.md` (D9), add it to the Contributing sidebar group, reduce `evals/README.md` to the synopsis and a link, add the page to the docs map; verify guard 7, the sidebar guard and `pnpm docs:build` pass.
 
 ## 9. Plan
 
