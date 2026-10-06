@@ -8,6 +8,7 @@ export const specModule = defineConfigModule({
   key: "spec",
   consumer: "spec",
   owner: "T30",
+  setup: "derived",
   description: "The grammar `spec delta check` holds a delta to.",
   schema: z
     .strictObject({

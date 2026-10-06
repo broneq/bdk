@@ -21,6 +21,7 @@ const registry = createConfigRegistry({
       key: "features",
       consumer: "ctx",
       owner: "T12",
+      setup: "default",
       description: "Switches.",
       schema: z
         .strictObject({ lavish: z.boolean().default(true), other: z.boolean().default(false) })
@@ -30,6 +31,7 @@ const registry = createConfigRegistry({
       key: "languages",
       consumer: "ctx",
       owner: "T12",
+      setup: "default",
       description: "Languages.",
       schema: z.array(z.string()).default([]),
     }),

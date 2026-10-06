@@ -14,6 +14,7 @@ export const gatesModule = defineConfigModule({
   key: "policy.gates",
   consumer: "graph",
   owner: "T21",
+  setup: "asked",
   description: "How the pipeline proceeds: whether each human gate waits for the user.",
   schema: z
     .strictObject({
@@ -27,6 +28,7 @@ export const executionTreeModule = defineConfigModule({
   key: "execution.tree",
   consumer: "graph",
   owner: "T41",
+  setup: "default",
   description: "When bdk next marks a part of the execute wave tree: one lead per part.",
   schema: z
     .strictObject({
@@ -44,6 +46,13 @@ export const executionWorktreeModule = defineConfigModule({
   key: "execution.worktree",
   consumer: "graph",
   owner: "T45",
+  setup: {
+    enabled: "default",
+    dir: "default",
+    "setup.command": "derived",
+    "setup.timeout": "default",
+    "max-live": "default",
+  },
   description: "Kernel-owned git worktrees of the plan parts with isolation: worktree.",
   schema: z
     .strictObject({

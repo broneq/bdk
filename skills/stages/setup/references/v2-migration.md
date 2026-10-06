@@ -16,7 +16,7 @@ BDK 3 never reads the v2 state. This skill moves the project over once, with the
 
 v2 wrote `/.bdk/` into `.gitignore`. That rule keeps every file v3 commits under `.bdk/` out of git, and `bdk config set` cannot add the two v3 paths while it covers them. `bdk doctor` reports it as `bdk-ignored`, also in a project whose v2 files are already gone. Replace it before the first `bdk config set`:
 
-1. Show the user the rule, its file and its line from the finding's summary, and ask once whether to replace it with the two paths v3 keeps out of git, `/.bdk/.machine/` and `/.bdk/settings.local.yaml`. A rule outside `.gitignore` (`.git/info/exclude`, a global excludes file) is in a file the team does not share: name the file in the question.
+1. Show the user the rule, its file and its line from the finding's summary, and ask once, as part of the setup page, whether to replace it with the two paths v3 keeps out of git, `/.bdk/.machine/` and `/.bdk/settings.local.yaml`. A rule outside `.gitignore` (`.git/info/exclude`, a global excludes file) is in a file the team does not share: name the file in the question.
 2. After a yes, remove only that line, and add to `.gitignore` each of the two paths it does not already hold.
 3. Run `bdk doctor --json` again. A `bdk-ignored` finding that remains names another rule: handle it the same way.
 4. Commit `.gitignore` alone, when you edited it: `git add .gitignore`, then `git commit -m "chore(bdk): replace the v2 .bdk/ ignore rule" -- .gitignore`. An edit of another ignore file is local and has no commit.
@@ -38,4 +38,4 @@ Any other v2 key has no v3 counterpart: list it in the closing render as not car
 
 ## Deleting the v2 files
 
-List the v2 paths that exist and ask once whether to delete them. Delete only after a yes, and only those paths. When the user declines, `bdk doctor` keeps reporting `v2-layout`; say so in the closing render.
+List the v2 paths that exist and ask once, as part of the setup page, whether to delete them. Delete only after a yes, and only those paths. When the user declines, `bdk doctor` keeps reporting `v2-layout`; say so in the closing render.

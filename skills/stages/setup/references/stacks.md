@@ -1,6 +1,6 @@
 # Stack Detection
 
-How to turn a project's files into `tools.test`, `tools.lint`, `tools.build` entries and `languages`. Read only when the project has no settings for a group yet.
+How to turn a project's files into `tools.test`, `tools.lint`, `tools.build` entries and `languages`, and into the other derived keys: `execution.worktree.setup.command`, `policy.evidence.build-config`, `policy.evidence.non-executable` and `spec.normative-word`. Read only when the project has no settings for a group yet, or the setup coverage lists a derived key as `unset` or on its default.
 
 ## Prefer the project's own scripts
 
@@ -40,7 +40,7 @@ A script wraps a runner: read the script's body to know which runner it starts, 
 
 | Runner     | `tier`      | `scoped`                         | `related`                             | `failed`                            | `incremental`              |
 | ---------- | ----------- | -------------------------------- | ------------------------------------- | ----------------------------------- | -------------------------- |
-| vitest     | `fast`      | `npx vitest run {files}`         | `npx vitest related --run {files}`    | `npx vitest run --changed`          |                            |
+| vitest     | `fast`      | `npx vitest run {files}`         | `npx vitest related --run {files}`    |                                     |                            |
 | jest       | `fast`      | `npx jest {files}`               | `npx jest --findRelatedTests {files}` | `npx jest --onlyFailures`           |                            |
 | playwright | `e2e`       | `npx playwright test {files}`    |                                       | `npx playwright test --last-failed` |                            |
 | cypress    | `e2e`       | `npx cypress run --spec {files}` |                                       |                                     |                            |
@@ -72,6 +72,47 @@ bdk config set languages '[typescript, react]'
 ```
 
 Quote any value holding `{files}`, `:` or `#`.
+
+## Worktree setup command
+
+`execution.worktree.setup.command` runs in a new kernel worktree after the `.worktreeinclude` copy, so a part that runs there finds its dependencies. Derive it from the lockfile at the project root; without a lockfile, leave the key unset.
+
+| Lockfile                          | `execution.worktree.setup.command`  |
+| --------------------------------- | ----------------------------------- |
+| `pnpm-lock.yaml`                  | `pnpm install --frozen-lockfile`    |
+| `package-lock.json`               | `npm ci`                            |
+| `yarn.lock` with `.yarnrc.yml`    | `yarn install --immutable`          |
+| `yarn.lock` without `.yarnrc.yml` | `yarn install --frozen-lockfile`    |
+| `bun.lock`, `bun.lockb`           | `bun install --frozen-lockfile`     |
+| `uv.lock`                         | `uv sync --frozen`                  |
+| `poetry.lock`                     | `poetry install --no-interaction`   |
+| `Gemfile.lock`                    | `bundle install`                    |
+| `composer.lock`                   | `composer install --no-interaction` |
+| `go.sum`                          | `go mod download`                   |
+| `Cargo.lock`                      | `cargo fetch`                       |
+
+Several lockfiles of one stack in a monorepo: take the one at the root. Lockfiles of different stacks: join their commands with `&&` in the table's order.
+
+## Evidence globs
+
+`policy.evidence.non-executable` lists the files whose edit needs no new test run; `policy.evidence.build-config` lists the files that always count as source and win over it. Both only grow: append what the project needs, never repeat a default (`bdk config show policy.evidence` prints them).
+
+Append to `policy.evidence.build-config` the Markdown or text sources the project builds or tests from, which the defaults would treat as non-executable:
+
+| Project file                                    | Glob to append                                                                                                              |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `mkdocs.yml`                                    | its `docs_dir` as `<dir>/**`, by default `docs/**`                                                                          |
+| `.vitepress/` in a directory                    | that directory as `<dir>/**`                                                                                                |
+| `docusaurus.config.*`                           | its `docs` and `blog` directories as `<dir>/**`                                                                             |
+| `conf.py` of Sphinx                             | its directory as `<dir>/**`                                                                                                 |
+| `book.toml` of mdBook                           | `src/**` below it                                                                                                           |
+| `fixtures/`, `testdata/`, `__snapshots__/` dirs | `**/fixtures/**`, `**/testdata/**`, `**/__snapshots__/**`, each only when that directory holds `.md`, `.txt` or image files |
+
+Append to `policy.evidence.non-executable` the documentation and image formats the project holds that the defaults miss, each as `**/*.<ext>`: `adoc`, `org`, `drawio`, `pdf`, `ico`, `avif`. Search with Glob; append only an extension that occurs outside the build-config globs above.
+
+## Normative word
+
+`spec.normative-word` is the word every requirement of a living spec carries. Count the whole words `SHALL` and `MUST` in the requirement statements of `.bdk/specs/**/spec.md`, or, before BDK wrote any, of a specification tree the project already keeps (`openspec/specs/**/spec.md`). Set `MUST` only when it holds the majority; otherwise leave the default `SHALL` and write nothing.
 
 ## Ignore lists
 

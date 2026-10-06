@@ -1,6 +1,7 @@
 // `bdk config show`: the resolved value at a key, prompt values as their files.
 import {
   declaredSteps,
+  keyOrigin,
   layerFiles,
   unknownKeyMessage,
   valueAt,
@@ -8,8 +9,8 @@ import {
 import type { PromptValue } from "../../shared/config/index.ts";
 import { refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
-import { leafOrigins } from "../domain/origins.ts";
-import type { LayerEntry, ShowReport } from "../domain/report.ts";
+import { leafKeys } from "../domain/origins.ts";
+import type { LayerEntry, LayerName, ShowReport } from "../domain/report.ts";
 import { displayPath, isRefusal, resolve, schemaCommand } from "./input.ts";
 import type { ConfigInput, Resolved } from "./input.ts";
 
@@ -52,6 +53,15 @@ export function showConfig(input: ConfigInput, request: ShowRequest): ShowReport
   return withOrigins({ key, value, layers }, request, () =>
     leafOrigins(value, key, resolved.merged.origins),
   );
+}
+
+/** The layer of every leaf of `value`; the merge recorded only the paths a file set. */
+function leafOrigins(
+  value: unknown,
+  key: string,
+  origins: Resolved["merged"]["origins"],
+): Record<string, LayerName> {
+  return Object.fromEntries(leafKeys(value, key).map((leaf) => [leaf, keyOrigin(origins, leaf)]));
 }
 
 function withOrigins(

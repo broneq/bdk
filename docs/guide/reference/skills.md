@@ -10,7 +10,7 @@ BDK works in Changes: one unit of work on one branch, whose intent, design, plan
 
 ## /bdk:setup
 
-**Purpose.** Bring a project to a working BDK layout: `.bdk/settings.yaml` with the project's languages and its test, lint and build commands (detected from the project files and confirmed with you), Lavish, and the migration of a BDK 2 project. Settings are written only with `bdk config set`, which validates every value. See [Project setup](../getting-started/setup.md).
+**Purpose.** Bring a project to a working BDK layout: `.bdk/settings.yaml` with the project's languages, its test, lint and build commands and the other keys its files tell (the worktree install command, evidence globs, the normative word of its specs), the gates, review risks and tracker; every question asked together on one Lavish page, or one terminal question each without Lavish, before anything is written; Lavish, and the migration of a BDK 2 project. Settings are written only with `bdk config set`, which validates every value, and only where they differ from the default. Every other key stays on its default and is listed with its value in the closing report; the `Setup` column of [Configuration](configuration.md) says which keys setup derives, asks or leaves. See [Project setup](../getting-started/setup.md).
 
 **Arguments:** `[what to change, e.g. 'add the e2e suite']` - with none, the whole setup; with a request, only that.
 

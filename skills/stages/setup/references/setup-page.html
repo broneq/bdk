@@ -1,0 +1,470 @@
+<!doctype html>
+<!--
+  Every question of /bdk:setup on one Lavish page. The skill copies this file
+  to .lavish/bdk-setup-<stamp>.html and replaces only the JSON of #setup-data; the
+  script below renders a section for each key the data holds and leaves out a
+  section whose key is null or missing. Each section queues one prompt whose
+  data is {question, answer}. The example data shows every section.
+-->
+<html lang="en" data-theme="luxury">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BDK setup</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@5.5.19/daisyui.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@5.5.19/themes.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.2.4/dist/index.global.js"></script>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      body {
+        background: var(--color-base-100);
+        color: var(--color-base-content);
+      }
+      :where(.grid, .flex) > * {
+        min-width: 0;
+      }
+      :where(p, li, td, th, .badge, code) {
+        overflow-wrap: anywhere;
+      }
+      svg {
+        max-width: 100%;
+        height: auto;
+      }
+      .rows > * + * {
+        border-top: 1px solid color-mix(in oklab, var(--color-base-content) 10%, transparent);
+      }
+      .fieldset > label {
+        padding: 0.25rem 0;
+      }
+      .gate-box {
+        fill: var(--color-base-200);
+        stroke: var(--color-base-content);
+        stroke-opacity: 0.25;
+      }
+      .gate-mark {
+        fill: var(--color-primary);
+      }
+      .gate-text {
+        fill: var(--color-base-content);
+        font: 13px ui-monospace, monospace;
+      }
+      .gate-label {
+        fill: var(--color-primary);
+        font: 600 12px ui-sans-serif, system-ui, sans-serif;
+      }
+      .gate-arrow {
+        stroke: var(--color-base-content);
+        stroke-opacity: 0.4;
+      }
+    </style>
+    <script type="application/json" id="setup-data">
+      {
+        "project": "example-project",
+        "v2": {
+          "ignoreRule": { "file": ".gitignore", "line": 4, "rule": "/.bdk/" },
+          "paths": [".bdk/settings.json", ".bdk/plans/"]
+        },
+        "commands": {
+          "entries": [
+            {
+              "group": "test",
+              "id": "vitest",
+              "tier": "fast",
+              "command": "pnpm test",
+              "forms": { "scoped": "pnpm vitest run {files}", "related": "pnpm vitest related --run {files}" },
+              "source": "package.json scripts.test"
+            },
+            {
+              "group": "build",
+              "id": "tsc",
+              "command": "pnpm build",
+              "forms": {},
+              "source": "package.json scripts.build"
+            }
+          ],
+          "missing": ["lint"]
+        },
+        "derived": [
+          { "key": "languages", "value": "[typescript]", "source": "tsconfig.json" },
+          {
+            "key": "execution.worktree.setup.command",
+            "value": "pnpm install --frozen-lockfile",
+            "source": "pnpm-lock.yaml"
+          },
+          { "key": "policy.evidence.build-config", "value": "[docs/**]", "source": "mkdocs.yml" }
+        ],
+        "exclusions": [{ "file": ".prettierignore", "entry": ".bdk/" }],
+        "gates": { "design": "manual", "review": "manual" },
+        "risks": [
+          {
+            "id": "auth",
+            "instruction": "Changes to authentication, authorisation, permissions, roles or session handling, including who may call a changed endpoint.",
+            "matches": ["src/auth/session.ts"],
+            "enabled": true
+          },
+          {
+            "id": "migration",
+            "instruction": "Changes to a persistent data model: schema migrations, stored formats, data backfills, anything hard to roll back.",
+            "matches": [],
+            "enabled": true
+          },
+          {
+            "id": "secrets",
+            "instruction": "Code or configuration that reads, stores, logs or transmits secrets, tokens, keys or personal data.",
+            "matches": [],
+            "enabled": true
+          },
+          {
+            "id": "public-api",
+            "instruction": "Changes to a public or cross-service interface: endpoints, exported functions, CLI flags, events, file formats others consume.",
+            "matches": [],
+            "enabled": true
+          },
+          {
+            "id": "dependencies",
+            "instruction": "Added, removed or upgraded third-party dependencies and changes to the build.",
+            "matches": ["package.json"],
+            "enabled": true
+          },
+          {
+            "id": "configuration",
+            "instruction": "Changes to runtime or deployment configuration: settings files, environment variables, feature flags, CI and infrastructure.",
+            "matches": [],
+            "enabled": true
+          }
+        ],
+        "tracker": { "current": null, "proposal": "none", "reason": "gh is not signed in" }
+      }
+    </script>
+  </head>
+  <body class="min-h-screen">
+    <main class="mx-auto max-w-4xl px-4 py-10 sm:px-6">
+      <header class="mb-8">
+        <p class="text-sm uppercase tracking-widest opacity-60">BDK setup</p>
+        <h1 class="mt-1 text-3xl font-semibold">Set up BDK in <span id="project"></span></h1>
+        <p class="mt-3 max-w-2xl opacity-80">
+          Setup read the project and needs your answer on what the files cannot tell. Answer each
+          section with its <strong>Queue answer</strong> button, then press
+          <strong>Send to Agent</strong>. Nothing is written before you send; setup writes only the
+          answers that differ from the defaults.
+        </p>
+        <p class="mt-3 text-sm opacity-70"><span id="progress"></span></p>
+        <div id="no-lavish" role="alert" class="alert alert-warning mt-4 hidden">
+          <span>This page is open outside Lavish, so its answers cannot reach the agent.</span>
+        </div>
+      </header>
+      <div id="sections"></div>
+    </main>
+
+    <script>
+      const data = JSON.parse(document.getElementById("setup-data").textContent);
+      // Lavish injects window.lavish into the page it serves; read it at use.
+      window.addEventListener("load", () => {
+        if (!window.lavish) document.getElementById("no-lavish").classList.remove("hidden");
+      });
+      document.getElementById("project").textContent = data.project;
+
+      const el = (tag, attrs = {}, ...children) => {
+        const node = document.createElement(tag);
+        for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, value);
+        for (const child of children) node.append(child);
+        return node;
+      };
+      const svg = (tag, attrs, text) => {
+        const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
+        for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, value);
+        if (text !== undefined) node.textContent = text;
+        return node;
+      };
+      const code = (text) => el("code", {}, text);
+      const choice = (type, name, value, checked, ...label) => {
+        const input = el("input", {
+          type,
+          name,
+          value,
+          class: `${type === "radio" ? "radio radio-primary radio-sm" : "checkbox checkbox-primary checkbox-sm"} mt-1 shrink-0`,
+        });
+        input.checked = checked;
+        return el("label", { class: "flex cursor-pointer items-start gap-3 p-3 text-sm leading-6" }, input, el("span", {}, ...label));
+      };
+      const files = (list, empty) => {
+        const box = el("div", { class: "flex flex-wrap gap-1" });
+        if (list.length === 0) box.append(el("span", { class: "badge badge-ghost badge-sm" }, empty));
+        for (const file of list) box.append(el("span", { class: "badge badge-soft badge-info badge-sm h-auto font-mono" }, file));
+        return box;
+      };
+
+      const asked = [];
+      const done = new Set();
+      const progress = () => {
+        document.getElementById("progress").textContent = `${done.size} of ${asked.length} sections queued.`;
+      };
+      // One card per question: a form whose submit queues exactly one prompt.
+      const section = (question, title, intro, build, answer) => {
+        asked.push(question);
+        const badge = el("span", { class: "badge badge-soft shrink-0 whitespace-nowrap" }, "Not queued");
+        const form = el("form", { class: "card-body", "data-lavish-question": question });
+        form.append(
+          el("div", { class: "flex items-center justify-between gap-3" }, el("h2", { class: "card-title" }, `${asked.length}. ${title}`), badge),
+          el("p", { class: "opacity-80" }, ...intro),
+        );
+        build(form);
+        form.append(el("div", { class: "card-actions justify-end" }, el("button", { type: "submit", class: "btn btn-primary" }, "Queue answer")));
+        form.addEventListener("submit", (event) => {
+          event.preventDefault();
+          const [text, value] = answer(form);
+          if (!window.lavish) return;
+          window.lavish.queuePrompt(text, { tag: "choice", text, element: form, queueKey: question, data: { question, answer: value } });
+          badge.textContent = "Queued";
+          badge.className = "badge badge-success shrink-0 whitespace-nowrap";
+          done.add(question);
+          progress();
+        });
+        document.getElementById("sections").append(el("section", { class: "card card-border bg-base-100 mb-6" }, form));
+      };
+      const checked = (form, name) => [...form.querySelectorAll(`input[name="${name}"]`)].filter((input) => input.checked).map((input) => input.value);
+      const unchecked = (form, name) => [...form.querySelectorAll(`input[name="${name}"]`)].filter((input) => !input.checked).map((input) => input.value);
+      const list = (values) => values.join(", ") || "none";
+
+      // The v2 layout: its ignore rule and its files.
+      if (data.v2) {
+        const { ignoreRule, paths } = data.v2;
+        section(
+          "v2",
+          "Move the BDK 2 layout over",
+          ["BDK 3 never reads the v2 state. Its settings were read as the detected values below; its other files are not converted."],
+          (form) => {
+            const rows = el("div", { class: "rows rounded-box border border-base-content/10" });
+            if (ignoreRule) {
+              rows.append(
+                choice("checkbox", "v2", "replace-ignore-rule", true,
+                  "Replace the rule ", code(ignoreRule.rule), ` in ${ignoreRule.file}:${ignoreRule.line} with `,
+                  code("/.bdk/.machine/"), " and ", code("/.bdk/settings.local.yaml"),
+                  ". While it stays, the files BDK commits under .bdk/ stay out of git."),
+              );
+            }
+            if (paths.length > 0) {
+              rows.append(choice("checkbox", "v2", "delete-paths", true, "Delete the v2 files: ", ...paths.flatMap((path, index) => [index ? ", " : "", code(path)])));
+            }
+            form.append(rows);
+          },
+          (form) => {
+            const answer = { replaceIgnoreRule: checked(form, "v2").includes("replace-ignore-rule"), deletePaths: checked(form, "v2").includes("delete-paths") };
+            return [`v2: replace the ignore rule ${answer.replaceIgnoreRule ? "yes" : "no"}, delete the v2 files ${answer.deletePaths ? "yes" : "no"}`, answer];
+          },
+        );
+      }
+
+      // The detected commands, and a group that has none.
+      if (data.commands) {
+        const { entries, missing } = data.commands;
+        section(
+          "commands",
+          "The project's commands",
+          ["BDK runs these commands to test, lint and build a Change. The tier and the scoped forms follow from the runner."],
+          (form) => {
+            const rows = el("div", { class: "rows rounded-box border border-base-content/10" });
+            for (const entry of entries) {
+              const forms = Object.entries(entry.forms).map(([name, value]) => el("div", { class: "text-xs opacity-70" }, `${name}: `, code(value)));
+              rows.append(
+                choice("checkbox", "keep", `${entry.group}/${entry.id}`, true,
+                  el("span", { class: "badge badge-outline badge-sm mr-2" }, entry.group),
+                  el("strong", {}, `${entry.tier ? `${entry.tier} ` : ""}${entry.id}: `), code(entry.command),
+                  el("div", { class: "text-xs opacity-60" }, `from ${entry.source}`), ...forms),
+              );
+            }
+            form.append(rows);
+            for (const group of missing) {
+              const box = el("fieldset", { class: "fieldset rounded-box border border-base-content/10 p-3" }, el("legend", { class: "fieldset-legend" }, `No ${group} command found`));
+              box.append(
+                choice("radio", `missing-${group}`, "none", true, el("strong", {}, "The project has none"), `: a Change skips the ${group} steps and says so`),
+                choice("radio", `missing-${group}`, "command", false, el("strong", {}, "Use this command:")),
+                el("input", { class: "input w-full", name: `command-${group}`, placeholder: `the ${group} command` }),
+              );
+              form.append(box);
+            }
+            const other = el("fieldset", { class: "fieldset rounded-box border border-base-content/10 p-3 grid gap-2 sm:grid-cols-[8rem_1fr]" }, el("legend", { class: "fieldset-legend" }, "Another command setup did not find (optional)"));
+            const select = el("select", { class: "select w-full", name: "other-group" });
+            for (const group of ["test", "lint", "build"]) select.append(el("option", { value: group }, group));
+            other.append(select, el("input", { class: "input w-full", name: "other-command", placeholder: "e.g. pnpm test:e2e" }));
+            form.append(other);
+          },
+          (form) => {
+            const values = new FormData(form);
+            const add = [];
+            const none = [];
+            for (const group of missing) {
+              const command = String(values.get(`command-${group}`) ?? "").trim();
+              if (values.get(`missing-${group}`) === "command" && command) add.push({ group, command });
+              else none.push(group);
+            }
+            const other = String(values.get("other-command") ?? "").trim();
+            if (other) add.push({ group: String(values.get("other-group")), command: other });
+            const answer = { keep: checked(form, "keep"), drop: unchecked(form, "keep"), add, none };
+            return [`Commands: keep ${list(answer.keep)}; drop ${list(answer.drop)}; add ${list(add.map((entry) => `${entry.group} ${entry.command}`))}; none ${list(none)}`, answer];
+          },
+        );
+      }
+
+      // The keys read from the project files.
+      if (data.derived?.length) {
+        section(
+          "derived",
+          "Values read from the project files",
+          ["Untick a value that is wrong for the project; it is then not written."],
+          (form) => {
+            const rows = el("div", { class: "rows rounded-box border border-base-content/10" });
+            for (const entry of data.derived) {
+              rows.append(choice("checkbox", "derived", entry.key, true, code(entry.key), " = ", el("strong", {}, entry.value), el("div", { class: "text-xs opacity-60" }, `from ${entry.source}`)));
+            }
+            form.append(rows);
+          },
+          (form) => {
+            const answer = { keep: checked(form, "derived"), drop: unchecked(form, "derived") };
+            return [`Derived values: keep ${list(answer.keep)}; drop ${list(answer.drop)}`, answer];
+          },
+        );
+      }
+
+      // The project's tools that would read the files under .bdk/.
+      if (data.exclusions?.length) {
+        section(
+          "exclusions",
+          "Keep .bdk/ out of the project's tools",
+          ["BDK writes and hashes the files under .bdk/. A linter that reads them fails on them; a formatter that rewrites them makes finished work stale. Setup adds each accepted entry and commits those files on their own."],
+          (form) => {
+            const rows = el("div", { class: "rows rounded-box border border-base-content/10" });
+            for (const entry of data.exclusions) rows.append(choice("checkbox", "exclusion", entry.file, true, code(entry.file), " gets ", code(entry.entry), " (recommended)"));
+            form.append(rows);
+          },
+          (form) => {
+            const answer = { accept: checked(form, "exclusion"), decline: unchecked(form, "exclusion") };
+            return [`Exclusions: accept ${list(answer.accept)}; decline ${list(answer.decline)}`, answer];
+          },
+        );
+      }
+
+      // Who passes the gates.
+      if (data.gates) {
+        section(
+          "gates",
+          "Who passes the gates",
+          ["A Change stops at two gates. ", el("strong", {}, "manual"), ": the Change waits until you type the next command. ", el("strong", {}, "auto"), ": it goes on by itself once the checks pass."],
+          (form) => {
+            const drawing = svg("svg", { viewBox: "0 0 720 120", role: "img", "aria-label": "design, gate, plan, execute, review, gate, close", class: "min-w-[560px]" });
+            const defs = svg("defs", {});
+            const marker = svg("marker", { id: "arrow", viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto" });
+            marker.append(svg("path", { d: "M0 0 L10 5 L0 10 z", class: "gate-mark", opacity: 0.5 }));
+            defs.append(marker);
+            drawing.append(defs);
+            ["design", "plan", "execute", "review", "close"].forEach((stage, index, stages) => {
+              const x = 10 + index * 145;
+              drawing.append(svg("rect", { x, y: 50, width: 110, height: 40, rx: 8, class: "gate-box" }));
+              drawing.append(svg("text", { x: x + 55, y: 75, "text-anchor": "middle", class: "gate-text" }, stage));
+              if (index < stages.length - 1) drawing.append(svg("line", { x1: x + 112, y1: 70, x2: x + 143, y2: 70, class: "gate-arrow", "marker-end": "url(#arrow)" }));
+            });
+            for (const [after, label] of [[0, "design gate"], [3, "review gate"]]) {
+              const x = 10 + after * 145 + 127;
+              drawing.append(svg("rect", { x: x - 4, y: 44, width: 8, height: 52, rx: 3, class: "gate-mark" }));
+              drawing.append(svg("text", { x, y: 30, "text-anchor": "middle", class: "gate-label" }, label));
+            }
+            form.append(el("div", { class: "overflow-x-auto" }, drawing));
+            const gates = el("div", { class: "grid gap-4 sm:grid-cols-2" });
+            for (const [gate, next, manual, auto] of [
+              ["design", "/bdk:plan", "you read the design, then type /bdk:plan", "planning starts once the design verifier passes"],
+              ["review", "/bdk:close", "you read the review report, then type /bdk:close", "the Change closes once no blocking finding is left"],
+            ]) {
+              gates.append(
+                el("fieldset", { class: "fieldset rounded-box border border-base-content/10 p-3" },
+                  el("legend", { class: "fieldset-legend" }, `${gate[0].toUpperCase()}${gate.slice(1)} gate: before `, code(next)),
+                  choice("radio", gate, "manual", data.gates[gate] === "manual", el("strong", {}, "manual"), ` (recommended): ${manual}`),
+                  choice("radio", gate, "auto", data.gates[gate] === "auto", el("strong", {}, "auto"), `: ${auto}`)),
+              );
+            }
+            form.append(gates);
+          },
+          (form) => {
+            const values = new FormData(form);
+            const answer = { design: values.get("design"), review: values.get("review") };
+            return [`Gates: design ${answer.design}, review ${answer.review}`, answer];
+          },
+        );
+      }
+
+      // Which review risks apply.
+      if (data.risks) {
+        section(
+          "risks",
+          "Which review risks apply",
+          ["A review reads the changed files a risk's paths match with that risk's instruction in mind. Untick a risk that does not fit the project; add one the project needs."],
+          (form) => {
+            const rows = el("div", { class: "rows rounded-box border border-base-content/10" });
+            for (const risk of data.risks) {
+              rows.append(choice("checkbox", "risk", risk.id, risk.enabled,
+                el("div", { class: "grid gap-2" }, el("span", { class: "font-mono font-semibold" }, risk.id), el("span", { class: "opacity-70" }, risk.instruction), files(risk.matches, "no match in this project"))));
+            }
+            const added = el("div", { class: "grid gap-3" });
+            const add = el("button", { type: "button", class: "btn btn-ghost" }, "+ Add a risk");
+            add.addEventListener("click", () => {
+              added.append(
+                el("fieldset", { class: "fieldset rounded-box border border-base-content/10 p-3 grid gap-2 sm:grid-cols-3" },
+                  el("legend", { class: "fieldset-legend" }, "New risk"),
+                  el("input", { class: "input w-full", name: "new-id", placeholder: "id, e.g. billing" }),
+                  el("input", { class: "input w-full sm:col-span-2", name: "new-paths", placeholder: "paths, comma separated: src/billing/**" }),
+                  el("textarea", { class: "textarea w-full sm:col-span-3", name: "new-instruction", rows: "2", placeholder: "What a reviewer checks in these files" })),
+              );
+            });
+            form.append(rows, added, el("div", {}, add));
+          },
+          (form) => {
+            const add = [...form.querySelectorAll("fieldset")]
+              .map((card) => ({
+                id: card.querySelector('[name="new-id"]').value.trim(),
+                paths: card.querySelector('[name="new-paths"]').value.split(",").map((path) => path.trim()).filter(Boolean),
+                instruction: card.querySelector('[name="new-instruction"]').value.trim(),
+              }))
+              .filter((risk) => risk.id !== "");
+            const answer = { keep: checked(form, "risk"), off: unchecked(form, "risk"), add };
+            return [`Risks: keep ${list(answer.keep)}; off ${list(answer.off)}; add ${list(add.map((risk) => risk.id))}`, answer];
+          },
+        );
+      }
+
+      // Where review findings are tracked.
+      if (data.tracker) {
+        const { current, proposal, reason } = data.tracker;
+        section(
+          "tracker",
+          "Where review findings are tracked",
+          ["The review report offers ", code("track"), ` on a finding only when a tracker is set.${reason ? ` Found: ${reason}.` : ""}`],
+          (form) => {
+            const selected = current?.kind ?? proposal;
+            const instruction = el("textarea", { class: "textarea w-full", name: "instruction", rows: "2", placeholder: "e.g. jira CLI: jira issue create --project SHOP" });
+            if (current?.kind === "instruction") instruction.value = current.instruction;
+            form.append(
+              el("div", { class: "rows rounded-box border border-base-content/10" },
+                choice("radio", "tracker", "github", selected === "github", el("strong", {}, "GitHub issues"), " of this repository, filed with ", code("gh"), proposal === "github" ? " (recommended)" : ""),
+                el("div", { class: "pb-3 pr-3" },
+                  choice("radio", "tracker", "instruction", selected === "instruction", el("strong", {}, "Another tracker"), ": describe how an issue is filed there"),
+                  el("div", { class: "pl-10" }, instruction)),
+                choice("radio", "tracker", "none", selected === "none", el("strong", {}, "None"), ": no tracker for now")),
+            );
+          },
+          (form) => {
+            const values = new FormData(form);
+            const kind = values.get("tracker");
+            const instruction = String(values.get("instruction") ?? "").trim();
+            const answer = kind === "instruction" ? { kind, instruction } : { kind };
+            return [kind === "instruction" ? `Tracker: ${instruction}` : `Tracker: ${kind}`, answer];
+          },
+        );
+      }
+
+      progress();
+    </script>
+  </body>
+</html>

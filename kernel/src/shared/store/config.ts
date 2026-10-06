@@ -9,6 +9,7 @@ export const checkpointModule = defineConfigModule({
   key: "policy.checkpoint",
   consumer: "shared/store",
   owner: "T22",
+  setup: "default",
   description: "Pathspec commits of the Change directory at park, escalation and session end.",
   schema: z
     .strictObject({

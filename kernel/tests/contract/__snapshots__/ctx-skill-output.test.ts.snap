@@ -183,7 +183,7 @@ exports[`ctx skill output > run is unchanged 1`] = `
 
 exports[`ctx skill output > setup is unchanged 1`] = `
 "{
-  "content": "## BDK context: setup\\n\\n### Project commands: test\\n\\n- id: unit\\n  command: pnpm test:unit\\n  scoped: pnpm vitest run {files}\\n  tier: fast\\n\\n### Project commands: lint\\n\\n- id: eslint\\n  command: pnpm lint\\n  tier: lint\\n\\n### Project commands: build\\n\\nnone configured\\n",
+  "content": "## BDK context: setup\\n\\n### Project commands: test\\n\\n- id: unit\\n  command: pnpm test:unit\\n  scoped: pnpm vitest run {files}\\n  tier: fast\\n\\n### Project commands: lint\\n\\n- id: eslint\\n  command: pnpm lint\\n  tier: lint\\n\\n### Project commands: build\\n\\nnone configured\\n\\n### Setup coverage\\n\\n#### Derived\\n\\n- languages: typescript, react, cobol (project)\\n- tools.test: unit (project)\\n- tools.lint: eslint (project)\\n- tools.build: [] (default)\\n- features.lavish: true (default)\\n- execution.worktree.setup.command: unset (default)\\n- policy.evidence.non-executable: **/*.md, **/*.mdx, **/*.txt, **/*.rst, **/*.png, **/*.jpg, **/*.jpeg, **/*.gif, **/*.svg, **/*.webp, docs/**, LICENSE*, CHANGELOG*, .bdk/** (default)\\n- policy.evidence.build-config: package.json, pnpm-lock.yaml, package-lock.json, yarn.lock, tsconfig*.json, pyproject.toml, uv.lock, poetry.lock, requirements*.txt, go.mod, go.sum, Cargo.toml, Cargo.lock, Gemfile, Gemfile.lock, pom.xml, build.gradle*, Makefile, CMakeLists.txt (default)\\n- spec.normative-word: SHALL (default)\\n\\n#### Asked\\n\\n- policy.gates.design: manual (default)\\n- policy.gates.review: manual (default)\\n- review.risks: auth, migration, secrets, public-api, dependencies, configuration (default)\\n- tracker: unset (default)\\n\\n#### Not set by setup\\n\\n- rules.warn-above: 100 (default)\\n- rules.disabled: BDK-SEC-2 (project)\\n- rules.audit.min-changes: 3 (default)\\n- rules.prune.uncited-changes: 20 (default)\\n- execution.concurrency: 5 (default)\\n- execution.tree.enabled: true (default)\\n- execution.tree.min-parts: 2 (default)\\n- execution.worktree.enabled: true (default)\\n- execution.worktree.dir: .bdk/.machine/worktrees (default)\\n- execution.worktree.setup.timeout: 300 (default)\\n- execution.worktree.max-live: 3 (default)\\n- policy.budgets.task-redispatch: 3 (default)\\n- policy.budgets.verify-fix: 2 (default)\\n- policy.budgets.review-fix: 2 (default)\\n- policy.budgets.verifier: 2 (default)\\n- policy.budgets.part-lead: 2 (default)\\n- policy.budgets.not-run: 3 (default)\\n- policy.oscillation.threshold: 2 (default)\\n- policy.escalation.enabled: true (default)\\n- policy.escalation.model: opus (default)\\n- policy.escalation.per-change: 3 (default)\\n- policy.verifier.blocking-categories: architecture, security, irreversible-step, integration-failure, unresolved-decision, false-code-claim (default)\\n- policy.verifier.not-a-fail: style, template-conformance, files-bookkeeping, wording, report-length, verification-defect (default)\\n- policy.evidence.max-committed-bytes: 65536 (default)\\n- archive.keep-evidence: false (default)\\n- agents.ttl: 300 (default)\\n- agents.open-call-limit: 720 (default)\\n- agents.message.max-chars: 300 (default)\\n- agents.continuation.max: 3 (default)\\n- agents.scout.max-per-ticket: 2 (default)\\n- diagnostics.verbose: false (default)\\n- diagnostics.repeat-refusal: 3 (default)\\n- diagnostics.repeat-read: 3 (default)\\n- diagnostics.outlier-factor: 3 (default)\\n- review.group.max-files: 30 (default)\\n- policy.checkpoint.enabled: true (default)\\n- prompts.dir: unset (default)\\n- prompts.files.<key>: 0 (default)\\n",
   "parts": [
     {
       "kind": "tools",
@@ -196,6 +196,10 @@ exports[`ctx skill output > setup is unchanged 1`] = `
     {
       "kind": "tools",
       "source": "tools.build"
+    },
+    {
+      "kind": "setup-coverage",
+      "source": "setup"
     }
   ]
 }"

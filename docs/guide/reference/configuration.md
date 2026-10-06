@@ -7,6 +7,16 @@ lists every key the kernel accepts. `bdk config schema` prints the same keys as
 a JSON Schema, which the modeline at the top of each settings file hands to
 your editor.
 
+The `Setup` column says what [`/bdk:setup`](skills.md#bdk-setup) does with a
+key:
+
+- `derived`: setup reads the value from your project files (a lockfile, a
+  docs build, your existing specs) and shows it for you to confirm;
+- `asked`: a decision of your team that no file holds, so setup asks;
+- `default`: setup leaves the key on its default on purpose and lists it, with
+  its value, in its closing report. Change it with `bdk config set` once your
+  Changes show you need to.
+
 ## Layers
 
 Four layers are merged, the higher one wins:
@@ -54,13 +64,13 @@ meant. A key that BDK 2 used names its replacement; see
 
 ## Project toolchain
 
-| Key               | Default | What it sets                                                                                                                                   |
-| ----------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `languages`       | `[]`    | The languages and frameworks of the project. Each name selects the plugin's language rules under `rules/languages/<name>/`.                    |
-| `tools.test`      | unset   | The test commands, or `none` when the project has no tests.                                                                                    |
-| `tools.lint`      | unset   | The lint, format and type check commands, or `none` when the project has no linter.                                                            |
-| `tools.build`     | `[]`    | The build commands. No pipeline step runs them; they tell the roles how the project builds.                                                    |
-| `features.lavish` | `true`  | Run the design and review conversations in [Lavish](https://github.com/broneq/lavish); `false` asks the same questions with `AskUserQuestion`. |
+| Key               | Default | Setup     | What it sets                                                                                                                                   |
+| ----------------- | ------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `languages`       | `[]`    | `derived` | The languages and frameworks of the project. Each name selects the plugin's language rules under `rules/languages/<name>/`.                    |
+| `tools.test`      | unset   | `derived` | The test commands, or `none` when the project has no tests.                                                                                    |
+| `tools.lint`      | unset   | `derived` | The lint, format and type check commands, or `none` when the project has no linter.                                                            |
+| `tools.build`     | `[]`    | `derived` | The build commands. No pipeline step runs them; they tell the roles how the project builds.                                                    |
+| `features.lavish` | `true`  | `derived` | Run the design and review conversations in [Lavish](https://github.com/broneq/lavish); `false` asks the same questions with `AskUserQuestion`. |
 
 `tools.test` and `tools.lint` have no default on purpose: while either is
 unset, `bdk change new` refuses with `policy/tools-unset`. What each state does
@@ -100,12 +110,12 @@ run the wrong thing, so leave it out when the tool takes no path list.
 
 ## Pipeline
 
-| Key                     | Default  | What it sets                                                                                                     |
-| ----------------------- | -------- | ---------------------------------------------------------------------------------------------------------------- |
-| `policy.gates.design`   | `manual` | `auto` lets the pipeline pass the design gate without you typing `/bdk:plan`.                                    |
-| `policy.gates.review`   | `manual` | `auto` lets the pipeline pass the review gate without you typing `/bdk:close`.                                   |
-| `archive.keep-evidence` | `false`  | `true` keeps the full dispatch packages and reports in the archived Change; `false` keeps only their hash index. |
-| `spec.normative-word`   | `SHALL`  | The word every requirement of a living spec carries; `bdk spec delta check` holds each delta to it.              |
+| Key                     | Default  | Setup     | What it sets                                                                                                     |
+| ----------------------- | -------- | --------- | ---------------------------------------------------------------------------------------------------------------- |
+| `policy.gates.design`   | `manual` | `asked`   | `auto` lets the pipeline pass the design gate without you typing `/bdk:plan`.                                    |
+| `policy.gates.review`   | `manual` | `asked`   | `auto` lets the pipeline pass the review gate without you typing `/bdk:close`.                                   |
+| `archive.keep-evidence` | `false`  | `default` | `true` keeps the full dispatch packages and reports in the archived Change; `false` keeps only their hash index. |
+| `spec.normative-word`   | `SHALL`  | `derived` | The word every requirement of a living spec carries; `bdk spec delta check` holds each delta to it.              |
 
 Gates are explained in [The Change pipeline](../concepts/change-pipeline.md#gates).
 
@@ -115,39 +125,39 @@ Each loop of a Change has a budget of tickets per round. When a budget runs
 out, the ladder moves on: one escalation ticket with a fresh context and a
 stronger model, then a question to you.
 
-| Key                              | Default | What it sets                                                                                               |
-| -------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------- |
-| `policy.budgets.task-redispatch` | `3`     | Re-dispatches of one task.                                                                                 |
-| `policy.budgets.verify-fix`      | `2`     | Fix rounds after a failed verification of one part.                                                        |
-| `policy.budgets.review-fix`      | `2`     | Fix rounds after the review of the Change.                                                                 |
-| `policy.budgets.verifier`        | `2`     | Iterations of one verifier over one artifact.                                                              |
-| `policy.budgets.part-lead`       | `2`     | Lead tickets of one plan part.                                                                             |
-| `policy.budgets.not-run`         | `3`     | Consecutive closes of one loop and target that ran nothing.                                                |
-| `policy.oscillation.threshold`   | `2`     | Failures of one round with the same fingerprint that shorten the ladder.                                   |
-| `policy.escalation.enabled`      | `true`  | `false` skips the escalation rung.                                                                         |
-| `policy.escalation.model`        | `opus`  | The model class the escalation ticket names.                                                               |
-| `policy.escalation.per-change`   | `3`     | Escalation tickets one Change may open in total.                                                           |
-| `policy.checkpoint.enabled`      | `true`  | Commits the Change directory at park, escalation and session end; `false` leaves that to the task commits. |
+| Key                              | Default | Setup     | What it sets                                                                                               |
+| -------------------------------- | ------- | --------- | ---------------------------------------------------------------------------------------------------------- |
+| `policy.budgets.task-redispatch` | `3`     | `default` | Re-dispatches of one task.                                                                                 |
+| `policy.budgets.verify-fix`      | `2`     | `default` | Fix rounds after a failed verification of one part.                                                        |
+| `policy.budgets.review-fix`      | `2`     | `default` | Fix rounds after the review of the Change.                                                                 |
+| `policy.budgets.verifier`        | `2`     | `default` | Iterations of one verifier over one artifact.                                                              |
+| `policy.budgets.part-lead`       | `2`     | `default` | Lead tickets of one plan part.                                                                             |
+| `policy.budgets.not-run`         | `3`     | `default` | Consecutive closes of one loop and target that ran nothing.                                                |
+| `policy.oscillation.threshold`   | `2`     | `default` | Failures of one round with the same fingerprint that shorten the ladder.                                   |
+| `policy.escalation.enabled`      | `true`  | `default` | `false` skips the escalation rung.                                                                         |
+| `policy.escalation.model`        | `opus`  | `default` | The model class the escalation ticket names.                                                               |
+| `policy.escalation.per-change`   | `3`     | `default` | Escalation tickets one Change may open in total.                                                           |
+| `policy.checkpoint.enabled`      | `true`  | `default` | Commits the Change directory at park, escalation and session end; `false` leaves that to the task commits. |
 
 ### Verifiers
 
 A verifier blocks only on a finding of a blocking category; any other blocker
 is recorded as a reviewed observation.
 
-| Key                                   | Default                                                                                                           | What it sets                                                                |
-| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `policy.verifier.blocking-categories` | `architecture`, `security`, `irreversible-step`, `integration-failure`, `unresolved-decision`, `false-code-claim` | The categories a blocker may name; you can add your own, the defaults stay. |
-| `policy.verifier.not-a-fail`          | `style`, `template-conformance`, `files-bookkeeping`, `wording`, `report-length`, `verification-defect`           | The categories shown to a verifier as never failing an artifact.            |
+| Key                                   | Default                                                                                                           | Setup     | What it sets                                                                |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | --------- | --------------------------------------------------------------------------- |
+| `policy.verifier.blocking-categories` | `architecture`, `security`, `irreversible-step`, `integration-failure`, `unresolved-decision`, `false-code-claim` | `default` | The categories a blocker may name; you can add your own, the defaults stay. |
+| `policy.verifier.not-a-fail`          | `style`, `template-conformance`, `files-bookkeeping`, `wording`, `report-length`, `verification-defect`           | `default` | The categories shown to a verifier as never failing an artifact.            |
 
 Each entry is `{id, description}`, merged by `id`.
 
 ### Evidence
 
-| Key                                   | Default                                                                        | What it sets                                                                                       |
-| ------------------------------------- | ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
-| `policy.evidence.non-executable`      | Markdown, text and image files, `docs/**`, `LICENSE*`, `CHANGELOG*`, `.bdk/**` | Files that never change the tree hash, so editing them needs no new test run. Layers append to it. |
-| `policy.evidence.build-config`        | manifests and lockfiles (`package.json`, `pyproject.toml`, `go.mod`, ...)      | Files that always change the tree hash, wherever they are; wins over `non-executable`.             |
-| `policy.evidence.max-committed-bytes` | `65536`                                                                        | The largest text evidence file copied into the Change; `0` commits none.                           |
+| Key                                   | Default                                                                        | Setup     | What it sets                                                                                       |
+| ------------------------------------- | ------------------------------------------------------------------------------ | --------- | -------------------------------------------------------------------------------------------------- |
+| `policy.evidence.non-executable`      | Markdown, text and image files, `docs/**`, `LICENSE*`, `CHANGELOG*`, `.bdk/**` | `derived` | Files that never change the tree hash, so editing them needs no new test run. Layers append to it. |
+| `policy.evidence.build-config`        | manifests and lockfiles (`package.json`, `pyproject.toml`, `go.mod`, ...)      | `derived` | Files that always change the tree hash, wherever they are; wins over `non-executable`.             |
+| `policy.evidence.max-committed-bytes` | `65536`                                                                        | `default` | The largest text evidence file copied into the Change; `0` commits none.                           |
 
 `bdk config show policy.evidence` prints the full default lists.
 [Verification scoping](../concepts/verification-scoping.md) explains the tree
@@ -155,36 +165,36 @@ hash.
 
 ## Execution
 
-| Key                                | Default                   | What it sets                                                                                 |
-| ---------------------------------- | ------------------------- | -------------------------------------------------------------------------------------------- |
-| `execution.concurrency`            | `5`                       | The most dispatches of one wave that run at once.                                            |
-| `execution.tree.enabled`           | `true`                    | `false` runs every part flat, with the main session dispatching its tasks.                   |
-| `execution.tree.min-parts`         | `2`                       | Ready parts a `large` Change needs before they run as a tree, one lead per part.             |
-| `execution.worktree.enabled`       | `true`                    | `false` runs a part marked `isolation: worktree` in your checkout, alone in its wave.        |
-| `execution.worktree.dir`           | `.bdk/.machine/worktrees` | Where the kernel's worktrees live, relative to the project root unless absolute.             |
-| `execution.worktree.setup.command` | unset                     | A shell command run in a new worktree after the `.worktreeinclude` copy, such as an install. |
-| `execution.worktree.setup.timeout` | `300`                     | Seconds the setup command may run.                                                           |
-| `execution.worktree.max-live`      | `3`                       | Worktrees alive at once; a later worktree part waits for a wave.                             |
+| Key                                | Default                   | Setup     | What it sets                                                                                 |
+| ---------------------------------- | ------------------------- | --------- | -------------------------------------------------------------------------------------------- |
+| `execution.concurrency`            | `5`                       | `default` | The most dispatches of one wave that run at once.                                            |
+| `execution.tree.enabled`           | `true`                    | `default` | `false` runs every part flat, with the main session dispatching its tasks.                   |
+| `execution.tree.min-parts`         | `2`                       | `default` | Ready parts a `large` Change needs before they run as a tree, one lead per part.             |
+| `execution.worktree.enabled`       | `true`                    | `default` | `false` runs a part marked `isolation: worktree` in your checkout, alone in its wave.        |
+| `execution.worktree.dir`           | `.bdk/.machine/worktrees` | `default` | Where the kernel's worktrees live, relative to the project root unless absolute.             |
+| `execution.worktree.setup.command` | unset                     | `derived` | A shell command run in a new worktree after the `.worktreeinclude` copy, such as an install. |
+| `execution.worktree.setup.timeout` | `300`                     | `default` | Seconds the setup command may run.                                                           |
+| `execution.worktree.max-live`      | `3`                       | `default` | Worktrees alive at once; a later worktree part waits for a wave.                             |
 
 See [Worktree parts](../concepts/worktree-parts.md).
 
 ## Agents
 
-| Key                           | Default | What it sets                                                                    |
-| ----------------------------- | ------- | ------------------------------------------------------------------------------- |
-| `agents.ttl`                  | `300`   | Seconds without a tool call after which an agent with no open call is suspect.  |
-| `agents.open-call-limit`      | `720`   | Seconds after which an open tool call no longer counts as the agent working.    |
-| `agents.message.max-chars`    | `300`   | The longest message one agent may send another.                                 |
-| `agents.continuation.max`     | `3`     | Turn ends in a row the stop check blocks without progress; `0` switches it off. |
-| `agents.scout.max-per-ticket` | `2`     | Scout agents one worker may start under one ticket; `0` forbids them.           |
+| Key                           | Default | Setup     | What it sets                                                                    |
+| ----------------------------- | ------- | --------- | ------------------------------------------------------------------------------- |
+| `agents.ttl`                  | `300`   | `default` | Seconds without a tool call after which an agent with no open call is suspect.  |
+| `agents.open-call-limit`      | `720`   | `default` | Seconds after which an open tool call no longer counts as the agent working.    |
+| `agents.message.max-chars`    | `300`   | `default` | The longest message one agent may send another.                                 |
+| `agents.continuation.max`     | `3`     | `default` | Turn ends in a row the stop check blocks without progress; `0` switches it off. |
+| `agents.scout.max-per-ticket` | `2`     | `default` | Scout agents one worker may start under one ticket; `0` forbids them.           |
 
 ## Review
 
-| Key                      | Default                                                                       | What it sets                                                                                                                                                                    |
-| ------------------------ | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `review.group.max-files` | `30`                                                                          | The target size of a reviewer group. Small modules are packed up to it; a module or plan part stays whole up to a third above it, and only a larger one is split, by directory. |
-| `review.risks`           | `auth`, `migration`, `secrets`, `public-api`, `dependencies`, `configuration` | The risky areas a review calls out. Each is `{id, instruction, paths, enabled}`, merged by `id`.                                                                                |
-| `tracker`                | unset                                                                         | Where a finding goes when you choose "track" in the review: `{kind: github}`, or `{kind: instruction, instruction: "<how to file it>"}`. Unset, the review offers no "track".   |
+| Key                      | Default                                                                       | Setup     | What it sets                                                                                                                                                                    |
+| ------------------------ | ----------------------------------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `review.group.max-files` | `30`                                                                          | `default` | The target size of a reviewer group. Small modules are packed up to it; a module or plan part stays whole up to a third above it, and only a larger one is split, by directory. |
+| `review.risks`           | `auth`, `migration`, `secrets`, `public-api`, `dependencies`, `configuration` | `asked`   | The risky areas a review calls out. Each is `{id, instruction, paths, enabled}`, merged by `id`.                                                                                |
+| `tracker`                | unset                                                                         | `asked`   | Where a finding goes when you choose "track" in the review: `{kind: github}`, or `{kind: instruction, instruction: "<how to file it>"}`. Unset, the review offers no "track".   |
 
 ```yaml
 review:
@@ -197,24 +207,24 @@ tracker: { kind: instruction, instruction: "Create a Jira issue in project PAY w
 
 ## Rules
 
-| Key                           | Default | What it sets                                                                                         |
-| ----------------------------- | ------- | ---------------------------------------------------------------------------------------------------- |
-| `rules.disabled`              | `[]`    | Rule ids switched off, BDK's own included (`BDK-SEC-3`).                                             |
-| `rules.warn-above`            | `100`   | Rules one role may receive before the session start warns. Every rule that applies still reaches it. |
-| `rules.audit.min-changes`     | `3`     | Distinct Changes a finding must appear in before `bdk rules stats` lists it as recurring.            |
-| `rules.prune.uncited-changes` | `20`    | Recent Changes `bdk rules prune` looks back over for citations.                                      |
+| Key                           | Default | Setup     | What it sets                                                                                         |
+| ----------------------------- | ------- | --------- | ---------------------------------------------------------------------------------------------------- |
+| `rules.disabled`              | `[]`    | `default` | Rule ids switched off, BDK's own included (`BDK-SEC-3`).                                             |
+| `rules.warn-above`            | `100`   | `default` | Rules one role may receive before the session start warns. Every rule that applies still reaches it. |
+| `rules.audit.min-changes`     | `3`     | `default` | Distinct Changes a finding must appear in before `bdk rules stats` lists it as recurring.            |
+| `rules.prune.uncited-changes` | `20`    | `default` | Recent Changes `bdk rules prune` looks back over for citations.                                      |
 
 Your own rules are files under `.bdk/rules/`, not settings; see
 [Rules hygiene](../workflows/rules-hygiene.md).
 
 ## Diagnostics
 
-| Key                          | Default | What it sets                                                                           |
-| ---------------------------- | ------- | -------------------------------------------------------------------------------------- |
-| `diagnostics.verbose`        | `false` | Writes a verbose log of each session under `.bdk/.machine/logs/`.                      |
-| `diagnostics.repeat-refusal` | `3`     | Refusals of one rule in a session that make the report flag them.                      |
-| `diagnostics.repeat-read`    | `3`     | Reads of one file by one agent that make the report flag them.                         |
-| `diagnostics.outlier-factor` | `3`     | The multiple of the session median above which a task's tokens or wall time stand out. |
+| Key                          | Default | Setup     | What it sets                                                                           |
+| ---------------------------- | ------- | --------- | -------------------------------------------------------------------------------------- |
+| `diagnostics.verbose`        | `false` | `default` | Writes a verbose log of each session under `.bdk/.machine/logs/`.                      |
+| `diagnostics.repeat-refusal` | `3`     | `default` | Refusals of one rule in a session that make the report flag them.                      |
+| `diagnostics.repeat-read`    | `3`     | `default` | Reads of one file by one agent that make the report flag them.                         |
+| `diagnostics.outlier-factor` | `3`     | `default` | The multiple of the session median above which a task's tokens or wall time stand out. |
 
 See [Diagnostics](../workflows/diagnostics.md).
 
@@ -230,10 +240,10 @@ replace, one file per prompt key:
 | `fragments/merge-conflicts`   | How a merge conflict is resolved; add your own regeneration commands here.         |
 | `pipeline/<kind>`             | The instruction template of one artifact kind of the pipeline (`pipeline/design`). |
 
-| Key                   | Default | What it sets                                                                                                                                                                   |
-| --------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `prompts.dir`         | unset   | This layer's prompts directory; never inherited by another layer. Unset, it is `.bdk/prompts/` (project), `.bdk/prompts.local/` (local) or `prompts/` next to the global file. |
-| `prompts.files.<key>` | unset   | One prompt key mapped to a file anywhere, as a path or `{path, mode, applies}`; wins over the directory.                                                                       |
+| Key                   | Default | Setup     | What it sets                                                                                                                                                                   |
+| --------------------- | ------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `prompts.dir`         | unset   | `default` | This layer's prompts directory; never inherited by another layer. Unset, it is `.bdk/prompts/` (project), `.bdk/prompts.local/` (local) or `prompts/` next to the global file. |
+| `prompts.files.<key>` | unset   | `default` | One prompt key mapped to a file anywhere, as a path or `{path, mode, applies}`; wins over the directory.                                                                       |
 
 A file contributes with `mode: extends` (appended to the value below it, the
 default) or `mode: replace` (instead of it), set in its frontmatter or in the

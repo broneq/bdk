@@ -5,6 +5,7 @@ type PartKind =
   | "rules"
   | "language-rules"
   | "project-rules"
+  | "setup-coverage"
   | "fragment"
   | "tools"
   | "concurrency"

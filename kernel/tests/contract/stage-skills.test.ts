@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
 
 import { SKILL_CONTEXT } from "../../src/ctx/use-cases/manifest.ts";
+import { settingsRegistry } from "../../src/registrations.ts";
 import { REPO_ROOT } from "../support/run.ts";
 
 const STAGES = join(REPO_ROOT, "skills", "stages");
@@ -355,6 +356,80 @@ describe("setup proposes the tracker (T42)", () => {
   });
 });
 
+describe("setup covers every derived and asked key (T56)", () => {
+  const dir = join(STAGES, "setup");
+  const references = readdirSync(join(dir, "references"))
+    .filter((name) => name.endsWith(".md"))
+    .map((name) => readFileSync(join(dir, "references", name), "utf8"));
+  const text = [readFileSync(join(dir, "SKILL.md"), "utf8"), ...references].join("\n");
+
+  it.each(
+    settingsRegistry()
+      .setupKeys()
+      .filter((entry) => entry.setup !== "default")
+      .map((entry) => [entry.key, entry.setup] as const),
+  )("names %s (%s)", (key) => {
+    expect(text).toContain(`\`${key}\``);
+  });
+
+  it("asks on the setup page, and reports the rest", () => {
+    const { body } = readSkill("setup");
+    expect(body).toContain("[the setup page](references/setup-page.html)");
+    expect(body).toContain("`npx -y lavish-axi poll <page>`");
+    expect(body).toContain("`.lavish/bdk-setup-<stamp>.html`");
+    expect(body).toContain("Not set by setup");
+    const finish = body.slice(body.indexOf("## Finish"));
+    expect(finish).toContain("Not set by setup");
+    expect(finish).toContain("bdk config set <key> <value>");
+  });
+});
+
+describe("setup asks on one page (T56)", () => {
+  const page = readFileSync(join(STAGES, "setup", "references", "setup-page.html"), "utf8");
+  const QUESTIONS = ["v2", "commands", "derived", "exclusions", "gates", "risks", "tracker"];
+
+  it("carries example data of the shape the skill fills, with every default risk", () => {
+    const json = /<script type="application\/json" id="setup-data">([\s\S]*?)<\/script>/.exec(page);
+    expect(json).not.toBeNull();
+    const data = JSON.parse(json?.[1] ?? "") as {
+      gates: Record<string, string>;
+      risks: { id: string }[];
+      tracker: Record<string, unknown>;
+    };
+    expect(Object.keys(data.gates).sort()).toStrictEqual(["design", "review"]);
+    expect(data.tracker).toHaveProperty("proposal");
+    expect(Object.keys(data).filter((key) => key !== "project")).toStrictEqual(QUESTIONS);
+    const risks = settingsRegistry()
+      .modules.find((module) => module.key === "review.risks")
+      ?.schema.parse(undefined) as { id: string }[];
+    expect(data.risks.map((risk) => risk.id)).toStrictEqual(risks.map((risk) => risk.id));
+  });
+
+  it("renders a section per question and queues one prompt each", () => {
+    for (const question of QUESTIONS) expect(page).toContain(`"${question}",`);
+    expect(page).toContain('"data-lavish-question": question');
+    expect(page).toContain("window.lavish.queuePrompt(");
+  });
+
+  it("the skill detects before it asks, names every answer and writes after", () => {
+    const { body } = readSkill("setup");
+    const ask = body.indexOf("## Ask");
+    const apply = body.indexOf("## Apply");
+    for (const section of [
+      "## Lavish",
+      "## Settings",
+      "## Keep `.bdk/`",
+      "## Gates, risks and tracker",
+    ]) {
+      expect(body.indexOf(section), section).toBeLessThan(ask);
+    }
+    expect(ask).toBeLessThan(apply);
+    const table = body.slice(ask, apply);
+    for (const question of QUESTIONS) expect(table, question).toContain(`| \`${question}\``);
+    expect(table).toMatch(/an `AskUserQuestion` call of its own/);
+  });
+});
+
 describe("worktree isolation in the stage skills (T45)", () => {
   it("plan decides isolation and its reason", () => {
     const { body } = readSkill("plan");
@@ -420,9 +495,13 @@ describe("setup keeps .bdk/ out of the project's tools (T51)", () => {
     }
     const start = body.indexOf("## Keep `.bdk/` out of the project's tools");
     expect(start).toBeGreaterThan(body.indexOf("## Settings"));
-    expect(start).toBeLessThan(body.indexOf("## Lavish"));
-    const section = body.slice(start, body.indexOf("## Lavish"));
-    expect(section).toMatch(/one multi-select/);
+    expect(body.slice(start, body.indexOf("## Gates, risks and tracker"))).toMatch(
+      /one multi-select/,
+    );
+    const section = body.slice(
+      body.indexOf("## Apply"),
+      body.indexOf("## When the kernel refuses"),
+    );
     expect(section).toContain("`tools.lint`");
     expect(section).toMatch(/never a formatter's write mode/);
     expect(section).toMatch(/every path under `\.bdk\/`/);

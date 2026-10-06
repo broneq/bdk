@@ -251,6 +251,7 @@ describe("ctx skill", () => {
       { kind: "tools", source: "tools.test" },
       { kind: "tools", source: "tools.lint" },
       { kind: "tools", source: "tools.build" },
+      { kind: "setup-coverage", source: "setup" },
     ]);
   });
 
@@ -338,5 +339,74 @@ describe("verifier-policy part (P8, T42)", () => {
     });
     expect(section).toContain("- data-retention: Personal data kept past its retention.\n");
     expect(section).toContain("- security: A security, privacy or authentication risk.\n");
+  });
+});
+
+describe("setup-coverage part (T56)", () => {
+  function coverage(project: Record<string, string> = {}): string {
+    const given = input(project);
+    const resolved = resolveOrRefuse(given, { removed: "ignore" });
+    if ("refused" in resolved) throw new Error(`refused: ${resolved.why}`);
+    const sections = sectionsOf(given, resolved, { kind: "setup-coverage" });
+    expect(sections.map((section) => [section.title, section.part])).toStrictEqual([
+      ["Setup coverage", { kind: "setup-coverage", source: "setup" }],
+    ]);
+    return sections[0]?.body ?? "";
+  }
+
+  function lines(body: string, heading: string): string[] {
+    const [, after = ""] = body.split(`#### ${heading}\n\n`);
+    return (after.split("\n\n")[0] ?? "").split("\n").filter((line) => line !== "");
+  }
+
+  it("follows the setup manifest entry after the tools parts", () => {
+    expect(titles(compose("setup").content)).toStrictEqual([
+      "BDK context: setup",
+      "Project commands: test",
+      "Project commands: lint",
+      "Project commands: build",
+      "Setup coverage",
+    ]);
+  });
+
+  it("groups every key by class with its default value on an empty project", () => {
+    const body = coverage();
+    expect(body.indexOf("#### Derived")).toBeLessThan(body.indexOf("#### Asked"));
+    expect(body.indexOf("#### Asked")).toBeLessThan(body.indexOf("#### Not set by setup"));
+    expect(lines(body, "Derived")).toContain("- tools.test: unset (default)");
+    expect(lines(body, "Derived")).toContain("- languages: [] (default)");
+    expect(lines(body, "Derived")).toContain("- spec.normative-word: SHALL (default)");
+    expect(lines(body, "Asked")).toStrictEqual([
+      "- policy.gates.design: manual (default)",
+      "- policy.gates.review: manual (default)",
+      "- review.risks: auth, migration, secrets, public-api, dependencies, configuration (default)",
+      "- tracker: unset (default)",
+    ]);
+    const rest = lines(body, "Not set by setup");
+    expect(rest).toContain("- policy.budgets.task-redispatch: 3 (default)");
+    expect(rest).toContain("- prompts.files.<key>: 0 (default)");
+    expect(rest).toContain("- prompts.dir: unset (default)");
+    const all = [...lines(body, "Derived"), ...lines(body, "Asked"), ...rest];
+    expect(all).toHaveLength(settingsRegistry().setupKeys().length);
+  });
+
+  it("names the layer a value comes from, an id array by its highest layer", () => {
+    const body = coverage({
+      ".bdk/settings.yaml":
+        "policy:\n  gates:\n    review: auto\nreview:\n  risks:\n    - { id: secrets, enabled: false }\ntools:\n  lint: none\n  test:\n    - { id: unit, tier: fast, command: npx vitest run }\n",
+      ".bdk/settings.local.yaml": "diagnostics:\n  verbose: true\n",
+    });
+    expect(lines(body, "Asked")).toContain("- policy.gates.review: auto (project)");
+    expect(lines(body, "Asked")).toContain(
+      "- review.risks: auth, migration, secrets, public-api, dependencies, configuration (project)",
+    );
+    expect(lines(body, "Derived")).toContain("- tools.test: unit (project)");
+    expect(lines(body, "Derived")).toContain("- tools.lint: none (project)");
+    expect(lines(body, "Not set by setup")).toContain("- diagnostics.verbose: true (local)");
+  });
+
+  it("joins the items of a plain array", () => {
+    const body = coverage({ ".bdk/settings.yaml": "languages: [typescript, react]\n" });
+    expect(lines(body, "Derived")).toContain("- languages: typescript, react (project)");
   });
 });

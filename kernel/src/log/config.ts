@@ -57,6 +57,7 @@ export const verifierModule = defineConfigModule({
   key: "policy.verifier",
   consumer: "log",
   owner: "T23",
+  setup: "default",
   description:
     "What a verifier may block on (P8): a blocker outside blocking-categories is downgraded to a reviewed observation.",
   schema: z

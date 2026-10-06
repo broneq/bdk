@@ -9,6 +9,7 @@ export const messageModule = defineConfigModule({
   key: "agents.message",
   consumer: "hooks",
   owner: "T41",
+  setup: "default",
   description: "Messages between agents.",
   schema: z
     .strictObject({
@@ -23,6 +24,7 @@ export const continuationModule = defineConfigModule({
   key: "agents.continuation",
   consumer: "hooks",
   owner: "T41",
+  setup: "default",
   description: "The continuation check of the Stop and SubagentStop hooks.",
   schema: z
     .strictObject({
@@ -37,6 +39,7 @@ export const scoutModule = defineConfigModule({
   key: "agents.scout",
   consumer: "hooks",
   owner: "T41",
+  setup: "default",
   description: "The scouts a worker may start.",
   schema: z
     .strictObject({
@@ -51,6 +54,7 @@ export const verboseModule = defineConfigModule({
   key: "diagnostics.verbose",
   consumer: "hooks",
   owner: "T47",
+  setup: "default",
   description: "Write the verbose log of each session under .bdk/.machine/logs/.",
   schema: z.boolean().default(false),
   appliesFrom: "next-session",

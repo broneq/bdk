@@ -12,6 +12,7 @@ export const reviewGroupModule = defineConfigModule({
   key: "review.group",
   consumer: "review",
   owner: "T42",
+  setup: "default",
   description: "How bdk review plan sizes the reviewer groups.",
   schema: z
     .strictObject({
@@ -142,6 +143,7 @@ export const risksModule = defineConfigModule({
   key: "review.risks",
   consumer: "review",
   owner: "T42",
+  setup: "asked",
   description: "Risky areas of this project the review calls out, merged by id.",
   schema: z
     .array(risk)
@@ -171,6 +173,7 @@ export const trackerModule = defineConfigModule({
   key: "tracker",
   consumer: "review",
   owner: "T42",
+  setup: "asked",
   description: "Where a finding goes when the human chooses track; unset offers no track.",
   schema: tracker.optional(),
 });

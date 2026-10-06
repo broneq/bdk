@@ -15,6 +15,8 @@ export type Part =
   | { readonly kind: "tools"; readonly group: ToolGroup }
   /** `execution.concurrency` as one sentence (T23-D52). */
   | { readonly kind: "concurrency" }
+  /** Every leaf key by setup class with its value and origin (`kernel-settings`, Setup classification; T56). */
+  | { readonly kind: "setup-coverage" }
   /** `policy.verifier`: the blocking categories and the not-a-fail list (P8, T42). */
   | { readonly kind: "verifier-policy" }
   /** A plugin file, verbatim; `path` is relative to the plugin root. */
@@ -64,7 +66,7 @@ export const SKILL_CONTEXT: Readonly<Record<string, readonly Part[]>> = {
   ],
   rules: [decision],
   run: [],
-  setup: [tools("test"), tools("lint"), tools("build")],
+  setup: [tools("test"), tools("lint"), tools("build"), { kind: "setup-coverage" }],
   swarm: [{ kind: "concurrency" }],
   "verify-design": [],
   "verify-plan": [],

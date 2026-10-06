@@ -1,29 +1,7 @@
-// `config show --origins`: the layer of every leaf of the shown value. The merge
-// records origins only for leaves a file set; the rest came from the defaults.
-import type { LayerName } from "./report.ts";
+// `config show --origins`: the leaves of the shown value, each of which gets
+// its layer; an id array's entries are addressed by id.
 
-type Origins = Readonly<Record<string, LayerName>>;
-
-export function leafOrigins(value: unknown, key: string, set: Origins): Record<string, LayerName> {
-  const out: Record<string, LayerName> = {};
-  for (const leaf of leafKeys(value, key)) out[leaf] = originOf(leaf, set);
-  return out;
-}
-
-/** A leaf's own origin, else the nearest ancestor's (an array replaced whole), else the default. */
-function originOf(leaf: string, set: Origins): LayerName {
-  for (
-    let key = leaf;
-    key !== "";
-    key = key.includes(".") ? key.slice(0, key.lastIndexOf(".")) : ""
-  ) {
-    const origin = set[key];
-    if (origin !== undefined) return origin;
-  }
-  return "default";
-}
-
-function leafKeys(value: unknown, prefix: string): string[] {
+export function leafKeys(value: unknown, prefix: string): string[] {
   if (isMapping(value) && Object.keys(value).length > 0) {
     return Object.entries(value).flatMap(([key, child]) => leafKeys(child, join(prefix, key)));
   }
