@@ -6,8 +6,6 @@ import {
   acceptCommand,
   checkCommand,
   explainCommand,
-  exportCommand,
-  importCommand,
   pruneCommand,
   statsCommand,
 } from "./commands/rules.ts";
@@ -41,8 +39,6 @@ export function rulesRegistrations(deps: RulesDeps): Registration[] {
     { id: "rules-show", handler: showCommand(deps), resolvesChange: "handler" },
     { id: "rules-explain", handler: explainCommand(deps) },
     { id: "rules-prune", handler: pruneCommand(deps) },
-    { id: "rules-import", handler: importCommand(deps) },
-    { id: "rules-export", handler: exportCommand(deps) },
     { id: "rules-stats", handler: statsCommand(deps) },
     { id: "rules-accept", handler: acceptCommand(deps) },
   ];

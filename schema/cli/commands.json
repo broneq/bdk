@@ -1561,7 +1561,7 @@
     {
       "id": "rules-accept",
       "argv": ["rules", "accept"],
-      "summary": "Adopt a rule: write `.bdk/rules/<PREFIX>-<n>.md` from the user's decision and regenerate the projection.",
+      "summary": "Adopt a rule: write `.bdk/rules/<PREFIX>-<n>.md` from the user's decision.",
       "availability": "orchestrator",
       "mode": "command",
       "slice": "rules",
@@ -1636,12 +1636,7 @@
         "policy/duplicate-rule-id",
         "state/corrupted-index"
       ],
-      "writes": [
-        ".bdk/rules/",
-        ".claude/rules/bdk-generated.md",
-        ".claude/rules/bdk-generated-scoped.md",
-        ".bdk/.prettierrc"
-      ]
+      "writes": [".bdk/rules/", ".bdk/.prettierrc"]
     },
     {
       "id": "rules-explain",
@@ -1700,43 +1695,6 @@
       "writes": []
     },
     {
-      "id": "rules-import",
-      "argv": ["rules", "import"],
-      "summary": "Import a project's `.claude/rules/*.md` into `.bdk/rules/`, one rule per top-level bullet, applies from `paths:`.",
-      "availability": "orchestrator",
-      "mode": "command",
-      "slice": "rules",
-      "owner": "T31",
-      "changeScoped": false,
-      "args": [
-        {
-          "name": "<dir>",
-          "required": false,
-          "description": "Default .claude/rules/."
-        }
-      ],
-      "flags": [
-        {
-          "name": "--dry-run",
-          "description": "Report what would be written; write nothing."
-        },
-        {
-          "name": "--prefix",
-          "value": "<PREFIX>",
-          "description": "Override the prefix derived from the file name; one file only."
-        }
-      ],
-      "output": "output/rules-import.json",
-      "exits": [0, 2, 3, 5],
-      "refusals": ["input/not-found", "policy/rule-format", "policy/duplicate-rule-id"],
-      "writes": [
-        ".bdk/rules/",
-        ".claude/rules/bdk-generated.md",
-        ".claude/rules/bdk-generated-scoped.md",
-        ".bdk/.prettierrc"
-      ]
-    },
-    {
       "id": "rules-stats",
       "argv": ["rules", "stats"],
       "summary": "The audit view: recurring items across Changes, the raw findings and learnings, citations by rule id.",
@@ -1765,31 +1723,6 @@
       "exits": [0, 3, 4, 5],
       "refusals": ["state/corrupted-index"],
       "writes": []
-    },
-    {
-      "id": "rules-export",
-      "argv": ["rules", "export"],
-      "summary": "Generate the host projection of the project's rules: `.claude/rules/bdk-generated.md` and `bdk-generated-scoped.md`.",
-      "availability": "orchestrator",
-      "mode": "command",
-      "slice": "rules",
-      "owner": "T31",
-      "changeScoped": false,
-      "args": [],
-      "flags": [
-        {
-          "name": "--claude",
-          "description": "Target Claude Code (the only target in 3.0)."
-        },
-        {
-          "name": "--check",
-          "description": "Exit 2 when the committed projection is out of date; write nothing."
-        }
-      ],
-      "output": "output/rules-export.json",
-      "exits": [0, 2, 3, 5],
-      "refusals": ["policy/rule-format", "policy/generated-drift"],
-      "writes": [".claude/rules/bdk-generated.md", ".claude/rules/bdk-generated-scoped.md"]
     },
     {
       "id": "export-agents",

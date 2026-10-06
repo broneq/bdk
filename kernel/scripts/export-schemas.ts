@@ -94,8 +94,6 @@ import {
   rulesAcceptOutput,
   rulesCheckOutput,
   rulesExplainOutput,
-  rulesExportOutput,
-  rulesImportOutput,
   rulesPruneOutput,
   rulesStatsOutput,
 } from "../src/rules/schema/outputs.ts";
@@ -172,8 +170,6 @@ const CLI_FILES: readonly (readonly [string, z.ZodType])[] = [
   ["output/rules-accept.json", rulesAcceptOutput],
   ["output/rules-check.json", rulesCheckOutput],
   ["output/rules-explain.json", rulesExplainOutput],
-  ["output/rules-export.json", rulesExportOutput],
-  ["output/rules-import.json", rulesImportOutput],
   ["output/rules-prune.json", rulesPruneOutput],
   ["output/rules-show.json", rulesShowOutput],
   ["output/rules-stats.json", rulesStatsOutput],

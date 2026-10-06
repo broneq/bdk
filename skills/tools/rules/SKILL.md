@@ -13,7 +13,7 @@ If no "BDK context: rules" heading appears above, run `bdk ctx skill rules` firs
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context.
 
-The project's rules are the files under `.bdk/rules/`, read with the rule pack of the plugin, selected per package by `applies` and cited by id. The kernel owns them: you create a rule only with `bdk rules accept`, and the generated `.claude/rules/bdk-generated*.md` files come from `bdk rules export --claude`; never write either by hand. Add `--json` to every command whose output you act on.
+The project's rules are the files under `.bdk/rules/`, read with the rule pack of the plugin, selected per package by `applies` and cited by id. The kernel owns them: you create a rule only with `bdk rules accept`, never by writing a rule file. Add `--json` to every command whose output you act on.
 
 The first argument picks the mode: `audit` (also with no argument), `capture <lesson>` or `check`. Done when the mode's report is given.
 
@@ -46,8 +46,8 @@ Distill the lesson into the one sentence and judge it as above. When it is not a
 
 ## check
 
-Run `bdk rules check --json` and `bdk rules export --claude --check --json`. Report each problem with the command that repairs it: a rule file the check refuses is fixed in that file, and a stale projection is regenerated with `bdk rules export --claude`, which you run when the user agrees.
+Run `bdk rules check --json`. Report each problem with the file that repairs it: a rule file the check refuses is fixed in that file.
 
 ## Removing a rule
 
-A rule is never deleted, so its id is never reused. After the user approves the removal of one project rule, edit its file under `.bdk/rules/` to set `removed`: add `removed: <reason>` to the frontmatter, with the reason the user agreed to (for example "merged into API-1" or "no file matches its globs"), and keep the body. Then run `bdk rules check --json` and `bdk rules export --claude --json`, and report the rule as a tombstone.
+A rule is never deleted, so its id is never reused. After the user approves the removal of one project rule, edit its file under `.bdk/rules/` to set `removed`: add `removed: <reason>` to the frontmatter, with the reason the user agreed to (for example "merged into API-1" or "no file matches its globs"), and keep the body. Then run `bdk rules check --json`, and report the rule as a tombstone.

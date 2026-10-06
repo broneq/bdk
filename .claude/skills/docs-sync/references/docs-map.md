@@ -105,7 +105,7 @@ Format: page - what it is for - the files that decide whether it is true.
 - **`workflows/docs-and-decisions.md`** - ADRs, module explanations, doc refresh, diagrams.
   Truth: `skills/tools/adr/`, `skills/tools/docs/`, `plugins/bdk-craft/skills/mermaid-drawer/`.
 - **`workflows/rules-hygiene.md`** - learnings, the audit with `rules stats`, `rules accept`, `rules prune`,
-  `rules import` of hand-written `.claude/rules/`.
+  and why hand-written `.claude/rules/` stays Claude Code's.
   Truth: `skills/tools/rules/`, `kernel/src/rules/`, `STARTUP_INSTRUCTIONS.md` capture conventions table.
 - **`workflows/diagnostics.md`** - the run journal, the verbose log, `/bdk:diagnose`.
   Truth: `skills/tools/diagnose/`, `kernel/src/diagnostics/`, `hooks/hooks.json`.
@@ -133,7 +133,8 @@ Format: page - what it is for - the files that decide whether it is true.
   reads its context, structured returns, `SendMessage` vs respawn, the tree.
   Truth: `agents/*.md`, `skills/roles/`, `kernel/src/export/domain/adapters.ts`, `STARTUP_INSTRUCTIONS.md`.
 - **`concepts/quality-and-language-rules.md`** - the definition of a rule, rule files and ids, the shipped
-  pack, project rules, `rules.disabled`, selection per role and file, `rules check` and the projection.
+  pack, project rules, `rules.disabled`, selection per role and file, `rules check`, and the note for projects
+  that used the removed import and export.
   Truth: `rules/`, `kernel/src/rules/` (`domain/rule.ts`, `use-cases/selection.ts`),
   `kernel/src/shared/store/state/rule.ts`.
 

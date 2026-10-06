@@ -1,6 +1,6 @@
 ---
 name: setup
-description: Prepares a project for BDK - settings with its test, lint and build commands, Lavish, the tracker, hand-written rules, migration from BDK 2. Use when starting BDK in a project or after cloning, or when BDK reports missing settings or a v2 layout.
+description: Prepares a project for BDK - settings with its test, lint and build commands, Lavish, the tracker, migration from BDK 2. Use when starting BDK in a project or after cloning, or when BDK reports missing settings or a v2 layout.
 argument-hint: "[what to change, e.g. 'add the e2e suite']"
 disable-model-invocation: true
 allowed-tools: Bash(bdk *) Bash(echo *) Bash(npx -y lavish-axi --help) Bash(gh auth status) Bash(git remote get-url origin) Bash(git add *) Bash(git commit *) Read Edit Write Grep Glob AskUserQuestion
@@ -66,10 +66,6 @@ The review report offers `track` for an entry only while `tracker` is set. When 
 - Otherwise ask whether findings go to another tracker. When the user names one, ask how an issue is filed there (a CLI or an MCP server and its project) and run `bdk config set tracker '{kind: instruction, instruction: "<their description>"}'`.
 
 A declined proposal leaves `tracker` unset.
-
-## Hand-written rules
-
-When `.claude/rules/` holds Markdown files other than the generated `bdk-generated*.md`, show `bdk rules import --dry-run --json` and ask whether to import them. After `bdk rules import --json` the generated projection carries their rules, so offer to delete the imported source files; a file the import skipped stays, with the reason the output gives. BDK's own `BDK-*` rules come from the plugin and are never imported.
 
 ## When the kernel refuses
 

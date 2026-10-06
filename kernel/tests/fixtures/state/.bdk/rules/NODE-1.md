@@ -5,7 +5,7 @@ kind: knowledge
 applies:
   - kernel/**
 severity: high
-origin: import
+origin: user
 since: 2026-09-20
 source: https://nodejs.org/api/sqlite.html
 verified: 2026-09-20

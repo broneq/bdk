@@ -28,7 +28,7 @@ export const REMOVED_KEYS: readonly RemovedKey[] = [
   {
     key: "quality",
     reason:
-      "use project rules in .bdk/rules/ (bdk rules import) and switch BDK rules off with rules.disabled",
+      "use project rules in .bdk/rules/ (bdk rules accept) and switch BDK rules off with rules.disabled",
   },
   {
     key: "language-rules",
@@ -49,7 +49,7 @@ const RETIRED_PROMPTS: readonly RemovedKey[] = [
   {
     key: "rules/",
     reason:
-      "rules are no longer prompt values: add project rules as files in .bdk/rules/ (bdk rules accept, bdk rules import) and switch BDK rules off with rules.disabled",
+      "rules are no longer prompt values: add project rules as files in .bdk/rules/ (bdk rules accept) and switch BDK rules off with rules.disabled",
   },
 ];
 

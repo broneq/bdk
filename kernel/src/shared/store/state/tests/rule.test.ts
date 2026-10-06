@@ -36,7 +36,6 @@ describe("rule", () => {
 
   it.each([
     "bdk",
-    "import",
     "user",
     "2026-09-25-passwordless-login/L-q81c0zt4",
     "2026-09-25-passwordless-login/A-7f3kx2p9",
@@ -44,7 +43,7 @@ describe("rule", () => {
     expect(issues(schema, { ...example.rule, origin })).toStrictEqual([]);
   });
 
-  it.each(["team", "L-q81c0zt4", "2026-09-25-passwordless-login/E-7f3kx2p9"])(
+  it.each(["team", "import", "L-q81c0zt4", "2026-09-25-passwordless-login/E-7f3kx2p9"])(
     "rejects the origin %j",
     (origin) => {
       expect(issues(schema, { ...example.rule, origin })).toStrictEqual(["origin"]);

@@ -1,13 +1,13 @@
 // T31 acceptance through the built bundle (tasks 8.1, 8.2 of
 // v3-t31-rules-ids-funnel): a scoped and a global project rule reach only the
 // packages whose task files they apply to, and a lesson recorded in three
-// Changes surfaces in the audit, is adopted with `rules accept` and lands in
-// the generated projection that `rules export --claude --check` guards.
+// Changes surfaces in the audit, is adopted with `rules accept` and applies
+// to the files of its glob.
 // That `change close` writes no rule is `close.test.ts`, "proposes no rule".
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { answered, bdk, git, read, refused, repository } from "../../../tests/support/repo.ts";
+import { answered, bdk, git, read, repository } from "../../../tests/support/repo.ts";
 import { fileStore } from "../../shared/store/index.ts";
 
 function projectRule(id: string, extra = ""): string {
@@ -82,7 +82,7 @@ describe("T31 acceptance", () => {
     expect(stampedRules(root, "01-1")).toStrictEqual(explained.rules.map((rule) => rule.id));
   });
 
-  it("8.2: a lesson in three Changes recurs, is adopted, and the projection guards it", () => {
+  it("8.2: a lesson in three Changes recurs, is adopted, and applies to its files", () => {
     const root = repository();
     const learn = (summary: string) => {
       const result = bdk(
@@ -131,22 +131,13 @@ describe("T31 acceptance", () => {
       "output/rules-accept.json",
     );
     expect(accepted).toMatchObject({ id: "FORM-1", origin: entries[0] });
-    expect(read(root, ".claude/rules/bdk-generated-scoped.md")).toMatch(
-      /^---\npaths:\n {2}- "web\/forms\/\*\*"\n---\n[\s\S]*- \[FORM-1\] Keep the pending state/,
-    );
-
-    answered(
-      bdk(["rules", "export", "--claude", "--check", "--json"], root),
-      "output/rules-export.json",
-    );
-    fileStore().write(
-      join(root, ".claude/rules/bdk-generated-scoped.md"),
-      `${read(root, ".claude/rules/bdk-generated-scoped.md")}- a hand edit\n`,
-    );
-    refused(
-      bdk(["rules", "export", "--claude", "--check", "--json"], root),
-      2,
-      "policy/generated-drift",
+    expect(read(root, ".bdk/rules/FORM-1.md")).toContain(`origin: ${entries[0] ?? ""}`);
+    const explained = answered(
+      bdk(["rules", "explain", "web/forms/Signup.tsx", "--json"], root),
+      "output/rules-explain.json",
+    ) as { rules: { id: string; matchedBy: string | null }[] };
+    expect(explained.rules).toContainEqual(
+      expect.objectContaining({ id: "FORM-1", matchedBy: "web/forms/**" }),
     );
   });
 });

@@ -201,18 +201,12 @@ describe("bdk doctor", () => {
     expect(JSON.stringify(result.json)).toContain(spec);
   });
 
-  it("exit 0: a hand-written rule file without an id is a rule-without-id finding", () => {
+  it("exit 0: a hand-written .claude/rules/ file is no finding", () => {
     const root = fixture({ files: { ".claude/rules/naming.md": "- Name things well.\n" } }).root;
     const result = runBdk(["doctor", "--json"], root);
     expect(result.code).toBe(0);
     expect(validDoctor(result.json), JSON.stringify(validDoctor.errors)).toBe(true);
-    expect(result.json).toMatchObject({ ok: false });
-    expect((result.json as { findings: unknown[] }).findings).toContainEqual({
-      id: "rule-without-id",
-      level: "warn",
-      summary: ".claude/rules/naming.md holds rules without an id",
-      repair: "bdk rules import",
-    });
+    expect(JSON.stringify(result.json)).not.toContain(".claude/rules/naming.md");
   });
 });
 

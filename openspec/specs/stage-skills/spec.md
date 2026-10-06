@@ -107,15 +107,6 @@ When `bdk doctor` reports the v2 layout, `/bdk:setup` SHALL migrate the project 
 - **WHEN** `npx -y lavish-axi --help` fails and the user declines the install
 - **THEN** `bdk config show features.lavish --json` reports `false` from the project layer
 
-### Requirement: setup imports hand-written rules
-
-When the project has hand-written `.claude/rules/*.md` files (any file other than the generated `bdk-generated*.md`), `/bdk:setup` SHALL show `bdk rules import --dry-run`, run `bdk rules import` only after the user confirms, and then offer to delete the imported source files, since the projection carries their rules. The `BDK-*` pack SHALL never be imported: the kernel reads it from the plugin.
-
-#### Scenario: one rules file
-
-- **WHEN** the project has `.claude/rules/api-style.md` with two top-level bullets and the user confirms the import
-- **THEN** `.bdk/rules/` holds `API-STYLE-1` and `API-STYLE-2` with `origin: import`, and `.claude/rules/bdk-generated.md` lists both
-
 ### Requirement: setup on Claude Code exports no adapters
 
 On Claude Code `/bdk:setup` SHALL NOT run `bdk export agents`: the adapters ship in the plugin's `agents/`, and a copy in the project would register each adapter twice.
@@ -477,7 +468,6 @@ It SHALL act on `next.action` of `attempt close`: `commit` runs `bdk commit <tas
 `/bdk:close` SHALL close the active Change through the kernel and never by hand:
 
 - it runs `bdk change close --dry-run`; on a refusal it follows `instead` (Requirement: Kernel refusals in a stage skill) and closes nothing;
-- it runs `bdk rules export --claude --check`, and on `policy/generated-drift` runs `bdk rules export --claude` and names the regenerated files, which the close commit does not stage, for the user to commit with the PR;
 - it runs `bdk change close`; a `policy/git-hook-failed` leaves the archive in the work tree, which the skill reports with the hook's output.
 
 It SHALL ask no question: the typed command, or a run that passed `gate:review`, is the consent. It SHALL propose no rule and route no `learning` entry: lessons stay in the archived ledger for the audit skill (T31). It SHALL never edit a project file (`disallowed-tools: Edit Write NotebookEdit`).
@@ -487,6 +477,11 @@ It SHALL ask no question: the typed command, or a run that passed `gate:review`,
 - **WHEN** the user types `/bdk:close` on a Change whose `gate:review` is done and no ticket is open
 - **THEN** `.bdk/changes/archive/<id>/` exists, the latest commit has the subject `chore(bdk): close <id>`, and the branch has no active Change
 
+#### Scenario: no rule projection at close
+
+- **WHEN** the content test reads `skills/stages/close/SKILL.md`
+- **THEN** it names neither `bdk rules export` nor `.claude/rules/`
+
 #### Scenario: open ticket
 
 - **WHEN** a ticket of the Change is open and the user types `/bdk:close`
@@ -494,7 +489,7 @@ It SHALL ask no question: the typed command, or a run that passed `gate:review`,
 
 ### Requirement: close reports the PR summary
 
-`/bdk:close` SHALL end with the `summary` of `bdk change close` verbatim, the gates passed by policy (`gatesByPolicy`), each named by its id such as `gate:review`, the archive path and the commit, the regenerated rule projection files when there are any, and the next step: open the PR with that summary. It SHALL NOT open the PR itself.
+`/bdk:close` SHALL end with the `summary` of `bdk change close` verbatim, the gates passed by policy (`gatesByPolicy`), each named by its id such as `gate:review`, the archive path and the commit, and the next step: open the PR with that summary. It SHALL NOT open the PR itself.
 
 #### Scenario: summary shown
 

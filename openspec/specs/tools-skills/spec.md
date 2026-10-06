@@ -119,9 +119,9 @@ Both modes SHALL produce the same document shape, which a reference file of the 
   - With an active Change, it records the lesson as `bdk log add learning` with refs and `--applies`. The audit reads it later.
   - Without an active Change, it applies the same admission test, proposes one rule, and adopts it with `bdk rules accept` once the user agrees.
   - A lesson that fails the test is reported as such, together with where it belongs instead: code, a doc comment, documentation or a spec.
-- **`check`**: it runs `bdk rules check --json` and `bdk rules export --claude --check --json`, and reports each problem with the command that repairs it.
+- **`check`**: it runs `bdk rules check --json` and reports each problem with the file that repairs it.
 
-The skill SHALL create a rule only through `bdk rules accept`, never by writing a rule file. It SHALL remove a rule only after the user accepted the removal. A removal sets `removed` in the rule's frontmatter and keeps the body as a tombstone. Afterwards the skill runs `bdk rules check` and `bdk rules export --claude`. It SHALL NOT write `.claude/rules/` by hand.
+The skill SHALL create a rule only through `bdk rules accept`, never by writing a rule file. It SHALL remove a rule only after the user accepted the removal. A removal sets `removed` in the rule's frontmatter and keeps the body as a tombstone. Afterwards the skill runs `bdk rules check`. It SHALL NOT write or name `.claude/rules/`: that directory belongs to the project, not to BDK.
 
 #### Scenario: audit adopts through the kernel
 
@@ -141,7 +141,7 @@ The skill SHALL create a rule only through `bdk rules accept`, never by writing 
 #### Scenario: removal leaves a tombstone
 
 - **WHEN** the content test reads the rules skill
-- **THEN** a removal sets `removed` and keeps the body, and is followed by `bdk rules check` and `bdk rules export --claude`
+- **THEN** a removal sets `removed` and keeps the body, and is followed by `bdk rules check`, and the skill names neither `bdk rules export` nor `.claude/rules/`
 
 ### Requirement: adr records one decision as MADR
 
@@ -168,7 +168,7 @@ It SHALL ask only for what neither input gives: the status, and missing options 
 
 - run `bdk doctor --fix --json` for the repairs that need no system change;
 - run `bdk doctor --json` again;
-- take each remaining finding in turn. A repair that is a kernel or BDK command (`bdk rebuild`, `bdk rules import`, `bdk rules export --claude`, `/bdk:setup`) is offered and run on the user's yes. A repair that changes the system (a Node install or switch, a `git restore` of a spec) is shown with its exact command and run only after the user agrees to that one command.
+- take each remaining finding in turn. A repair that is a kernel or BDK command (`bdk rebuild`, `bdk rules check`, `/bdk:setup`) is offered and run on the user's yes. A repair that changes the system (a Node install or switch, a `git restore` of a spec) is shown with its exact command and run only after the user agrees to that one command.
 
 It SHALL end with the findings left and why. It SHALL never install software without the user's agreement for that step.
 

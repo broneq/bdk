@@ -88,7 +88,7 @@ Invoke with `/bdk:<skill-name>`:
 
 | Skill                | Description                                                                                                                                                                                        |
 | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/bdk:setup`         | Prepare a project for BDK: `.bdk/settings.yaml` with its test, lint and build commands, Lavish, hand-written rules, migration from BDK 2. Run once per project or after cloning                    |
+| `/bdk:setup`         | Prepare a project for BDK: `.bdk/settings.yaml` with its test, lint and build commands, Lavish, migration from BDK 2. Run once per project or after cloning                                        |
 | `/bdk:change`        | Open a Change from an intent, or show, list, resume, park or take over one, and name the command to type next                                                                                      |
 | `/bdk:run`           | Carry a Change through the stages for you, from an intent to the close; records each choice for the next gate; `--auto` passes every ready gate                                                    |
 | `/bdk:design`        | Design the active Change with you: two or more approaches with Mermaid and self-critique, decisions in the ledger, verified, ending at the design gate                                             |
@@ -102,7 +102,7 @@ Invoke with `/bdk:<skill-name>`:
 | `/bdk:commit`        | Commit your own changes with a Conventional Commits message written from the diff and the project's convention                                                                                     |
 | `/bdk:adr`           | Record one architecture decision as MADR under `docs/adr/`                                                                                                                                         |
 | `/bdk:docs`          | Write architecture documentation for a code path, or refresh an existing document against the code                                                                                                 |
-| `/bdk:rules`         | Audit recurring lessons into project rules, capture one lesson, or check the rule files and their `.claude/rules/` projection                                                                      |
+| `/bdk:rules`         | Audit recurring lessons into project rules, capture one lesson, or check the rule files under `.bdk/rules/`                                                                                        |
 | `/bdk:doctor`        | Diagnose the BDK installation with `bdk doctor`, apply the safe repairs, and walk the rest with you                                                                                                |
 | `/bdk:diagnose`      | Analyze one session from its run journal, report and transcript slices into a cited analysis. By hand only                                                                                         |
 | `/bdk:bdk-cli`       | Point the agent at the kernel CLI and its `--help`                                                                                                                                                 |

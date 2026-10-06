@@ -510,20 +510,20 @@ Plan index: `schema`, `generated: true`, `parts` (array of `{id, title, depends-
 
 A rule file `.bdk/rules/<ruleId>.md` SHALL carry the frontmatter below and the rule text as its body (R-rule-id, T5, T02 decision Q-5).
 
-| Field      | Type                                           | Req.                   | Meaning                                                                                                                                 |
-| ---------- | ---------------------------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `schema`   | integer                                        | yes                    |                                                                                                                                         |
-| `id`       | `[A-Z][A-Z0-9]*(-[A-Z][A-Z0-9]*)*-[1-9][0-9]*` | yes                    | Equals the file name without `.md` (`API-4`, `BDK-SEC-2`); `BDK-` only in the bundle.                                                   |
-| `kind`     | `house \| knowledge`                           | yes                    | `house`: a choice among valid alternatives; `knowledge`: a fact that corrects the model (T5, `rule-pack`, What a rule is).              |
-| `applies`  | array of globs                                 | no                     | Absent: every file.                                                                                                                     |
-| `roles`    | array of role names                            | no                     | Absent: every role.                                                                                                                     |
-| `severity` | `critical \| high \| medium \| low`            | yes                    |                                                                                                                                         |
-| `origin`   | `bdk \| import \| user \| <changeId>/<id>`     | yes                    | The shipped pack, `rules import`, `rules accept` without `--from`, or the qualified entry or attempt finding the rule was adopted from. |
-| `evidence` | array of qualified ids                         | no                     | Every `--from` ref of `rules accept`.                                                                                                   |
-| `since`    | date `yyyy-mm-dd`                              | yes                    |                                                                                                                                         |
-| `source`   | string                                         | when `kind: knowledge` | Where the stated fact comes from (T5); unrelated to provenance `source`.                                                                |
-| `verified` | date                                           | when `kind: knowledge` |                                                                                                                                         |
-| `removed`  | string                                         | no                     | Tombstone reason; the id is never reused.                                                                                               |
+| Field      | Type                                           | Req.                   | Meaning                                                                                                                    |
+| ---------- | ---------------------------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `schema`   | integer                                        | yes                    |                                                                                                                            |
+| `id`       | `[A-Z][A-Z0-9]*(-[A-Z][A-Z0-9]*)*-[1-9][0-9]*` | yes                    | Equals the file name without `.md` (`API-4`, `BDK-SEC-2`); `BDK-` only in the bundle.                                      |
+| `kind`     | `house \| knowledge`                           | yes                    | `house`: a choice among valid alternatives; `knowledge`: a fact that corrects the model (T5, `rule-pack`, What a rule is). |
+| `applies`  | array of globs                                 | no                     | Absent: every file.                                                                                                        |
+| `roles`    | array of role names                            | no                     | Absent: every role.                                                                                                        |
+| `severity` | `critical \| high \| medium \| low`            | yes                    |                                                                                                                            |
+| `origin`   | `bdk \| user \| <changeId>/<id>`               | yes                    | The shipped pack, `rules accept` without `--from`, or the qualified entry or attempt finding the rule was adopted from.    |
+| `evidence` | array of qualified ids                         | no                     | Every `--from` ref of `rules accept`.                                                                                      |
+| `since`    | date `yyyy-mm-dd`                              | yes                    |                                                                                                                            |
+| `source`   | string                                         | when `kind: knowledge` | Where the stated fact comes from (T5); unrelated to provenance `source`.                                                   |
+| `verified` | date                                           | when `kind: knowledge` |                                                                                                                            |
+| `removed`  | string                                         | no                     | Tombstone reason; the id is never reused.                                                                                  |
 
 The bundle's pack lives under `rules/` of the plugin with the same frontmatter and `origin: bdk` (`rule-pack`, Pack layout); `.bdk/rules/` holds the project's rules only. Two sessions that accept a rule with the same number in parallel create the same path; that add/add conflict is the permitted "same rule written two ways" conflict, and the later Change renumbers (numbers are never reused).
 
@@ -541,6 +541,11 @@ The bundle's pack lives under `rules/` of the plugin with the same frontmatter a
 
 - **WHEN** `rules accept` writes a rule with `--from 2026-09-25-passwordless-login/L-m2x9v7qa`
 - **THEN** its `origin` is that ref and `evidence` lists it
+
+#### Scenario: origin import is refused
+
+- **WHEN** `.bdk/rules/API-1.md` carries `origin: import` and `bdk rules check` runs
+- **THEN** validation fails naming `origin`, and the exit code is 2 with `rule: policy/rule-format`
 
 ### Requirement: Derived state and mutation
 
@@ -613,7 +618,7 @@ Files:
 | any file (migration)              | `rebuild`, `change takeover`                                                                                                                                                                              | kernel                  |
 | the Change directory (archive)    | `change close`, which writes `dispatch/pruned.md` and `reports/pruned.md` through the prune function unless `archive.keep-evidence`, then moves the directory to `.bdk/changes/archive/<changeId>/` (T30) | kernel                  |
 | `.bdk/specs/<capability>/spec.md` | `spec merge`, `change close` (through the merge); never a host file tool (V1-7; T24 guards it)                                                                                                            | kernel                  |
-| `.bdk/rules/<ruleId>.md`          | `rules accept`, `rules import`                                                                                                                                                                            | kernel                  |
+| `.bdk/rules/<ruleId>.md`          | `rules accept`                                                                                                                                                                                            | kernel                  |
 
 Entry types (`source` values each writer stamps):
 
@@ -1113,14 +1118,14 @@ A reader SHALL treat one blank line directly after the closing `---` line as par
 
 #### Scenario: every kernel Markdown kind is Prettier-stable
 
-- **WHEN** the contract test writes through the bundle a rule (`rules accept`), an imported rule (`rules import`), a ledger entry with a body and one without, the profile assumption and `change.md` of `change new`, the rules projection (`rules export --claude`), a generated plan index and a merged living spec, and formats each with the repository's pinned Prettier and default options
+- **WHEN** the contract test writes through the bundle a rule (`rules accept`), a ledger entry with a body and one without, the profile assumption and `change.md` of `change new`, a generated plan index and a merged living spec, and formats each with the repository's pinned Prettier and default options
 - **THEN** every formatted text equals the file's bytes
 
 ### Requirement: Formatter guard
 
 The kernel SHALL own `.bdk/.prettierrc`, whose content is exactly the line `{ "requirePragma": true, "overrides": [{ "files": "*", "options": { "parser": "yaml" } }] }` and a newline. Prettier resolves the nearest configuration file of each file it formats and does not read a `.prettierignore` below its working directory, so this file governs every file under `.bdk/`. `requirePragma` makes Prettier skip a file without an `@format` pragma; JSON has no pragma support, so the override hands every file to the `yaml` parser, which has one. Together they keep Prettier off every file under `.bdk/` (Markdown, YAML, JSON evidence captures and any other kind), whether it runs over the whole tree, on explicit paths (lint-staged, pre-commit hooks) or from a subdirectory. The file is committed; it is not one of the `Ignored paths`. The guard is in force when the file is a mapping that sets `requirePragma: true` and has an override whose `files` is or contains `*` and whose `options.parser` is `yaml`.
 
-Before their first write, `change new`, `config set`, `rules accept` and `rules import` create the file when it is absent. A file that exists is never changed, whatever it holds: the kernel does not take over a configuration the user wrote. `bdk hooks session-start` warns when the guard is not in force (`kernel-cli/hooks`, `bdk hooks session-start`) and never writes it. A refused command writes no guard, as it writes no other file.
+Before their first write, `change new`, `config set` and `rules accept` create the file when it is absent. A file that exists is never changed, whatever it holds: the kernel does not take over a configuration the user wrote. `bdk hooks session-start` warns when the guard is not in force (`kernel-cli/hooks`, `bdk hooks session-start`) and never writes it. A refused command writes no guard, as it writes no other file.
 
 #### Scenario: fresh repository
 

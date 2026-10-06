@@ -21,10 +21,8 @@ that move.
      [below](#the-v2-ignore-rule));
    - offers the values of `.bdk/settings.json` as detected settings, which you
      confirm like any detection (see [Settings](#settings));
-   - imports your hand-written rules from `.claude/rules/` into `.bdk/rules/`,
-     after showing you what the import would write;
    - deletes the v2 paths, after you confirm (see [Artifacts](#artifacts)).
-4. **Commit** `.bdk/settings.yaml`, `.bdk/rules/` and `.gitignore`.
+4. **Commit** `.bdk/settings.yaml` and `.gitignore`.
 5. **Start working in Changes**: `/bdk:change "<what you want to build>"`. See
    [Your first feature](first-feature.md).
 
@@ -136,5 +134,6 @@ The BDK 3 layout is on [Artifacts](../reference/artifacts.md).
 - **v2 settings without a BDK 3 key**, listed above. Setup reports each one.
 - **Quality and language rule overrides.** Setup names their replacement but
   writes nothing; add the rules you still want with `/bdk:rules`.
-- **Hand-written rules the import skips.** The import reports each skipped
-  file with its reason and leaves it in place.
+- **Hand-written rules in `.claude/rules/`.** They stay where they are and
+  keep loading in Claude Code sessions. BDK does not read them; adopt a rule
+  for BDK agents with `/bdk:rules capture` or `bdk rules accept`.

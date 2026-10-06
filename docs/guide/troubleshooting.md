@@ -24,7 +24,7 @@ When a run went wrong and no message explains why, analyze the session: see [Dia
 { "requirePragma": true, "overrides": [{ "files": "*", "options": { "parser": "yaml" } }] }
 ```
 
-The next `bdk change new`, `bdk config set`, `bdk rules accept` or `bdk rules import` writes it too, if the file is absent. Restore files Prettier already rewrote as described in the previous section.
+The next `bdk change new`, `bdk config set` or `bdk rules accept` writes it too, if the file is absent. Restore files Prettier already rewrote as described in the previous section.
 
 ## BDK files ignored by git
 

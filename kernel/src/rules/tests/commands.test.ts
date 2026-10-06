@@ -1,6 +1,6 @@
 // The rules verbs that write or report on project rules (`kernel-cli/rules`;
-// design D-6, D-8, D-9 of v3-t31) on a memory store with the in-memory index:
-// `import`, `accept`, `prune` and the text mode of `explain` and `export`.
+// design D-6, D-9 of v3-t31) on a memory store with the in-memory index:
+// `accept`, `prune` and the text mode of `explain`.
 import { describe, expect, it } from "vitest";
 
 import { AUTHOR, CHANGE, fakeGit, repository, ROOT, runBdk } from "../../log/tests/support.ts";
@@ -10,7 +10,7 @@ import { fixedClock } from "../../shared/clock/index.ts";
 import { memoryIndex, memoryRegistry, writeDocument } from "../../shared/store/index.ts";
 import type { Store } from "../../shared/store/index.ts";
 import { rulesRegistrations } from "../index.ts";
-import { rulesAcceptOutput, rulesImportOutput, rulesPruneOutput } from "../schema/outputs.ts";
+import { rulesAcceptOutput, rulesPruneOutput } from "../schema/outputs.ts";
 
 const PLUGIN = "/plugin";
 const RULES = `${ROOT}/.bdk/rules`;
@@ -53,118 +53,11 @@ function refusedWith(result: { code: number; stdout: string }, code: number, rul
   expect(result.stdout).toContain(rule);
 }
 
-describe("rules import", () => {
-  function hostRules(store: Store): void {
-    store.write(
-      `${HOST}/api.md`,
-      '---\npaths: "src/api/**"\n---\n\n- Validate input.\n- Log ids.\n',
-    );
-    store.write(`${HOST}/naming.md`, "- Name things plainly.\n");
-    store.write(`${HOST}/owned.md`, "---\nid: X-1\n---\n\n- Already a rule.\n");
-    store.write(`${HOST}/empty.md`, "\n");
-    store.write(`${HOST}/broken.md`, "---\npaths: [\n---\n\n- A rule.\n");
-    store.write(`${HOST}/9.md`, "- No prefix from this name.\n");
-  }
-
-  it("writes one rule per bullet, applies from paths:, and skips what is no rule", async () => {
-    const store = repository();
-    hostRules(store);
-    const result = await run(store, ["rules", "import", "--json"]);
-    expect(result.code, result.stdout).toBe(0);
-    const report = rulesImportOutput.parse(result.json);
-    expect(report.imported).toStrictEqual([
-      { from: ".claude/rules/api.md", rules: ["API-1", "API-2"], applies: ["src/api/**"] },
-      { from: ".claude/rules/naming.md", rules: ["NAMING-1"] },
-    ]);
-    expect(report.skipped.map((file) => [file.from, file.why.split(":")[0]])).toStrictEqual([
-      [".claude/rules/9.md", "no project prefix from 9.md; rerun with --prefix"],
-      [".claude/rules/broken.md", "unreadable frontmatter"],
-      [".claude/rules/empty.md", "empty"],
-      [".claude/rules/owned.md", "already carries an id"],
-    ]);
-    expect(report.projection.length).toBeGreaterThan(0);
-    expect(store.read(`${RULES}/API-2.md`)).toContain("Log ids.");
-    expect(store.read(`${RULES}/API-1.md`)).toContain("origin: import");
-  });
-
-  it("numbers after the prefix's highest file, a tombstone included", async () => {
-    const store = repository();
-    store.write(`${RULES}/API-1.md`, projectRule("API-1"));
-    store.write(
-      `${RULES}/API-4.md`,
-      "---\nschema: 1\nid: API-4\nremoved: merged into API-1\n---\n",
-    );
-    store.write(`${HOST}/api.md`, "- Validate input.\n");
-    const result = await run(store, ["rules", "import", "--json"]);
-    expect(rulesImportOutput.parse(result.json).imported[0]?.rules).toStrictEqual(["API-5"]);
-  });
-
-  it("prints what it would import on --dry-run and writes nothing", async () => {
-    const store = repository();
-    store.write(`${HOST}/api.md`, "- Validate input.\n");
-    const result = await run(store, ["rules", "import", "--dry-run"]);
-    expect(result.code, result.stdout).toBe(0);
-    expect(result.stdout).toBe("would import .claude/rules/api.md: API-1\n");
-    expect(store.exists(`${RULES}/API-1.md`)).toBe(false);
-  });
-
-  it("prints the imports, the skips, the projection and the removal hint", async () => {
-    const store = repository();
-    store.write(`${HOST}/api.md`, '---\npaths: ["src/**"]\n---\n\n- Validate input.\n');
-    store.write(`${HOST}/empty.md`, "\n");
-    const lines = (await run(store, ["rules", "import"])).stdout.split("\n");
-    expect(lines[0]).toBe("imported .claude/rules/api.md: API-1 (applies: src/**)");
-    expect(lines[1]).toBe("skipped .claude/rules/empty.md: empty");
-    expect(lines.filter((line) => line.startsWith("regenerated "))).not.toHaveLength(0);
-    expect(lines).toContain(
-      "Remove the imported files: the generated projection now carries their rules.",
-    );
-  });
-
-  it("imports one file under --prefix", async () => {
-    const store = repository();
-    store.write(`${ROOT}/docs/style.md`, "- Keep lines short.\n");
-    const result = await run(store, ["rules", "import", "docs/style.md", "--prefix", "STYLE"]);
-    expect(result.stdout.split("\n")[0]).toBe("imported docs/style.md: STYLE-1");
-  });
-
-  it("says so when there is nothing to import", async () => {
-    const store = repository();
-    store.write(`${HOST}/.keep`, "");
-    expect((await run(store, ["rules", "import"])).stdout).toBe("Nothing to import.\n");
-  });
-
-  it("refuses a missing directory, a BDK prefix and --prefix over several files", async () => {
-    const store = repository();
-    refusedWith(await run(store, ["rules", "import", "nope/"]), 3, "input/not-found");
-    store.write(`${HOST}/a.md`, "- One.\n");
-    store.write(`${HOST}/b.md`, "- Two.\n");
-    refusedWith(
-      await run(store, ["rules", "import", ".claude/rules/a.md", "--prefix", "BDK"]),
-      2,
-      "policy/rule-format",
-    );
-    refusedWith(
-      await run(store, ["rules", "import", "--prefix", "API"]),
-      3,
-      "input/invalid-argument",
-    );
-  });
-
-  it("refuses while the prefix already holds a duplicate id, writing nothing", async () => {
-    const store = repository();
-    store.write(`${RULES}/API-1.md`, projectRule("API-1"));
-    store.write(`${RULES}/api-copy.md`, projectRule("API-1"));
-    store.write(`${HOST}/api.md`, "- Validate input.\n");
-    refusedWith(await run(store, ["rules", "import"]), 2, "policy/duplicate-rule-id");
-    expect(store.exists(`${RULES}/API-2.md`)).toBe(false);
-  });
-});
-
 describe("rules accept", () => {
-  it("writes the next number with origin user and regenerates the projection", async () => {
+  it("writes the next number with origin user and leaves .claude/rules/ alone", async () => {
     const store = repository();
     store.write(`${RULES}/API-2.md`, projectRule("API-2"));
+    store.write(`${HOST}/naming.md`, "- Name booleans as questions.\n");
     const result = await run(store, [
       "rules",
       "accept",
@@ -182,7 +75,9 @@ describe("rules accept", () => {
     expect(result.code, result.stdout).toBe(0);
     const report = rulesAcceptOutput.parse(result.json);
     expect(report).toMatchObject({ id: "API-3", path: ".bdk/rules/API-3.md", origin: "user" });
-    expect(report.projection.length).toBeGreaterThan(0);
+    expect(result.json).not.toHaveProperty("projection");
+    expect(store.list(HOST)).toStrictEqual(["naming.md"]);
+    expect(store.read(`${HOST}/naming.md`)).toBe("- Name booleans as questions.\n");
     const text = store.read(`${RULES}/API-3.md`) ?? "";
     expect(text).toContain("severity: high");
     expect(text).toContain("since: 2026-09-30");
@@ -385,15 +280,5 @@ describe("text mode", () => {
     store.write(`${ROOT}/src/a.ts`, "");
     const result = await run(store, ["rules", "explain", "src/a.ts"]);
     expect(result.stdout).toBe("src/a.ts (implementer)\nNo rule applies.\n");
-  });
-
-  it("rules export --claude lists each projection file and whether it changed", async () => {
-    const store = repository();
-    store.write(`${RULES}/API-1.md`, projectRule("API-1", "applies: [src/api/**]\n"));
-    const first = await run(store, ["rules", "export", "--claude"]);
-    expect(first.code, first.stdout).toBe(0);
-    expect(first.stdout).toMatch(/: 1 rules, changed\n$/);
-    const again = await run(store, ["rules", "export", "--claude"]);
-    expect(again.stdout).toMatch(/: 1 rules\n$/);
   });
 });

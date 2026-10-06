@@ -29,7 +29,7 @@ Run `bdk doctor --fix --json`. It applies the repairs that need no system change
 
 Sort the remaining findings, `fail` before `warn`, and take each by the kind of its `repair`:
 
-- **A `bdk` command or a `/bdk:` skill** (for example `bdk rules import` or `/bdk:setup`): it changes only BDK's own files in this project. Ask with `AskUserQuestion`, showing the summary and the repair, and run it on a yes.
+- **A `bdk` command or a `/bdk:` skill** (for example `bdk rebuild` or `/bdk:setup`): it changes only BDK's own files in this project. Ask with `AskUserQuestion`, showing the summary and the repair, and run it on a yes.
 - **A system change**: anything else, such as an install line, a version manager, or a change outside the repository. Show the exact command and what it changes. Run nothing yourself: a system change is made only after the user agrees to that exact command, and they run it in their own shell (`! <command>` in the prompt).
 
 A finding the user declines stays in the report as declined.

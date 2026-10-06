@@ -86,29 +86,7 @@ async function ignoreFinding(git: Git, root: string): Promise<Finding | undefine
 }
 
 function ruleFindings(input: DoctorInput, root: string): Finding[] {
-  const health = ruleHealth(input, root, input.globalDir);
-  if (health === undefined) return [];
-  const findings: Finding[] = health.withoutId.map((file) => ({
-    id: "rule-without-id",
-    level: "warn",
-    summary: `${file} holds rules without an id`,
-    repair: "bdk rules import",
-  }));
-  if (health.invalid !== undefined) {
-    findings.push({
-      id: "rules-invalid",
-      level: "fail",
-      summary: health.invalid,
-      repair: "bdk rules check",
-    });
-  }
-  if (health.drifted.length > 0) {
-    findings.push({
-      id: "projection-outdated",
-      level: "warn",
-      summary: `${health.drifted.join(" and ")} differ${health.drifted.length === 1 ? "s" : ""} from the rules under .bdk/rules/`,
-      repair: "bdk rules export --claude",
-    });
-  }
-  return findings;
+  const invalid = ruleHealth(input, root, input.globalDir);
+  if (invalid === undefined) return [];
+  return [{ id: "rules-invalid", level: "fail", summary: invalid, repair: "bdk rules check" }];
 }

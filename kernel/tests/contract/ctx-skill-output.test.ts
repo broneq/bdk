@@ -70,7 +70,7 @@ const input = {
     ...pluginFiles(),
     [`${PROJECT}/.bdk/settings.yaml`]: SETTINGS,
     [`${PROJECT}/.bdk/rules/NAMING-1.md`]: rule("NAMING-1", "user"),
-    [`${PROJECT}/.bdk/rules/API-1.md`]: rule("API-1", "import", "applies: [src/api/**]\n"),
+    [`${PROJECT}/.bdk/rules/API-1.md`]: rule("API-1", "user", "applies: [src/api/**]\n"),
   }),
   pluginRoot: PLUGIN,
   settings: registry,

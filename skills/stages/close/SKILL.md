@@ -1,6 +1,6 @@
 ---
 name: close
-description: Closes the reviewed BDK Change - merges its spec deltas, archives it in one commit, regenerates drifted rule files and reports the PR summary. Use when a Change waits on /bdk:close after review.
+description: Closes the reviewed BDK Change - merges its spec deltas, archives it in one commit and reports the PR summary. Use when a Change waits on /bdk:close after review.
 allowed-tools: Bash(bdk *) Bash(echo *) Bash(git log -1 --oneline) Read
 disallowed-tools: Edit Write NotebookEdit
 ---
@@ -13,7 +13,7 @@ If no "BDK context: close" heading appears above, run `bdk ctx skill close` firs
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md).
 
-Closing ends a Change: the kernel merges its spec deltas into the living specs, routes its lessons, archives it and commits the archive. The kernel does all of it in one command; this skill checks that the close can go through, keeps the rule files current and hands the user the PR summary. Add `--json` to every command whose output you act on.
+Closing ends a Change: the kernel merges its spec deltas into the living specs, routes its lessons, archives it and commits the archive. The kernel does all of it in one command; this skill checks that the close can go through and hands the user the PR summary. Add `--json` to every command whose output you act on.
 
 Done when `bdk change close` has archived the Change, or a refusal you cannot resolve is reported, and you have given the report of "Finish". Ask the user nothing: the typed `/bdk:close`, or the run that passed `gate:review`, is the consent. You never edit a file, and you propose no rule: the lessons stay in the archived ledger.
 
@@ -21,8 +21,7 @@ Done when `bdk change close` has archived the Change, or a refusal you cannot re
 
 1. Run `bdk next --json`. When it returns a node of an earlier stage, the Change is not ready to close: report that node and the command it names, and close nothing.
 2. Run `bdk change close --dry-run --json`. It writes nothing and refuses what the real close would refuse, such as `policy/ticket-open` for a ticket still open. On a refusal, follow "When the kernel refuses" and close nothing.
-3. Run `bdk rules export --claude --check --json`. On `policy/generated-drift`, run `bdk rules export --claude --json` and keep the `path` of each file with `changed: true`. The close commit stages only `.bdk/`, so these files go into the PR as the user's own commit.
-4. Run `bdk change close --json`, then `git log -1 --oneline` for the close commit.
+3. Run `bdk change close --json`, then `git log -1 --oneline` for the close commit.
 
 ## When the kernel refuses
 
@@ -38,7 +37,6 @@ Report from the kernel's output only:
 - the `summary` of `bdk change close`, verbatim: it is the PR description;
 - the gates passed by policy, from `gatesByPolicy`, each by its id (`gate:review`), or that every gate was passed by the user;
 - the archive path from `archivedTo`, and the close commit;
-- the regenerated rule files, when step 3 wrote any, for the user to commit;
 - the next step: open the PR with this summary. You do not open the PR: publishing it is the user's step.
 
 When `/bdk:run` started this skill, the report is the last part of the run.
