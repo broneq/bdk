@@ -170,7 +170,7 @@ A stage skill SHALL ask the user through the `Asking the user` section of its co
 
 `/bdk:setup` is the exception: it asks every question, simple or rich, on its setup page (Requirement: setup asks on one page), since its questions are answered together before anything is written.
 
-Inside a run (Requirement: run decides instead of asking) the stage skill asks nothing: it takes the recommended option and records the choice as the run's decision. Either way the recommended option comes first with the tradeoff of each option, and a decision the user did not answer stays open. When the Lavish page fails (non-zero exit, a reply that does not parse, a session the user ended), the skill SHALL ask the same decision with `AskUserQuestion` and SHALL NOT reopen a session the user ended.
+Inside a run (Requirement: run decides instead of asking) the stage skill asks nothing: it takes the recommended option and records the choice as the run's decision. Either way the recommended option comes first with the tradeoff of each option, and a decision the user did not answer stays open. Each ask through Lavish SHALL write its page to a file name under `.lavish/` that no earlier ask of the project used, since `lavish-axi` never reopens a path whose session the user ended, even after the file is written again. When the Lavish page fails (non-zero exit, a reply that does not parse, a session the user ended), the skill SHALL ask the same decision with `AskUserQuestion` and SHALL NOT reopen a session the user ended.
 
 #### Scenario: branch question with Lavish on
 
@@ -181,6 +181,11 @@ Inside a run (Requirement: run decides instead of asking) the stage skill asks n
 
 - **WHEN** `features.lavish` is off and `/bdk:design` reaches a choice between two approaches
 - **THEN** both approaches with their diagrams are printed before one `AskUserQuestion` call whose first option is the recommended approach
+
+#### Scenario: a second ask in one Change
+
+- **WHEN** the user ended the Lavish session of a design's approaches and the design asks again through Lavish
+- **THEN** the new page is written to a file name under `.lavish/` that differs from the first page's, and `lavish-axi` opens it
 
 ### Requirement: design writes the design the kernel asks for
 
@@ -660,7 +665,7 @@ The Finish report of `/bdk:setup` SHALL name every key its context lists under `
 
 A section the page leaves unanswered, a non-zero exit of `lavish-axi`, a reply that does not parse, and every question when Lavish is off or declined, SHALL be asked in the terminal with one `AskUserQuestion` call per section, in the page's order; a list longer than the four options a question takes SHALL be split into multi-select questions of at most four. An answer the skill cannot apply as given, such as a command no tool of the project runs, SHALL be asked again in the terminal with the reason. The skill SHALL NOT reopen a session the user ended.
 
-After the answers, the skill SHALL write in this order: the v2 ignore rule and the v2 files, the commands, the derived values, the asked keys, `features.lavish`, and the exclusions with their lint run and commit.
+After the answers, the skill SHALL write them, with two orderings: an accepted replacement of the v2 ignore rule comes before the first `bdk config set`, since git would otherwise ignore `.bdk/settings.yaml`; and the lint run that looks for paths under `.bdk/` comes after the commands and the accepted exclusions are written. The other writes have no order.
 
 #### Scenario: one page
 
@@ -675,4 +680,4 @@ After the answers, the skill SHALL write in this order: the v2 ignore rule and t
 #### Scenario: the page's contract
 
 - **WHEN** the content test reads `setup-page.html` and `SKILL.md`
-- **THEN** the page's example data holds every section with the six default risks, each section queues one prompt, and the skill's sections that detect come before "Ask", which names the answer of every section, and "Apply" follows it
+- **THEN** the page's example data holds every section with the six default risks, each section queues one prompt, and the skill's sections that detect come before "Ask", which names the answer of every section, and "Apply" follows it, names both orderings and holds no numbered list
