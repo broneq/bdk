@@ -66,7 +66,7 @@
 
 ## 10. Acceptance
 
-- [ ] 10.1 Run `pnpm test:unit`, `pnpm test:e2e`, `pnpm test:contract`, `pnpm lint`, `pnpm skill-check` and `pnpm docs:build`; verify all pass, then run `pnpm test:perf` in a Linux container (design D11) and record its result in the PR description.
-- [ ] 10.2 Read `docs/V3-ACCEPTANCE.md` and verify every item `S1`-`S8`, `S-DISPATCH` and `S-EVALS` and every `AC`, `TSH` and `EC` item has evidence, and every `open` row names an issue.
-- [ ] 10.3 On a clean project, install `bdk-craft` alone and run its `tdd` skill once; verify it runs without `bdk` and record the result in the PR description.
+- [x] 10.1 Run `pnpm test:unit`, `pnpm test:e2e`, `pnpm test:contract`, `pnpm lint`, `pnpm skill-check` and `pnpm docs:build`; verify all pass, then run `pnpm test:perf` in a Linux container (design D11) and record its result in the PR description.
+- [x] 10.2 Read `docs/V3-ACCEPTANCE.md` and verify every item `S1`-`S8`, `S-DISPATCH` and `S-EVALS` and every `AC`, `TSH` and `EC` item has evidence, and every `open` row names an issue.
+- [x] 10.3 On a clean project, install `bdk-craft` alone and run its `tdd` skill once; verify it runs without `bdk` and record the result in the PR description.
 - [ ] 10.4 Open the PR into `staging/v3` and verify CI is green; then run `openspec validate v3-t50-acceptance-docs --strict` and verify it passes.
