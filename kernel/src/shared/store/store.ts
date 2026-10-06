@@ -35,7 +35,11 @@ export interface Store {
   write(path: string, content: string): void;
   /** `write` for bytes: evidence files that need not be text. */
   writeBytes(path: string, content: Uint8Array): void;
-  /** Direct children, sorted, directories with a trailing `/`; [] when absent. */
+  /**
+   * Direct children, sorted, directories with a trailing `/`; [] when absent.
+   * The temp file of a `write` still in flight (in another kernel process) is
+   * never listed, so a reader cannot take it for a document.
+   */
   list(dir: string): string[];
   /** True for a file or a directory. */
   exists(path: string): boolean;
@@ -83,6 +87,7 @@ export function fileStore(): Store {
       try {
         return readdirSync(dir, { withFileTypes: true })
           .map((entry) => (entry.isDirectory() ? `${entry.name}/` : entry.name))
+          .filter((name) => !TEMP_FILE.test(name))
           .sort();
       } catch (error) {
         if (isCode(error, "ENOENT") || isCode(error, "ENOTDIR")) return [];
@@ -126,6 +131,9 @@ export function fileStore(): Store {
     },
   };
 }
+
+/** The name `replaceFile` gives its temp file: the target's, a random suffix, `.tmp`. */
+const TEMP_FILE = /\.[0-9a-f]{8}\.tmp$/;
 
 /** Replaces the file in one step (temp file, then rename), creating parents. */
 function replaceFile(path: string, content: string | Uint8Array): void {
@@ -204,7 +212,7 @@ export function memoryStore(initial: Readonly<Record<string, string>> = {}): Sto
           .filter((path) => path !== parent && dirname(path) === parent)
           .map((path) => `${path.slice(parent.length + 1)}/`),
       ];
-      return names.sort();
+      return names.filter((name) => !TEMP_FILE.test(name)).sort();
     },
     exists: (path) => files.has(resolve(path)) || dirs.has(resolve(path)),
     isDirectory: (path) => dirs.has(resolve(path)),

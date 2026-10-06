@@ -94,6 +94,11 @@ describe.each(implementations)("%s store", (_, make) => {
     expect(store.list(join(root, "nowhere"))).toStrictEqual([]);
   });
 
+  it("lists no temp file of a write still in flight in another process", () => {
+    const { root, store } = open({ "log/a.md": "", "log/b.md.0f3a9c7e.tmp": "" });
+    expect(store.list(join(root, "log"))).toStrictEqual(["a.md"]);
+  });
+
   it("knows files and directories, including empty ones", () => {
     const { root, store } = open({ "f.md": "", "d/": "" });
     expect(store.exists(join(root, "f.md"))).toBe(true);
