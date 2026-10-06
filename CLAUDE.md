@@ -38,11 +38,22 @@ openspec/specs/          - living specs of BDK v3 (kernel-cli, kernel-architectu
 - The conversation language does not change this. When the user writes in another language, reply in that language, but write files in English.
 - Exception: `docs/v3/` is a temporary archive of v3 design-session material and stays as written. Do not translate it.
 
-## v3 Work Tracking
+## SDLC
 
-- Roadmap: `docs/V3-IMPLEMENTATION-PLAN.md`, which also holds the scope of the tasks it already lists. A task added later (T43 onward) keeps its scope (Goal, Scope, Input, Acceptance signal, To resolve in the spec, Dependencies) in its GitHub issue body, not in the plan. Status: one GitHub issue per task `Tnn` in the `v3.0` milestone, with "blocked by" links for dependencies. Board: https://github.com/users/broneq/projects/1 (set `Status` to In progress when starting a task).
-- Pick the next task from issues whose blockers are all closed. Each task runs as an OpenSpec Change `v3-tnn-<slug>` (lowercase: OpenSpec rejects capitals) on a branch `v3/Tnn-<slug>` and ends with a PR into `staging/v3`. Closing keywords only fire on the default branch, so after the merge close the issue with `gh issue close N -c "Done in #PR"`.
-- Start a task: `/opsx:propose v3-tnn-<slug>` (or `/opsx:new` + `/opsx:continue` to review artifacts one at a time), naming the task ID and issue. Then `/opsx:apply`, `/opsx:verify`, `/opsx:archive`. Project context and artifact rules: `openspec/config.yaml`.
+Every piece of work is a GitHub issue, an OpenSpec Change and a PR into `staging/v3`, in this order.
+
+- **Create.** A new issue always goes onto the board and into the current milestone, unless the user says otherwise: `gh issue create --title "..." --body-file <file> --milestone v3.0 --project "BDK v3"`. For an issue created without them, add both with `gh issue edit N --milestone v3.0 --add-project "BDK v3"`. Name its blockers with "blocked by" links.
+- **Pick.** Roadmap: `docs/V3-IMPLEMENTATION-PLAN.md`, which also holds the scope of the tasks it already lists. A task added later (T43 onward) keeps its scope (Goal, Scope, Input, Acceptance signal, To resolve in the spec, Dependencies) in its GitHub issue body, not in the plan. One issue per task `Tnn` in the `v3.0` milestone, with "blocked by" links for dependencies. Pick the next task from issues whose blockers are all closed.
+- **Start.** Assign yourself (`gh issue edit N --add-assignee @me`) and set its `Status` on the board (https://github.com/users/broneq/projects/1) to In Progress:
+  ```bash
+  ITEM=$(gh project item-list 1 --owner broneq --format json -L 500 -q ".items[] | select(.content.number==N) | .id")
+  gh project item-edit --project-id PVT_kwHOAYCCG84Bkk4V --id "$ITEM" --field-id PVTSSF_lAHOAYCCG84Bkk4VzhjU_Qg --single-select-option-id 47fc9ee4
+  ```
+- **Branch.** Create the branch from the issue, before the first push, so the PR shows under the issue's Development section: `gh issue develop N --base staging/v3 --name v3/Tnn-<slug> --checkout` (`v3/<N>-<slug>` for an issue without a task id; `--worktree <path>` instead of `--checkout` for a separate worktree). Closing keywords fire only on the default branch, so `Resolves #N` in a PR into `staging/v3` creates no such link, and no API adds it to an existing PR: then link it by hand in the PR's Development section.
+- **Change.** The work runs as an OpenSpec Change `v3-tnn-<slug>` (`v3-<N>-<slug>`; lowercase: OpenSpec rejects capitals): `/opsx:propose` (or `/opsx:new` + `/opsx:continue` to review artifacts one at a time) naming the task id and issue, then `/opsx:apply`, `/opsx:verify`, `/opsx:archive`. Sync the main specs (`/opsx:sync`) before the contract gate, since the CLI contract tests compare them with the command index. Project context and artifact rules: `openspec/config.yaml`.
+- **Gates.** Before the PR: `pnpm lint && pnpm format:check && pnpm typecheck && pnpm knip`, `pnpm test:unit`, `pnpm build && pnpm test:e2e`, `pnpm test:contract`, `pnpm skill-check`, `openspec validate --specs --strict`, and for a user-facing change `/docs-sync` and `pnpm docs:build`.
+- **PR.** One Conventional Commit per Change (`feat(rules)!: ...`, with `BREAKING CHANGE:` when a command or schema value goes) and a PR into `staging/v3` whose body names the issue (`Resolves #N`), the archived Change and the gate results.
+- **After the merge.** Close the issue: `gh issue close N -c "Done in #PR"`. The board moves a closed issue to Done by itself. An issue the Change resolved only in part stays open with a comment saying what is left. Delete the merged branch and its worktree.
 - Requires the OpenSpec CLI: `npm i -g @fission-ai/openspec@1.13.2`. Its global profile must be `custom` with `ff` and `verify` enabled before running `openspec update`, otherwise the update deletes `/opsx:ff` and `/opsx:verify` from `.claude/`.
 
 ## Development Commands
