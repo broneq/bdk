@@ -8,8 +8,22 @@ import type * as z from "zod";
 
 import { verifierLists } from "../../log/index.ts";
 import type { VerifierCategory } from "../../log/index.ts";
-import { moduleValue, NONE, promptContent, toolsModule } from "../../shared/config/index.ts";
-import type { ConfigModule, PromptKey, Resolved } from "../../shared/config/index.ts";
+import {
+  keyOrigin,
+  keySteps,
+  moduleValue,
+  NONE,
+  promptContent,
+  toolsModule,
+  valueAt,
+} from "../../shared/config/index.ts";
+import type {
+  ConfigModule,
+  ConfigRegistry,
+  PromptKey,
+  Resolved,
+  SetupClass,
+} from "../../shared/config/index.ts";
 import {
   languageRules,
   packRules,
@@ -103,6 +117,14 @@ export function sectionsOf(input: CtxInput, resolved: Resolved, part: Part): Sec
         },
       ];
     }
+    case "setup-coverage":
+      return [
+        {
+          title: "Setup coverage",
+          body: setupCoverage(input.settings, resolved),
+          part: { kind: "setup-coverage", source: "setup" },
+        },
+      ];
     case "file": {
       const text = input.store.read(join(input.pluginRoot, part.path));
       if (text === undefined) throw new Error(`the plugin file ${part.path} is missing`);
@@ -121,6 +143,44 @@ export function categoryText(input: RulesInput, resolved: Resolved, category: st
     throw new Error(`${category} is not a rule category of the pack`);
   }
   return ruleLines(packRules(ruleContext(input, resolved), category));
+}
+
+const SETUP_HEADINGS: readonly (readonly [SetupClass, string])[] = [
+  ["derived", "Derived"],
+  ["asked", "Asked"],
+  ["default", "Not set by setup"],
+];
+
+/** One `- <key>: <value> (<origin>)` line per leaf key, under a heading per setup class. */
+function setupCoverage(settings: ConfigRegistry, resolved: Resolved): string {
+  const keys = settings.setupKeys();
+  return SETUP_HEADINGS.map(([setup, heading]) => {
+    const lines = keys
+      .filter((entry) => entry.setup === setup)
+      .map(({ key }) => {
+        // A free-form mapping (`prompts.files.<key>`) reads as its entry count.
+        const path = key.endsWith(".<key>") ? key.slice(0, -".<key>".length) : key;
+        const steps = keySteps(settings.tree, path);
+        const value = steps === undefined ? undefined : valueAt(resolved.value, steps);
+        const shown = path === key ? coverageValue(value) : String(Object.keys(value ?? {}).length);
+        return `- ${key}: ${shown} (${keyOrigin(resolved.merged.origins, path)})\n`;
+      });
+    return `#### ${heading}\n\n${lines.join("")}`;
+  }).join("\n");
+}
+
+function coverageValue(value: unknown): string {
+  if (value === undefined) return "unset";
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  if (!Array.isArray(value)) return JSON.stringify(value);
+  if (value.length === 0) return "[]";
+  return value
+    .map((item: unknown) =>
+      typeof item === "object" && item !== null && "id" in item ? String(item.id) : String(item),
+    )
+    .join(", ");
 }
 
 function categoryLines(categories: readonly VerifierCategory[]): string {

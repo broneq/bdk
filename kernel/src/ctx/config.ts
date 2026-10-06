@@ -10,6 +10,7 @@ export const featuresModule = defineConfigModule({
   key: "features",
   consumer: "ctx",
   owner: "T12",
+  setup: "derived",
   description: "Feature switches.",
   schema: z
     .strictObject({
@@ -25,6 +26,7 @@ export const executionModule = defineConfigModule({
   key: "execution.concurrency",
   consumer: "ctx",
   owner: "T23",
+  setup: "default",
   description:
     "The most dispatches of one wave run at once; the swarm skill's context states it (T23-D52).",
   schema: z.int().min(1).max(15).default(5),

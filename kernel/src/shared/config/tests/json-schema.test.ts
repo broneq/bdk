@@ -105,6 +105,7 @@ describe("settingsJsonSchema", () => {
           key: "when",
           consumer: "ctx",
           owner: "T12",
+          setup: "default",
           description: "A date.",
           schema: z.date(),
         }),

@@ -8,6 +8,7 @@ export const archiveModule = defineConfigModule({
   key: "archive",
   consumer: "change",
   owner: "T30",
+  setup: "default",
   description: "What `change close` keeps in the archived Change.",
   schema: z
     .strictObject({

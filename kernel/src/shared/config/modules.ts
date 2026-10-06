@@ -27,6 +27,7 @@ export const promptsModule = defineConfigModule({
   key: "prompts",
   consumer: "shared/config",
   owner: "T12",
+  setup: "default",
   description: "Where prompt values come from: a directory per layer and single mapped files.",
   schema: z
     .strictObject({
@@ -107,6 +108,7 @@ export const toolsModule = defineConfigModule({
   key: "tools",
   consumer: "shared/config",
   owner: "T12",
+  setup: "derived",
   description: "The commands the project runs, one entry per command, merged by id.",
   schema: z
     .strictObject({

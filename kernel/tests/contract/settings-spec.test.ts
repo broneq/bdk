@@ -92,3 +92,27 @@ describe("prompt keys", () => {
     );
   });
 });
+
+describe("setup classification", () => {
+  it("equals the setup table of the spec", () => {
+    // The table groups the keys by class; the registry lists them in module order.
+    const byKey = (a: { key: string }, b: { key: string }) => a.key.localeCompare(b.key);
+    const table = tableRows(spec, "Setup key").map((row) => ({
+      key: backticked(column(row, "Setup key"))[0] ?? "",
+      setup: backticked(column(row, "Class"))[0] ?? "",
+    }));
+    expect(table.sort(byKey)).toStrictEqual(
+      settings
+        .setupKeys()
+        .map((entry) => ({ ...entry }))
+        .sort(byKey),
+    );
+  });
+
+  it("classifies every key of the key tables", () => {
+    const classified = new Set(settings.setupKeys().map((entry) => entry.key));
+    expect(registeredLeaves(settings).filter((leaf) => !classified.has(leaf.key))).toStrictEqual(
+      [],
+    );
+  });
+});

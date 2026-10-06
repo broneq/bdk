@@ -13,6 +13,7 @@ export const languagesModule = defineConfigModule({
   key: "languages",
   consumer: "rules",
   owner: "T12",
+  setup: "derived",
   description:
     "Languages and frameworks of the project; a name selects the bundle's pack rules/languages/<name>/.",
   schema: z
@@ -26,6 +27,7 @@ export const rulesModule = defineConfigModule({
   key: "rules",
   consumer: "rules",
   owner: "T31",
+  setup: "default",
   description: "Rule selection per dispatch package and the audit view of rules stats.",
   schema: z
     .strictObject({

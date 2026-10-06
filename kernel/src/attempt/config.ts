@@ -12,6 +12,7 @@ export const budgetsModule = defineConfigModule({
   key: "policy.budgets",
   consumer: "attempt",
   owner: "T22",
+  setup: "default",
   description: "How many tickets each loop may open in one round before the ladder moves on.",
   schema: z
     .strictObject({
@@ -29,6 +30,7 @@ export const oscillationModule = defineConfigModule({
   key: "policy.oscillation",
   consumer: "attempt",
   owner: "T22",
+  setup: "default",
   description: "When a finding that keeps coming back shortens the ladder.",
   schema: z
     .strictObject({
@@ -43,6 +45,7 @@ export const escalationModule = defineConfigModule({
   key: "policy.escalation",
   consumer: "attempt",
   owner: "T22",
+  setup: "default",
   description: "The one-shot escalation ticket with a fresh context and a stronger model.",
   schema: z
     .strictObject({

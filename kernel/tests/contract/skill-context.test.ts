@@ -48,6 +48,7 @@ function partFiles(part: Part): (string | undefined)[] {
     case "tools":
     case "concurrency":
     case "verifier-policy":
+    case "setup-coverage":
     case "project-rules":
       return [];
   }

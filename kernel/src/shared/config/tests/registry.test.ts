@@ -16,6 +16,7 @@ const tools = defineConfigModule({
   key: "tools",
   consumer: "ctx",
   owner: "T12",
+  setup: "default",
   description: "Commands the project runs.",
   schema: z
     .strictObject({
@@ -36,6 +37,7 @@ const features = defineConfigModule({
   key: "features",
   consumer: "ctx",
   owner: "T12",
+  setup: "derived",
   description: "Feature switches.",
   schema: z.strictObject({ lavish: z.boolean().default(true) }).prefault({}),
 });
@@ -241,6 +243,7 @@ describe("dotted module keys", () => {
     key: "policy.gates",
     consumer: "graph",
     owner: "T21",
+    setup: "default",
     description: "Human gates.",
     schema: z.strictObject({ design: z.enum(["manual", "auto"]).default("manual") }).prefault({}),
   });
@@ -248,6 +251,7 @@ describe("dotted module keys", () => {
     key: "policy.budgets",
     consumer: "attempt",
     owner: "T22",
+    setup: "default",
     description: "Loop budgets.",
     schema: z.strictObject({ verifier: z.int().min(0).default(2) }).prefault({}),
   });
@@ -255,6 +259,7 @@ describe("dotted module keys", () => {
     key: "policy.checkpoint",
     consumer: "change",
     owner: "T22",
+    setup: "default",
     description: "Checkpoint commits.",
     schema: z.strictObject({ enabled: z.boolean().default(true) }).prefault({}),
   });
@@ -264,6 +269,7 @@ describe("dotted module keys", () => {
     key: "gates.propose-when",
     consumer: "rules",
     owner: "T98",
+    setup: "default",
     description: "Proposal thresholds.",
     schema: z.strictObject({ changes: z.int().min(1).default(2) }).prefault({}),
   });
@@ -354,6 +360,7 @@ describe("default items of an id array", () => {
     key: "policy.verifier",
     consumer: "log",
     owner: "T23",
+    setup: "default",
     description: "Verifier categories.",
     schema: z
       .strictObject({
@@ -423,6 +430,7 @@ describe("append-only arrays", () => {
     key: "policy.evidence",
     consumer: "evidence",
     owner: "T23",
+    setup: "default",
     description: "File classes.",
     schema: z
       .strictObject({
@@ -467,5 +475,93 @@ describe("append-only arrays", () => {
     expect(resolved.problems.map((problem) => [problem.rule, problem.layer])).toStrictEqual([
       ["policy/config-invalid", "project"],
     ]);
+  });
+});
+
+describe("setup classification", () => {
+  const worktree = defineConfigModule({
+    key: "execution.worktree",
+    consumer: "graph",
+    owner: "T45",
+    description: "Kernel worktrees.",
+    setup: { enabled: "default", "setup.command": "derived", "setup.timeout": "default" },
+    schema: z
+      .strictObject({
+        enabled: z.boolean().default(true),
+        setup: z
+          .strictObject({
+            command: z.string().min(1).optional(),
+            timeout: z.int().min(10).default(300),
+          })
+          .prefault({}),
+      })
+      .prefault({}),
+  });
+  const risks = defineConfigModule({
+    key: "review.risks",
+    consumer: "review",
+    owner: "T42",
+    description: "Risky areas.",
+    setup: "asked",
+    schema: z
+      .array(z.strictObject({ id: z.string(), instruction: z.string().optional() }))
+      .default([{ id: "auth" }]),
+  });
+  const prompts = defineConfigModule({
+    key: "prompts",
+    consumer: "shared/config",
+    owner: "T12",
+    description: "Prompt files.",
+    setup: "default",
+    schema: z
+      .strictObject({
+        dir: z.string().min(1).optional(),
+        files: z.record(z.string(), z.string()).optional(),
+      })
+      .prefault({}),
+  });
+
+  it("gives a module's single class to each of its leaves", () => {
+    const registry = createConfigRegistry({ modules: [features, prompts], prompts: [] });
+    expect(registry.setupKeys()).toStrictEqual([
+      { key: "features.lavish", setup: "derived" },
+      { key: "prompts.dir", setup: "default" },
+      { key: "prompts.files.<key>", setup: "default" },
+    ]);
+  });
+
+  it("lists the classes in registry order, an id array as one leaf", () => {
+    const registry = createConfigRegistry({ modules: [worktree, risks], prompts: [] });
+    expect(registry.setupKeys()).toStrictEqual([
+      { key: "execution.worktree.enabled", setup: "default" },
+      { key: "execution.worktree.setup.command", setup: "derived" },
+      { key: "execution.worktree.setup.timeout", setup: "default" },
+      { key: "review.risks", setup: "asked" },
+    ]);
+    expect(registry.setupClass("execution.worktree.setup.command")).toBe("derived");
+    expect(registry.setupClass("review.risks")).toBe("asked");
+    expect(registry.setupClass("execution.worktree.nope")).toBeUndefined();
+  });
+
+  it("fails on a leaf without a class, naming the module and the leaf", () => {
+    const partial = defineConfigModule({ ...worktree, setup: { enabled: "default" } });
+    expect(() => createConfigRegistry({ modules: [partial], prompts: [] })).toThrow(
+      /execution\.worktree.*setup\.command/,
+    );
+  });
+
+  it("fails on a class for a path that is not a leaf", () => {
+    const stray = defineConfigModule({
+      ...worktree,
+      setup: {
+        enabled: "default",
+        "setup.command": "derived",
+        "setup.timeout": "default",
+        "setup.cmd": "derived",
+      },
+    });
+    expect(() => createConfigRegistry({ modules: [stray], prompts: [] })).toThrow(
+      /execution\.worktree.*setup\.cmd/,
+    );
   });
 });

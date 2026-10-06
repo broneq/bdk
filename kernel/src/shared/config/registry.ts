@@ -3,11 +3,22 @@
 // `config.ts`; the composition root assembles them into one registry.
 import * as z from "zod";
 
-import { appendOnlyPaths, keyPaths, keyTree } from "./keys.ts";
+import { appendOnlyPaths, keyPaths, keyTree, leafPaths } from "./keys.ts";
 import type { KeyNode } from "./keys.ts";
 import { PLANNED_KEYS, within } from "./known.ts";
 import type { PlannedKey } from "./known.ts";
 import { joinKey, valueAt } from "./values.ts";
+
+/**
+ * What `/bdk:setup` does with a key (`kernel-settings`, Setup classification):
+ * reads it from the project files, asks the user, or leaves it on its default.
+ */
+export type SetupClass = "derived" | "asked" | "default";
+
+export interface SetupKey {
+  readonly key: string;
+  readonly setup: SetupClass;
+}
 
 export interface ConfigModule<S extends z.ZodType = z.ZodType> {
   /** A root key (`tools`) or a dotted subtree of a root (`policy.budgets`). */
@@ -19,6 +30,11 @@ export interface ConfigModule<S extends z.ZodType = z.ZodType> {
   readonly description: string;
   /** The subtree's schema; its defaults are the default layer. */
   readonly schema: S;
+  /**
+   * The setup class of every leaf: one class for all, or one per leaf path
+   * below `key` (`"setup.command"` in `execution.worktree`), each leaf once.
+   */
+  readonly setup: SetupClass | Readonly<Record<string, SetupClass>>;
   /** A key read once at session start: `config set` says the change waits for the next session. */
   readonly appliesFrom?: "next-session";
 }
@@ -45,6 +61,9 @@ export interface ConfigRegistry {
   /** Keys the spec declares for a task that has not registered them yet. */
   readonly planned: readonly PlannedKey[];
   promptKey(key: string): PromptKey | undefined;
+  /** Every leaf key with its setup class, in registry order. */
+  setupKeys(): readonly SetupKey[];
+  setupClass(key: string): SetupClass | undefined;
 }
 
 export function defineConfigModule<S extends z.ZodType>(module: ConfigModule<S>): ConfigModule<S> {
@@ -65,6 +84,7 @@ export function createConfigRegistry(parts: {
   readonly planned?: readonly PlannedKey[];
 }): ConfigRegistry {
   checkModuleKeys(parts.modules);
+  const setup = parts.modules.flatMap(setupKeysOf);
   const seen = new Set<string>();
   for (const prompt of parts.prompts) checkPromptKey(prompt.key, seen);
 
@@ -80,6 +100,8 @@ export function createConfigRegistry(parts: {
     appendOnly: new Set(appendOnlyPaths(tree)),
     planned: parts.planned ?? PLANNED_KEYS,
     promptKey: (key) => prompts.find((prompt) => matches(prompt.key, key)),
+    setupKeys: () => setup,
+    setupClass: (key) => setup.find((entry) => entry.key === key)?.setup,
   };
 }
 
@@ -130,6 +152,30 @@ function composedShape(
       .meta({ description: `Composed of ${inner.map((candidate) => candidate.key).join(", ")}.` });
   }
   return shape;
+}
+
+/** The leaf keys of a module with their classes; a leaf without a class, or a class without a leaf, fails. */
+function setupKeysOf(module: ConfigModule): SetupKey[] {
+  const leaves = leafPaths(keyTree(module.schema));
+  const key = (leaf: string): string => (leaf === "" ? module.key : joinKey(module.key, leaf));
+  const { setup } = module;
+  if (typeof setup === "string") return leaves.map((leaf) => ({ key: key(leaf), setup }));
+  const missing = leaves.filter((leaf) => !(leaf in setup));
+  if (missing.length > 0) {
+    throw new Error(
+      `config module ${module.key} declares no setup class for ${missing.join(", ")}`,
+    );
+  }
+  const stray = Object.keys(setup).filter((path) => !leaves.includes(path));
+  if (stray.length > 0) {
+    throw new Error(
+      `config module ${module.key} declares a setup class for ${stray.join(", ")}, which is not one of its leaves`,
+    );
+  }
+  return leaves.flatMap((leaf) => {
+    const own = setup[leaf];
+    return own === undefined ? [] : [{ key: key(leaf), setup: own }];
+  });
 }
 
 function checkPromptKey(key: string, seen: Set<string>): void {

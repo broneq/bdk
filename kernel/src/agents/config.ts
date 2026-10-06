@@ -8,6 +8,7 @@ export const ttlModule = defineConfigModule({
   key: "agents.ttl",
   consumer: "agents",
   owner: "T41",
+  setup: "default",
   description: "Seconds without a tool call after which an agent with no open call is suspect.",
   schema: z.int().min(60).max(1800).default(300),
 });
@@ -16,6 +17,7 @@ export const openCallLimitModule = defineConfigModule({
   key: "agents.open-call-limit",
   consumer: "agents",
   owner: "T41",
+  setup: "default",
   description: "Seconds after which an open tool call no longer keeps an agent running.",
   schema: z.int().min(60).max(3600).default(720),
 });

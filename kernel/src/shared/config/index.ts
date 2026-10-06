@@ -6,6 +6,7 @@ export { globalDir, LAYER_NAMES, layerFiles, readLayers } from "./layers.ts";
 export type { Environment, FileLayerName, Layer, LayerName, LayerPaths } from "./layers.ts";
 export { closest } from "./hint.ts";
 export { mergeLayers } from "./merge.ts";
+export { keyOrigin } from "./origins.ts";
 export type { Merged } from "./merge.ts";
 export type { ConfigProblem } from "./problems.ts";
 export {
@@ -14,7 +15,7 @@ export {
   definePromptKey,
   moduleValue,
 } from "./registry.ts";
-export type { ConfigModule, ConfigRegistry, PromptKey } from "./registry.ts";
+export type { ConfigModule, ConfigRegistry, PromptKey, SetupClass, SetupKey } from "./registry.ts";
 export { declaredSteps, unknownKeyMessage, validateLayers } from "./validate.ts";
 export type { Validated } from "./validate.ts";
 export { PLANNED_KEYS, REMOVED_KEYS } from "./known.ts";

@@ -60,6 +60,11 @@ export const evidenceModule = defineConfigModule({
   key: "policy.evidence",
   consumer: "evidence",
   owner: "T23",
+  setup: {
+    "non-executable": "derived",
+    "build-config": "derived",
+    "max-committed-bytes": "default",
+  },
   description: "Which files the tree hash covers and which evidence files are committed.",
   schema: z
     .strictObject({
