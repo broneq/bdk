@@ -23,6 +23,7 @@ import type { ConfigRegistry } from "../../shared/config/index.ts";
 import { currentTrees, filePolicy } from "../../evidence/index.ts";
 import {
   memoryIndex,
+  memoryRegistry,
   readPlanParts,
   secondStamp,
   writeDocument,
@@ -73,6 +74,7 @@ export function harness(options: HarnessOptions = {}): Harness {
         store,
         git,
         openIndex: memoryIndex,
+        openRegistry: memoryRegistry(),
         clock: fixedClock(at),
         random,
         pluginRoot: PLUGIN,

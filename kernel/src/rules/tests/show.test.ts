@@ -10,6 +10,7 @@ import { settingsRegistry } from "../../registrations.ts";
 import { fixedClock } from "../../shared/clock/index.ts";
 import {
   memoryIndex,
+  memoryRegistry,
   memoryStore,
   readAttempts,
   stampPackage,
@@ -98,6 +99,7 @@ function run(store: Store, argv: readonly string[], at = FIRST) {
     store,
     git: fakeGit(),
     openIndex: memoryIndex,
+    openRegistry: memoryRegistry(),
     clock: fixedClock(at),
     pluginRoot: PLUGIN,
     settings: settingsRegistry(),

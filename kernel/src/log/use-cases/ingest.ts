@@ -1,7 +1,8 @@
 // `bdk log ingest` (`kernel-cli/log`; T23-D25, D26): a role's report with its
 // envelope as frontmatter, validated whole before anything is written, then
-// stored at the dispatch package's `report` path with `schema`, `ticket` and
-// `role` stamped. It writes no ledger entry: entries come only from `log add`.
+// stored at the dispatch package's `report` path with `schema`, `ticket`,
+// `role` and `at` stamped. The package is the one of the agent working on the
+// ticket, else the ticket's active one (`resolveTicketRef`, #133). It writes no ledger entry: entries come only from `log add`.
 // A `<ticket>@<group>` report goes to the group package's path, and the
 // reserved group `merge` stores the orchestrator's merged review of a round
 // without a package (T42-A1, B1).
@@ -27,7 +28,7 @@ import { readEnvelope } from "./envelope.ts";
 import type { Envelope } from "./envelope.ts";
 
 /** Stamped by the kernel from the ticket and its package (P1). */
-const STAMPED: readonly string[] = ["schema", "ticket", "role"];
+const STAMPED: readonly string[] = ["schema", "ticket", "role", "at"];
 const FIELDS: readonly string[] = ["status", "files", "entries", "evidence", "reason"];
 
 /** The role a merged review is stored under: the main thread's, never a dispatched agent's. */
@@ -43,9 +44,8 @@ export function ingestReport(
   change: ActiveChange,
   input: IngestInput,
 ): Promise<IngestReport | Refusal> {
-  // eslint-disable-next-line @typescript-eslint/require-await -- withChangeIndex takes an async body
   return withChangeIndex(deps, change, async (index): Promise<IngestReport | Refusal> => {
-    const ref = resolveTicketRef(deps.store, change.projectRoot, change.dir, input.ticket);
+    const ref = await resolveTicketRef(deps, change.projectRoot, change.dir, input.ticket);
     if (isRefusal(ref)) return ref;
     const target = reportTarget(change, ref);
     if (target === undefined) {
@@ -58,7 +58,7 @@ export function ingestReport(
     const { role, report } = target;
     const envelope = readEnvelope(input.text);
     if ("invalid" in envelope) return invalidEnvelope(envelope.invalid);
-    const checked = checkEnvelope(envelope, ref.ticket, role);
+    const checked = checkEnvelope(envelope, ref.ticket, role, deps.clock.now());
     if ("refused" in checked) return checked;
     const data = ref.group === undefined ? checked : { ...checked, group: ref.group };
     const missing = missingIds(deps, change, index, ref, data);
@@ -120,13 +120,18 @@ function withoutEmptyReason(fields: Readonly<Record<string, unknown>>): Record<s
 }
 
 /** The stamped envelope, or the refusal naming its first bad field and line. */
-function checkEnvelope(envelope: Envelope, ticket: string, role: string): ReportData | Refusal {
+function checkEnvelope(
+  envelope: Envelope,
+  ticket: string,
+  role: string,
+  storedAt: string,
+): ReportData | Refusal {
   const at = (field: string) => `line ${String(envelope.lines[field] ?? envelope.end)}: ${field}`;
   const names = Object.keys(envelope.fields);
   const stamped = names.find((field) => STAMPED.includes(field));
   if (stamped !== undefined) {
     return refuse("input/forbidden-field", `${at(stamped)} is stamped by the kernel`, [
-      "drop the field; the kernel stamps schema, ticket and role from the ticket",
+      "drop the field; the kernel stamps schema, ticket, role and at",
     ]);
   }
   const unknown = names.find((field) => !FIELDS.includes(field));
@@ -139,6 +144,7 @@ function checkEnvelope(envelope: Envelope, ticket: string, role: string): Report
     schema: STATE_KINDS.report.version,
     ticket,
     role,
+    at: storedAt,
     ...withoutEmptyReason(envelope.fields),
   });
   if (parsed.success) return parsed.data;

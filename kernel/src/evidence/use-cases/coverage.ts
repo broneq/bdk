@@ -56,7 +56,7 @@ export async function recordCoverage(
       ["bdk config show tools.test", `bdk config set tools.test.${entry.id}.coverage ...`],
     );
   }
-  const ref = resolveTicketRef(deps.store, change.projectRoot, change.dir, input.ticket);
+  const ref = await resolveTicketRef(deps, change.projectRoot, change.dir, input.ticket);
   if (isRefusal(ref)) return ref;
   if (ref.record === undefined || !ref.open || ref.record.data.target !== change.id) {
     return refuse(

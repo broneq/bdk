@@ -11,7 +11,7 @@ import { AUTHOR, DIR, fakeGit, repository, runBdk } from "../../log/tests/suppor
 import type { FakeGit, RunResult } from "../../log/tests/support.ts";
 import { settingsRegistry } from "../../registrations.ts";
 import { fixedClock } from "../../shared/clock/index.ts";
-import { memoryIndex, writeDocument } from "../../shared/store/index.ts";
+import { memoryIndex, memoryRegistry, writeDocument } from "../../shared/store/index.ts";
 import type { Store } from "../../shared/store/index.ts";
 import { dispatchRegistrations } from "../index.ts";
 import type { DispatchDeps } from "../index.ts";
@@ -83,6 +83,7 @@ export function dispatchHarness(
         store,
         git,
         openIndex: memoryIndex,
+        openRegistry: memoryRegistry(),
         clock: fixedClock(at),
         pluginRoot: PLUGIN,
         settings: settingsRegistry(),

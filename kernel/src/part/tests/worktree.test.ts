@@ -23,7 +23,13 @@ import { systemGit } from "../../shared/git/index.ts";
 import type { Git } from "../../shared/git/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
-import { fileStore, memoryIndex, partBranch, readHomeMarker } from "../../shared/store/index.ts";
+import {
+  fileStore,
+  memoryIndex,
+  memoryRegistry,
+  partBranch,
+  readHomeMarker,
+} from "../../shared/store/index.ts";
 import type { IndexDb, PlanPartFile } from "../../shared/store/index.ts";
 import type { PartDeps } from "../index.ts";
 import {
@@ -66,6 +72,7 @@ function depsWith(git: Git): PartDeps {
     store: fileStore(),
     git,
     openIndex: memoryIndex,
+    openRegistry: memoryRegistry(),
     clock: fixedClock("2026-10-04T10:00:00.000Z"),
     random: sequentialRandom(),
     pluginRoot: "/plugins/bdk",

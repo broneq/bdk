@@ -52,6 +52,8 @@ function render(root: string, ...flags: string[]) {
 }
 
 describe("bdk review render", () => {
+  // A whole executed Change spawns dozens of kernel and git processes: about 10 s
+  // alone, over the 30 s project default when the whole E2E suite loads the machine.
   it("renders the report of an executed Change, the same bytes twice", () => {
     const change = executed(
       started('review:\n  risks:\n    - {id: core, instruction: "Core code", paths: ["src/**"]}\n'),
@@ -87,7 +89,7 @@ describe("bdk review render", () => {
 
     render(change.root);
     expect(readFileSync(join(change.root, first.path as string), "utf8")).toBe(page);
-  });
+  }, 120_000);
 
   it("--format md writes the Markdown fallback without a form", () => {
     const change = executed(started());

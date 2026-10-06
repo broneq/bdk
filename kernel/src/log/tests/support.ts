@@ -8,6 +8,7 @@ import { createRegistry, loadIndex } from "../../shared/registry/index.ts";
 import type { Registration } from "../../shared/registry/index.ts";
 import {
   memoryIndex,
+  memoryRegistry,
   memoryStore,
   resolveActiveChange,
   stampPackage,
@@ -112,6 +113,7 @@ export function logDeps(store: Store, git: Git = fakeGit(), at = AT): LogDeps {
     store,
     git,
     openIndex: memoryIndex,
+    openRegistry: memoryRegistry(),
     clock: fixedClock(at),
     random: sequentialRandom(),
     pluginRoot: "/plugin",

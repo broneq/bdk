@@ -3,12 +3,16 @@
 // writes (T23-D42), and the manifests of a ticket and of a part. They read
 // the files, never the index, so a fresh clone answers the same way, and they
 // live in `shared/store` so `dispatch`, `rules`, `log`, `evidence`, `attempt`
-// and `graph` share them without a slice edge.
+// and `graph` share them without a slice edge. A ticket reference also reads
+// the agent registry: the package of the agent working on the ticket wins
+// over the active stamp, which the next step's build moves (#133).
 import { join, posix } from "node:path";
 
 import { refuse } from "../refusal/index.ts";
 import type { Refusal } from "../refusal/index.ts";
 
+import { agentsRegistryPath, withRegistry } from "./agents/registry.ts";
+import type { AgentRegistry, AgentRow, RegistryOpener } from "./agents/registry.ts";
 import type { DispatchPackage } from "./state/dispatch.ts";
 import { readDocument, writeDocument } from "./state/documents.ts";
 import type { EvidenceManifest } from "./state/evidence.ts";
@@ -35,8 +39,17 @@ export interface ResolvedRef {
   readonly record?: AttemptFile;
   /** True when the record exists and is not closed. */
   readonly open: boolean;
-  /** The group's package for a group reference, else the ticket's active package. */
+  /**
+   * The group's package for a group reference; else the package of the
+   * ticket's working agent, or the ticket's active package without one.
+   */
   readonly package?: ActivePackage;
+}
+
+/** What a ticket reference reads: the files, and the agent registry. */
+export interface TicketDeps {
+  readonly store: Store;
+  readonly openRegistry: RegistryOpener;
 }
 
 /**
@@ -45,12 +58,13 @@ export interface ResolvedRef {
  * ticket of another loop than `review-fix`, is `input/invalid-argument`. A
  * missing record or package is left to the caller, whose rule differs.
  */
-export function resolveTicketRef(
-  store: Store,
+export async function resolveTicketRef(
+  deps: TicketDeps,
   projectRoot: string,
   changeDir: string,
   value: string,
-): ResolvedRef | Refusal {
+): Promise<ResolvedRef | Refusal> {
+  const { store } = deps;
   const at = value.indexOf("@");
   const ticket = at === -1 ? value : value.slice(0, at);
   const group = at === -1 ? undefined : value.slice(at + 1);
@@ -72,7 +86,8 @@ export function resolveTicketRef(
   const open = record !== undefined && record.data["closed-at"] === undefined;
   const found =
     group === undefined
-      ? activePackage(store, projectRoot, changeDir, ticket)
+      ? ((await workingPackage(deps, projectRoot, ticket)) ??
+        activePackage(store, projectRoot, changeDir, ticket))
       : groupPackage(store, projectRoot, changeDir, ticket, group);
   return {
     ticket,
@@ -100,6 +115,97 @@ function groupPackage(
   if (data.group !== group) return undefined;
   const path = posix.relative(projectRoot, join(dir, name));
   return { role: data.role, path, data };
+}
+
+/**
+ * The ungrouped package of the agent working on the ticket, among the
+ * ticket's agents that have not ended: the agents in an open tool call when
+ * there are any, as the agent calling the kernel is in one, else the agents
+ * whose own report is not stored yet. Undefined without a registry, without
+ * such an agent, or when they hold several packages; the active stamp
+ * answers then.
+ */
+async function workingPackage(
+  deps: TicketDeps,
+  projectRoot: string,
+  ticket: string,
+): Promise<ActivePackage | undefined> {
+  if (!deps.store.exists(agentsRegistryPath(projectRoot))) return undefined;
+  const holders = await withRegistry(deps.openRegistry, projectRoot, (registry) =>
+    registry
+      .all()
+      .filter((row) => row.ticket === ticket && notEnded(registry, row))
+      .map((row) => ({ row, open: registry.heartbeat(row.id)?.open === true })),
+  );
+  const held = holders.flatMap(({ row, open }) => {
+    const found =
+      row.package === null ? undefined : readPackage(deps.store, projectRoot, row.package);
+    return found?.data.ticket === ticket && found.data.group === undefined
+      ? [{ found, row, open }]
+      : [];
+  });
+  const calling = held.filter(({ open }) => open);
+  if (calling.length > 0) return onlyOne(calling);
+  return onlyOne(held.filter(({ row }) => agentReport(deps.store, projectRoot, row) === undefined));
+}
+
+function onlyOne(held: readonly { readonly found: ActivePackage }[]): ActivePackage | undefined {
+  const [first] = held;
+  return first !== undefined && held.every(({ found }) => found.path === first.found.path)
+    ? first.found
+    : undefined;
+}
+
+/** The `ended` rule of the registry's derived state: a heartbeat after the end resumes the agent. */
+function notEnded(registry: AgentRegistry, row: AgentRow): boolean {
+  if (row.endedAt === null) return true;
+  const heartbeat = registry.heartbeat(row.id);
+  return heartbeat !== undefined && heartbeat.atMs > Date.parse(row.endedAt);
+}
+
+/** What `agentReport` reads of an agent: its package and when it was linked and started. */
+export interface ReportingAgent {
+  readonly package: string | null;
+  readonly linkedAt: string | null;
+  readonly startedAt: string | null;
+}
+
+/**
+ * The envelope's `status` of the agent's own report at its package's
+ * `report` path, or undefined before `log ingest` stores one. A report whose
+ * `at` is earlier than the agent's link and start belongs to an earlier agent
+ * of the same package; one without `at` counts as the agent's.
+ */
+export function agentReport(
+  store: Store,
+  projectRoot: string,
+  agent: ReportingAgent,
+): string | undefined {
+  if (agent.package === null) return undefined;
+  const reportPath = field(store, join(projectRoot, agent.package), "report");
+  if (reportPath === undefined) return undefined;
+  const path = join(projectRoot, reportPath);
+  if (!store.exists(path)) return undefined;
+  const at = field(store, path, "at");
+  const since = [agent.linkedAt, agent.startedAt]
+    .filter((time): time is string => time !== null)
+    .map((time) => Date.parse(time));
+  if (at !== undefined && since.length > 0 && Date.parse(at) < Math.min(...since)) {
+    return undefined;
+  }
+  return field(store, path, "status") ?? "unknown";
+}
+
+/** A string field of a state document's frontmatter; undefined when absent or unreadable. */
+function field(store: Store, path: string, name: string): string | undefined {
+  try {
+    const document = readDocument(store, path);
+    if (document === undefined || !("data" in document)) return undefined;
+    const value = (document.data as Readonly<Record<string, unknown>>)[name];
+    return typeof value === "string" ? value : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 export interface ActivePackage {
@@ -137,7 +243,11 @@ export function activePackage(
 ): ActivePackage | undefined {
   const record = readAttempts(store, changeDir).find((file) => file.data.ticket === ticket);
   const path = record?.data.package;
-  if (path === undefined) return undefined;
+  return path === undefined ? undefined : readPackage(store, projectRoot, path);
+}
+
+/** The dispatch package at `path`, relative to the project root; undefined without one. */
+function readPackage(store: Store, projectRoot: string, path: string): ActivePackage | undefined {
   const document = readDocument(store, join(projectRoot, path));
   if (document?.kind !== "dispatch" || !("data" in document)) return undefined;
   const data = document.data as unknown as DispatchPackage;

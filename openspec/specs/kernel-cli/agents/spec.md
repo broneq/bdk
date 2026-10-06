@@ -168,7 +168,7 @@ Block until something happens that the calling agent must react to. The kernel S
   - `--timeout <seconds>`. How long to block with nothing to report; default 300, at most 540, so the call ends before the host's 10-minute `Bash` limit.
 - **Behaviour:** The call a lead makes between dispatches instead of ending its turn (a lead that ends its turn ends, HOST-FACTS `lead-detach`). It returns every event for `<agent-id>` that no earlier `wait` of the same agent returned, at once when there is one, otherwise as soon as one occurs, checking at least once per second:
   - `message`: a `SendMessage` to the caller that `hooks pre-tool` admitted, with the sender and the ledger id it names; the host delivers the message itself when this tool call returns (HOST-FACTS `send-live`), so the event tells the caller to read it;
-  - `report`: a child's report was stored by `log ingest`, with the child, its ticket and the envelope's `status`;
+  - `report`: a child's report was stored by `log ingest`, with the child, its ticket and the envelope's `status`; a report at the child's package's `report` path whose `at` is earlier than the child's link or start is an earlier agent's and never the child's (#133);
   - `ended`: a child ended without a stored report, with the signal that ended it;
   - `suspect`: a child turned `suspect`;
   - `timeout`: nothing happened within `--timeout`.
@@ -236,6 +236,11 @@ Block until something happens that the calling agent must react to. The kernel S
 
 - **WHEN** a child's report is stored while the lead is not in `wait`
 - **THEN** the lead's next `wait` returns the `report` event at once
+
+#### Scenario: a report older than the child
+
+- **WHEN** a step is dispatched again with the package of an earlier agent whose report is stored, and the lead waits
+- **THEN** `wait` returns no `report` event for the new child until the new child stores its own report
 
 #### Scenario: timeout
 

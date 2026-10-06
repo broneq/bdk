@@ -254,7 +254,7 @@ An attempt record SHALL be one file per ticket, created by `attempt open`, stamp
 | `findings`      | array of `{fingerprint, type, file, symbol?}`                          | no   | kernel  | Fingerprints of the `finding` and `blocker` entries of a `fail` (oscillation check).                                                                                        |
 | `dropped`       | array of `L-` ids                                                      | no   |         | Findings that fell out of scope N+1.                                                                                                                                        |
 | `rules-read`    | timestamp                                                              | no   | kernel  | First `rules show --ticket` call under the ticket's implementer package (risk R2); read by `attempt close`.                                                                 |
-| `package`       | relative path                                                          | no   | kernel  | The ticket's active package: the latest `dispatch build` of the ticket (T23-D42).                                                                                           |
+| `package`       | relative path                                                          | no   | kernel  | The ticket's active package: the latest `dispatch build` (T23-D42); a working agent's package wins (`kernel-cli`, Ticket references).                                       |
 | `merge`         | boolean                                                                | no   | kernel  | A `verify-fix` merge ticket of a worktree part (T45; `kernel-cli/attempt`, bdk attempt open).                                                                               |
 | `conflicts`     | array of paths                                                         | no   | kernel  | The unmerged paths when the merge ticket opened; present exactly when `merge` is.                                                                                           |
 
@@ -400,7 +400,7 @@ A dispatch package SHALL be written only by `dispatch build`, with the frontmatt
 
 ### Requirement: Report envelope
 
-A report's frontmatter SHALL be the role's envelope (at most 15 rendered lines) and its body SHALL be the full report. `log ingest` writes every report, stamping `schema`, `ticket` and `role`; a role writes only the other fields and never a `bdk-entries` block (T23-D14).
+A report's frontmatter SHALL be the role's envelope (at most 15 rendered lines) and its body SHALL be the full report. `log ingest` writes every report, stamping `schema`, `ticket`, `role` and `at`; a role writes only the other fields and never a `bdk-entries` block (T23-D14).
 
 | Field      | Type                                                     | Req. | Meaning                                                                                  |
 | ---------- | -------------------------------------------------------- | ---- | ---------------------------------------------------------------------------------------- |
@@ -408,6 +408,7 @@ A report's frontmatter SHALL be the role's envelope (at most 15 rendered lines) 
 | `ticket`   | `A-` id                                                  | yes  | Stamped by `log ingest` from `--ticket`.                                                 |
 | `group`    | kebab-case string                                        | no   | Stamped by `log ingest` for a `<ticket>@<group>` report.                                 |
 | `role`     | string                                                   | yes  | Stamped by `log ingest` from the dispatch package; `orchestrator` for the `merge` group. |
+| `at`       | timestamp                                                | no   | Stamped by `log ingest`; absent on reports of earlier kernels.                           |
 | `status`   | `done \| done-with-concerns \| needs-context \| blocked` | yes  | The four statuses of the v2 return contract.                                             |
 | `files`    | array of paths                                           | yes  | Files the role changed; empty for read-only roles.                                       |
 | `entries`  | array of `L-` ids                                        | yes  | Entries the role wrote with `log add`; empty when none.                                  |
@@ -916,7 +917,7 @@ The registry is live machine state, not a cache: no committed file can rebuild i
 | `ended-by`      | `subagent-stop \| task-stop \| agent-result \| stale` or null | Which signal ended it: `SubagentStop` allowed by the continuation check, `PostToolUse` on `TaskStop`, a foreground `Agent` result, a stale session. |
 | `continuations` | integer                                                       | Consecutive turn ends the continuation check blocked without progress (`kernel-cli/hooks`, bdk hooks subagent-stop).                                |
 
-A heartbeat file `.bdk/.machine/agents/<id>` is written by the shell prefilter on every tool call of a subagent (`kernel-cli/hooks`, Guard hooks file and prefilter): its modification time is the agent's last activity and its content is `open` between `PreToolUse` and `PostToolUse` and `idle` after. Messages admitted by `hooks pre-tool` are rows of a second table with the sender, the recipient, the ledger id, the time and whether a `wait` of the recipient returned them; a child has reported when the `report` path of its package exists (`log ingest` wrote it), which the registry reads and never stores; the child reports and state changes a `wait` returned are tracked by a per-agent cursor.
+A heartbeat file `.bdk/.machine/agents/<id>` is written by the shell prefilter on every tool call of a subagent (`kernel-cli/hooks`, Guard hooks file and prefilter): its modification time is the agent's last activity and its content is `open` between `PreToolUse` and `PostToolUse` and `idle` after. Messages admitted by `hooks pre-tool` are rows of a second table with the sender, the recipient, the ledger id, the time and whether a `wait` of the recipient returned them; a child has reported when the `report` path of its package exists (`log ingest` wrote it) and its `at` is not earlier than the child's link or start, since an older report there is an earlier agent's of the same package (#133), which the registry reads and never stores; the child reports and state changes a `wait` returned are tracked by a per-agent cursor.
 
 State, derived at every read with `last` = the later of the heartbeat time and `started-at`:
 

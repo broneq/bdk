@@ -7,7 +7,7 @@ import { settingsRegistry } from "../../registrations.ts";
 import { createRegistry, loadIndex } from "../../shared/registry/index.ts";
 import { fakeGit } from "../../log/tests/support.ts";
 import { fixedClock } from "../../shared/clock/index.ts";
-import { memoryIndex, memoryStore } from "../../shared/store/index.ts";
+import { memoryIndex, memoryRegistry, memoryStore } from "../../shared/store/index.ts";
 import { serviceRegistrations } from "../index.ts";
 
 const index = loadIndex(commands);
@@ -21,6 +21,7 @@ const registry = createRegistry(
     settings: settingsRegistry(),
     git: fakeGit(),
     openIndex: memoryIndex,
+    openRegistry: memoryRegistry(),
     clock: fixedClock("2026-10-04T10:00:00.000Z"),
   }),
 );

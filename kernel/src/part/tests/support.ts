@@ -18,7 +18,7 @@ import type { FakeGit, RunResult } from "../../log/tests/support.ts";
 import type { Registration } from "../../shared/registry/index.ts";
 import { settingsRegistry } from "../../registrations.ts";
 import { fixedClock } from "../../shared/clock/index.ts";
-import { memoryIndex, writeDocument } from "../../shared/store/index.ts";
+import { memoryIndex, memoryRegistry, writeDocument } from "../../shared/store/index.ts";
 import type { Store } from "../../shared/store/index.ts";
 import { partRegistrations } from "../index.ts";
 import type { PartDeps } from "../index.ts";
@@ -110,6 +110,7 @@ export function harness(extra: (deps: PartDeps) => Registration[] = () => []): H
         store,
         git,
         openIndex: memoryIndex,
+        openRegistry: memoryRegistry(),
         clock: fixedClock(at),
         random,
         pluginRoot: PLUGIN,

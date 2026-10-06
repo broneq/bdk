@@ -4,7 +4,7 @@
 // `agents.continuation.max` times without progress. Every doubt passes: a
 // payload outside a BDK project, a non-BDK agent, a broken Change, a question
 // to the user, a background task still running. A hook never traps the user.
-import { reportStatus, recordEnd } from "../../agents/index.ts";
+import { recordEnd } from "../../agents/index.ts";
 import { readGraph, stageWork } from "../../graph/index.ts";
 import { appendEntry, withChangeIndex } from "../../log/index.ts";
 import { moduleValue } from "../../shared/config/index.ts";
@@ -12,6 +12,7 @@ import { trailerCommits } from "../../shared/git/index.ts";
 import { isRefusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
 import {
+  agentReport,
   listEntries,
   openAttempts,
   readAttempts,
@@ -255,7 +256,7 @@ async function agentWork(
   if (row.package === null || ticket === null) return undefined;
   if (!open.some((attempt) => attempt.ticket === ticket)) return undefined;
   const entries = entriesOf(index, change);
-  const reported = reportStatus(deps.store, change.projectRoot, row.package) !== undefined;
+  const reported = agentReport(deps.store, change.projectRoot, row) !== undefined;
   const storeReport = `your report for ${ticket} is not stored. Pipe it to bdk log ingest --ticket ${ticket}, then return your envelope.`;
   if (type !== "bdk:lead") {
     if (reported) return undefined;

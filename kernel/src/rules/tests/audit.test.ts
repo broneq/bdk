@@ -14,7 +14,7 @@ import {
 } from "../../log/tests/support.ts";
 import { settingsRegistry } from "../../registrations.ts";
 import { fixedClock } from "../../shared/clock/index.ts";
-import { memoryIndex, writeDocument } from "../../shared/store/index.ts";
+import { memoryIndex, memoryRegistry, writeDocument } from "../../shared/store/index.ts";
 import type { Store } from "../../shared/store/index.ts";
 import { prefixFromName, prefixProblem, ruleTexts } from "../domain/import.ts";
 import { projectionFiles } from "../domain/projection.ts";
@@ -30,6 +30,7 @@ function run(store: Store, argv: readonly string[]) {
     store,
     git: fakeGit(),
     openIndex: memoryIndex,
+    openRegistry: memoryRegistry(),
     clock: fixedClock("2026-09-30T10:00:00.000Z"),
     pluginRoot: PLUGIN,
     settings: settingsRegistry(),

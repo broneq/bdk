@@ -125,6 +125,7 @@ export { readAttempts, readPlanParts, targetFiles, taskHolders } from "./work.ts
 export { stampRulesRead } from "./rules-read.ts";
 export {
   activePackage,
+  agentReport,
   openPackage,
   packageRoles,
   partManifests,
@@ -135,7 +136,7 @@ export {
   stampPackage,
   ticketManifests,
 } from "./tickets.ts";
-export type { ActivePackage, ManifestFile, ResolvedRef } from "./tickets.ts";
+export type { ActivePackage, ManifestFile, ResolvedRef, TicketDeps } from "./tickets.ts";
 export type { DispatchPackage } from "./state/dispatch.ts";
 export type { EvidenceManifest } from "./state/evidence.ts";
 export type { AttemptFile, PlanPartFile, PlanPartFrontmatter } from "./work.ts";

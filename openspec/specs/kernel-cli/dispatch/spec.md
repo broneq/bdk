@@ -254,7 +254,7 @@ Print a dispatch package by path or ticket. The kernel SHALL implement the comma
 - **Mode:** `command`; Change-scoped
 - **Arguments:**
   - `<ticket|path>` (required). A ticket reference (`kernel-cli`, Ticket references), or a package path relative to the working directory or absolute.
-- **Behaviour:** Available to subagents, so an agent reads its package without touching `.bdk/` directly (Key boundaries). A path must name a file under the active Change's `dispatch/`; a ticket resolves to its active package (`kernel-state`, Attempt record, `package`) and `<ticket>@<group>` to the package of that group. Text mode prints the file verbatim; `--json` adds the parsed frontmatter. A path outside `dispatch/`, a missing file or a ticket or a group without a package is `input/not-found`.
+- **Behaviour:** Available to subagents, so an agent reads its package without touching `.bdk/` directly (Key boundaries). A path must name a file under the active Change's `dispatch/`; a ticket resolves to the package of the agent working on it, else its active package (`kernel-cli`, Ticket references; `kernel-state`, Attempt record, `package`), and `<ticket>@<group>` to the package of that group. Text mode prints the file verbatim; `--json` adds the parsed frontmatter. A path outside `dispatch/`, a missing file or a ticket or a group without a package is `input/not-found`.
 - **Writes:** nothing
 - **Output:** `schema/cli/output/dispatch-show.json`
 - **Exit codes and rules:** `0, 2, 3, 4, 5`. Specific rules: `input/not-found`; plus the common rules of every command and of Change-scoped commands (`kernel-cli`, Exit codes and the error object).

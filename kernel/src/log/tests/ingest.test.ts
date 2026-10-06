@@ -8,6 +8,7 @@ import type { Store } from "../../shared/store/index.ts";
 import { logRegistrations } from "../index.ts";
 import { logIngestOutput } from "../schema/outputs.ts";
 import {
+  AT,
   AUTHOR,
   CHANGE,
   DIR,
@@ -130,6 +131,7 @@ describe("log ingest", () => {
         schema: 1,
         ticket: TICKET,
         role: "verifier",
+        at: AT,
         status: "done-with-concerns",
         entries: [id],
       },
@@ -316,7 +318,7 @@ describe("log ingest refusals", () => {
     expect(reports(h.store)).toStrictEqual([]);
   });
 
-  it.each(["schema: 1", `ticket: ${TICKET}`, "role: verifier"])(
+  it.each(["schema: 1", `ticket: ${TICKET}`, "role: verifier", `at: ${AT}`])(
     "refuses a stamped field (%s) with input/forbidden-field",
     async (line) => {
       const h = harness();

@@ -70,7 +70,7 @@ export async function appendEntry(
   let source: string = draft.source ?? "kernel";
   if (draft.ticket !== undefined && draft.group !== MERGE_GROUP) {
     const ref = draft.group === undefined ? draft.ticket : `${draft.ticket}@${draft.group}`;
-    const resolved = resolveTicketRef(deps.store, change.projectRoot, change.dir, ref);
+    const resolved = await resolveTicketRef(deps, change.projectRoot, change.dir, ref);
     if (isRefusal(resolved)) return resolved;
     const role = resolved.open ? resolved.package?.role : undefined;
     if (role === undefined) {
