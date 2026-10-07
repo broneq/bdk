@@ -15,6 +15,8 @@ const Check = z.strictObject({
   id: kebab,
   command: text,
   scoped: text.includes("{files}", { message: "must contain {files}" }).optional(),
+  /** Seconds, at most a day (a longer timer overflows); `bdk check run` defaults it. */
+  timeout: z.int().min(1).max(86_400).optional(),
 });
 
 const E2e = z.strictObject({
