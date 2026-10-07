@@ -25,6 +25,8 @@ const E2e = z.strictObject({
   ready: text,
   driver: z.enum(["cli", "http", "browser"]),
   env: z.record(z.string().regex(/^[A-Za-z_][A-Za-z0-9_]*$/), z.string()).optional(),
+  /** Read only for `driver: browser`; the e2e tester takes an absent field as `chrome-devtools-axi`. */
+  browser: z.enum(["chrome-devtools-axi", "chrome-devtools-mcp"]).optional(),
 });
 
 const Step = z.strictObject({

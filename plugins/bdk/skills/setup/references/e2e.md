@@ -1,6 +1,6 @@
 # E2E entries
 
-`tools.e2e` tells the E2E check how to start the product and when it is ready; the tester then drives it as a user would. Write one item per runnable product: `id`, `start` (a command), `ready` (a URL, or a command that exits 0 once the product runs), `driver` (`browser`, `http` or `cli`), and `env` only when needed.
+`tools.e2e` tells the E2E check how to start the product and when it is ready; the tester then drives it as a user would. Write one item per runnable product: `id`, `start` (a command), `ready` (a URL, or a command that exits 0 once the product runs), `driver` (`browser`, `http` or `cli`), `browser` and `env` only when needed.
 
 ## Classify by what a user runs
 
@@ -27,6 +27,10 @@ A web UI that serves its own API in one process is one `web` item. A workspace w
 
 - `ready`: the CLI's help invocation, which exits 0 once it runs: `node bin/<name>.js --help`, `uv run <script> --help`, `go run ./cmd/<name> --help`, `cargo run --quiet -- --help`.
 - `start`: the build command that makes it runnable (`pnpm build`, `go build ./...`, `cargo build`); for an interpreted CLI with no build, the same command as `ready`.
+
+## `browser`
+
+Only on a `browser` item, and only as `browser: chrome-devtools-mcp`, when the project's `.mcp.json` declares a server that runs the `chrome-devtools-mcp` package. Otherwise leave it out: the E2E tester then uses `chrome-devtools-axi` through `npx`.
 
 ## `env`
 

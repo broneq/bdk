@@ -44,7 +44,7 @@ The skill SHALL write one `tools.e2e` item per runnable product of the project, 
 | HTTP API (a server framework and no UI) | `api` | `http` | the start script or the framework's run command | `http://localhost:<port>` followed by the health route when the code has one, else `/` |
 | CLI (a `bin` entry, `[project.scripts]`, a Go `main` package without a server, a Rust binary) | `cli` | `cli` | the build command that makes the binary runnable, else the same command as `ready` | the CLI's help invocation |
 
-Several products in one workspace SHALL get one item each, the `id` suffixed with the package name. A project with no runnable product SHALL get no `tools.e2e` item, and the report SHALL say that E2E is skipped and why. `env` SHALL be written only for a variable the start command needs, with a non-secret local value the project documents.
+Several products in one workspace SHALL get one item each, the `id` suffixed with the package name. A project with no runnable product SHALL get no `tools.e2e` item, and the report SHALL say that E2E is skipped and why. `env` SHALL be written only for a variable the start command needs, with a non-secret local value the project documents. `browser` SHALL be written, as `chrome-devtools-mcp`, only on a `browser` item of a project whose `.mcp.json` declares a Chrome DevTools MCP server (a server running the `chrome-devtools-mcp` package); otherwise it SHALL be left out, so the tester uses `chrome-devtools-axi`.
 
 #### Scenario: Web app with Playwright
 
@@ -65,6 +65,11 @@ Several products in one workspace SHALL get one item each, the `id` suffixed wit
 
 - **WHEN** the project exports functions and has no UI, server or `bin`
 - **THEN** `.bdk/settings.yaml` holds no `tools.e2e` item and the report says E2E is skipped because there is nothing to run
+
+#### Scenario: Chrome DevTools MCP server configured
+
+- **WHEN** a web app's `.mcp.json` declares a server running `npx chrome-devtools-mcp@latest`
+- **THEN** its `tools.e2e` item `web` holds `browser: chrome-devtools-mcp`, and a web app without that server gets no `browser` field
 
 ### Requirement: Ask only what the files cannot answer
 

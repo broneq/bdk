@@ -59,7 +59,7 @@ The configuration SHALL accept exactly these keys; any other key at any level SH
 | Key                                                  | Type                                                                                                         | Default      |
 | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------ |
 | `tools.test`, `tools.lint`, `tools.build`            | items by `id`: `command` (string, required), `scoped` (string holding `{files}`, optional), `timeout` (integer seconds, 1 to 86400, optional; `bdk check run` uses 600 when absent) | `[]`         |
-| `tools.e2e`                                          | items by `id`: `start` (command), `ready` (URL or command), `driver` (`cli`, `http`, `browser`), `env` (map of variable name to string, optional); all but `env` required | `[]`         |
+| `tools.e2e`                                          | items by `id`: `start` (command), `ready` (URL or command), `driver` (`cli`, `http`, `browser`), `env` (map of variable name to string, optional), `browser` (`chrome-devtools-axi` or `chrome-devtools-mcp`, optional; read only for `driver: browser`, where an absent field means `chrome-devtools-axi`); all but `env` and `browser` required | `[]`         |
 | `languages`                                          | list of kebab-case names                                                                                     | `[]`         |
 | `rules.disabled`                                     | list of rule names                                                                                           | `[]`         |
 | `models.<role>`                                      | model name or alias                                                                                          | none set     |
@@ -88,6 +88,11 @@ A missing required field, a value of the wrong type or outside its allowed value
 
 - **WHEN** `.bdk/settings.yaml` gives the `tools.test` item `unit` the field `timeout: 0`
 - **THEN** `bdk config check` reports `tools.test.unit.timeout` and that it must be at least 1, and exits 1
+
+#### Scenario: Browser tool of an E2E entry
+
+- **WHEN** `.bdk/settings.yaml` gives the `tools.e2e` item `web` the field `browser: chrome-devtools-mcp`, and the item `admin` the field `browser: playwright`
+- **THEN** `bdk config check` accepts `tools.e2e.web.browser`, reports `tools.e2e.admin.browser` with the allowed values, and exits 1
 
 ### Requirement: Configured project
 

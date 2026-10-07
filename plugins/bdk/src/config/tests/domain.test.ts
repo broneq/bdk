@@ -141,6 +141,7 @@ describe("keys", () => {
     });
     expect(resolveKey("models.implementer").ok).toBe(true);
     expect(resolveKey("tools.e2e.web.env.PORT").ok).toBe(true);
+    expect(resolveKey("tools.e2e.web.browser").ok).toBe(true);
     expect(resolveKey("steps.execute.review.enabled").ok).toBe(true);
   });
 
@@ -263,6 +264,32 @@ describe("validate", () => {
     ]);
     expect(validate([tools(1.5)], suggest).problems.map((problem) => problem.key)).toEqual([
       "tools.build.tsc.timeout",
+    ]);
+  });
+
+  it("accepts the two browser tools of an e2e item and reports another", () => {
+    const web = (browser: unknown) =>
+      layer("project", {
+        tools: {
+          e2e: [
+            {
+              id: "web",
+              start: "pnpm dev",
+              ready: "http://localhost:5173",
+              driver: "browser",
+              browser,
+            },
+          ],
+        },
+      });
+    for (const browser of ["chrome-devtools-axi", "chrome-devtools-mcp"]) {
+      expect(validate([web(browser)], suggest).settings?.tools.e2e[0]?.browser).toBe(browser);
+    }
+    expect(validate([web("playwright")], suggest).problems).toEqual([
+      expect.objectContaining({
+        key: "tools.e2e.web.browser",
+        message: expect.stringContaining("chrome-devtools-mcp") as unknown,
+      }) as unknown,
     ]);
   });
 

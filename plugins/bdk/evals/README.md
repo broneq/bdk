@@ -45,6 +45,23 @@ pnpm --filter @bdk/bdk run eval --allow-tools "Bash(*/bin/bdk *)" "Bash(git *)" 
 pnpm --filter @bdk/bdk run eval --allow-tools "Bash(*/bin/bdk *)" "Bash(git *)" --case 'judge-*'
 ```
 
+The `e2e-check-*` cases run the product of the scaffolded project as a user would, through commands the skill cannot know in advance, so they need `Bash` itself; the sandbox still confines every command to the run's workspace. `--trust-plugin` lets the run start without a terminal:
+
+```bash
+pnpm --filter @bdk/bdk run eval --trust-plugin --allow-tools Write Bash --case 'e2e-check-*'
+```
+
+### Manual browser check of `e2e-check`
+
+No eval case covers the `browser` and `http` drivers: the run's sandbox refuses to bind a local port ("Host limits"). Check them by hand in a project built from `fixtures/click-counter.sh` outside this repository:
+
+```bash
+mkdir -p /tmp/click-counter && cd /tmp/click-counter && bash <repo>/plugins/bdk/evals/fixtures/click-counter.sh
+claude -p "Use the app the way a user would and check that change add-counter does what its spec scenarios say." --plugin-dir <repo>/plugins/bdk --permission-mode auto
+```
+
+Expected: `.bdk/runs/add-counter/e2e/verdict.md` starts with `Verdict: FAIL`, `add-one.md` with `Result: fail` and a screenshot next to it, one `e2e-check` finding for "Add one", and nothing listening on port 5180 afterwards.
+
 ## Write a case
 
 One directory per case, `evals/<block>-<case>/`, where `<block>` is the skill's name:
@@ -96,3 +113,4 @@ Measured with Claude Code 2.1.292:
 
 - **`PATH` leaks from the caller.** A run inherits the `PATH` of the shell that starts it, including the `bin/` of plugins of a Claude Code session the command runs in. Start paid runs from a plain terminal.
 - **No Artifact tool, no project configuration.** A run cannot publish artifacts and loads no `CLAUDE.md`, `.claude/` or `.mcp.json`; ship what a case needs in the plugin.
+- **No local server.** Measured with Claude Code 2.1.292: a Bash-granting run cannot bind a local port (`listen EPERM: operation not permitted 0.0.0.0:5180`), so a case cannot start a web app or an HTTP API. `e2e-check` then reports `Verdict: BLOCKED`, as it should; its browser path is checked by hand (see "Manual browser check of `e2e-check`").
