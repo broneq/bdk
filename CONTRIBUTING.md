@@ -25,3 +25,7 @@ Build first, then run a plugin from this repository in a separate test project, 
 pnpm build
 claude --plugin-dir ~/projects/bdk/plugins/<name>
 ```
+
+## Evals
+
+Skills are measured with `claude plugin eval`, locally only, because every run is paid. How to run the suite and write a case: [`plugins/bdk/evals/README.md`](plugins/bdk/evals/README.md).

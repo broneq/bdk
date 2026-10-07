@@ -14,3 +14,6 @@ docs/.vitepress/cache/
 .code-review-graph/
 .husky/
 coverage/
+
+# claude plugin eval run results; written by every run.
+plugins/*/evals/results/

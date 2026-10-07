@@ -1,0 +1,9 @@
+{
+  "name": "bdk-eval-sample",
+  "description": "Sample plugin of the bdk eval harness; never installed",
+  "version": "0.0.0",
+  "author": {
+    "name": "Przemysław Broniszewski",
+    "url": "https://github.com/broneq"
+  }
+}
