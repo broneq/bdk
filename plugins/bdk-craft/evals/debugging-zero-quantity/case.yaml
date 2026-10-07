@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: debugging-zero-quantity
+context:
+  scaffold_script: scaffold.sh

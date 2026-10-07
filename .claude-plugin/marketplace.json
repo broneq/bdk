@@ -39,6 +39,17 @@
         "ref": "release"
       },
       "category": "development"
+    },
+    {
+      "name": "bdk-craft",
+      "description": "Engineering craft skills that change what an agent does: test-driven development, debugging, refactoring, testing strategy and Mermaid diagrams. Works alone, without bdk.",
+      "source": {
+        "source": "git-subdir",
+        "url": "broneq/bdk",
+        "path": "plugins/bdk-craft",
+        "ref": "release"
+      },
+      "category": "development"
     }
   ]
 }

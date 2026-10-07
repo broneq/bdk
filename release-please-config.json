@@ -13,6 +13,10 @@
   ],
   "packages": {
     "plugins/bdk": { "component": "bdk" },
+    "plugins/bdk-craft": {
+      "component": "bdk-craft",
+      "bump-minor-pre-major": true
+    },
     "plugins/bdk-skill-kit": {
       "component": "bdk-skill-kit",
       "bump-minor-pre-major": true,
