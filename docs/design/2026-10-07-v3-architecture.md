@@ -316,7 +316,7 @@ sequenceDiagram
   M->>H: PRs and every decision taken without the user
 ```
 
-With several Changes, each Change gets its own PR, stacked on the branch of the previous one.
+With several Changes, each Change gets its own branch from the base branch and its own PR; Changes are not stacked ([D9](./2026-10-07-v3-skills-decisions.md#d9-no-stacked-prs)).
 
 #### Design
 
@@ -581,10 +581,10 @@ The BDK rule pack works as in draft 1: one file per rule with `kind`, `paths` an
 - [ ] Exact JSON schemas of `run.json` and a part state (the finding events are in spec `bdk-cli/findings`).
 - [ ] Probe: does `!` resolve in a skill preloaded into an agent with `skills:`? If not, the agent's prompt carries the configuration from its caller.
 - [ ] The `Stop`/`SubagentStop` hook engine for the autopilot: deferred until measured; probes of the `Stop` payload (`background_tasks`, `last_assistant_message`) belong to that work.
-- [ ] How many subagents run at once (probe); the design assumes a wave of about 5.
+- [x] How many subagents run at once: `execution.max-parallel`, default measured in #200 ([D8](./2026-10-07-v3-skills-decisions.md#d8-wave-size-limit)).
 - [ ] When one session for the whole queue degrades quality: measured; the fallback is one session per Change.
-- [ ] Stacked PR upkeep: when an earlier PR changes in review, who rebases the later ones and when.
-- [ ] Lavish in user projects: whether it is a dependency of BDK; without it `triage` and `design-draft` fall back to `AskUserQuestion`.
+- [x] Stacked PR upkeep: no stacking ([D9](./2026-10-07-v3-skills-decisions.md#d9-no-stacked-prs)).
+- [x] Lavish in user projects: optional, `AskUserQuestion` without it ([D4](./2026-10-07-v3-skills-decisions.md#d4-lavish)).
 - [ ] The file contract a replacement block in `steps.<orchestrator>` must meet (inputs, the file it writes, its return line).
 - [ ] How `run` orders a queue built from a GitHub milestone; v3.0 takes an intent, an issue or an issue list (ordered by "blocked by").
 - [ ] `bdk run next` and transcript diagnostics (`bdk diag`): added only after a measured need.
