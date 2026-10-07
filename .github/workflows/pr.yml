@@ -23,3 +23,112 @@ jobs:
 
       - name: Validate main specs
         run: openspec validate --specs --strict
+
+  # `pnpm check`, step by step, so a failure names its step.
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm format:check
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+
+  # Strict validation of the marketplace and of every plugin directory, with the
+  # Claude Code version pinned in pnpm-lock.yaml.
+  plugins:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Validate the marketplace
+        run: pnpm exec claude plugin validate .claude-plugin/marketplace.json --strict
+
+      - name: Validate every plugin
+        run: |
+          status=0
+          for dir in plugins/*/; do
+            [ -d "$dir" ] || continue
+            echo "::group::$dir"
+            pnpm exec claude plugin validate "$dir" --strict || { echo "::error::$dir failed strict validation"; status=1; }
+            echo "::endgroup::"
+          done
+          exit "$status"
+
+  # Every commit of the PR: release-please reads them once they reach main.
+  commitlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Lint the commits of the PR
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: pnpm exec commitlint --from "$BASE" --to "$HEAD" --verbose
+
+  # Always reports, so it can be a required check; builds the site only when
+  # its inputs change.
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Detect docs changes
+        id: changes
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if git diff --name-only "$BASE...$HEAD" | grep -qE '^(docs/|pnpm-lock\.yaml$|\.github/workflows/pr\.yml$)'; then
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No change under docs/, pnpm-lock.yaml or pr.yml: nothing to build."
+          fi
+
+      - if: steps.changes.outputs.build == 'true'
+        uses: pnpm/action-setup@v6
+
+      - if: steps.changes.outputs.build == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - if: steps.changes.outputs.build == 'true'
+        run: pnpm install --frozen-lockfile --filter @bdk/docs
+
+      - if: steps.changes.outputs.build == 'true'
+        run: pnpm --filter @bdk/docs docs:build

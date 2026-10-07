@@ -24,7 +24,7 @@ The v3 architecture is in `docs/design/2026-10-07-v3-architecture.md`.
 
 ## Target layout (v3)
 
-Decided in [ADR-0002](docs/adr/0002-v3-repo-structure-and-release.md); details in `docs/design/2026-10-07-v3-repo-structure-cicd.md`. Not built yet (issues #172-#175).
+Decided in [ADR-0002](docs/adr/0002-v3-repo-structure-and-release.md); details in `docs/design/2026-10-07-v3-repo-structure-cicd.md`. The workspace, PR CI and release flow exist (#172); plugins move in with #175 and #178.
 
 ```
 .claude-plugin/marketplace.json  - one marketplace; each entry installs plugins/<name> at ref: release
@@ -36,12 +36,13 @@ openspec/                        - SDLC specs and changes
 - Directory name = plugin name = release-please component = tag prefix (`bdk--v3.0.0`).
 - Every plugin works alone; plugins never import from each other.
 - `plugin.json` `version` is the only version of a plugin; release-please bumps it.
+- A new plugin directory is added to `release-please-config.json` (`"plugins/<name>": {"component": "<name>"}`) and `.release-please-manifest.json` in the same PR; `tests/release-components.test.ts` fails otherwise.
 - Node only, no Python. `dist/` is never committed; the release job builds the released plugin and writes it to the `release` branch.
 - Hooks call `node "${CLAUDE_PLUGIN_ROOT}/dist/<cli>.mjs"`; everything else calls `bin/<cli>`.
 
 ## Current state
 
-The repository holds no plugin yet: only `docs/`, repo metadata and `.claude-plugin/marketplace.json`. v2 is gone from this line; its source stays in git history and on `main` (tag `v2.7.0`).
+The repository holds no plugin yet: the pnpm workspace and toolchain, PR CI (`.github/workflows/pr.yml`), the release flow (`release.yml`, `scripts/publish-plugin.ts`), `docs/` and `.claude-plugin/marketplace.json`. v2 is gone from this line; its source stays in git history and on `main` (tag `v2.7.0`).
 
 - Until `plugins/bdk/` exists, the `bdk` marketplace entry pins the `v2.7.0` tag, so `/plugin install bdk@bdk` still installs v2.
 - v2 tools come back one by one in their own tasks, rebuilt as v3 skills (see "Building skills (v3)").
@@ -78,6 +79,10 @@ Every piece of work is a GitHub issue, an OpenSpec Change and a PR into `staging
 ## Development Commands
 
 ```bash
+pnpm install
+pnpm check        # what the `check` job of PR CI runs
+pnpm build        # before --plugin-dir: dist/ is never committed
+
 # Run a plugin from this repository in a separate test project
 # (launch Claude Code from the target project directory):
 claude --plugin-dir ~/projects/bdk/plugins/<name>

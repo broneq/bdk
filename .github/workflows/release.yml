@@ -1,0 +1,83 @@
+name: release
+
+# Releases run from main only: staging/v3 reaches main by its final merge
+# (v3-172-repo-skeleton, design D5).
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# One release run at a time, never cancelled: the publish job is the single
+# writer of the release branch.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      # Every output of the action as one JSON object: paths_released plus
+      # one `<path>--tag_name` per released plugin.
+      release: ${{ toJSON(steps.release.outputs) }}
+      releases_created: ${{ steps.release.outputs.releases_created }}
+    steps:
+      # The App token makes release PRs and tags trigger the normal PR CI,
+      # which GITHUB_TOKEN would not.
+      - uses: actions/create-github-app-token@v3
+        id: app
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - uses: googleapis/release-please-action@v5
+        id: release
+        with:
+          token: ${{ steps.app.outputs.token }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  publish:
+    needs: release-please
+    if: needs.release-please.outputs.releases_created == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/create-github-app-token@v3
+        id: app
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      # Full history and tags: the script builds each plugin from its own tag.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          token: ${{ steps.app.outputs.token }}
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Commit as the App
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          SLUG: ${{ steps.app.outputs.app-slug }}
+        run: |
+          id=$(gh api "/users/${SLUG}%5Bbot%5D" --jq .id)
+          git config --global user.name "${SLUG}[bot]"
+          git config --global user.email "${id}+${SLUG}[bot]@users.noreply.github.com"
+
+      - name: Publish released plugins to the release branch
+        env:
+          RELEASE: ${{ needs.release-please.outputs.release }}
+        run: |
+          read -r -a tags <<< "$(jq -r '(.paths_released | fromjson)[] as $path | .["\($path)--tag_name"]' <<< "$RELEASE" | tr "\n" " ")"
+          echo "Publishing: ${tags[*]}"
+          pnpm exec node scripts/publish-plugin.ts "${tags[@]}"

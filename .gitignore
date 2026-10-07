@@ -3,3 +3,13 @@
 /.lavish/
 .claude/settings.local.json
 .claude/scheduled_tasks.lock
+node_modules/
+dist/
+docs/.vitepress/cache/
+.claude/worktrees/
+# Local tool state left by other tools and by v2.
+.venv/
+.pytest_cache/
+.ruff_cache/
+.code-review-graph/
+.husky/
