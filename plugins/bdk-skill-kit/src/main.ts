@@ -6,10 +6,11 @@ import { ConfigError, loadConfig } from "./config.ts";
 import { exitCode, formatHuman, formatJson } from "./report.ts";
 import { runChecks } from "./runner.ts";
 
-// Read at run time so a release-please version bump needs no rebuild of dist/:
-// `../package.json` is the same file from src/ (tests) and from dist/ (bundle).
+// The plugin manifest holds the kit's only version (release-please bumps it).
+// `../.claude-plugin/plugin.json` is the same file from src/ (tests) and from
+// dist/ (bundle), so the version is read at run time.
 const VERSION = (
-  JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as {
+  JSON.parse(readFileSync(new URL("../.claude-plugin/plugin.json", import.meta.url), "utf8")) as {
     version: string;
   }
 ).version;

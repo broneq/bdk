@@ -1,4 +1,5 @@
 import { spawn, spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { main } from "./main.ts";
@@ -25,6 +26,20 @@ async function cli(
   });
   return { code, stdout, stderr };
 }
+
+// The plugin manifest holds the kit's only version (release-please bumps it).
+const pluginVersion = (
+  JSON.parse(
+    readFileSync(join(import.meta.dirname, "..", ".claude-plugin", "plugin.json"), "utf8"),
+  ) as { version: string }
+).version;
+
+describe("--version", () => {
+  it("prints the version of the plugin manifest", async () => {
+    const out = await cli(tree({}), ["--version"]);
+    expect(out).toEqual({ code: 0, stdout: `${pluginVersion}\n`, stderr: "" });
+  });
+});
 
 const rulePlugin = `export default { name: "t", rules: [
   { id: "bad-word", kinds: ["skills"], defaultSeverity: "error",
@@ -192,6 +207,11 @@ export default defineConfig({ targets: [{ kind: "skills", dirs: ["skills"] }] })
     expect(run.stderr).toBe("");
     expect(run.status).toBe(0);
     expect((JSON.parse(run.stdout) as { summary: { files: number } }).summary.files).toBe(1);
+  });
+
+  it("prints the version of the plugin manifest", () => {
+    const run = spawnSync(process.execPath, [bin, "--version"], { encoding: "utf8" });
+    expect(run.stdout).toBe(`${pluginVersion}\n`);
   });
 
   it("exits quietly when the reader closes stdout early, as `| head` does", async () => {

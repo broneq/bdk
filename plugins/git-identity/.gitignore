@@ -1,9 +1,0 @@
-node_modules/
-*.tsbuildinfo
-
-# Claude Code / BDK working state, not part of the plugin
-/.claude/
-/.bdk/
-/.code-review-graph/
-/.lavish/
-/.serena/

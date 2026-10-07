@@ -5,7 +5,21 @@
   "tag-separator": "--",
   "separate-pull-requests": true,
   "extra-files": [
-    { "type": "json", "path": ".claude-plugin/plugin.json", "jsonpath": "$.version" }
+    {
+      "type": "json",
+      "path": ".claude-plugin/plugin.json",
+      "jsonpath": "$.version"
+    }
   ],
-  "packages": {}
+  "packages": {
+    "plugins/bdk-skill-kit": {
+      "component": "bdk-skill-kit",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true
+    },
+    "plugins/git-identity": {
+      "component": "git-identity",
+      "bump-minor-pre-major": true
+    }
+  }
 }

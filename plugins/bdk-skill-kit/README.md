@@ -16,16 +16,18 @@ The kit is listed in the BDK marketplace:
 /plugin install bdk-skill-kit@bdk
 ```
 
-The plugin brings both skills. The `skill-check` skill runs the bundled CLI from the plugin directory.
+The plugin brings the `skill-check` skill, which runs the bundled CLI from the plugin directory.
 
 ### As a project dev dependency
 
-For CI and pre-commit hooks, pin a release tag. The package is not on npm; the tag carries the built bundle.
+For CI and pre-commit hooks, pin a commit of the `release` branch of [broneq/bdk](https://github.com/broneq/bdk), where each release of the kit lands built under `plugins/bdk-skill-kit/`. The package is not on npm.
 
 ```sh
-pnpm add -D github:broneq/bdk-skill-kit#v0.1.0
+pnpm add -D "github:broneq/bdk#<release-commit>&path:/plugins/bdk-skill-kit"
 pnpm exec skill-check --help
 ```
+
+Releases up to 0.3.0 came from the archived repository `broneq/bdk-skill-kit`, whose tags still install as `github:broneq/bdk-skill-kit#v0.3.0`.
 
 Node 22.18 or newer is required, so that a `skill-check.config.ts` loads without a build step.
 
@@ -136,22 +138,21 @@ pnpm exec skill-check --baseline-prune
 
 ## Rules
 
-The rule catalogue, the profiles and the exit codes are specified in the [`skill-kit` spec](openspec/specs/skill-kit/spec.md). `skill-check --help` is the usage reference, `skill-check --list-rules` prints the rules a config enables, and `skill-check --explain <rule>` prints what a rule checks, why, how to fix a finding and its options. A plugin rule can carry the same text in its `explain` field.
+The rule catalogue, the profiles and the exit codes are specified in the [`skill-kit` spec](../../openspec/specs/skill-kit/spec.md). `skill-check --help` is the usage reference, `skill-check --list-rules` prints the rules a config enables, and `skill-check --explain <rule>` prints what a rule checks, why, how to fix a finding and its options. A plugin rule can carry the same text in its `explain` field.
 
 ## Develop
 
+The kit lives in the [BDK repository](https://github.com/broneq/bdk) and uses its root toolchain. From the repository root:
+
 ```sh
 pnpm install
-pnpm hooks
-pnpm build
-pnpm lint && pnpm format:check && pnpm typecheck && pnpm knip
-pnpm test
-pnpm self-check
+pnpm check            # lint, format check, typecheck, tests with coverage, build
+pnpm --filter bdk-skill-kit build
 ```
 
-`dist/` is committed and rebuilt by `pnpm build`; CI fails when it differs from the source. Releases are cut by release-please from Conventional Commits.
+`dist/` is not committed. The test suite builds it before the tests that run the bundles (`vitest.setup.ts`), and the release job builds it onto the `release` branch. The tests include the self-check: the built CLI over the kit's own `skills/` with `skill-check.config.ts`. Releases are cut per plugin by release-please from Conventional Commits, as tags `bdk-skill-kit--v<version>`; the version lives only in `.claude-plugin/plugin.json`.
 
-A change to the contract (a rule, an option, the output, the exit codes) runs as an [OpenSpec](https://github.com/Fission-AI/OpenSpec) change that updates `openspec/specs/skill-kit/spec.md` in the same PR: `/opsx:propose <name>`, then `/opsx:apply` and `/opsx:archive`.
+A change to the contract (a rule, an option, the output, the exit codes) runs as an [OpenSpec](https://github.com/Fission-AI/OpenSpec) change that updates `openspec/specs/skill-kit/spec.md` at the repository root in the same PR, following the repository's SDLC.
 
 ## License
 

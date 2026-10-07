@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 
-// Tests that run the committed bundles must see the build of the current
+// Tests that run the bundles must see the build of the current
 // source. Building once here, before any test file starts, keeps parallel test
 // files from racing on dist/.
 export default function setup(): void {

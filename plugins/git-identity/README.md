@@ -114,15 +114,18 @@ while commits carry another.
 
 ## Development
 
+The plugin lives in the [BDK repository](https://github.com/broneq/bdk) and uses
+its root toolchain. From the repository root:
+
 ```
 pnpm install
-pnpm run verify      # biome + tsc --checkJs + node --test
+pnpm check           # lint, format check, typecheck (tsc --checkJs), tests
 ```
 
-Test the plugin locally without publishing:
+Test the plugin locally without publishing, from a separate test project:
 
 ```
-claude --plugin-dir ~/projects/git-identity
+claude --plugin-dir <path-to-bdk>/plugins/git-identity
 ```
 
 Design decisions, with the measurements behind them, are in

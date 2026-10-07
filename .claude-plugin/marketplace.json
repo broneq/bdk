@@ -22,8 +22,10 @@
       "name": "git-identity",
       "description": "Bind a project to a GitHub account and a git commit identity. Every gh call and every commit in it then uses the right one - carried by the environment, not by a prompt a subagent can miss.",
       "source": {
-        "source": "github",
-        "repo": "broneq/git-identity"
+        "source": "git-subdir",
+        "url": "broneq/bdk",
+        "path": "plugins/git-identity",
+        "ref": "release"
       },
       "category": "productivity"
     },
@@ -31,8 +33,10 @@
       "name": "bdk-skill-kit",
       "description": "Deterministic checks and authoring guidance for Agent Skills and Claude Code subagents: the skill-check validator plus the skill-authoring and skill-check skills.",
       "source": {
-        "source": "github",
-        "repo": "broneq/bdk-skill-kit"
+        "source": "git-subdir",
+        "url": "broneq/bdk",
+        "path": "plugins/bdk-skill-kit",
+        "ref": "release"
       },
       "category": "development"
     }

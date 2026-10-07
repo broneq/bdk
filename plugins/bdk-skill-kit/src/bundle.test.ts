@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 const kit = join(import.meta.dirname, "..");
 const bundles = ["dist/skill-check.mjs", "dist/index.mjs", "dist/testing.mjs"];
 
-describe("committed bundles", () => {
+describe("bundles", () => {
   it.each(bundles)("%s imports only node: modules", (file) => {
     const text = readFileSync(join(kit, file), "utf8");
     const specifiers = [

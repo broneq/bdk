@@ -1,6 +1,6 @@
 // The seeded-violation suite: `fixtures/clean/` passes every generic rule, and
 // each `fixtures/violations/<rule-id>/` is an overlay that, copied over the
-// clean tree, breaks exactly that rule. Runs the committed CLI bundle.
+// clean tree, breaks exactly that rule. Runs the built CLI bundle.
 import { spawnSync } from "node:child_process";
 import { cpSync, mkdtempSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";

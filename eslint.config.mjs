@@ -12,7 +12,9 @@ export default tseslint.config(
     ignores: ["openspec/changes/archive/"],
   },
   {
-    files: ["**/*.ts"],
+    // Plugin hooks stay plain .mjs with JSDoc types (no build step); their
+    // plugin tsconfig sets checkJs, so the typed rules apply to them too.
+    files: ["**/*.ts", "plugins/*/hooks/**/*.mjs"],
     extends: [
       js.configs.recommended,
       ...tseslint.configs.strictTypeChecked,

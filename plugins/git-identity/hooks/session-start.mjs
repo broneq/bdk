@@ -49,6 +49,16 @@ function readStdin() {
 }
 
 /**
+ * Narrow a parsed JSON value to an object whose fields can be read.
+ *
+ * @param {unknown} value
+ * @returns {value is Record<string, unknown>}
+ */
+function isRecord(value) {
+  return typeof value === "object" && value !== null;
+}
+
+/**
  * Work out which directory the session is rooted at.
  *
  * The payload's `cwd` is authoritative: a hook process does not necessarily
@@ -60,8 +70,9 @@ function readStdin() {
 export function projectDirFromPayload(rawStdin) {
   if (!rawStdin.trim()) return null;
   try {
+    /** @type {unknown} */
     const payload = JSON.parse(rawStdin);
-    const cwd = payload?.cwd;
+    const cwd = isRecord(payload) ? payload.cwd : undefined;
     return typeof cwd === "string" && cwd.length > 0 ? cwd : null;
   } catch {
     return null;
@@ -86,17 +97,19 @@ export function readBinding(projectDir) {
     return null;
   }
 
-  let env;
+  /** @type {unknown} */
+  let settings;
   try {
-    env = JSON.parse(raw)?.env;
+    settings = JSON.parse(raw);
   } catch {
     return null;
   }
 
-  const ghConfigDir = env?.GH_CONFIG_DIR;
+  const env = isRecord(settings) && isRecord(settings.env) ? settings.env : {};
+  const ghConfigDir = env.GH_CONFIG_DIR;
   if (typeof ghConfigDir !== "string" || ghConfigDir.length === 0) return null;
 
-  const gitConfig = env?.GIT_CONFIG_GLOBAL;
+  const gitConfig = env.GIT_CONFIG_GLOBAL;
   return {
     ghConfigDir,
     ...(typeof gitConfig === "string" && gitConfig.length > 0 ? { gitConfig } : {}),

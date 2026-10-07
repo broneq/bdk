@@ -13,3 +13,4 @@ docs/.vitepress/cache/
 .ruff_cache/
 .code-review-graph/
 .husky/
+coverage/

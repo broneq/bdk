@@ -276,6 +276,25 @@ change:
 
 ---
 
+## Amendment 2 (2026-10-07): the plugin moves into the BDK repository
+
+The plugin now lives in `broneq/bdk` under `plugins/git-identity/`, with its
+history (ADR-0002 of that repository, issue broneq/bdk#175). The runtime
+decisions above stand: plain ESM `.mjs`, JSDoc types, no build, no runtime
+dependencies. Only the development stack of "Stack" changes, to the one the BDK
+repository shares across its plugins:
+
+| Area | Before | Now |
+|---|---|---|
+| Types | `tsc --checkJs` | unchanged, from `pnpm typecheck` |
+| Tests | `node --test` | Vitest, in the repository's single suite |
+| Lint and format | Biome | ESLint with typed rules, Prettier |
+| Versioning | release-please, tags `v<x>` | release-please per plugin, tags `git-identity--v<x>` |
+| Node | `.nvmrc` of this repository | `.nvmrc` of the BDK repository; `engines >=20` unchanged |
+
+One toolchain for every plugin outweighs the dependency count that favoured
+Biome and `node --test` for a single-plugin repository.
+
 ## Rules for Claude Code plugins
 
 This section is written impersonally and deliberately detached from

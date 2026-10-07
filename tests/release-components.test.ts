@@ -97,4 +97,11 @@ describe("release-please configuration", () => {
       });
     expect(notSerialized, "rewrite as JSON.stringify(manifest, null, 2) + newline").toEqual([]);
   });
+
+  it("holds each plugin's version from its plugin.json", () => {
+    for (const [path, version] of Object.entries(manifest)) {
+      const plugin = readJson(join(path, ".claude-plugin", "plugin.json")) as { version?: string };
+      expect(version, path).toBe(plugin.version);
+    }
+  });
 });
