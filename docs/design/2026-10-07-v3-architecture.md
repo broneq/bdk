@@ -484,14 +484,14 @@ flowchart LR
   E2["e2e-check"] -->|"append"| F
   CK["bdk check run"] -->|"append red checks"| F
   J["judge"] -->|"append level events"| F
-  F -->|"bdk findings: fold, dedupe, count"| T["triage (main thread)"]
+  F -->|"bdk findings list: fold, dedupe, count"| T["triage (main thread)"]
   T -->|"the model writes the page"| LV["Lavish"]
   LV -->|"append decision events"| F
   classDef store fill:#5f4b8b,stroke:#9b8bc4,color:#ffffff
   class F store
 ```
 
-- The file is an event log. A `finding` line holds `id`, `source`, `file`, `line`, `rule`, `summary`, `evidence`. A `level` line (judge: blocker, should-fix, nice-to-have, not-a-problem) and a `decision` line (triage: fix, accept, defer with an issue) name a finding id. `bdk findings` folds the log into the current view.
+- The file is an event log. A `finding` line holds `id`, `source`, `file`, `line`, `rule`, `summary`, `evidence`. A `level` line (judge: blocker, should-fix, nice-to-have, not-a-problem) and a `decision` line (triage: fix, accept, defer with an issue) name a finding id. `bdk findings list` folds the log into the current view; the event schema and the dedupe key are in spec `bdk-cli/findings`.
 - Writers append through `bdk findings add|level|decide`, which opens the file in append mode and writes one line per call, so parallel reviewers never rewrite each other's lines. `bdk check run` appends red checks itself.
 - In draft 1 a kernel ledger held findings (`bdk log add|list|triage`); here the file and `bdk findings` replace it.
 - The model writes the triage page from the merged findings, following the `lavish-axi` playbooks. In auto mode the judge's levels and the policy decide.
@@ -525,7 +525,7 @@ Extension points: settings; an own orchestrator as a project skill calling BDK b
 | `bdk git groups`, `scope` | Splits a change into review groups; scope since the last round |
 | `bdk rules for --stage --files` | The rules for a stage and a set of files |
 | `bdk plan check` | Part sizes, `depends-on` cycles, waves |
-| `bdk findings [add\|level\|decide]` | Appends finding, level and decision events; folds, dedupes and counts; lists what to fix |
+| `bdk findings add\|level\|decide\|list` | Appends finding, level and decision events; folds, dedupes and counts; lists what to fix (spec `bdk-cli/findings`) |
 | `bdk run status` | Renders `run.json`, the part states and the derived stage for the context |
 | `bdk hooks session-start` | The hook below |
 
@@ -578,7 +578,7 @@ The BDK rule pack works as in draft 1: one file per rule with `kind`, `paths` an
 - [ ] Living architecture documentation for user projects: dropped for v3.0. Specs cover behaviour only; a `docs-sync` block can be added later without changing the rest.
 - [ ] Whether a subagent can use `AskUserQuestion` itself (probe); today a lead returns a blocker and the main thread asks.
 - [ ] Whether the main thread in `claude -p` keeps running while a background lead works (probe); `execution.lead: foreground` covers non-interactive runs until then.
-- [ ] Exact JSON schemas of `run.json`, a part state and a finding event.
+- [ ] Exact JSON schemas of `run.json` and a part state (the finding events are in spec `bdk-cli/findings`).
 - [ ] Probe: does `!` resolve in a skill preloaded into an agent with `skills:`? If not, the agent's prompt carries the configuration from its caller.
 - [ ] The `Stop`/`SubagentStop` hook engine for the autopilot: deferred until measured; probes of the `Stop` payload (`background_tasks`, `last_assistant_message`) belong to that work.
 - [ ] How many subagents run at once (probe); the design assumes a wave of about 5.
