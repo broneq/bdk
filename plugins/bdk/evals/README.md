@@ -28,6 +28,16 @@ Read `WITH`, `W/OUT` and `Δ`: a block whose `Δ` stays near 0 over 3 runs does 
 
 A run gets only the read-only tools a case lists in `allowed_tools`; `Write`, `Edit`, `Bash`, `WebFetch` and `WebSearch` also need `--allow-tools` on the command line, for every case of the run. Repeated `--allow-tools` add up. Grant `Bash` narrowly (`"Bash(git *)"`); each granted command runs in Claude Code's OS sandbox.
 
+### Cases that need Bash
+
+The `setup-*` cases run `/bdk:setup`, which calls the plugin's `bdk`, OpenSpec and `git`. Grant them, with the clean `HOME` of "Host limits" and a `PATH` without other plugins' `bin/`:
+
+```bash
+pnpm --filter @bdk/bdk run eval --allow-tools Write Edit "Bash(*/bin/bdk *)" "Bash(openspec *)" "Bash(npx *)" "Bash(git *)" --case 'setup-*'
+```
+
+Claude Code refuses every write to `.claude/settings.json` in a run, whatever the grants, so the cases grade the permission rules from the reply, where setup lists them for the user.
+
 ## Write a case
 
 One directory per case, `evals/<block>-<case>/`, where `<block>` is the skill's name:
