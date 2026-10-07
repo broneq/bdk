@@ -1,7 +1,7 @@
 {
   "name": "bdk-skill-kit",
   "description": "Check Agent Skills and Claude Code agent files with a deterministic validator that explains every rule",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "author": {
     "name": "broneq"
   },
