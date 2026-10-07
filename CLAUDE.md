@@ -21,10 +21,11 @@ The v3 architecture is in `docs/design/2026-10-07-v3-architecture.md`.
 - Always build a skill with `/skill-creator`, new or rewritten. v2 skills (`main`) and draft skills (`draft/v3-1`) are input to read, not text to copy.
 - A new skill starts as a plain skill with an eval case. Add a CLI helper, hook or workflow only when an eval or a measurement shows a concrete problem, and record that problem.
 - One block, one job: an author block writes, a verifier block checks, an orchestrator only composes blocks. Each block runs alone and has its own eval cases.
+- The `bdk` CLI is built as vertical slices, one per command group: spec `openspec/specs/bdk-cli/`, rule `.claude/rules/bdk-cli.md`, enforced by ESLint (`plugins/bdk/eslint.architecture.ts`).
 
 ## Target layout (v3)
 
-Decided in [ADR-0002](docs/adr/0002-v3-repo-structure-and-release.md); details in `docs/design/2026-10-07-v3-repo-structure-cicd.md`. The workspace, PR CI and release flow exist (#172); `git-identity` and `bdk-skill-kit` moved in with their history (#175); `bdk` follows with #178.
+Decided in [ADR-0002](docs/adr/0002-v3-repo-structure-and-release.md); details in `docs/design/2026-10-07-v3-repo-structure-cicd.md`. The workspace, PR CI and release flow exist (#172); `git-identity` and `bdk-skill-kit` moved in with their history (#175); `bdk` was laid down with #178.
 
 ```
 .claude-plugin/marketplace.json  - one marketplace; each entry installs plugins/<name> at ref: release
@@ -42,9 +43,9 @@ openspec/                        - SDLC specs and changes
 
 ## Current state
 
-The repository holds two plugins, `plugins/git-identity/` and `plugins/bdk-skill-kit/` (imported from their archived repositories, tags `<name>--v<version>`), plus the pnpm workspace and toolchain, PR CI (`.github/workflows/pr.yml`), the release flow (`release.yml`, `scripts/publish-plugin.ts`), `docs/` and `.claude-plugin/marketplace.json`. v2 is gone from this line; its source stays in git history and on `main` (tag `v2.7.0`).
+The repository holds three plugins, plus the pnpm workspace and toolchain, PR CI (`.github/workflows/pr.yml`), the release flow (`release.yml`, `scripts/publish-plugin.ts`), `docs/` and `.claude-plugin/marketplace.json`. `plugins/git-identity/` and `plugins/bdk-skill-kit/` were imported from their archived repositories (tags `<name>--v<version>`); `plugins/bdk/` is the skeleton of the `bdk` plugin: manifest, `bin/bdk` and an empty CLI with no command group yet (#178). v2 is gone from this line; its source stays in git history and on `main` (tag `v2.7.0`).
 
-- Until `plugins/bdk/` exists, the `bdk` marketplace entry pins the `v2.7.0` tag, so `/plugin install bdk@bdk` still installs v2.
+- The `bdk` marketplace entry installs `plugins/bdk` from the `release` branch; until the first `bdk--v*` release is published from `main` (#213), installing it fails, and `v2.7.0` stays installable by its tag.
 - v2 tools come back one by one in their own tasks, rebuilt as v3 skills (see "Building skills (v3)").
 
 ## Language

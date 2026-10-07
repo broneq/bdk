@@ -1,0 +1,24 @@
+#!/bin/sh
+# Runs the bdk CLI bundle with Node (design D2 of v3-178-bdk-plugin-skeleton).
+set -eu
+
+# Resolve symbolic links by hand: `readlink -f` is missing on older macOS.
+self=$0
+while [ -L "$self" ]; do
+  link=$(readlink "$self")
+  case $link in
+    /*) self=$link ;;
+    *) self=$(dirname "$self")/$link ;;
+  esac
+done
+bundle=$(cd "$(dirname "$self")/.." && pwd -P)/dist/bdk.mjs
+
+if ! command -v node >/dev/null 2>&1; then
+  echo "bdk: node is not on PATH; install Node 22.18.0 or later" >&2
+  exit 3
+fi
+if [ ! -f "$bundle" ]; then
+  echo "bdk: $bundle is missing; reinstall the bdk plugin, or run pnpm build in a checkout" >&2
+  exit 3
+fi
+exec node "$bundle" "$@"
