@@ -6,6 +6,7 @@ import { homedir } from "node:os";
 import { configGroup } from "./config/index.ts";
 import { findingsGroup } from "./findings/index.ts";
 import { gitGroup } from "./git/index.ts";
+import { planGroup } from "./plan/index.ts";
 import { runGroup } from "./run/index.ts";
 import { run } from "./shared/cli/index.ts";
 import type { Group } from "./shared/cli/index.ts";
@@ -23,6 +24,7 @@ const GROUPS: readonly Group[] = [
   findingsGroup({ files }),
   runGroup(deps),
   gitGroup({ ...deps, git: (cwd, args) => git(cwd, args) }),
+  planGroup(deps),
 ];
 
 process.exitCode = await run({
