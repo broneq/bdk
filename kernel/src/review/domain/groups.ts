@@ -21,6 +21,8 @@ export interface PartFiles {
 export interface GroupInput {
   /** The changed files of the range, `.bdk/` excluded. */
   readonly changed: readonly string[];
+  /** The changed files git counts as binary: no reviewer reads them, so they go into no group (#158). */
+  readonly binary: readonly string[];
   /** The plan parts in plan order; none groups by module. */
   readonly parts: readonly PartFiles[];
   /** `review.group.max-files`: the target size of a group; a module or part is kept whole up to a third above it. */
@@ -33,7 +35,8 @@ const UNPLANNED = "unplanned";
 const INTEGRATION = "integration";
 
 export function reviewGroups(input: GroupInput): ReviewGroup[] {
-  const changed = sorted(new Set(input.changed));
+  const binary = new Set(input.binary);
+  const changed = sorted(new Set(input.changed.filter((path) => !binary.has(path))));
   if (changed.length === 0) return [];
   const logical = input.parts.length > 0 ? byPart(changed, input.parts) : byModule(changed, input);
   return [

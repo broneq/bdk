@@ -43,11 +43,15 @@ export interface AddInput {
   readonly review: boolean;
   readonly supersedes?: string;
   readonly category?: string;
+  /** Only with `finding` or `observation`: the writer's severity (#158). */
+  readonly severity?: string;
   /** Only with `learning`; defaults to the `Files:` of the ticket's task. */
   readonly applies?: readonly string[];
 }
 
 const CATEGORY_TYPES: readonly string[] = ["finding", "blocker"];
+const SEVERITY_TYPES: readonly string[] = ["finding", "observation"];
+const SEVERITIES: readonly string[] = ["critical", "high", "medium", "low"];
 
 export function addEntry(
   deps: LogDeps,
@@ -212,6 +216,23 @@ function validate(input: AddInput): Refusal | undefined {
         `bdk log add ${input.type} "${input.summary}" --ref <ref>`,
         "bdk log add blocker ... --category <id>",
       ],
+    );
+  }
+  if (input.severity !== undefined && !SEVERITY_TYPES.includes(input.type)) {
+    return refuse(
+      "input/invalid-argument",
+      `--severity applies to finding and observation, the types that carry it, not ${input.type}`,
+      [
+        `bdk log add ${input.type} "${input.summary}" --ref <ref>`,
+        "bdk log add finding ... --severity high",
+      ],
+    );
+  }
+  if (input.severity !== undefined && !SEVERITIES.includes(input.severity)) {
+    return refuse(
+      "input/invalid-argument",
+      `--severity ${input.severity} is not one of ${SEVERITIES.join(", ")}`,
+      ["bdk log add finding ... --severity high"],
     );
   }
   if (input.status === "superseded") {

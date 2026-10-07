@@ -135,10 +135,17 @@ export {
   mergeReportName,
   readManifests,
   resolveTicketRef,
+  reviewerGroups,
   stampPackage,
   ticketManifests,
 } from "./tickets.ts";
-export type { ActivePackage, ManifestFile, ResolvedRef, TicketDeps } from "./tickets.ts";
+export type {
+  ActivePackage,
+  ManifestFile,
+  ResolvedRef,
+  ReviewerGroup,
+  TicketDeps,
+} from "./tickets.ts";
 export type { DispatchPackage } from "./state/dispatch.ts";
 export type { EvidenceManifest } from "./state/evidence.ts";
 export type { AttemptFile, PlanPartFile, PlanPartFrontmatter } from "./work.ts";

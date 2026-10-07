@@ -120,7 +120,7 @@ BDK works in Changes: one unit of work on one branch, whose intent, design, plan
 
 ## /bdk:cr
 
-**Purpose.** Review the Change on the current branch in rounds on the v3 kernel: one `reviewer` package per group of the range, an Opus `integration-reviewer` over the whole range and a `runner` for the full gate and diff coverage. It triages every finding to `blocker`, `should-fix`, `nice-to-have` or `not-a-problem`, merges the round's report, and fixes blocking entries in the next round through an `implementer` package until none is left or the Change is parked. Without an active Change it opens a review Change of the branch (`bdk change new --inferred --kind review`).
+**Purpose.** Review the Change on the current branch in rounds on the v3 kernel: one `reviewer` package per group of the range and a `runner` for the full gate and diff coverage, then, once the reviewers have returned, an Opus `integration-reviewer` that traces the spec deltas from their reports, and then a `judge` that triages every entry of the round to `blocker`, `should-fix`, `nice-to-have` or `not-a-problem` with a reason. It triages what the judge left, merges the round's report, and fixes blocking entries in the next round through an `implementer` package until none is left or the Change is parked. Without an active Change it opens a review Change of the branch (`bdk change new --inferred --kind review`).
 
 **Arguments:** `[--full] [--base <ref>] [--inline] [focus]` - the delta since the last merged review by default; `--full` reviews the whole Change; `--base <ref>` reviews from an explicit base, for stacked branches; `--inline` runs the packages in the session with no agents and fixes nothing.
 
@@ -263,6 +263,6 @@ With `bdk` installed, every implementer package has a `Craft` section that names
 
 ## Role skills
 
-The skills under `skills/roles/` and `swarm` carry `user-invocable: false` and are never typed as `/bdk:<name>`. A role skill is the contract of one role (implementer, simplifier, verifier, design-verifier, reviewer, integration-reviewer, pr-reviewer, runner, scout, lead): what the agent reads, does, writes and returns. A dispatch package embeds its role's section, and the [agents](agents.md) run it. `swarm` holds how an orchestrator dispatches packages and waits for their agents. BDK 3 removed the eight `bdk-*` meta-skills that BDK 2 preloaded into agents; see [Context](../concepts/context.md#dispatch-packages) for how an agent gets its context now.
+The skills under `skills/roles/` and `swarm` carry `user-invocable: false` and are never typed as `/bdk:<name>`. A role skill is the contract of one role (implementer, simplifier, verifier, design-verifier, reviewer, integration-reviewer, judge, pr-reviewer, runner, scout, lead): what the agent reads, does, writes and returns. A dispatch package embeds its role's section, and the [agents](agents.md) run it. `swarm` holds how an orchestrator dispatches packages and waits for their agents. BDK 3 removed the eight `bdk-*` meta-skills that BDK 2 preloaded into agents; see [Context](../concepts/context.md#dispatch-packages) for how an agent gets its context now.
 
 The v2 skills BDK 3 removed, and what replaced each, are on [Migration from v2](../getting-started/migration-from-v2.md#skills).

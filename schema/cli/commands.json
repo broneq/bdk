@@ -761,6 +761,11 @@
           "description": "The entry's category; a verifier blocker needs one from policy.verifier.blocking-categories (P8)."
         },
         {
+          "name": "--severity",
+          "values": ["critical", "high", "medium", "low"],
+          "description": "The writer's severity; only with finding or observation."
+        },
+        {
           "name": "--review",
           "description": "Mark the entry to be shown at the next gate."
         },
@@ -1023,7 +1028,7 @@
         {
           "name": "<role>",
           "required": true,
-          "description": "Role skill under skills/roles/: implementer, simplifier, verifier, design-verifier, reviewer, integration-reviewer, pr-reviewer, runner, scout, lead."
+          "description": "Role skill under skills/roles/: implementer, simplifier, verifier, design-verifier, reviewer, integration-reviewer, judge, pr-reviewer, runner, scout, lead."
         },
         {
           "name": "<ticket>",
@@ -1050,7 +1055,7 @@
         {
           "name": "--range",
           "value": "<range>",
-          "description": "Only with `--group`; required for `reviewer` and `integration-reviewer`. The reviewed range `<base>..<head>` from `bdk review plan`."
+          "description": "Only with `--group`; required for `reviewer`, `integration-reviewer` and `judge`. The reviewed range `<base>..<head>` from `bdk review plan`."
         },
         {
           "name": "--focus",
@@ -1544,7 +1549,7 @@
         {
           "name": "--role",
           "value": "<role>",
-          "description": "One of the ten roles; needs at least one --file. Prints the rules a package of that role and file set would record, with no Change (T42)."
+          "description": "One of the eleven roles; needs at least one --file. Prints the rules a package of that role and file set would record, with no Change (T42)."
         },
         {
           "name": "--file",
@@ -1744,7 +1749,7 @@
       "output": "output/export-agents.json",
       "exits": [0, 2, 3, 5],
       "refusals": ["policy/generated-drift"],
-      "writes": ["<out>/{worker,reader,reviewer,runner,scout}.md"]
+      "writes": ["<out>/{lead,worker,reader,integrator,judge,reviewer,runner,scout}.md"]
     },
     {
       "id": "hooks-session-start",
@@ -1818,6 +1823,7 @@
         "guard/subagent-git",
         "guard/subagent-kernel-command",
         "guard/lead-scope",
+        "guard/judge-scope",
         "guard/worktree-scope",
         "guard/hooks-from-bash",
         "guard/nested-stage-command",

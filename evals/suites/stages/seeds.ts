@@ -6,7 +6,8 @@
 // is a tiny Change executed and reviewed, waiting at `gate:review` (T41).
 // `executed` is that Change before its review, and `executed-blocker` the same
 // with the task delivered without the export it names; `executed-two-parts` is
-// a Change with two dependent parts delivered, the base of `review-models` (T42),
+// a Change with two dependent parts delivered, its spec delta done and a
+// binary snapshot among its files, the base of `review-models` (T42, #158),
 // which passes a defects patch: each task then delivers its files with the
 // defects in them, as an implementer that made those mistakes would have.
 // `shared-lockfile` is a large Change whose two disjoint parts both add a
@@ -218,9 +219,12 @@ function deliveredTask(
   run(dir, kernel, ["commit", task]);
 }
 
-/** The files a unified diff changes, by their `+++ b/` lines. */
+/**
+ * The files a unified diff changes, by their `diff --git` lines, so a binary
+ * section, which has no `+++ b/` line, counts too.
+ */
 function patchFiles(patch: string): string[] {
-  return [...patch.matchAll(/^\+\+\+ b\/(.+)$/gm)].flatMap((match) =>
+  return [...patch.matchAll(/^diff --git a\/\S+ b\/(.+)$/gm)].flatMap((match) =>
     match[1] === undefined ? [] : [match[1]],
   );
 }
@@ -245,7 +249,8 @@ function patched(dir: string, patch: string, defects?: string): () => readonly s
     if (extra !== "") {
       execFileSync("git", ["apply", "-"], { cwd: dir, env: ENV, input: extra, stdio: "pipe" });
     }
-    return git(dir, "diff", "--name-only").trim().split("\n");
+    // A file the patch adds is untracked, so `git diff` alone would miss it.
+    return git(dir, "ls-files", "--modified", "--others", "--exclude-standard").trim().split("\n");
   };
 }
 
@@ -323,9 +328,13 @@ function executedTwoParts(dir: string, kernel: Kernel, defects?: string): void {
     "change",
   );
   commitIgnore(dir);
-  cpSync(join(TWO_PARTS_EXECUTED, "plan"), join(dir, ".bdk", "changes", change, "plan"), {
-    recursive: true,
-  });
+  // The plan with the spec delta its parts name in `spec-impact`, which the
+  // integration reviewer traces (#158).
+  for (const path of ["plan", "spec-delta"]) {
+    cpSync(join(TWO_PARTS_EXECUTED, path), join(dir, ".bdk", "changes", change, path), {
+      recursive: true,
+    });
+  }
   run(dir, kernel, ["done", "plan"]);
   for (const [part, task] of [
     ["01", "01-1"],
@@ -335,6 +344,7 @@ function executedTwoParts(dir: string, kernel: Kernel, defects?: string): void {
     deliveredTask(dir, kernel, task, patched(dir, taskPatch(task), defects));
     run(dir, kernel, ["part", "done", part]);
   }
+  run(dir, kernel, ["done", "spec-delta"]);
   run(dir, kernel, ["change", "checkpoint"]);
 }
 

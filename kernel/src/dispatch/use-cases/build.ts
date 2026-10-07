@@ -1,6 +1,6 @@
 // `bdk dispatch build <target> <role> <ticket>` (`kernel-cli/dispatch`;
 // T23-D31 to D33, D37, D42): the package of an open ticket from the one
-// template, stamped whole, at most 12 288 bytes. A ticket keeps one package per
+// template, stamped whole, at most 163 840 bytes. A ticket keeps one package per
 // role, and the last one built is its active package. A review round's
 // `--group` builds one package per group under the same ticket and leaves the
 // active package alone (T42-A1). Nothing is written before every check has
@@ -34,6 +34,7 @@ import {
   readDocument,
   readPlanParts,
   renderDocument,
+  reviewerGroups,
   splitFrontmatter,
   stampPackage,
   STATE_KINDS,
@@ -46,15 +47,21 @@ import {
 } from "../../shared/store/index.ts";
 import type { EntryRow, IndexDb, PlanPartFile } from "../../shared/store/index.ts";
 import { isBlocking, ROLE_STAGE, ROLES } from "../../shared/vocabulary/index.ts";
-import { risksModule } from "../../review/index.ts";
+import { rangeBinary, risksModule } from "../../review/index.ts";
 import type { Role } from "../../shared/vocabulary/index.ts";
 import { mergeConflictsPrompt } from "../config.ts";
 import { checksText, fullChecksText } from "../domain/checks.ts";
 import type { ToolLists } from "../domain/checks.ts";
 import { fileRefs, selectEntries, taskText } from "../domain/entries.ts";
 import type { BuildReport } from "../domain/report.ts";
-import { groupFlagProblem, reviewText, risksText } from "../domain/review.ts";
-import type { GroupFlags } from "../domain/review.ts";
+import {
+  groupFlagProblem,
+  integrationText,
+  judgeText,
+  reviewText,
+  risksText,
+} from "../domain/review.ts";
+import type { GroupFlags, JudgedEntry } from "../domain/review.ts";
 import {
   bytes,
   largestSection,
@@ -83,6 +90,14 @@ export interface BuildInput extends GroupFlags {
 
 /** The intent and plan documents a review group reads, when the Change holds them. */
 const INTENT_FILES = ["change.md", "design.md", "architecture.md", "plan/index.md"];
+
+/** The verifiers: their P8 lists come with the sentence that any other blocker is an observation. */
+const VERIFIER_ROLES: readonly string[] = ["verifier", "design-verifier"];
+/** The reviewing roles that get the P8 lists with the triage sentence (#158). */
+const P8_REVIEWING_ROLES: readonly string[] = ["reviewer", "integration-reviewer", "judge"];
+/** The entry types the judge triages, and the statuses of a live entry (#158). */
+const JUDGED_TYPES: readonly string[] = ["finding", "blocker", "observation"];
+const LIVE: readonly string[] = ["proposed", "accepted"];
 
 /** What the target section says, which names select its entries, and its file set. */
 interface TargetFacts {
@@ -175,8 +190,9 @@ export function buildPackage(
       { removed: "ignore" },
     );
     if ("refused" in resolved) return resolved;
-    const verifier = role === "verifier" || role === "design-verifier";
-    const policy = verifier ? verifierPolicy(deps, change, globalDir) : undefined;
+    const verifier = VERIFIER_ROLES.includes(role);
+    const p8 = verifier || P8_REVIEWING_ROLES.includes(role);
+    const policy = p8 ? verifierPolicy(deps, change, globalDir) : undefined;
     if (policy !== undefined && isRefusal(policy)) return policy;
     const ref = group === undefined ? input.ticket : `${input.ticket}@${group}`;
     const checks =
@@ -191,22 +207,54 @@ export function buildPackage(
     const name = `${input.target}-${role}-${input.ticket}${group === undefined ? "" : `-${group}`}.md`;
     const changeRel = posix.relative(change.projectRoot, change.dir);
     const report = `${changeRel}/reports/${name}`;
-    const review =
-      group === undefined
-        ? ""
-        : reviewText({
-            files: input.files,
-            range: input.range,
-            partFile: part === undefined ? undefined : `${changeRel}/${part.file}`,
-            intent: INTENT_FILES.filter((file) => deps.store.exists(join(change.dir, file))).map(
-              (file) => `${changeRel}/${file}`,
-            ),
-            focus: input.focus,
-          });
+    const intent = INTENT_FILES.filter((file) => deps.store.exists(join(change.dir, file))).map(
+      (file) => `${changeRel}/${file}`,
+    );
+    let review = "";
+    let reviewLead = "";
+    const judged =
+      role === "judge" ? judgedEntries(listEntries(index, change.id), input.ticket) : [];
+    if (group !== undefined && role === "judge") {
+      reviewLead = `You are the judge of ticket ${input.ticket}, group \`${group}\`.`;
+      review = judgeText({
+        range: input.range ?? "",
+        entries: judged,
+        reports: roundReports(deps, change.dir, input.ticket, name).map(
+          (file) => `${changeRel}/reports/${file}`,
+        ),
+        specDeltas: specDeltaPaths(deps, change.dir).map((path) => `${changeRel}/${path}`),
+        intent,
+        focus: input.focus,
+      });
+    } else if (group !== undefined && role === "integration-reviewer") {
+      const [base = "", head = ""] = (input.range ?? "").split("..");
+      const binary = await rangeBinary(deps.git, change.projectRoot, base, head);
+      if (isRefusal(binary)) return binary;
+      reviewLead = `You are the integration reviewer of ticket ${input.ticket}, group \`${group}\`.`;
+      review = integrationText({
+        range: input.range ?? "",
+        binary,
+        groups: reviewerGroups(deps.store, change.projectRoot, change.dir, input.ticket),
+        specDeltas: specDeltaPaths(deps, change.dir).map((path) => `${changeRel}/${path}`),
+        intent,
+        focus: input.focus,
+      });
+    } else if (group !== undefined) {
+      reviewLead = `You review group \`${group}\` of ticket ${input.ticket}. Review only this group; another agent reviews each other group in parallel.`;
+      review = reviewText({
+        files: input.files,
+        range: input.range,
+        partFile: part === undefined ? undefined : `${changeRel}/${part.file}`,
+        intent,
+        focus: input.focus,
+      });
+    }
     const risks =
       role === "integration-reviewer" ? risksText(moduleValue(risksModule, resolved.value)) : "";
     const kinds: SectionKind[] = [
-      ...(verifier ? (["verifier"] as const) : []),
+      // The judge reads each entry's body with `bdk log show`, so its package holds none (#158).
+      ...(role === "judge" ? [] : (["ledger"] as const)),
+      ...(p8 ? (["categories"] as const) : []),
       ...(role === "runner" || role === "lead" ? [role] : []),
       ...(group === undefined ? [] : (["review"] as const)),
       ...(role === "integration-reviewer" ? (["risks"] as const) : []),
@@ -242,7 +290,7 @@ export function buildPackage(
       {
         ticket: input.ticket,
         ref,
-        group: group ?? "",
+        "review-lead": reviewLead,
         review,
         risks,
         role,
@@ -255,6 +303,9 @@ export function buildPackage(
         entries: entriesText(deps, change, selection.full, selection.counted, input.target),
         "role-body": demoteHeadings(withPluginRoot(roleBody, deps.pluginRoot)),
         report,
+        "categories-rule": verifier
+          ? `A blocker names one of these with \`bdk log add blocker <summary> --ref <ref> --ticket ${ref} --category <id>\`; any other blocker is stored as an observation for review.`
+          : "Only an entry in one of these categories can be triaged `blocker`.",
         blocking: categoryList(policy?.blocking ?? []),
         "not-a-fail": categoryList(policy?.notAFail ?? []),
         checks,
@@ -307,6 +358,7 @@ export function buildPackage(
       report,
       rules: rules.selected.map(({ rule }) => rule.id),
       ...(group === undefined ? {} : { group, files: [...input.files] }),
+      ...(role === "judge" ? { entries: judged.map((entry) => entry.id) } : {}),
       ...(isolated ? { workdir } : {}),
     };
     const text = renderDocument(data, packageBody(sections));
@@ -351,7 +403,10 @@ export function buildPackage(
       templateHash,
       report,
       ...(group === undefined ? {} : { group, files: input.files }),
-      entries: { full: selection.full.map((entry) => entry.id), counted: selection.counted },
+      entries:
+        role === "judge"
+          ? { full: [], counted: {} }
+          : { full: selection.full.map((entry) => entry.id), counted: selection.counted },
     };
   });
 }
@@ -613,4 +668,52 @@ function hashOf(texts: readonly string[]): string {
   const hash = createHash("sha256");
   for (const text of texts) hash.update(`${normalise(text)}\n\0`);
   return `sha256:${hash.digest("hex")}`;
+}
+
+/**
+ * The entries a judge triages (#158): every live finding, blocker and
+ * observation written under the round's ticket, then every other live one of
+ * the Change without a level, each in ledger order.
+ */
+function judgedEntries(entries: readonly EntryRow[], ticket: string): JudgedEntry[] {
+  const live = entries.filter(
+    (entry) => JUDGED_TYPES.includes(entry.type) && LIVE.includes(entry.status),
+  );
+  return [
+    ...live.filter((entry) => entry.ticket === ticket),
+    ...live.filter((entry) => entry.ticket !== ticket && entry.level === undefined),
+  ].map((entry) => ({
+    id: entry.id,
+    type: entry.type,
+    summary: entry.summary,
+    refs: entry.refs,
+    writer: entry.source,
+    group: entry.group,
+  }));
+}
+
+/** The stored reports of the round's ticket but the judge's own, by file name, sorted. */
+function roundReports(
+  deps: DispatchDeps,
+  changeDir: string,
+  ticket: string,
+  own: string,
+): string[] {
+  return deps.store
+    .list(join(changeDir, "reports"))
+    .filter((name) => name.endsWith(".md") && name.includes(`-${ticket}-`) && name !== own)
+    .sort();
+}
+
+/** The Change's `spec-delta/**\/*.md` paths, relative to its directory, sorted. */
+function specDeltaPaths(deps: DispatchDeps, changeDir: string): string[] {
+  const found: string[] = [];
+  const visit = (dir: string): void => {
+    for (const name of deps.store.list(join(changeDir, dir))) {
+      if (name.endsWith("/")) visit(`${dir}/${name.slice(0, -1)}`);
+      else if (name.endsWith(".md")) found.push(`${dir}/${name}`);
+    }
+  };
+  visit("spec-delta");
+  return found.sort();
 }

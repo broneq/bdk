@@ -33,11 +33,19 @@ import {
 } from "../../shared/store/index.ts";
 import type { ManifestFile } from "../../shared/store/index.ts";
 import { moduleOf, rangeFiles } from "../../measure/index.ts";
+import { listDeltas } from "../../spec/index.ts";
 import { risksModule, trackerModule } from "../config.ts";
 import { prPage } from "../domain/pr.ts";
 import type { PrInput } from "../domain/pr.ts";
-import { areaLines, changeReport } from "../domain/report.ts";
-import type { CoverageInput, ReportCommit, ReportEntry, Tracker } from "../domain/report.ts";
+import { areaLines, changeReport, intentRows } from "../domain/report.ts";
+import type {
+  CoverageInput,
+  IntentKey,
+  IntentRow,
+  ReportCommit,
+  ReportEntry,
+  Tracker,
+} from "../domain/report.ts";
 import type { PrPage } from "../domain/pr.ts";
 import type { ChangeReport } from "../domain/report.ts";
 import type { RenderResult } from "../domain/render.ts";
@@ -93,6 +101,7 @@ export async function renderChangeReport(
     };
   });
   const tracker = trackerOf(settings);
+  const integration = integrationReports(deps, change);
   const report = changeReport({
     change: change.id,
     intent,
@@ -110,7 +119,9 @@ export async function renderChangeReport(
     })),
     commits,
     risks: moduleValue(risksModule, settings).filter((risk) => risk.enabled),
-    areas: areasOf(deps, change),
+    areas: areasOf(integration),
+    scenarios: scenariosOf(deps, change),
+    traced: tracedOf(integration),
     entries,
     gate: gateOf(deps, change, settings),
     tracker,
@@ -209,11 +220,8 @@ async function commitsByFile(
   return byFile;
 }
 
-/**
- * The `## Areas` lines of the integration reviewer's reports, oldest round
- * first by the ticket's `opened-at`, so a later report overrides per id.
- */
-function areasOf(deps: ReviewDeps, change: ActiveChange): Map<string, string> {
+/** The bodies of the integration reviewer's reports, oldest round first by the ticket's `opened-at`. */
+function integrationReports(deps: ReviewDeps, change: ActiveChange): string[] {
   const opened = new Map(
     readAttempts(deps.store, change.dir).map((attempt) => [
       attempt.data.ticket,
@@ -232,11 +240,42 @@ function areasOf(deps: ReviewDeps, change: ActiveChange): Map<string, string> {
       return [{ name, at: opened.get(data.ticket ?? "") ?? "", body: document.body }];
     })
     .sort((a, b) => compare(a.at, b.at) || compare(a.name, b.name));
+  return reports.map((report) => report.body);
+}
+
+/** The `## Areas` lines of the integration reports; a later report overrides per id. */
+function areasOf(reports: readonly string[]): Map<string, string> {
   const areas = new Map<string, string>();
-  for (const report of reports) {
-    for (const [id, sentence] of areaLines(report.body)) areas.set(id, sentence);
+  for (const body of reports) {
+    for (const [id, sentence] of areaLines(body)) areas.set(id, sentence);
   }
   return areas;
+}
+
+/** The `## Intent` rows of the latest integration report that holds the table (#158). */
+function tracedOf(reports: readonly string[]): IntentRow[] | undefined {
+  return reports
+    .map(intentRows)
+    .filter((rows) => rows !== undefined)
+    .at(-1);
+}
+
+/**
+ * The scenarios of the Change's spec deltas: every scenario of an `ADDED`
+ * or `MODIFIED` requirement, and `-` for a `REMOVED` one, capability by
+ * capability in the order each delta lists them.
+ */
+function scenariosOf(deps: ReviewDeps, change: ActiveChange): IntentKey[] {
+  return listDeltas(deps.store, change.dir).flatMap(({ capability, delta }) => [
+    ...[...delta.added, ...delta.modified].flatMap((requirement) =>
+      requirement.scenarios.map((scenario) => ({
+        capability,
+        requirement: requirement.name,
+        scenario: scenario.name,
+      })),
+    ),
+    ...delta.removed.map((removal) => ({ capability, requirement: removal.name, scenario: "-" })),
+  ]);
 }
 
 function gateOf(deps: ReviewDeps, change: ActiveChange, settings: Mapping) {

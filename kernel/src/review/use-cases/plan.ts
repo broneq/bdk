@@ -4,13 +4,7 @@
 // nothing, so the same repository and ledger give the same plan.
 import { moduleValue, resolveOrRefuse } from "../../shared/config/index.ts";
 import type { ConfigRegistry } from "../../shared/config/index.ts";
-import {
-  diffNames,
-  dirtyTracked,
-  headCommit,
-  mergeBase,
-  resolveCommit,
-} from "../../shared/git/index.ts";
+import { dirtyTracked, headCommit, mergeBase, resolveCommit } from "../../shared/git/index.ts";
 import type { Git } from "../../shared/git/index.ts";
 import { isRefusal, refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
@@ -24,7 +18,8 @@ import {
   withIndex,
 } from "../../shared/store/index.ts";
 import type { IndexOpener, Store } from "../../shared/store/index.ts";
-import { measureRange, moduleOf } from "../../measure/index.ts";
+import { moduleOf, rangeStats } from "../../measure/index.ts";
+import type { FileStat } from "../../measure/index.ts";
 import { reviewGroupModule } from "../config.ts";
 import { reviewGroups } from "../domain/groups.ts";
 import type { ReviewPlan } from "../domain/plan.ts";
@@ -74,8 +69,11 @@ export async function reviewPlan(
 
   const anchor = await anchorOf(deps, change, input);
   if (isRefusal(anchor)) return anchor;
-  const measured = await measureRange(deps, root, anchor.sha, head);
-  if (isRefusal(measured)) return measured;
+  // One numstat read gives the measure, the group files and the binary list.
+  const stats = await rangeStats(deps, root, anchor.sha, head);
+  if (isRefusal(stats)) return stats;
+  const measured = stats.report;
+  const binary = binaryOf(stats.files);
   const parts = readPlanParts(deps.store, change.dir).map((part) => ({
     id: part.id,
     files: part.tasks.flatMap((task) => task.files.map((file) => file.path)),
@@ -92,13 +90,31 @@ export async function reviewPlan(
       removed: measured.removed,
       modules: measured.modules,
     },
+    binary,
     groups: reviewGroups({
-      changed: (await diffNames(deps.git, root, anchor.sha, head)).filter((path) => !isBdk(path)),
+      changed: stats.files.map((file) => file.path),
+      binary,
       parts,
       maxFiles: moduleValue(reviewGroupModule, resolved.value)["max-files"],
       moduleOf,
     }),
   };
+}
+
+/**
+ * The changed files of `<base>..<head>` git counts as binary, sorted: what
+ * `review plan` returns in `binary`, for `dispatch build`, which gets the
+ * range and not the plan (#158).
+ */
+export async function rangeBinary(
+  git: Git,
+  workTree: string,
+  base: string,
+  head: string,
+): Promise<string[] | Refusal> {
+  const stats = await rangeStats({ git }, workTree, base, head);
+  if (isRefusal(stats)) return stats;
+  return binaryOf(stats.files);
 }
 
 /**
@@ -140,4 +156,8 @@ async function anchorOf(
 /** Ledger and machine files are never reviewed: any path with a `.bdk` segment. */
 function isBdk(path: string): boolean {
   return path.split("/").includes(".bdk");
+}
+
+function binaryOf(files: readonly FileStat[]): string[] {
+  return files.filter((file) => file.binary).map((file) => file.path);
 }

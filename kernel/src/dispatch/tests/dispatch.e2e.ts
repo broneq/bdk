@@ -61,7 +61,7 @@ describe("bdk dispatch build", () => {
     expect(text).not.toContain("bdk.mjs");
     expect(text).toContain(`bdk rules show --ticket ${ticket}`);
     expect(text).toContain(`bdk log ingest --ticket ${ticket}`);
-    // The package size of the tiny fixture, recorded for the 12 288-byte budget.
+    // The package size of the tiny fixture, far below the 163 840-byte limit.
     expect(report.bytes).toBeLessThan(8_192);
   });
 
@@ -124,7 +124,7 @@ describe("bdk dispatch build", () => {
     expect(text).toContain("- `eslint src/01-1.ts`");
     expect(text).toContain(`\`bdk evidence record lint <file> --ticket ${ticket} --verdict`);
     expect(text.indexOf("### tests-scoped")).toBeLessThan(text.indexOf("### lint"));
-    expect(report.bytes).toBeLessThanOrEqual(12_288);
+    expect(report.bytes).toBeLessThanOrEqual(163_840);
   });
 
   it("exit 0: the same package built twice carries the same template hash", () => {

@@ -219,6 +219,7 @@ const INSTEAD: Readonly<Record<Deny["rule"], string>> = {
   "guard/subagent-git": "return blocked with the cause",
   "guard/subagent-kernel-command": "return blocked with the cause",
   "guard/lead-scope": "return blocked with the cause",
+  "guard/judge-scope": "return blocked with the cause",
   "guard/worktree-scope": "edit the same path under your work root",
   "guard/reader-write": "report through bdk log add or bdk log ingest",
   "guard/dispatch-prompt": "pass the dispatch package path and at most one sentence",

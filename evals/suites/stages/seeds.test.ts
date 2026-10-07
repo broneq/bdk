@@ -120,6 +120,12 @@ describe("runSeed", { timeout: 60_000 }, () => {
       .split("\n")
       .filter(Boolean);
     expect(tasks).toStrictEqual(["01-1", "02-1"]);
+    // The binary snapshot of task 02-1 is committed with it, and the spec delta is done.
+    const snapshot = "src/ui/__snapshots__/load-error.png";
+    expect(
+      git(dir, "log", "--format=%(trailers:key=BDK-Task,valueonly)", "--", snapshot).trim(),
+    ).toBe("02-1");
+    expect(bdkJson(dir, kernel, ["explain", "spec-delta"])).toMatchObject({ state: "done" });
     expect(readFileSync(join(dir, "src/api/http.ts"), "utf8")).toContain("isProblemDetails");
     expect(readFileSync(join(dir, "src/ui/asyncState.ts"), "utf8")).toContain("getLoadMessage");
     expect(git(dir, "status", "--porcelain")).toBe("");
@@ -199,6 +205,12 @@ describe("sectionsFor", () => {
     );
     expect(sectionsFor(patch, ["a.ts", "c.ts"])).toBe(patch);
     expect(sectionsFor(patch, ["x.ts"])).toBe("");
+  });
+
+  it("keeps a binary section of a named file, which has no +++ line", () => {
+    const binary =
+      "diff --git a/s/a.png b/s/a.png\nnew file mode 100644\nindex 0..1\nGIT binary patch\nliteral 1\nzc\n\n";
+    expect(sectionsFor(patch + binary, ["s/a.png"])).toBe(binary);
   });
 
   it("refuses defects for a seed without task patches", () => {

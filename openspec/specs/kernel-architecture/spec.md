@@ -158,7 +158,7 @@ A slice imports another slice only through that slice's `index.ts`, and only alo
 | `rules`                                                                                    | `shared` only                                                               | Rule files are read from the bundle and `.bdk/rules/`; `stats`, `prune` and `accept` read the index, and `show --ticket` reads the package and stamps `rules-read`, all through `shared/store`.                                                                                                                                                                                                                                                                          |
 | `hooks`                                                                                    | `change`, `graph`, `log`, `ctx`, `config`, `rules`, `agents`, `diagnostics` | `session-end` renders the verbose log through `diagnostics`; `session-start` composes status, startup context, the config check and the v2 layout detection of `config`, and the rules load of `rules`; `prompt-expansion` asks the graph and writes the transition; `session-end` checkpoints; the agent hooks, the lead and message guards and the continuation check read and write the registry of `agents`, and the continuation check asks `graph` for ready work. |
 | `service`                                                                                  | every slice (read-only)                                                     | `doctor` and `rebuild` inspect all state (`doctor` takes the v2 layout detection from `config`); `rebuild` writes Change state through the `shared/store` rebuild core, not through a slice; its worktree recovery is `part`'s, since `part` owns the worktree and its setup (T45).                                                                                                                                                                                      |
-| `review`                                                                                   | `measure`                                                                   | `plan` reads the module signals of `measure`; `render` reads the same signals for its diagram; the plan parts, the `merge` reports, the entries, the evidence and the Change base come from `shared/store`.                                                                                                                                                                                                                                                              |
+| `review`                                                                                   | `measure`, `spec`                                                           | `plan` reads the module signals of `measure`; `render` reads the scenarios of the Change's spec deltas through the delta parser `spec` owns, to check the `## Intent` table (#158); `render` reads the same signals for its diagram; the plan parts, the `merge` reports, the entries, the evidence and the Change base come from `shared/store`.                                                                                                                        |
 | `log`, `evidence`, `spec`, `config`, `query`, `measure`, `export`, `agents`, `diagnostics` | `shared` only                                                               | Leaves; `agents` reads ledger entries and task `Files:` for `--affected-by` through `shared/store`; `diagnostics` reads the journal, the registry and the ledger through `shared/store`.                                                                                                                                                                                                                                                                                 |
 
 Edges not in the table are forbidden, including the reverse of every listed edge. The two structural tests below fail the build on a violation.
@@ -196,7 +196,7 @@ Edges not in the table are forbidden, including the reverse of every listed edge
 #### Scenario: review imports only measure
 
 - **WHEN** the import test reads `kernel/src/review/`
-- **THEN** it imports no slice but `measure`, and no slice but `dispatch` imports `review`
+- **THEN** it imports no slice but `measure` and `spec`, `spec` through its `index.ts`, and no slice but `dispatch` imports `review`
 
 ### Requirement: Slice anatomy
 
@@ -466,7 +466,7 @@ The allowlist is `zod` and the YAML parser `yaml` (design, Constraints & NFRs, S
 
 Every file that `pnpm build` generates SHALL be ignored and untracked on every branch except the distribution ref, and one contract test SHALL keep the ignore list and the generators in step.
 
-Generated files: `dist/bdk.mjs`; under `schema/`, `settings.json`, `pipeline.json`, `state/`, `cli/output/` and the generated files of `cli/common/` (`version.json`, `refusal.json`); under `agents/`, the adapters of `bdk export agents --host claude` (`lead`, `reader`, `reviewer`, `runner`, `scout`, `worker`). Hand-written files stay tracked: `schema/cli/commands.json`, `schema/cli/commands.schema.json`, `schema/cli/common/list-page.json` and `agents/web-researcher.md`, the one hand-written agent next to the adapters since T42 removed the v2 agents. `.gitignore` names each generated path (a directory where the whole directory is generated); the adapters are covered by `/agents/*` with `agents/web-researcher.md` excepted. `pnpm build` runs the bundler, the schema exporter and `export agents --host claude`, in that order, from one command, so `prepare`, CI and the release job all produce the same set. The contract test runs the exporters into a temporary directory, lists every file they write, and fails when one of those paths is tracked or is not covered by `.gitignore`, and when `git ls-files` on any generated path is non-empty (it skips this second check when HEAD is the distribution ref).
+Generated files: `dist/bdk.mjs`; under `schema/`, `settings.json`, `pipeline.json`, `state/`, `cli/output/` and the generated files of `cli/common/` (`version.json`, `refusal.json`); under `agents/`, the adapters of `bdk export agents --host claude` (`integrator`, `judge`, `lead`, `reader`, `reviewer`, `runner`, `scout`, `worker`). Hand-written files stay tracked: `schema/cli/commands.json`, `schema/cli/commands.schema.json`, `schema/cli/common/list-page.json` and `agents/web-researcher.md`, the one hand-written agent next to the adapters since T42 removed the v2 agents. `.gitignore` names each generated path (a directory where the whole directory is generated); the adapters are covered by `/agents/*` with `agents/web-researcher.md` excepted. `pnpm build` runs the bundler, the schema exporter and `export agents --host claude`, in that order, from one command, so `prepare`, CI and the release job all produce the same set. The contract test runs the exporters into a temporary directory, lists every file they write, and fails when one of those paths is tracked or is not covered by `.gitignore`, and when `git ls-files` on any generated path is non-empty (it skips this second check when HEAD is the distribution ref).
 
 #### Scenario: new generated file without an ignore entry
 
@@ -486,7 +486,7 @@ Generated files: `dist/bdk.mjs`; under `schema/`, `settings.json`, `pipeline.jso
 #### Scenario: one build command
 
 - **WHEN** `pnpm build` runs in a clean checkout
-- **THEN** it writes `dist/bdk.mjs`, every generated file under `schema/` and the six adapters under `agents/`, and a second run changes none of them
+- **THEN** it writes `dist/bdk.mjs`, every generated file under `schema/` and the eight adapters under `agents/`, and a second run changes none of them
 
 ### Requirement: Distribution ref
 
@@ -497,7 +497,7 @@ The job checks out the release tag, runs the frozen install and `pnpm build`, fo
 #### Scenario: release publishes the generated outputs
 
 - **WHEN** release-please creates release `v3.0.1`
-- **THEN** `release` points to a commit whose tree is the tree of `v3.0.1` plus `dist/bdk.mjs`, `schema/` and the six adapters, each equal to a fresh `pnpm build` of the tag, and the tag `dist-v3.0.1` names that commit
+- **THEN** `release` points to a commit whose tree is the tree of `v3.0.1` plus `dist/bdk.mjs`, `schema/` and the eight adapters, each equal to a fresh `pnpm build` of the tag, and the tag `dist-v3.0.1` names that commit
 
 #### Scenario: no release, no publish
 
@@ -517,7 +517,7 @@ The job checks out the release tag, runs the frozen install and `pnpm build`, fo
 #### Scenario: install from the distribution ref
 
 - **WHEN** a clean project installs `bdk` from the marketplace after a release
-- **THEN** the plugin directory contains `dist/bdk.mjs` and the six adapters, and `hooks session-start` runs without the `kernel unavailable` message
+- **THEN** the plugin directory contains `dist/bdk.mjs` and the eight adapters, and `hooks session-start` runs without the `kernel unavailable` message
 
 ### Requirement: Plugin launcher
 

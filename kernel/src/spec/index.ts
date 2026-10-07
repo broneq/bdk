@@ -8,7 +8,7 @@ import type { SpecDeps } from "./use-cases/deps.ts";
 
 export type { SpecDeps } from "./use-cases/deps.ts";
 export { deltaCapabilities, deltaProblems } from "./use-cases/check.ts";
-export { normativeWord } from "./use-cases/files.ts";
+export { listDeltas, normativeWord } from "./use-cases/files.ts";
 export { planMerge, writeMerge } from "./use-cases/merge.ts";
 export type { MergePlan } from "./use-cases/merge.ts";
 export { mergeHashFindings } from "./use-cases/hash.ts";

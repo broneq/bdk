@@ -73,6 +73,16 @@ describe("dispatch package", () => {
     expect(issues(dispatchKind.schema, without(grouped, "group"))).toStrictEqual(["group"]);
   });
 
+  it("names its entries on a judge package and only there (#158)", () => {
+    const judge = { ...grouped, role: "judge", group: "judge", files: [] };
+    expect(
+      issues(dispatchKind.schema, { ...judge, entries: ["L-a1b2c3d4", "L-c3d4e5f6"] }),
+    ).toStrictEqual([]);
+    expect(issues(dispatchKind.schema, judge)).toStrictEqual(["entries"]);
+    expect(issues(dispatchKind.schema, { ...grouped, entries: [] })).toStrictEqual(["entries"]);
+    expect(issues(dispatchKind.schema, { ...judge, entries: ["x"] })).toStrictEqual(["entries.0"]);
+  });
+
   it("is laid out under its group's name", () => {
     const store = memoryStore();
     const path = at("dispatch/02-3-reviewer-A-7f3kx2p9-p01.md");

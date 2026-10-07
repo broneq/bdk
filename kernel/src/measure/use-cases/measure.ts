@@ -41,20 +41,6 @@ export async function measure(
   return diffSignals(deps, workTree, range, refs.join(".."));
 }
 
-/**
- * The signals of `<base>..<head>` for a caller that resolved both itself,
- * `<base>` possibly the empty tree (`kernel-cli/review`, bdk review plan).
- */
-export function measureRange(
-  deps: MeasureDeps,
-  workTree: string,
-  base: string,
-  head: string,
-): Promise<MeasureReport | Refusal> {
-  const range = `${base}..${head}`;
-  return diffSignals(deps, workTree, range, range);
-}
-
 /** The per-file lines of `<base>..<head>`, sorted by path (`kernel-cli/review`, bdk review render). */
 export async function rangeFiles(
   deps: MeasureDeps,
@@ -67,6 +53,28 @@ export async function rangeFiles(
   return typeof output === "string" ? fileStats(output) : output;
 }
 
+export interface RangeStats {
+  readonly files: readonly FileStat[];
+  readonly report: MeasureReport;
+}
+
+/**
+ * The per-file rows of `<base>..<head>`, binary files flagged, and their
+ * signals, from one `git diff` (`kernel-cli/review`, bdk review plan, #158).
+ */
+export async function rangeStats(
+  deps: MeasureDeps,
+  workTree: string,
+  base: string,
+  head: string,
+): Promise<RangeStats | Refusal> {
+  const range = `${base}..${head}`;
+  const output = await numstat(deps, workTree, range, range);
+  if (typeof output !== "string") return output;
+  const files = fileStats(output);
+  return { files, report: aggregate(range, files) };
+}
+
 async function diffSignals(
   deps: MeasureDeps,
   workTree: string,
@@ -74,7 +82,7 @@ async function diffSignals(
   revisions: string,
 ): Promise<MeasureReport | Refusal> {
   const output = await numstat(deps, workTree, range, revisions);
-  return typeof output === "string" ? aggregate(range, output) : output;
+  return typeof output === "string" ? aggregate(range, fileStats(output)) : output;
 }
 
 async function numstat(

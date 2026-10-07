@@ -16,5 +16,7 @@ export interface ReviewPlan {
     readonly removed: number;
     readonly modules: readonly string[];
   };
+  /** The changed files git counts as binary, sorted: counted in `measure`, in no group. */
+  readonly binary: readonly string[];
   readonly groups: readonly ReviewGroup[];
 }

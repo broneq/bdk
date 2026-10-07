@@ -28,11 +28,13 @@ const REMOVED_AGENTS = [
 ];
 
 describe("plugin layout", () => {
-  it("ships exactly the six adapters and web-researcher", () => {
+  it("ships exactly the eight adapters and web-researcher", () => {
     const agents = readdirSync(join(REPO_ROOT, "agents"))
       .filter((name) => name.endsWith(".md"))
       .sort();
     expect(agents).toStrictEqual([
+      "integrator.md",
+      "judge.md",
       "lead.md",
       "reader.md",
       "reviewer.md",

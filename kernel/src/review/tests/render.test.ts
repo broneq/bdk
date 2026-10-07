@@ -110,7 +110,7 @@ function attempt(store: Store, ticket: string, at: string): void {
   });
 }
 
-function report(store: Store, ticket: string, role: string, areas: string): void {
+function report(store: Store, ticket: string, role: string, areas: string, more = ""): void {
   writeDocument(store, `${DIR}/reports/${CHANGE}-${role}-${ticket}-integration.md`, {
     data: {
       schema: 1,
@@ -122,7 +122,7 @@ function report(store: Store, ticket: string, role: string, areas: string): void
       entries: [],
       evidence: [],
     },
-    body: `# Integration review\n\n## Areas\n\n${areas}\n`,
+    body: `# Integration review\n\n${more}## Areas\n\n${areas}\n`,
   });
 }
 
@@ -231,6 +231,46 @@ describe("review render", () => {
     expect(page).toContain("91.5% (min 80%)");
     expect(page).toContain('<span class="verdict fail">fail</span>');
     expect(page).toContain("(fixed)");
+  });
+
+  it("traces the scenarios of the spec deltas through the latest Intent table (#158)", async () => {
+    const store = seeded();
+    store.write(
+      `${DIR}/spec-delta/auth/login.md`,
+      "## ADDED Requirements\n\n### Requirement: Magic link\n\nThe system SHALL send a link.\n\n#### Scenario: link sent\n\n- **WHEN** x\n- **THEN** y\n\n#### Scenario: link expired\n\n- **WHEN** x\n- **THEN** y\n\n## REMOVED Requirements\n\n### Requirement: Password login\n\n**Reason**: links replace it.\n",
+    );
+    const table = (state: string) =>
+      `## Intent\n\n| Capability | Requirement | Scenario | Code | Test | State |\n|---|---|---|---|---|---|\n| auth/login | Magic link | link sent | login.ts | login.test.ts | ${state} |\n| auth/login | Password login | - | login.ts | - | ok |\n\n`;
+    attempt(store, "A-00000001", "2026-09-25T11:00:00.000Z");
+    attempt(store, "A-00000002", "2026-09-25T12:00:00.000Z");
+    attempt(store, "A-00000003", "2026-09-25T13:00:00.000Z");
+    report(store, "A-00000001", "integration-reviewer", "- core: First.", table("L-00000009"));
+    report(store, "A-00000002", "integration-reviewer", "- core: Second.", table("ok"));
+    report(store, "A-00000003", "integration-reviewer", "- core: Third, no table.");
+
+    const result = await render(store, git().git, ["--format", "md", "--out", "review.md"]);
+    expect(result.code, result.stdout).toBe(0);
+    const md = store.read(`${ROOT}/review.md`) ?? "";
+    expect(md).toContain(
+      "| `auth/login` | Magic link | link sent | login.ts | login.test.ts | ok |\n| `auth/login` | Magic link | link expired |  |  | untraced |\n| `auth/login` | Password login | - | login.ts | - | ok |",
+    );
+    expect(md).not.toContain("No integration-reviewer report holds");
+  });
+
+  it("warns when no integration report holds an Intent table, and shows none without a delta (#158)", async () => {
+    const store = seeded();
+    report(store, "A-00000001", "integration-reviewer", "- core: First.");
+    const before = await render(store, git().git, ["--format", "md", "--out", "review.md"]);
+    expect(before.code, before.stdout).toBe(0);
+    expect(store.read(`${ROOT}/review.md`)).not.toContain("## Intent");
+    store.write(
+      `${DIR}/spec-delta/auth.md`,
+      "## ADDED Requirements\n\n### Requirement: Magic link\n\nThe system SHALL send a link.\n\n#### Scenario: link sent\n\n- **WHEN** x\n- **THEN** y\n",
+    );
+    await render(store, git().git, ["--format", "md", "--out", "review.md"]);
+    expect(store.read(`${ROOT}/review.md`)).toContain(
+      "No integration-reviewer report holds an `## Intent` table: every scenario is untraced.\n\n| Capability | Requirement | Scenario | Code | Test | State |\n|---|---|---|---|---|---|\n| `auth` | Magic link | link sent |  |  | untraced |",
+    );
   });
 
   it("--format md --out writes Markdown at the path, relative to cwd", async () => {

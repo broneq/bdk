@@ -16,6 +16,8 @@ Every rule states two required fields, and the kernel selects by them only:
 | `execute` | -                         | -                     | `implementer`, `simplifier`                       |
 | `review`  | -                         | -                     | `reviewer`, `integration-reviewer`, `pr-reviewer` |
 
+The `runner`, `scout`, `lead` and `judge` roles read no stage rules; the judge reads only the rules an entry cites, by id.
+
 In the pack, the directory fixes a rule's stages, and a language directory fixes its `paths` to the extensions of the language:
 
 | directory                      | `stages`                              | `paths`                                       |

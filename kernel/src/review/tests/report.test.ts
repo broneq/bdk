@@ -4,7 +4,7 @@
 // Context, from one fixed input.
 import { describe, expect, it } from "vitest";
 
-import { areaLines, changeReport, splitBody } from "../domain/report.ts";
+import { areaLines, changeReport, intentRows, splitBody } from "../domain/report.ts";
 import { fixture } from "./report-fixture.ts";
 
 describe("changeReport", () => {
@@ -102,6 +102,7 @@ describe("changeReport", () => {
         fix: "Use timingSafeEqual.",
       },
       history: ["Triaged as should-fix at 2026-09-25T10:00:00Z: real"],
+      reason: "real",
     });
     expect(report.decisions[1]?.entries[0]?.body).toStrictEqual({
       kind: "text",
@@ -121,10 +122,122 @@ describe("changeReport", () => {
 });
 
 describe("splitBody", () => {
+  it("reads Failure scenario as a fourth field after Problem (#158)", () => {
+    const body = [
+      "Problem: parse reads a null body.",
+      "Failure scenario: a 204 reply makes parse throw.",
+      "Why it matters: the page shows no error.",
+      "Suggested fix: return early on an empty body.",
+      "Triaged as should-fix at 2026-10-07T10:00:00Z: the null body reaches parse",
+    ].join("\n\n");
+    expect(splitBody(body)).toStrictEqual({
+      body: {
+        kind: "labelled",
+        problem: "parse reads a null body.",
+        failure: "a 204 reply makes parse throw.",
+        why: "the page shows no error.",
+        fix: "return early on an empty body.",
+      },
+      history: [
+        {
+          line: "Triaged as should-fix at 2026-10-07T10:00:00Z: the null body reaches parse",
+          reason: "the null body reaches parse",
+        },
+      ],
+    });
+  });
+
+  it("drops no paragraph of a labelled body: an unlabelled one continues the field above it", () => {
+    const body =
+      "Problem: two callers.\n\nThe second one is in auth.\n\nWhy it matters: x\n\nSuggested fix: y\n\n```ts\nguard();\n```";
+    expect(splitBody(body).body).toStrictEqual({
+      kind: "labelled",
+      problem: "two callers.\n\nThe second one is in auth.",
+      why: "x",
+      fix: "y\n\n```ts\nguard();\n```",
+    });
+  });
+
+  it("keeps a body with text before its first label as written", () => {
+    expect(
+      splitBody("Intro.\n\nProblem: a\n\nWhy it matters: b\n\nSuggested fix: c").body,
+    ).toStrictEqual({
+      kind: "text",
+      text: "Intro.\n\nProblem: a\n\nWhy it matters: b\n\nSuggested fix: c",
+    });
+  });
+
   it("keeps a body without all three labels as written", () => {
     expect(splitBody("Problem: half a label.\n\nMore text.").body).toStrictEqual({
       kind: "text",
       text: "Problem: half a label.\n\nMore text.",
+    });
+  });
+});
+
+describe("intentRows (#158)", () => {
+  const table = (...rows: string[]) =>
+    [
+      "# Integration review",
+      "",
+      "## Intent",
+      "",
+      "| Capability | Requirement | Scenario | Code | Test | State |",
+      "| --- | --- | --- | --- | --- | --- |",
+      ...rows,
+      "",
+      "## Areas",
+      "",
+      "- auth: x",
+    ].join("\n");
+
+  it("reads the rows by capability, requirement and scenario, names trimmed", () => {
+    const body = table(
+      "|  api-errors | Problem details body  |  gateway body | `src/api/http.ts` | `http.test.ts` | ok |",
+      "| api-errors | Problem details body | body that is not JSON | src/api/http.ts | - | L-a1b2c3d4, L-e5f6g7h8 |",
+    );
+    expect(intentRows(body)).toStrictEqual([
+      {
+        capability: "api-errors",
+        requirement: "Problem details body",
+        scenario: "gateway body",
+        code: "`src/api/http.ts`",
+        test: "`http.test.ts`",
+        state: { kind: "ok" },
+      },
+      {
+        capability: "api-errors",
+        requirement: "Problem details body",
+        scenario: "body that is not JSON",
+        code: "src/api/http.ts",
+        test: "-",
+        state: { kind: "entries", ids: ["L-a1b2c3d4", "L-e5f6g7h8"] },
+      },
+    ]);
+  });
+
+  it("skips a malformed row: a wrong cell count or a state that is neither ok nor entry ids", () => {
+    const body = table(
+      "| api-errors | Problem details body | gateway body | x |",
+      "| api-errors | Problem details body | problem body | x | y | maybe |",
+      "| api-errors | Problem details body | blank body | x | y | ok |",
+    );
+    expect(intentRows(body)?.map((row) => row.scenario)).toStrictEqual(["blank body"]);
+  });
+
+  it("is undefined without an Intent table and empty for a table without rows", () => {
+    expect(intentRows("# Review\n\n## Areas\n\n- auth: x\n")).toBeUndefined();
+    expect(intentRows("## Intent\n\nNo table here.\n")).toBeUndefined();
+    expect(intentRows(table())).toStrictEqual([]);
+  });
+
+  it("matches names exactly after trimming: case and inner spaces count", () => {
+    const [row] =
+      intentRows(table("| API-errors | Problem  details body | Gateway Body | a | b | ok |")) ?? [];
+    expect(row).toMatchObject({
+      capability: "API-errors",
+      requirement: "Problem  details body",
+      scenario: "Gateway Body",
     });
   });
 });

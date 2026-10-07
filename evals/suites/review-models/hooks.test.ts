@@ -3,7 +3,8 @@ import { describe, expect, it } from "vitest";
 import type { RunContext } from "../../harness/hook.ts";
 import type { JudgeRequest } from "../../harness/judge.ts";
 import type { KernelCall } from "../stages/checks.ts";
-import { MATCH_SCHEMA, createHooks, matchRequest, reviewEntries } from "./hooks.ts";
+import { MATCH_SCHEMA, createHooks, matchRequest, reviewEntries, withoutHistory } from "./hooks.ts";
+import type { RoundFacts } from "./round.ts";
 import { parseKey } from "./key.ts";
 
 const KEY = parseKey(
@@ -23,6 +24,8 @@ defects:
 `,
   "key.yaml",
 );
+
+const ROUND: RoundFacts = { agents: [], guards: [], packages: [], reports: [], binary: [] };
 
 const LOG = {
   items: [
@@ -121,6 +124,16 @@ describe("matchRequest", () => {
   });
 });
 
+describe("withoutHistory", () => {
+  it("drops the kernel's history lines, so the matcher does not see the level", () => {
+    expect(
+      withoutHistory(
+        "Problem: x\n\nTriaged as not-a-problem at 2026-10-07T00:00:00Z: a guard\nResolved as fixed at 2026-10-07T00:00:00Z\n",
+      ),
+    ).toBe("Problem: x");
+  });
+});
+
 describe("hooks", () => {
   it("measures one run: the judge's matches, the review state, turns and time", async () => {
     const requests: JudgeRequest[] = [];
@@ -142,6 +155,7 @@ describe("hooks", () => {
       key: () => KEY,
       kernel: () => fakeKernel(),
       record: () => undefined,
+      round: () => ROUND,
     });
     const measured = await hooks.measure(context("/w"), {
       latencyMs: 90_000,
@@ -156,6 +170,18 @@ describe("hooks", () => {
         "recall_test-gap": 0,
         alarms: 2,
         false_alarms: 1,
+        false_alarms_raw: 1,
+        "found_after_triage_null-body": 1,
+        "found_after_triage_missing-case": 0,
+        recall_after_triage_logic: 1,
+        "recall_after_triage_test-gap": 0,
+        dismissed_by_triage: 0,
+        binary_groups: 0,
+        reader_write_denials: 0,
+        judge_scope_denials: 0,
+        reports_without_seams: 0,
+        intent_before_areas: 0,
+        findings_without_failure_scenario: 2,
         review_done: 1,
         uncertain: 1,
         turns: 12,
@@ -176,6 +202,7 @@ describe("hooks", () => {
           ? { code: 0, json: { state: "ready" } }
           : { code: 0, json: { items: [] } },
       record: () => undefined,
+      round: () => ROUND,
     });
     const measured = await hooks.measure(context("/w"), {});
     expect(measured.metrics).toMatchObject({ recall_logic: 0, alarms: 0, review_done: 0 });

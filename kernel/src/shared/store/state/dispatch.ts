@@ -5,7 +5,16 @@ import { isAbsolute } from "node:path";
 
 import * as z from "zod";
 
-import { hash, relativePath, reviewGroup, role, scope, ticketId, timestamp } from "./common.ts";
+import {
+  hash,
+  ledgerId,
+  relativePath,
+  reviewGroup,
+  role,
+  scope,
+  ticketId,
+  timestamp,
+} from "./common.ts";
 import type { DocumentKind } from "./common.ts";
 import { RULE_ID } from "../../vocabulary/index.ts";
 
@@ -43,6 +52,10 @@ export const dispatchKind = {
       files: z.array(relativePath).optional().meta({
         description: "The group's file set; present exactly when `group` is.",
       }),
+      entries: z.array(ledgerId).optional().meta({
+        description:
+          "The entries a `judge` package lists to triage, in package order; present exactly on a `judge` package. `guard/judge-scope` reads it (#158).",
+      }),
       workdir: z
         .string()
         .refine((path) => isAbsolute(path), "must be an absolute path")
@@ -53,6 +66,13 @@ export const dispatchKind = {
         }),
     })
     .superRefine((data, context) => {
+      if ((data.role === "judge") !== (data.entries !== undefined)) {
+        context.addIssue({
+          code: "custom",
+          path: ["entries"],
+          message: "entries is present exactly on a judge package",
+        });
+      }
       if ((data.group === undefined) === (data.files === undefined)) return;
       const missing = data.group === undefined ? "group" : "files";
       context.addIssue({ code: "custom", path: [missing], message: "group and files go together" });

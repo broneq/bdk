@@ -74,6 +74,9 @@ describe("reviewModelsReport", () => {
       "| recall_logic | no difference (gap 0, noise 0) | opus higher (gap 0.50, noise 0) |",
     );
     expect(lines).toContain("| review_done | n/a | n/a | n/a |");
+    // The round metrics of #158 are tabulated too, with or without values.
+    expect(lines).toContain("| recall_after_triage_logic | n/a | n/a | n/a |");
+    expect(lines).toContain("| verdict_coverage | n/a | n/a | n/a |");
     expect(lines).toContain("- series-1 opus run 3: provider error: x");
   });
 

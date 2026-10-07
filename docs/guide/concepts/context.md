@@ -79,10 +79,13 @@ passes it as the agent's whole prompt:
 | Craft   | For an implementer with `bdk-craft` installed, the craft skills to read (`tdd`, and `debugging` on a bug Change) |
 | Return  | How to record entries and store the report                                                                       |
 
-A verifier's package adds the blocking categories, a reviewer's the risks of
-`review.risks`, and a merge ticket's the project's conflict instruction.
+A verifier's, a reviewer's and the judge's package add the blocking
+categories, the integration reviewer's the risks of `review.risks`, and a
+merge ticket's the project's conflict instruction. The judge's package lists
+the entries of the round to triage, by id, refs and writer, and holds no
+entry body: the judge reads each with `bdk log show`.
 
-The kernel refuses a package above 12 KB, naming its largest section, so a
+The kernel refuses a package above 160 KiB, naming its largest section, so a
 package never grows into a context dump. The agent reads its rules with
 `bdk rules show --ticket <ticket>`: the rules for its role and for the files
 its target touches, resolved from the same settings your session uses, and

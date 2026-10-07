@@ -6,7 +6,7 @@ goal: parseApiProblem returns a JSON body only when it is problem details.
 success-measure: The http tests pass, with a gateway-body case.
 do-not-touch: ["src/ui/**"]
 depends-on: []
-spec-impact: none
+spec-impact: [api-errors]
 ---
 
 ## 01-1 Accept only problem details as a problem body

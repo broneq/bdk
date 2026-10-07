@@ -16,9 +16,12 @@ const AREA_SENTENCE_MAX = 300;
 const HISTORY_LINE = /^(Resolved as|Triaged as|Decided) (\S+) at \S+(?:: (.*))?$/;
 const BODY_LABELS = [
   ["problem", "Problem:"],
+  ["failure", "Failure scenario:"],
   ["why", "Why it matters:"],
   ["fix", "Suggested fix:"],
 ] as const;
+/** The labels a body needs to be shown as fields; `Failure scenario:` is optional (#158). */
+const REQUIRED_LABELS = ["problem", "why", "fix"] as const;
 
 export type Tracker = "github" | "instruction";
 
@@ -56,6 +59,8 @@ export interface Lines {
 
 interface ReportFile extends Lines {
   readonly path: string;
+  /** Git counts it as binary: listed under `Not reviewed as text`, on no card (#158). */
+  readonly binary?: boolean | undefined;
 }
 
 export interface ReportCommit {
@@ -86,6 +91,10 @@ export interface ReportInput {
   }[];
   /** The `## Areas` lines of the integration reviewer, by risk id or `unplanned`. */
   readonly areas: ReadonlyMap<string, string>;
+  /** The scenarios of the spec deltas in capability, requirement and scenario order; empty without one. */
+  readonly scenarios: readonly IntentKey[];
+  /** The `## Intent` rows of the latest integration report that holds the table; undefined when none does. */
+  readonly traced: readonly IntentRow[] | undefined;
   /** The Change's entries ordered by `at`, then id. */
   readonly entries: readonly ReportEntry[];
   readonly gate: {
@@ -147,6 +156,7 @@ export type EntryBody =
   | {
       readonly kind: "labelled";
       readonly problem: string;
+      readonly failure?: string | undefined;
       readonly why: string;
       readonly fix: string;
     }
@@ -167,6 +177,29 @@ export interface DecisionEntry {
   readonly body: EntryBody;
   /** The triage, decision and resolution lines of the body, oldest first. */
   readonly history: readonly string[];
+  /** The reason of the latest `Triaged as` line, shown next to the level. */
+  readonly reason?: string | undefined;
+}
+
+/** A scenario of the Change's spec deltas; `-` for a REMOVED requirement (#158). */
+export interface IntentKey {
+  readonly capability: string;
+  readonly requirement: string;
+  readonly scenario: string;
+}
+
+/** A row of the Intent section: the report's cells, or `untraced` without a matching row. */
+export interface IntentLine extends IntentKey {
+  readonly code?: string | undefined;
+  readonly test?: string | undefined;
+  readonly state:
+    | { readonly kind: "ok" }
+    | { readonly kind: "untraced" }
+    | {
+        readonly kind: "entries";
+        /** `linked` when the entry is in Decisions or Settled. */
+        readonly ids: readonly { readonly id: string; readonly linked: boolean }[];
+      };
 }
 
 interface SettledEntry {
@@ -182,9 +215,13 @@ export interface ChangeReport {
   readonly kind: string;
   readonly range: string;
   readonly totals: Lines & { readonly files: number };
+  /** The binary files of the range, sorted: no reviewer read them. */
+  readonly binary: readonly string[];
   readonly levels: Readonly<Record<string, number>>;
   readonly dispositions: Readonly<Record<string, number>>;
   readonly grid: { readonly modules: readonly string[]; readonly rows: readonly GridRow[] };
+  /** The Intent section; undefined without spec deltas. `table` is false when no integration report holds one. */
+  readonly trace: { readonly table: boolean; readonly rows: readonly IntentLine[] } | undefined;
   readonly cards: readonly Card[];
   readonly gate: ReportInput["gate"];
   readonly decisions: readonly {
@@ -204,6 +241,28 @@ export function changeReport(input: ReportInput): ChangeReport {
   const live = input.entries.filter((entry) => LIVE.has(entry.status));
   const open = live.filter((entry) => DECIDED_TYPES.has(entry.type));
   const owner = owners(input.files, input.parts);
+  const decisions = DECISION_GROUPS.map((group) => ({
+    group,
+    entries: open
+      .filter((entry) => entry.level !== "blocker")
+      .filter((entry) => (entry.level ?? "untriaged") === group)
+      .map(decisionEntry),
+  }));
+  const settled = input.entries
+    .filter((entry) => DECIDED_TYPES.has(entry.type) && entry.status === "resolved")
+    .map((entry) => {
+      const reason = splitBody(entry.body).history.at(-1)?.reason;
+      return {
+        id: entry.id,
+        type: entry.type,
+        summary: entry.summary,
+        ...(reason === undefined ? {} : { reason }),
+      };
+    });
+  const shown = new Set([
+    ...decisions.flatMap((group) => group.entries.map((entry) => entry.id)),
+    ...settled.map((entry) => entry.id),
+  ]);
   return {
     change: input.change,
     intent: input.intent,
@@ -214,6 +273,7 @@ export function changeReport(input: ReportInput): ChangeReport {
       added: sum(input.files, "added"),
       removed: sum(input.files, "removed"),
     },
+    binary: sorted(input.files.filter((file) => file.binary === true).map((file) => file.path)),
     levels: counts(
       open.map((entry) => entry.level ?? "untriaged"),
       [...LEVELS, "untriaged"],
@@ -223,26 +283,11 @@ export function changeReport(input: ReportInput): ChangeReport {
       [...DISPOSITIONS, "none"],
     ),
     grid: grid(input, owner),
+    trace: trace(input, shown),
     cards: cards(input, owner, open),
     gate: input.gate,
-    decisions: DECISION_GROUPS.map((group) => ({
-      group,
-      entries: open
-        .filter((entry) => entry.level !== "blocker")
-        .filter((entry) => (entry.level ?? "untriaged") === group)
-        .map(decisionEntry),
-    })),
-    settled: input.entries
-      .filter((entry) => DECIDED_TYPES.has(entry.type) && entry.status === "resolved")
-      .map((entry) => {
-        const reason = splitBody(entry.body).history.at(-1)?.reason;
-        return {
-          id: entry.id,
-          type: entry.type,
-          summary: entry.summary,
-          ...(reason === undefined ? {} : { reason }),
-        };
-      }),
+    decisions,
+    settled,
     context: live
       .filter((entry) => CONTEXT_TYPES.has(entry.type))
       .map((entry) => ({ id: entry.id, type: entry.type, summary: entry.summary })),
@@ -271,6 +316,94 @@ export function areaLines(body: string): Map<string, string> {
   return areas;
 }
 
+/** A row of the `## Intent` table of an integration report (`role-contracts`, #158). */
+export interface IntentRow {
+  readonly capability: string;
+  readonly requirement: string;
+  readonly scenario: string;
+  readonly code: string;
+  readonly test: string;
+  readonly state:
+    { readonly kind: "ok" } | { readonly kind: "entries"; readonly ids: readonly string[] };
+}
+
+const INTENT_COLUMNS = 6;
+const ENTRY_ID = /^L-[0-9a-z]{8}$/;
+
+/**
+ * The rows of the `## Intent` table of a report body, cells trimmed and
+ * otherwise as written; undefined when the section holds no table. A row
+ * with another cell count, or a `State` that is neither `ok` nor entry ids,
+ * is skipped.
+ */
+export function intentRows(body: string): IntentRow[] | undefined {
+  const lines: string[] = [];
+  let inside = false;
+  for (const line of body.split("\n")) {
+    if (/^#{1,6}\s/.test(line)) {
+      inside = /^##\s+Intent\s*$/.test(line);
+      continue;
+    }
+    if (inside && line.trimStart().startsWith("|")) lines.push(line.trim());
+  }
+  if (lines.length === 0) return undefined;
+  const rows: IntentRow[] = [];
+  // The first line is the header, the second its separator.
+  for (const line of lines.slice(1)) {
+    if (/^\|(\s*:?-+:?\s*\|)+$/.test(line)) continue;
+    const cells = line
+      .replace(/^\|/, "")
+      .replace(/\|$/, "")
+      .split("|")
+      .map((cell) => cell.trim());
+    if (cells.length !== INTENT_COLUMNS) continue;
+    const [capability = "", requirement = "", scenario = "", code = "", test = "", state = ""] =
+      cells;
+    const ids = state.split(/[\s,]+/).filter((id) => id !== "");
+    const parsed =
+      state === "ok"
+        ? ({ kind: "ok" } as const)
+        : ids.length > 0 && ids.every((id) => ENTRY_ID.test(id))
+          ? ({ kind: "entries", ids } as const)
+          : undefined;
+    if (parsed === undefined) continue;
+    rows.push({ capability, requirement, scenario, code, test, state: parsed });
+  }
+  return rows;
+}
+
+/**
+ * The Intent section: each scenario of the spec deltas with the cells of the
+ * report row of the same capability, requirement and scenario, names
+ * trimmed and otherwise matched exactly. A report row that names no scenario
+ * of the deltas is not shown.
+ */
+function trace(input: ReportInput, shown: ReadonlySet<string>): ChangeReport["trace"] {
+  if (input.scenarios.length === 0) return undefined;
+  const key = (row: IntentKey) =>
+    JSON.stringify([row.capability.trim(), row.requirement.trim(), row.scenario.trim()]);
+  const traced = new Map((input.traced ?? []).map((row) => [key(row), row]));
+  return {
+    table: input.traced !== undefined,
+    rows: input.scenarios.map((scenario): IntentLine => {
+      const row = traced.get(key(scenario));
+      if (row === undefined) return { ...scenario, state: { kind: "untraced" } };
+      return {
+        ...scenario,
+        code: row.code,
+        test: row.test,
+        state:
+          row.state.kind === "ok"
+            ? row.state
+            : {
+                kind: "entries",
+                ids: row.state.ids.map((id) => ({ id, linked: shown.has(id) })),
+              },
+      };
+    }),
+  };
+}
+
 /** The labelled fields of a body, or its text, apart from its history lines. */
 export function splitBody(body: string): {
   readonly body: EntryBody;
@@ -282,19 +415,33 @@ export function splitBody(body: string): {
     .filter((paragraph) => paragraph !== "");
   const history = paragraphs.filter((paragraph) => HISTORY_LINE.test(paragraph));
   const text = paragraphs.filter((paragraph) => !HISTORY_LINE.test(paragraph));
-  const fields = new Map<string, string>();
+  // An unlabelled paragraph continues the field above it, so no paragraph is
+  // dropped; text before the first label keeps the body as written.
+  const fields = new Map<string, string[]>();
+  let current: string | undefined;
+  let preamble = false;
   for (const paragraph of text) {
     const label = BODY_LABELS.find(([, prefix]) => paragraph.startsWith(prefix));
-    if (label !== undefined) fields.set(label[0], paragraph.slice(label[1].length).trim());
+    if (label !== undefined) {
+      current = label[0];
+      fields.set(current, [
+        ...(fields.get(current) ?? []),
+        paragraph.slice(label[1].length).trim(),
+      ]);
+    } else if (current === undefined) preamble = true;
+    else fields.get(current)?.push(paragraph);
   }
-  const labelled = BODY_LABELS.every(([key]) => fields.has(key));
+  const field = (key: string) => fields.get(key)?.join("\n\n");
+  const failure = field("failure");
+  const labelled = !preamble && REQUIRED_LABELS.every((key) => fields.has(key));
   return {
     body: labelled
       ? {
           kind: "labelled",
-          problem: fields.get("problem") ?? "",
-          why: fields.get("why") ?? "",
-          fix: fields.get("fix") ?? "",
+          problem: field("problem") ?? "",
+          ...(failure === undefined ? {} : { failure }),
+          why: field("why") ?? "",
+          fix: field("fix") ?? "",
         }
       : { kind: "text", text: text.join("\n\n") },
     history: history.map((line) => {
@@ -304,8 +451,15 @@ export function splitBody(body: string): {
   };
 }
 
+/** The level of a Decisions entry with its latest triage reason next to it. */
+export function levelWithReason(entry: DecisionEntry): string {
+  const level = entry.level ?? "untriaged";
+  return entry.reason === undefined ? level : `${level} (${entry.reason})`;
+}
+
 function decisionEntry(entry: ReportEntry): DecisionEntry {
   const split = splitBody(entry.body);
+  const reason = split.history.filter((item) => item.line.startsWith("Triaged as ")).at(-1)?.reason;
   return {
     id: entry.id,
     type: entry.type,
@@ -320,6 +474,7 @@ function decisionEntry(entry: ReportEntry): DecisionEntry {
     review: entry.review === true,
     body: split.body,
     history: split.history.map((item) => item.line),
+    ...(reason === undefined ? {} : { reason }),
   };
 }
 
@@ -400,9 +555,10 @@ function cards(
       )
       .map((entry) => ({ id: entry.id, level: entry.level, disposition: entry.disposition })),
   });
+  const text = input.files.filter((file) => file.binary !== true);
   const result: Card[] = [];
   for (const risk of input.risks) {
-    const files = input.files.filter((file) =>
+    const files = text.filter((file) =>
       (risk.paths ?? []).some((glob) => input.matches(glob, file.path)),
     );
     const summary = input.areas.get(risk.id);
@@ -413,7 +569,7 @@ function cards(
       files: files.map((file) => cardFile(file, risk.id)),
     });
   }
-  const outside = input.files.filter((file) => !owner.has(file.path));
+  const outside = text.filter((file) => !owner.has(file.path));
   if (input.parts.length > 0 && outside.length > 0) {
     const summary = input.areas.get(UNPLANNED);
     result.push({

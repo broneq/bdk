@@ -12,8 +12,11 @@ import { kernelIn } from "../stages/hooks.ts";
 import type { KernelSettings } from "../stages/hooks.ts";
 import { readKey } from "./key.ts";
 import type { AnswerKey } from "./key.ts";
+import { readRound } from "./facts.ts";
 import { REVIEW_TYPES, reviewMetrics } from "./metrics.ts";
 import type { Matches, ReviewEntry } from "./metrics.ts";
+import { roundMetrics } from "./round.ts";
+import type { RoundFacts } from "./round.ts";
 
 /** A row's metric: 1 when the judge marked its judgement uncertain. */
 export const UNCERTAIN_METRIC = "uncertain";
@@ -53,6 +56,12 @@ export interface HookDeps {
   readonly kernel: (workDir: string, settings: KernelSettings) => (args: string) => KernelCall;
   /** Keeps the judge's request and answer with the run's raw records, for the spot-check. */
   readonly record: (context: RunContext, request: JudgeRequest, judgement: Judgement) => void;
+  /** The round's agents, denials, packages, reports and binary files (#158). */
+  readonly round: (
+    workDir: string,
+    kernel: (args: string) => KernelCall,
+    session: string | undefined,
+  ) => RoundFacts;
 }
 
 interface Listed {
@@ -97,6 +106,17 @@ export function reviewEntries(kernel: (args: string) => KernelCall): ReviewEntry
     });
 }
 
+/** The history lines the kernel appends to a body (`Triaged as ...`), which would tell the judge the level. */
+const HISTORY_LINE = /^(?:Resolved as|Triaged as|Decided) \S+ at \S+(?::.*)?$/;
+
+export function withoutHistory(body: string): string {
+  return body
+    .split("\n")
+    .filter((line) => !HISTORY_LINE.test(line))
+    .join("\n")
+    .trimEnd();
+}
+
 export function matchRequest(key: AnswerKey, entries: readonly ReviewEntry[]): JudgeRequest {
   const defects = key.defects.map((defect) => ({
     id: defect.id,
@@ -109,7 +129,7 @@ export function matchRequest(key: AnswerKey, entries: readonly ReviewEntry[]): J
     type: entry.type,
     refs: entry.refs,
     summary: entry.summary,
-    body: entry.body ?? "",
+    body: withoutHistory(entry.body ?? ""),
   }));
   return {
     system: MATCH_SYSTEM,
@@ -142,9 +162,11 @@ async function measure(
     models = judgement.models;
   }
   const review = kernel("explain review").json as { state?: unknown } | undefined;
+  const round = deps.round(workDir, kernel, result.response?.sessionId);
   return {
     metrics: {
       ...reviewMetrics(key, entries, matches),
+      ...roundMetrics(round, entries),
       review_done: review?.state === "done" ? 1 : 0,
       [UNCERTAIN_METRIC]: uncertain,
       turns: result.response?.metadata?.numTurns ?? null,
@@ -165,4 +187,5 @@ export const hooks = createHooks({
   key: () => readKey(),
   kernel: kernelIn,
   record: recordJudgement,
+  round: readRound,
 });

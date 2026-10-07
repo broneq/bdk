@@ -15,7 +15,7 @@ import type { AgentsReport } from "../domain/report.ts";
 
 const PLUGIN = "/plugins/bdk";
 const ROOT = "/work/repo";
-const NAMES = ["lead", "worker", "reader", "reviewer", "runner", "scout"];
+const NAMES = ["lead", "worker", "reader", "integrator", "judge", "reviewer", "runner", "scout"];
 
 function generated(): Record<string, string> {
   return Object.fromEntries(
@@ -27,7 +27,7 @@ function generated(): Record<string, string> {
 }
 
 describe("adapter definitions", () => {
-  it("define exactly the six adapters in a fixed order", () => {
+  it("define exactly the eight adapters in a fixed order", () => {
     expect(ADAPTERS.map((adapter) => adapter.name)).toEqual(NAMES);
   });
 
@@ -59,6 +59,8 @@ describe("adapter definitions", () => {
         effort: "medium",
       },
       { name: "reader", tools: readOnly, model: "opus", effort: "high" },
+      { name: "integrator", tools: readOnly, model: "opus", effort: "high" },
+      { name: "judge", tools: readOnly, model: "sonnet", effort: "high" },
       { name: "reviewer", tools: readOnly, model: "sonnet", effort: "medium" },
       { name: "runner", tools: ["Read", "Bash", "SendMessage"], model: "haiku", effort: undefined },
       { name: "scout", tools: readOnly, model: "haiku", effort: undefined },
@@ -126,7 +128,7 @@ describe("adapterFile", () => {
 });
 
 describe("exportAgents", () => {
-  it("writes the six adapter files and reports them as changed", () => {
+  it("writes the eight adapter files and reports them as changed", () => {
     const store = memoryStore();
     const report = exportAgents(
       { store, pluginRoot: PLUGIN },
@@ -274,6 +276,6 @@ describe("export agents handler", () => {
 
   it("prints the text rendering without --json", async () => {
     const result = await run(["export", "agents", "--host", "claude"]);
-    expect(result.stdout).toContain("claude: 6 of 6 adapter files changed");
+    expect(result.stdout).toContain("claude: 8 of 8 adapter files changed");
   });
 });

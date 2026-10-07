@@ -353,6 +353,32 @@ describe("agent guards", () => {
     expect(stranger.json).toMatchObject({ rule: "guard/lead-scope" });
   });
 
+  it("scopes a judge's triage to the entries of its registry package (#158)", async () => {
+    const h = harness();
+    const judgeTicket = "A-00000009";
+    openTicket(h.store, judgeTicket, CHANGE, "review-fix");
+    writePackage(h.store, judgeTicket, "judge", CHANGE, {
+      adapter: "judge",
+      entries: ["L-a1a1a1a1"],
+    });
+    const path = `.bdk/changes/${CHANGE}/dispatch/${CHANGE}-judge-${judgeTicket}.md`;
+    await h.run(["hooks", "post-tool"], spawn(undefined, SCOUT, "bdk:judge", `Read ${path}.`));
+    const bash = (command: string) =>
+      preTool(h, {
+        agent_id: SCOUT,
+        agent_type: "bdk:judge",
+        tool_name: "Bash",
+        tool_input: { command: `node /p/dist/bdk.mjs ${command}` },
+      });
+    expect((await bash('log triage L-a1a1a1a1 should-fix --reason "holds"')).code).toBe(0);
+    const outside = await bash('log triage L-z9z9z9z9 not-a-problem --reason "x"');
+    expect(outside.json).toMatchObject({ rule: "guard/judge-scope" });
+    expect(JSON.stringify(outside.json)).toContain("L-z9z9z9z9");
+    expect((await bash('log resolve L-a1a1a1a1 resolved --reason "x"')).json).toMatchObject({
+      rule: "guard/subagent-kernel-command",
+    });
+  });
+
   it("tells a lead started in the foreground why it has no part", async () => {
     const h = harness();
     await h.run(["hooks", "subagent-start"], start(LEAD, "bdk:lead"));

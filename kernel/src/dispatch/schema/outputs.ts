@@ -14,13 +14,25 @@ const id = (prefix: string) =>
 export const dispatchBuildOutput = z
   .strictObject({
     path: z.string().min(1).meta({ description: "Path relative to the project root." }),
-    bytes: z.int().min(1).max(12_288),
+    bytes: z.int().min(1).max(163_840).meta({
+      description:
+        "The package size; above 163 840 bytes the build refuses (policy/package-too-large).",
+    }),
     ticket: id("A"),
     target: z.string().min(1).meta({
       description: "The ticket's target: a task id, a part id, the Change id or an artifact id.",
     }),
     role: z.enum(ROLES),
-    adapter: z.enum(["worker", "reader", "reviewer", "runner", "scout", "lead"]),
+    adapter: z.enum([
+      "worker",
+      "reader",
+      "integrator",
+      "judge",
+      "reviewer",
+      "runner",
+      "scout",
+      "lead",
+    ]),
     scope: z.enum(["full", "high+", "blockers"]),
     model: z.string().min(1).optional().meta({
       description:

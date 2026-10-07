@@ -67,6 +67,7 @@ export const RULES = [
   "guard/agent-spawn",
   "guard/escalation-model",
   "guard/lead-scope",
+  "guard/judge-scope",
   "guard/worktree-scope",
   "guard/stage-skill",
   "guard/gate-manual",

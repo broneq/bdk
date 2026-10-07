@@ -67,6 +67,37 @@ export function fixture(overrides: Partial<ReportInput> = {}): ReportInput {
       ["public-api", "The login endpoint accepts a link token."],
       ["unplanned", "The README documents the new flow."],
     ]),
+    scenarios: [
+      { capability: "auth/login", requirement: "Magic link", scenario: "link sent" },
+      { capability: "auth/login", requirement: "Magic link", scenario: "link expired" },
+      { capability: "auth/login", requirement: "Password login", scenario: "-" },
+    ],
+    traced: [
+      {
+        capability: "auth/login",
+        requirement: "Magic link",
+        scenario: "link sent",
+        code: "src/auth/login.ts#issue",
+        test: "src/auth/login.test.ts: sends the link",
+        state: { kind: "ok" },
+      },
+      {
+        capability: "auth/login",
+        requirement: "Password login",
+        scenario: "-",
+        code: "src/auth/login.ts (removed)",
+        test: "-",
+        state: { kind: "entries", ids: ["L-00000002", "L-00000006", "L-0000000z"] },
+      },
+      {
+        capability: "auth/login",
+        requirement: "Magic link",
+        scenario: "link resent",
+        code: "src/auth/login.ts#resend",
+        test: "-",
+        state: { kind: "ok" },
+      },
+    ],
     entries: [
       entry({ id: "L-00000001", type: "decision", status: "accepted", summary: "Links expire" }),
       entry({

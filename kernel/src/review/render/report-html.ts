@@ -11,9 +11,10 @@ import type {
   DecisionEntry,
   EntryBody,
   GridRow,
+  IntentLine,
   Lines,
 } from "../domain/report.ts";
-import { NOT_USED_GATE } from "../domain/report.ts";
+import { levelWithReason, NOT_USED_GATE } from "../domain/report.ts";
 import type { ToolGroupName } from "../../shared/vocabulary/index.ts";
 import { html, safeUrl } from "./escape.ts";
 
@@ -70,7 +71,11 @@ summary { cursor: pointer; }
 .tag.should-fix { box-shadow: inset 0 0 0 1px var(--warn); }
 .tag.blocker { box-shadow: inset 0 0 0 1px var(--bad); }
 .verdict { font-weight: 600; }
-li.warn { color: var(--warn); font-weight: 600; }
+li.warn, p.warn { color: var(--warn); font-weight: 600; }
+table.intent { border-collapse: collapse; min-width: 100%; font-size: 13px; }
+.intent th, .intent td { text-align: left; vertical-align: top; padding: 6px 8px; border-bottom: 1px solid var(--border); overflow-wrap: anywhere; }
+.intent th { font-weight: 600; }
+.intent tr.warn td:last-child { color: var(--warn); font-weight: 600; }
 .verdict.pass, .verdict.approve { color: var(--ok); }
 .verdict.fail, .verdict.request-changes { color: var(--bad); }
 dl.legend { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 0; }
@@ -162,13 +167,14 @@ export function changeReportHtml(report: ChangeReport): string {
   const sections = [
     summarySection(report),
     gridSection(report),
+    intentSection(report),
     mapSection(report),
     gateSection(report),
     decisionsSection(report),
     settledSection(report),
     contextSection(report),
   ];
-  return page(`Review: ${report.change}`, sections.join("\n"));
+  return page(`Review: ${report.change}`, sections.filter((section) => section !== "").join("\n"));
 }
 
 export function prPageHtml(page_: PrPage): string {
@@ -247,7 +253,11 @@ function summarySection(report: ChangeReport): string {
 <ul class="stats">
 <li>Kind: <b>${html(report.kind)}</b></li>
 <li>Range: <code>${html(shortRange(report.range))}</code></li>
-<li>Files: <b>${String(report.totals.files)}</b></li>
+<li>Files: <b>${String(report.totals.files)}</b></li>${
+    report.binary.length === 0
+      ? ""
+      : `\n<li>Not reviewed as text: ${report.binary.map((path) => `<code>${html(path)}</code>`).join(", ")}</li>`
+  }
 <li>Lines: ${lines(report.totals)}</li>
 <li>Open entries by level: <b>${levels.length === 0 ? "none" : html(levels.join(", "))}</b></li>
 <li>By disposition: <b>${dispositions.length === 0 ? "none" : html(dispositions.join(", "))}</b></li>
@@ -276,6 +286,45 @@ function gridSection(report: ChangeReport): string {
 ${rows.join("\n")}
 </tbody>
 </table></div>`;
+}
+
+/** Without spec deltas the section is left out, so the sections after it keep their order. */
+function intentSection(report: ChangeReport): string {
+  if (report.trace === undefined) return "";
+  const warning = report.trace.table
+    ? ""
+    : '<p class="warn">No integration-reviewer report holds an <code>## Intent</code> table: every scenario is untraced.</p>\n';
+  return `<h2>Intent</h2>
+${warning}<div class="scroll"><table class="intent">
+<thead><tr><th>Capability</th><th>Requirement</th><th>Scenario</th><th>Code</th><th>Test</th><th>State</th></tr></thead>
+<tbody>
+${report.trace.rows.map(intentRow).join("\n")}
+</tbody>
+</table></div>`;
+}
+
+function intentRow(row: IntentLine): string {
+  const state =
+    row.state.kind === "ok"
+      ? '<span class="verdict pass">ok</span>'
+      : row.state.kind === "untraced"
+        ? "untraced"
+        : row.state.ids
+            .map(({ id, linked }) =>
+              linked ? `<a href="#entry-${html(id)}">${html(id)}</a>` : html(id),
+            )
+            .join(" ");
+  const cells = [
+    `<code>${html(row.capability)}</code>`,
+    html(row.requirement),
+    html(row.scenario),
+    html(row.code ?? ""),
+    html(row.test ?? ""),
+    state,
+  ];
+  return `<tr${row.state.kind === "untraced" ? ' class="warn"' : ""}>${cells
+    .map((cell) => `<td>${cell}</td>`)
+    .join("")}</tr>`;
 }
 
 function mapSection(report: ChangeReport): string {
@@ -372,6 +421,7 @@ function decision(entry: DecisionEntry, tracker: boolean): string {
     .join("");
   const meta = [
     entry.type,
+    levelWithReason(entry),
     entry.severity,
     entry.category,
     `by ${entry.writer}`,
@@ -399,10 +449,9 @@ function decision(entry: DecisionEntry, tracker: boolean): string {
 
 function body(value: EntryBody): string {
   if (value.kind === "labelled") {
-    return `<dl>${field("Problem", value.problem)}${field("Why it matters", value.why)}${field(
-      "Suggested fix",
-      value.fix,
-    )}</dl>`;
+    return `<dl>${field("Problem", value.problem)}${
+      value.failure === undefined ? "" : field("Failure scenario", value.failure)
+    }${field("Why it matters", value.why)}${field("Suggested fix", value.fix)}</dl>`;
   }
   return value.text === ""
     ? '<p class="muted">No details.</p>'
@@ -417,7 +466,7 @@ function settledSection(report: ChangeReport): string {
   if (report.settled.length === 0) return `<h2>Settled</h2>\n<p class="muted">None.</p>`;
   const items = report.settled.map(
     (entry) =>
-      `<li><code>${html(entry.id)}</code> ${html(entry.summary)}${
+      `<li id="entry-${html(entry.id)}"><code>${html(entry.id)}</code> ${html(entry.summary)}${
         entry.reason === undefined ? "" : ` <span class="muted">(${html(entry.reason)})</span>`
       }</li>`,
   );

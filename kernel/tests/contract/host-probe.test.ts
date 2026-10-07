@@ -182,6 +182,8 @@ const BDK_NAMES = new Set([
   "lead",
   "worker",
   "reader",
+  "integrator",
+  "judge",
 ]);
 
 /**

@@ -159,6 +159,39 @@ describe("/bdk:cr", () => {
   });
 });
 
+describe("#158: /bdk:cr runs integration and the judge after the groups", () => {
+  const body = (): string => readSkill("cr").body;
+
+  it("cr runs a review round: reviewers and gate, then integration, then the judge", () => {
+    const text = body();
+    const reviewers = text.indexOf("role `reviewer`");
+    const integration = text.indexOf("role `integration-reviewer`");
+    const judge = text.indexOf("role `judge`");
+    expect(reviewers).toBeGreaterThan(-1);
+    expect(integration).toBeGreaterThan(reviewers);
+    expect(judge).toBeGreaterThan(integration);
+    expect(text).toMatch(/every `reviewer` agent[^.]*has returned/);
+    expect(text).toMatch(/integration reviewer has returned/);
+    expect(text).toContain("--group judge");
+    expect(text).toMatch(/in the background/);
+    expect(text).toMatch(/no text file to review/);
+  });
+
+  it("cr triages every entry of the round: main only what the judge left", () => {
+    const text = body();
+    expect(text).toMatch(/only[^.]*without a level/);
+    expect(text).toMatch(/never change a level the judge set/i);
+  });
+
+  it("cr inline builds the packages in the same order and plays the integration reviewer and the judge", () => {
+    const inline = /## Inline\n\n([^#]*)/.exec(body())?.[1] ?? "";
+    expect(inline).toMatch(/same order/);
+    expect(inline).toContain("integration-reviewer");
+    expect(inline).toContain("judge");
+    expect(inline).toContain("bdk log triage");
+  });
+});
+
 describe("/bdk:pr-review", () => {
   const skill = (): Skill => readSkill("pr-review");
 

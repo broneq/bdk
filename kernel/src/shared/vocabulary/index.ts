@@ -104,6 +104,7 @@ export const ROLES = [
   "design-verifier",
   "reviewer",
   "integration-reviewer",
+  "judge",
   "pr-reviewer",
   "runner",
   "scout",
@@ -129,6 +130,8 @@ export const ROLE_STAGE: Readonly<Record<Role, RuleStage | undefined>> = {
   "design-verifier": "design",
   reviewer: "review",
   "integration-reviewer": "review",
+  // The judge reads only the rules an entry cites, by id (#158).
+  judge: undefined,
   "pr-reviewer": "review",
   runner: undefined,
   scout: undefined,

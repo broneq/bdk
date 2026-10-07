@@ -346,7 +346,7 @@ Tree hash (T23-D7, D16, D45): the scope of a target is its part for a task, the 
 
 ### Requirement: Dispatch package
 
-A dispatch package SHALL be written only by `dispatch build`, with the frontmatter fields below (K3, K4, P10) and the body sections that `kernel-cli/dispatch`, `bdk dispatch build`, lists in order; the whole file is at most 12 288 bytes.
+A dispatch package SHALL be written only by `dispatch build`, with the frontmatter fields below (K3, K4, P10) and the body sections that `kernel-cli/dispatch`, `bdk dispatch build`, lists in order; the whole file is at most 163 840 bytes (`kernel-cli/dispatch`, bdk dispatch build).
 
 | Field            | Type                        | Req. | Stamped | Meaning                                                                                                                                                      |
 | ---------------- | --------------------------- | ---- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -367,6 +367,7 @@ A dispatch package SHALL be written only by `dispatch build`, with the frontmatt
 | `group`          | kebab-case string           | no   | kernel  | Review group of a `dispatch build --group` package (T42-A1).                                                                                                 |
 | `files`          | array of paths              | no   | kernel  | The group's file set; present exactly when `group` is.                                                                                                       |
 | `workdir`        | absolute path               | no   | kernel  | The work root of the target when it is a live worktree part, or a task of one (Part worktree, T45); absent otherwise, which means the home checkout.         |
+| `entries`        | array of ledger ids         | no   | kernel  | The entries a `judge` package lists to triage, in package order; present exactly on a `judge` package. `guard/judge-scope` reads it (#158).                  |
 
 #### Scenario: package without template hash
 
@@ -397,6 +398,11 @@ A dispatch package SHALL be written only by `dispatch build`, with the frontmatt
 
 - **WHEN** a dispatch package carries `workdir: .bdk/.machine/worktrees/x/02`
 - **THEN** validation fails naming `workdir`, because it must be absolute
+
+#### Scenario: judge package names its entries
+
+- **WHEN** `dispatch build <change> judge A-r1v2w3x4 --group judge --range H0..H1` lists `L-a1` and `L-c3` in its `Review` section
+- **THEN** its frontmatter holds `entries: [L-a1, L-c3]`, and a package of any other role holds no `entries`
 
 ### Requirement: Report envelope
 

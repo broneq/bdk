@@ -107,12 +107,14 @@ export function readPatch(key: AnswerKey): string {
   return readFileSync(fileURLToPath(new URL(`./${key.patch}`, import.meta.url)), "utf8");
 }
 
-/** Per file of a unified diff, the new-side line range of each hunk. */
+/** Per file of a unified diff, the new-side line range of each hunk; a binary file has none. */
 export function hunkRanges(patch: string): Map<string, [number, number][]> {
   const ranges = new Map<string, [number, number][]>();
   let file: string | undefined;
   for (const line of patch.split("\n")) {
-    const target = /^\+\+\+ b\/(.+)$/.exec(line)?.[1];
+    // A binary section names its file only in its `diff --git` line.
+    const target =
+      /^\+\+\+ b\/(.+)$/.exec(line)?.[1] ?? /^diff --git a\/\S+ b\/(.+)$/.exec(line)?.[1];
     if (target !== undefined) {
       file = target;
       ranges.set(file, []);

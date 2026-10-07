@@ -25,9 +25,9 @@ Any other text is the focus of the run, which every reviewer receives. `bdk revi
 
 One round is one `review-fix` ticket:
 
-1. **Plan.** `bdk review plan` splits the range into groups: one per plan part, one for files no part names, and one `integration` group over the whole range.
-2. **Dispatch.** One package per group goes to a `reviewer` agent, the `integration` group to an Opus `integration-reviewer`, and one more package to a `runner` that runs the full gate and the diff coverage on the whole Change. Each agent reads the rules of its role and files with `bdk rules show --ticket` and writes its findings to the ledger.
-3. **Triage.** The orchestrator gives every finding of the round, and every other live entry of the Change without a level (such as an observation the verifier wrote during execute), one level: `blocker`, `should-fix`, `nice-to-have` or `not-a-problem`. A blocker must name one of the blocking categories of `policy.verifier`; a finding that repeats another is `not-a-problem`.
+1. **Plan.** `bdk review plan` splits the range into groups: one per plan part, one for files no part names, and one `integration` group over the whole range. Files git counts as binary, such as image snapshots, go into no group: the plan lists them in `binary`, and they still count in its `measure`. A range with binary files only opens no round.
+2. **Dispatch.** One package per group goes to a `reviewer` agent, and one more package to a `runner` that runs the full gate and the diff coverage on the whole Change, all in parallel. Each reviewer reads its group's files and their tests, writes its findings to the ledger, each with a failure scenario, and lists the contracts its files change under `## Seams`. When every reviewer has returned, the `integration` group goes to an Opus `integration-reviewer`, which reads the group reports and traces each scenario of the spec deltas to its code and test.
+3. **Triage.** When the integration reviewer has returned, a `judge` agent triages every finding of the round, and every other live entry of the Change without a level (such as an observation the verifier wrote during execute): it checks the failure scenario at the entry's refs and gives one level, `blocker`, `should-fix`, `nice-to-have` or `not-a-problem`, with a reason. A blocker must name one of the blocking categories of `policy.verifier`; a finding that repeats another is `not-a-problem`. The orchestrator triages only what the judge left without a level.
 4. **Merge.** The round's merged report is stored under `<ticket>@merge`, with every entry per level, the gate's verdicts and the coverage.
 5. **Close.** Without a blocking entry the ticket closes `ok` and `bdk done review` passes. With one it closes `fail`, and the kernel decides the next round: a retry, a narrower scope, an escalation to a stronger model, or parking the Change for a human.
 
@@ -39,10 +39,12 @@ A round that starts with blocking entries fixes them first: an `implementer` pac
 
 After `bdk done review`, `/bdk:cr` renders the human report with `bdk review render`: one self-contained HTML file under `.bdk/.machine/review/`, or Markdown with `--format md`. It shows:
 
+- **Summary:** the range, its files and lines, the open entries by level and disposition, and the binary files of the range under `Not reviewed as text`.
 - **Parts and areas:** the plan parts against the changed modules, with how much each part changed there.
+- **Intent:** shown only when the Change holds spec deltas. One row per scenario the deltas add or modify, and one row with the scenario `-` per removed requirement. Each row shows the code and the test that the integration reviewer traced to it, and its state: `ok`, or the ids of the entries it raised, linked to them. A scenario the reviewer did not trace shows `untraced` as a warning, so you see which promised behaviour nobody checked.
 - **Change map:** one card per configured risk area the range touches (`review.risks` with `paths`), with the integration reviewer's one-sentence summary of what changed there and why, then the files outside the plan. Each file lists the tasks and commits that changed it and the entries that name it.
 - **Gate:** the verdicts of `tests-full` and `lint-full` and the coverage against its minimum.
-- **Decisions:** every open `should-fix`, `nice-to-have` and untriaged entry, with its problem, why it matters and the suggested fix. Blockers are fixed by the rounds, so they never reach this list.
+- **Decisions:** every open `should-fix`, `nice-to-have` and untriaged entry, with its problem, the failure scenario when the reviewer gave one (the concrete input and state that go wrong), why it matters and the suggested fix, and the reason of its triage next to its level. Blockers are fixed by the rounds, so they never reach this list.
 - **Settled** and **Context:** the resolved entries with their reason, and the live decisions, assumptions and risks.
 
 You give each entry in Decisions one disposition:
@@ -60,7 +62,7 @@ Inside `/bdk:run` nobody answers: every entry without a disposition is deferred 
 
 ## `--inline`
 
-`--inline` runs the same packages in the session, one after another, with no agent. It reviews and triages, but fixes nothing: with blocking entries it closes the round `fail` and names them, and `/bdk:cr` without `--inline` fixes them.
+`--inline` runs the same packages in the session, one after another and in the same order (the reviewers and the gate, then the integration reviewer, then the judge), with no agent. It reviews and triages, but fixes nothing: with blocking entries it closes the round `fail` and names them, and `/bdk:cr` without `--inline` fixes them.
 
 ## Reviewing GitHub pull requests
 

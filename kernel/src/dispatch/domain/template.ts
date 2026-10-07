@@ -6,7 +6,7 @@
 
 /** A section a package carries only when the build names its kind. */
 export type SectionKind =
-  | "verifier"
+  | "categories"
   | "runner"
   | "lead"
   | "review"
@@ -14,17 +14,19 @@ export type SectionKind =
   | "work-root"
   | "conflict"
   | "merge"
-  | "craft";
+  | "craft"
+  | "ledger";
 
 interface Section {
   readonly name: string;
   readonly skeleton: string;
   /**
-   * Only packages of this kind carry it: the verifiers' P8 lists, the runner's
+   * Only packages of this kind carry it: the P8 lists of the verifiers and the reviewing roles, the runner's
    * checks, the lead's tasks, a grouped package's review scope (T42-A1) and the
    * integration reviewer's risks (T42-K), a worktree target's work root and a
    * merge ticket's conflict for its implementer and the merge note for its steps (T45),
-   * and the implementer's installed craft skills (T42, R-8).
+   * the implementer's installed craft skills (T42, R-8), and the ledger
+   * entries of the target, which every role but the judge reads (#158).
    */
   readonly only?: SectionKind;
 }
@@ -64,8 +66,7 @@ const SECTIONS: readonly Section[] = [
   {
     name: "review",
     only: "review",
-    skeleton:
-      "## Review\n\nYou review group `{{group}}` of ticket {{ticket}}. Review only this group; another agent reviews each other group in parallel.\n\n{{review}}",
+    skeleton: "## Review\n\n{{review-lead}}\n\n{{review}}",
   },
   {
     name: "craft",
@@ -73,7 +74,7 @@ const SECTIONS: readonly Section[] = [
     skeleton:
       "## Craft\n\nBefore your first edit, print each craft skill below with its command and follow it while you work:\n\n{{craft}}",
   },
-  { name: "entries", skeleton: "## Ledger entries\n\n{{entries}}" },
+  { name: "entries", only: "ledger", skeleton: "## Ledger entries\n\n{{entries}}" },
   { name: "role", skeleton: "{{role-body}}" },
   {
     name: "rules",
@@ -82,9 +83,9 @@ const SECTIONS: readonly Section[] = [
   },
   {
     name: "categories",
-    only: "verifier",
+    only: "categories",
     skeleton:
-      "## Blocking categories (P8)\n\nA blocker names one of these with `bdk log add blocker <summary> --ref <ref> --ticket {{ref}} --category <id>`; any other blocker is stored as an observation for review.\n\n{{blocking}}\n\n## Not a fail\n\nNever block on these:\n\n{{not-a-fail}}",
+      "## Blocking categories (P8)\n\n{{categories-rule}}\n\n{{blocking}}\n\n## Not a fail\n\nNever block on these:\n\n{{not-a-fail}}",
   },
   {
     name: "risks",
@@ -96,7 +97,7 @@ const SECTIONS: readonly Section[] = [
   {
     name: "return",
     skeleton:
-      "## Return\n\nWrite your entries with `bdk log add <type> <summary> --ref <ref> --ticket {{ref}}`: the summary is 1 to 120 characters (put detail in `--body`), the type is one of decision, finding, observation, blocker, question, assumption, risk, learning, report. Then pipe the full report to `bdk log ingest --ticket {{ref}}` on stdin (`bdk log ingest --ticket {{ref}} < <report-file>`; there is no frontmatter flag), the envelope (`status`, `files`, `entries`, `evidence`) as its frontmatter between two `---` lines. `entries` lists the ids `log add` printed. Leave `reason` out, except for `blocked` or `needs-context`. When it refuses, fix the named field and call it again. Return only the envelope and the report path `{{report}}`.",
+      "## Return\n\nWrite your entries with `bdk log add <type> <summary> --ref <ref> --ticket {{ref}}`: the summary is 1 to 120 characters (put detail in `--body`), the type is one of decision, finding, observation, blocker, question, assumption, risk, learning, report. Then hand the full report to `bdk log ingest --ticket {{ref}}` on stdin from a quoted heredoc, never from a file, with the envelope (`status`, `files`, `entries`, `evidence`) as its frontmatter between two `---` lines; there is no frontmatter flag:\n\n```sh\nbdk log ingest --ticket {{ref}} <<'REPORT'\n---\nstatus: done\nfiles: []\nentries: [<ids>]\nevidence: []\n---\n<the report>\nREPORT\n```\n\n`entries` lists the ids `log add` printed. Leave `reason` out, except for `blocked` or `needs-context`. When it refuses, fix the named field and call it again. Return only the envelope and the report path `{{report}}`.",
   },
 ];
 

@@ -16,6 +16,14 @@ Users log in with a one-time link.
 | 02 Mail |  |  | +12 -1 (1) |
 | outside the plan | +2 -0 (1) |  |  |
 
+## Intent
+
+| Capability | Requirement | Scenario | Code | Test | State |
+|---|---|---|---|---|---|
+| `auth/login` | Magic link | link sent | src/auth/login.ts#issue | src/auth/login.test.ts: sends the link | ok |
+| `auth/login` | Magic link | link expired |  |  | untraced |
+| `auth/login` | Password login | - | src/auth/login.ts (removed) | - | L-00000002, L-00000006, L-0000000z |
+
 ## Change map
 
 ### auth
@@ -52,7 +60,7 @@ The README documents the new flow.
 ### should-fix (1)
 
 - **L-00000002** finding L-00000002
-  - finding · high · security · by agent:reviewer · undecided
+  - finding · should-fix (real) · high · security · by agent:reviewer · undecided
   - Refs: `src/auth/login.ts#verify`
   - Problem: The token is compared with ==.
   - Why it matters: A timing attack reveals it.
@@ -61,14 +69,14 @@ The README documents the new flow.
 ### nice-to-have (1)
 
 - **L-00000003** observation L-00000003
-  - observation · by agent:reviewer · decided defer
+  - observation · nice-to-have · by agent:reviewer · decided defer
   - Refs: `auth`
   - Dates are built by hand.
 
 ### untriaged (1)
 
 - **L-00000005** finding L-00000005
-  - finding · by agent:reviewer · undecided
+  - finding · untriaged · by agent:reviewer · undecided
   - Refs: `README.md`
 
 ## Settled
