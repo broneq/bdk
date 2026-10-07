@@ -77,7 +77,7 @@ async function index(): Promise<IndexDb> {
 }
 
 function closeOpenTicket(): void {
-  const path = join(dir, "attempts/task-redispatch-02-3-A-4m8rt2wx.md");
+  const path = join(dir, "attempts/part-02-A-4m8rt2wx.md");
   const text = readFileSync(path, "utf8").replace(
     "author: Jan Kowalski <jan@example.com>\n",
     "author: Jan Kowalski <jan@example.com>\nclosed-at: 2026-09-25T12:10:00.000Z\noutcome: ok\n",
@@ -101,17 +101,17 @@ describe("taskProgress", () => {
     const missing = commit(`feat: x\n\nBDK-Change: ${ID}\nBDK-Part: 02\nBDK-Task: 02-9`);
     const wrong = commit(`feat: y\n\nBDK-Change: ${ID}\nBDK-Part: 01\nBDK-Task: 02-3`);
     const partial = commit(`feat: z\n\nBDK-Change: ${ID}\nBDK-Part: 01`);
-    const attempts = readAttempts(store, dir).map((record) =>
-      record.data.ticket === "A-7f3kx2p9"
-        ? { ...record, data: { ...record.data, target: "02-8" } }
-        : record,
+    const progress = await taskProgress(
+      systemGit,
+      root,
+      ID,
+      readPlanParts(store, dir),
+      readAttempts(store, dir),
     );
-    const progress = await taskProgress(systemGit, root, ID, readPlanParts(store, dir), attempts);
     expect(progress.mismatches).toStrictEqual([
       `commit ${partial} carries BDK-Change: ${ID} without BDK-Task`,
       `commit ${wrong} carries BDK-Part: 01 for BDK-Task: 02-3, but plan/parts/02-login.md holds 02-3`,
       `commit ${missing} carries BDK-Task: 02-9, but no plan part holds 02-9`,
-      "attempt record A-7f3kx2p9 targets task 02-8, but no plan part holds 02-8",
     ]);
     expect(progress.committed.size).toBe(0);
   });
@@ -138,6 +138,43 @@ describe("taskProgress", () => {
     ]);
     expect(progress.committed.size).toBe(0);
     expect(progress.commits).toHaveLength(3);
+  });
+  it("a BDK-Part with the BDK-Ticket of a part ticket of that part is part work (#166)", async () => {
+    const work = commit(
+      `refactor(02): conform part 02\n\nBDK-Change: ${ID}\nBDK-Part: 02\nBDK-Ticket: A-4m8rt2wx`,
+    );
+    const other = commit(
+      `refactor(01): x\n\nBDK-Change: ${ID}\nBDK-Part: 01\nBDK-Ticket: A-4m8rt2wx`,
+    );
+    const progress = await taskProgress(
+      systemGit,
+      root,
+      ID,
+      readPlanParts(store, dir),
+      readAttempts(store, dir),
+    );
+    expect(progress.mismatches).toStrictEqual([
+      `commit ${other} carries BDK-Part: 01 and BDK-Ticket: A-4m8rt2wx, but no part or verify-fix ticket of part 01 is A-4m8rt2wx`,
+    ]);
+    expect(progress.mismatches.join("\n")).not.toContain(work);
+    expect(progress.committed.size).toBe(0);
+  });
+  it("reports a part ticket whose part is in no plan part file", async () => {
+    writeFileSync(
+      join(dir, "attempts/part-09-A-9z9z9z9z.md"),
+      '---\nschema: 1\nticket: A-9z9z9z9z\nloop: part\ntarget: "09"\nattempt: 1\nof: 3\n' +
+        "scope: full\nopened-at: 2026-09-25T12:00:00.000Z\nauthor: Jan Kowalski <jan@example.com>\n---\n",
+    );
+    const progress = await taskProgress(
+      systemGit,
+      root,
+      ID,
+      readPlanParts(store, dir),
+      readAttempts(store, dir),
+    );
+    expect(progress.mismatches).toStrictEqual([
+      "attempt record A-9z9z9z9z targets part 09, but no plan part is 09",
+    ]);
   });
 });
 

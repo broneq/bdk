@@ -73,7 +73,7 @@ describe("post-task step nodes", () => {
   it("registers the eighteen kinds, the three steps on one base", () => {
     const kinds = kindRegistry();
     expect(kinds.size).toBe(18);
-    for (const name of ["simplify", "tests-scoped", "lint"]) {
+    for (const name of ["conform", "tests-scoped", "lint"]) {
       expect(kinds.get(name)).toBeInstanceOf(PostTaskStepKind);
     }
     expect(kinds.has("post-task-step")).toBe(false);
@@ -82,11 +82,11 @@ describe("post-task step nodes", () => {
   it("follow execute in pipeline order, one instance per plan part", () => {
     const ids = graph().nodes.map((node) => node.id);
     const at = (id: string) => ids.indexOf(id);
-    expect(at("execute-part:01")).toBeLessThan(at("simplify"));
-    expect(ids.slice(at("simplify"), at("spec-delta"))).toStrictEqual([
-      "simplify",
-      "simplify:01",
-      "simplify:02",
+    expect(at("execute-part:01")).toBeLessThan(at("conform"));
+    expect(ids.slice(at("conform"), at("spec-delta"))).toStrictEqual([
+      "conform",
+      "conform:01",
+      "conform:02",
       "tests-scoped",
       "tests-scoped:01",
       "tests-scoped:02",
@@ -98,9 +98,9 @@ describe("post-task step nodes", () => {
 
   it("pair step instances by part; other instances require collections whole", () => {
     const result = graph();
-    expect(result.find("simplify:02")?.requires).toStrictEqual(["execute-part:02"]);
-    expect(result.find("tests-scoped:02")?.requires).toStrictEqual(["simplify:02"]);
-    expect(result.find("lint:02")?.requires).toStrictEqual(["simplify:02"]);
+    expect(result.find("conform:02")?.requires).toStrictEqual(["execute-part:02"]);
+    expect(result.find("tests-scoped:02")?.requires).toStrictEqual(["conform:02"]);
+    expect(result.find("lint:02")?.requires).toStrictEqual(["conform:02"]);
     expect(result.find("execute-part:02")?.requires).toStrictEqual([
       "plan-part:01",
       "plan-part:02",
@@ -112,36 +112,36 @@ describe("post-task step nodes", () => {
         "tests-scoped:02",
         "lint:01",
         "lint:02",
-        "simplify:01",
-        "simplify:02",
+        "conform:01",
+        "conform:02",
       ]),
     );
   });
 
   it("is ready without evidence once its part's requirements are done", () => {
     const result = graph();
-    expect(result.find("simplify:01")?.state).toBe("ready");
+    expect(result.find("conform:01")?.state).toBe("ready");
     expect(result.find("tests-scoped:01")?.state).toBe("blocked");
-    expect(result.next?.id).toBe("simplify:01");
+    expect(result.next?.id).toBe("conform:01");
   });
 
   it("is done from the latest covering manifest when it is fresh and says pass or not-run", () => {
     const result = graph({
       evidence: [
-        manifest("E-00000001", "simplify", "02-1", { fresh: false }),
-        manifest("E-00000002", "simplify", "02-2"),
+        manifest("E-00000001", "conform", "02-1", { fresh: false }),
+        manifest("E-00000002", "conform", "02-2"),
         manifest("E-00000003", "tests-scoped", "02-2", { verdict: "not-run", cited: false }),
       ],
     });
-    expect(result.find("simplify:02")?.state).toBe("done");
+    expect(result.find("conform:02")?.state).toBe("done");
     expect(result.find("tests-scoped:02")?.state).toBe("done");
-    expect(result.find("simplify:01")?.state).toBe("ready");
+    expect(result.find("conform:01")?.state).toBe("ready");
   });
 
   it("is stale when the latest covering manifest is not fresh, and next returns it once its requirements are done", () => {
     const evidence = [
-      manifest("E-00000001", "simplify", "01-1"),
-      manifest("E-00000002", "simplify", "02-1"),
+      manifest("E-00000001", "conform", "01-1"),
+      manifest("E-00000002", "conform", "02-1"),
       manifest("E-00000004", "tests-scoped", "2026-09-25-login"),
       manifest("E-00000005", "lint", "01"),
       manifest("E-00000003", "lint", "02-2", { fresh: false }),
@@ -155,32 +155,32 @@ describe("post-task step nodes", () => {
 
     const blocked = graph({ evidence: evidence.slice(4) });
     expect(blocked.find("lint:02")?.state).toBe("stale");
-    expect(blocked.next?.id).toBe("simplify:01");
+    expect(blocked.next?.id).toBe("conform:01");
   });
 
   it("counts the fresh one of two manifests recorded in the same second as the later", () => {
     const result = graph({
       evidence: [
-        manifest("E-00000001", "simplify", "01-1"),
-        manifest("E-00000002", "simplify", "01-1", { fresh: false }),
-        manifest("E-00000003", "simplify", "02-1", {
+        manifest("E-00000001", "conform", "01-1"),
+        manifest("E-00000002", "conform", "01-1", { fresh: false }),
+        manifest("E-00000003", "conform", "02-1", {
           at: "2026-09-25T10:00:00.000Z",
           fresh: false,
         }),
-        manifest("E-00000004", "simplify", "02-2", {
+        manifest("E-00000004", "conform", "02-2", {
           at: "2026-09-25T10:00:01.000Z",
           fresh: false,
         }),
       ],
     });
-    expect(result.find("simplify:01")?.state).toBe("done");
-    expect(result.find("simplify:02")?.state).toBe("stale");
+    expect(result.find("conform:01")?.state).toBe("done");
+    expect(result.find("conform:02")?.state).toBe("stale");
   });
 
   it("is not done on a fresh fail", () => {
     const result = graph({
       evidence: [
-        manifest("E-00000001", "simplify", "01"),
+        manifest("E-00000001", "conform", "01"),
         manifest("E-00000002", "tests-scoped", "01-1", { verdict: "fail" }),
       ],
     });
@@ -193,13 +193,13 @@ describe("post-task step nodes", () => {
   it("counts a manifest of the part or the Change, never one of another part or an artifact", () => {
     const result = graph({
       evidence: [
-        manifest("E-00000001", "simplify", "2026-09-25-login"),
+        manifest("E-00000001", "conform", "2026-09-25-login"),
         manifest("E-00000002", "lint", "01"),
         manifest("E-00000003", "tests-scoped", "plan"),
       ],
     });
-    expect(result.find("simplify:01")?.state).toBe("done");
-    expect(result.find("simplify:02")?.state).toBe("done");
+    expect(result.find("conform:01")?.state).toBe("done");
+    expect(result.find("conform:02")?.state).toBe("done");
     expect(result.find("lint:01")?.state).toBe("done");
     expect(result.find("lint:02")?.state).toBe("ready");
     expect(result.find("tests-scoped:01")?.state).toBe("ready");
@@ -222,7 +222,7 @@ describe("post-task step nodes", () => {
         ok: false,
         why: "E-00000002 was recorded on another tree of 02-1",
         rule: "policy/stale-evidence",
-        instead: "bdk evidence record lint <file> --ticket <ticket>",
+        instead: "bdk check run <part> --ticket <ticket>",
       },
       { id: "verdict", ok: true, why: "pass" },
     ]);
@@ -235,13 +235,13 @@ describe("post-task step nodes", () => {
 
   it("names its command as the way to done", () => {
     const kinds = kindRegistry();
-    expect(kinds.get("simplify")?.doneBy).toStrictEqual({
+    expect(kinds.get("conform")?.doneBy).toStrictEqual({
       through: "evidence",
       command: "bdk attempt close <ticket> ok",
     });
     expect(kinds.get("tests-scoped")?.doneBy).toStrictEqual({
       through: "evidence",
-      command: "bdk evidence record tests-scoped <file> --ticket <ticket>",
+      command: "bdk check run <part> --ticket <ticket>",
     });
   });
 
@@ -313,7 +313,7 @@ describe("tool group nodes (T49)", () => {
   it("names the group of each grouped kind", () => {
     const kinds = kindRegistry();
     expect(
-      ["tests-scoped", "tests-full", "lint", "lint-full", "simplify"].map(
+      ["tests-scoped", "tests-full", "lint", "lint-full", "conform"].map(
         (name) => kinds.get(name)?.toolGroup,
       ),
     ).toStrictEqual(["test", "test", "lint", "lint", undefined]);

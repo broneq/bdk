@@ -1,18 +1,15 @@
 // The execute wave `bdk next` returns with an `execute-part` node (T41-D3;
 // `kernel-cli/graph`, bdk next): every ready part, whether it is started, its
-// open tickets, whether it runs flat (main dispatches its tasks) or as a
-// tree (one lead per part), and where it works (T45). Pure, so the rules have
-// unit tests of their own.
+// open `part` and `verify-fix` tickets, and where it works (T45). Every part
+// runs as one `part` ticket (#166). Pure, so the rules have unit tests of
+// their own.
 import type { Graph } from "./engine.ts";
-
-type WaveMode = "flat" | "tree";
 
 export interface WaveItem {
   readonly part: string;
   readonly started: boolean;
-  /** Open tickets of the part, or of one of its tasks, oldest first. */
+  /** Open `part` and `verify-fix` tickets of the part, oldest first. */
   readonly tickets: readonly string[];
-  readonly mode: WaveMode;
   /** The part's `isolation`, `shared` when absent (T45). */
   readonly isolation: "shared" | "worktree";
   /** The absolute path of a live worktree part's worktree. */
@@ -21,15 +18,13 @@ export interface WaveItem {
 
 export interface WaveInput {
   readonly graph: Graph;
-  readonly profile: string;
-  readonly tree: { readonly enabled: boolean; readonly "min-parts": number };
   /** The `Files:` of every task of each part. */
   readonly files: ReadonlyMap<string, readonly string[]>;
   /** The first path of `own` that touches a path of `other`, or undefined. */
   readonly overlap: (own: readonly string[], other: readonly string[]) => string | undefined;
   /** Parts with a kernel transition to their `execute-part` instance. */
   readonly started: ReadonlySet<string>;
-  /** Open tickets, oldest first: the loop and the target, a part or a task id. */
+  /** Open tickets, oldest first: the loop and the target. */
   readonly tickets: readonly {
     readonly ticket: string;
     readonly loop: string;
@@ -48,9 +43,6 @@ export interface WaveInput {
 const KIND = "execute-part";
 
 /**
- * A part with an open `part-lead` ticket is `tree`; another started part is
- * `flat`; a part not started is `tree` when the Change is `large`, the tree is
- * enabled and the ready parts not started number at least `min-parts`.
  * Parts share one working tree, so a part not started whose `Files:` overlap
  * a started part or a part listed before it waits for a later wave. A
  * worktree runs no other part, so two isolation rules follow (T45): with
@@ -94,20 +86,15 @@ export function executeWave(input: WaveInput): WaveItem[] {
     listed += 1;
     return true;
   });
-  const fresh = ready.filter((nn) => !input.started.has(nn)).length;
-  const tree = input.profile === "large" && input.tree.enabled && fresh >= input.tree["min-parts"];
   return ready.map((part) => {
     const own = input.tickets.filter(
-      ({ target }) => target === part || target.startsWith(`${part}-`),
+      ({ loop, target }) => target === part && (loop === "part" || loop === "verify-fix"),
     );
-    const started = input.started.has(part);
-    const lead = own.some(({ loop }) => loop === "part-lead");
     const workdir = input.live.get(part);
     return {
       part,
-      started,
+      started: input.started.has(part),
       tickets: own.map(({ ticket }) => ticket),
-      mode: lead || (!started && tree) ? "tree" : "flat",
       isolation: isolationOf(part),
       ...(workdir === undefined ? {} : { workdir }),
     };

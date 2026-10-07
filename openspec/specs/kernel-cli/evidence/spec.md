@@ -35,24 +35,24 @@ Register verification evidence: a manifest with the tree hash and the hashes of 
   - `--ticket <ticket>`. Required; a ticket reference (`kernel-cli`, Ticket references); ties the evidence to the target, the role and the group.
   - `--verdict pass|fail|not-run`.
   - `--cite <pointer>`. Repeatable; JSON pointer into a measured file or file:line in a snapshot, required for pass.
-- **Behaviour:** The first of the three T4 primitives. `<kind>` is any kebab-case name: the built-in kinds and a project's own kind are recorded the same way (`input/invalid-argument` otherwise, and for `coverage`). The ticket must be open (`policy/no-open-ticket`); the manifest's `target` is the ticket's target and its `source` is `agent:<role>` of the ticket's package (the working agent's, else the active one; `kernel-cli`, Ticket references), or `kernel` when the ticket has no package; for `<ticket>@<group>` the role is the group package's and the manifest also holds `group` (a group without a package is `policy/no-open-ticket`). Each `<file>` must exist (`input/not-found`). Storage (user choice, T23-D46): a file that is UTF-8 text without a NUL byte and at most `policy.evidence.max-committed-bytes` bytes is copied to `.bdk/changes/<id>/evidence/<target>-<evidenceId>-<file name>` and listed with `stored: committed`; any other file stays in `.bdk/.machine/evidence/` (copied there as `<target>-<evidenceId>-<file name>` when it lies elsewhere) and is listed with `stored: machine`, referenced from the committed manifest by its hash only. The kernel stamps `tree-hash` and `tree` with the tree hash of the ticket's target (`kernel-state`, Evidence manifest, Tree hash). Citation validator (T4, T23-D8): a citation is `<file>#<json-pointer>`, `<file>:<line>` or `<file>:<line>=<text>`; `<file>` names a recorded file by its path as given, by the same path relative to the project root or absolute, or by its file name, and may be left out when exactly one file is recorded (`#/summary/failed`, `:12`); a bare JSON pointer starting with `/` is the same as `#` plus the pointer, unless the citation starts with a recorded file's path followed by `#` or `:`, so an absolute path names its file. A JSON pointer resolves when the file parses as JSON and the pointer names a value; `<line>` resolves when the file has that 1-based line; `=<text>` resolves when that line contains the text. A citation into a file that is not text never resolves. Any citation that does not resolve, and a `pass` verdict without a citation, is `policy/missing-citation` naming the citation and the file, and nothing is written. A second call with the same kind, ticket, tree hash, file hashes, verdict and citations writes nothing and returns the earlier manifest with `deduplicated: true`. Available to subagents: runners record the evidence they produce. A `--cite` value that does not resolve, and whose text (the whole value, or the part after `=` of a `<file>:<line>=<text>` or `<file>:<from>-<to>=<text>` value) is on a line of exactly one recorded text file, is refused with `policy/missing-citation` as any citation that does not resolve, and `instead` then holds the exact `--cite <file>:<line>=<text>` form of that file's first such line; the kernel never accepts the bare text as a citation (T23-D47) and writes nothing.
+- **Behaviour:** The first of the three T4 primitives. `<kind>` is any kebab-case name: the built-in kinds and a project's own kind are recorded the same way (`input/invalid-argument` otherwise, and for `coverage`). The ticket must be open (`policy/no-open-ticket`); the manifest's `target` is the ticket's target and its `source` is `agent:<role>` of the ticket's package (the working agent's, else the active one; `kernel-cli`, Ticket references), or `kernel` when the ticket has no package; for `<ticket>@<group>` the role is the group package's and the manifest also holds `group` (a group without a package is `policy/no-open-ticket`). Each `<file>` must exist (`input/not-found`). An agent's evidence file (a manifest whose `source` is `agent:<role>`) must lie under `.bdk/.machine/checks/<ticket>/`, the directory of the ticket the reference names without its `@<group>` (#166): a file elsewhere refuses with `policy/evidence-outside-ticket` naming the file and that directory, and nothing is written, so two tickets never cite one shared output. Storage (user choice, T23-D46): a file that is UTF-8 text without a NUL byte and at most `policy.evidence.max-committed-bytes` bytes is copied to `.bdk/changes/<id>/evidence/<target>-<evidenceId>-<file name>` and listed with `stored: committed`; any other file stays in `.bdk/.machine/evidence/` (copied there as `<target>-<evidenceId>-<file name>` when it lies elsewhere) and is listed with `stored: machine`, referenced from the committed manifest by its hash only. The kernel stamps `tree-hash` and `tree` with the tree hash of the ticket's target (`kernel-state`, Evidence manifest, Tree hash). Citation validator (T4, T23-D8): a citation is `<file>#<json-pointer>`, `<file>:<line>` or `<file>:<line>=<text>`; `<file>` names a recorded file by its path as given, by the same path relative to the project root or absolute, or by its file name, and may be left out when exactly one file is recorded (`#/summary/failed`, `:12`); a bare JSON pointer starting with `/` is the same as `#` plus the pointer, unless the citation starts with a recorded file's path followed by `#` or `:`, so an absolute path names its file. A JSON pointer resolves when the file parses as JSON and the pointer names a value; `<line>` resolves when the file has that 1-based line; `=<text>` resolves when that line contains the text. A citation into a file that is not text never resolves. Any citation that does not resolve, and a `pass` verdict without a citation, is `policy/missing-citation` naming the citation and the file, and nothing is written. A second call with the same kind, ticket, tree hash, file hashes, verdict and citations writes nothing and returns the earlier manifest with `deduplicated: true`. Available to subagents: the review gate runner and other agents record the evidence they produce; the `tests-scoped` and `lint` evidence of a part is recorded by `bdk check run` (`kernel-cli/check`). A `--cite` value that does not resolve, and whose text (the whole value, or the part after `=` of a `<file>:<line>=<text>` or `<file>:<from>-<to>=<text>` value) is on a line of exactly one recorded text file, is refused with `policy/missing-citation` as any citation that does not resolve, and `instead` then holds the exact `--cite <file>:<line>=<text>` form of that file's first such line; the kernel never accepts the bare text as a citation (T23-D47) and writes nothing.
 - **Writes:** `.bdk/changes/<id>/evidence/`, `.bdk/.machine/evidence/`
 - **Output:** `schema/cli/output/evidence-record.json`
-- **Exit codes and rules:** `0, 2, 3, 4, 5`. Specific rules: `input/not-found`, `policy/no-open-ticket`, `policy/missing-citation`; plus the common rules of every command and of Change-scoped commands (`kernel-cli`, Exit codes and the error object).
+- **Exit codes and rules:** `0, 2, 3, 4, 5`. Specific rules: `input/not-found`, `policy/no-open-ticket`, `policy/missing-citation`, `policy/evidence-outside-ticket`; plus the common rules of every command and of Change-scoped commands (`kernel-cli`, Exit codes and the error object).
 - **Example:**
 
   ```bash
-  bdk evidence record tests-scoped .bdk/.machine/evidence/02-3-tests.json --ticket A-7f3k9m2q --verdict pass --cite '/summary/failed' --json
+  bdk evidence record tests-scoped .bdk/.machine/checks/A-7f3k9m2q/02-tests.json --ticket A-7f3k9m2q --verdict pass --cite '/summary/failed' --json
   ```
 
   ```json
   {
     "evidence": "E-b6n9t2kq",
-    "path": ".bdk/changes/2026-09-25-passwordless-login/evidence/02-3-E-b6n9t2kq.md",
+    "path": ".bdk/changes/2026-09-25-passwordless-login/evidence/02-E-b6n9t2kq.md",
     "treeHash": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
     "files": [
       {
-        "path": ".bdk/changes/2026-09-25-passwordless-login/evidence/02-3-E-b6n9t2kq-02-3-tests.json",
+        "path": ".bdk/changes/2026-09-25-passwordless-login/evidence/02-E-b6n9t2kq-02-tests.json",
         "hash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
         "stored": "committed"
       }
@@ -70,7 +70,7 @@ Register verification evidence: a manifest with the tree hash and the hashes of 
 
 #### Scenario: example run
 
-- **WHEN** `bdk evidence record tests-scoped .bdk/.machine/evidence/02-3-tests.json --ticket A-7f3k9m2q --verdict pass --cite '/summary/failed' --json` runs as in the example
+- **WHEN** `bdk evidence record tests-scoped .bdk/.machine/checks/A-7f3k9m2q/02-tests.json --ticket A-7f3k9m2q --verdict pass --cite '/summary/failed' --json` runs as in the example
 - **THEN** the exit code is 0 and stdout validates against `schema/cli/output/evidence-record.json`
 
 #### Scenario: input/not-found
@@ -80,7 +80,7 @@ Register verification evidence: a manifest with the tree hash and the hashes of 
 
 #### Scenario: policy/no-open-ticket
 
-- **WHEN** no open ticket for the task, or the ticket named does not match
+- **WHEN** no open ticket for the target, or the ticket named does not match
 - **THEN** the exit code is 2 and the error object carries `rule: policy/no-open-ticket`
 
 #### Scenario: policy/missing-citation
@@ -140,13 +140,23 @@ Register verification evidence: a manifest with the tree hash and the hashes of 
 
 #### Scenario: grouped evidence
 
-- **WHEN** the runner of group `gate` runs `bdk evidence record tests-full .bdk/.machine/evidence/full.json --ticket A-r1v2w3x4@gate --verdict pass --cite /numFailedTests`
+- **WHEN** the runner of group `gate` runs `bdk evidence record tests-full .bdk/.machine/checks/A-r1v2w3x4/full.json --ticket A-r1v2w3x4@gate --verdict pass --cite /numFailedTests`
 - **THEN** the manifest holds `kind: tests-full`, `target` the Change id, `group: gate`, `source: agent:runner` and the tree hash of the Change
 
 #### Scenario: coverage through record
 
 - **WHEN** `bdk evidence record coverage lcov.info --ticket A-r1v2w3x4@gate` runs
 - **THEN** the exit code is 3 and the error object carries `rule: input/invalid-argument` naming `bdk evidence coverage`
+
+#### Scenario: policy/evidence-outside-ticket
+
+- **WHEN** an agent of ticket `A-7f3k9m2q` runs `bdk evidence record tests-full .bdk/.machine/checks/full.txt --ticket A-7f3k9m2q@gate --verdict pass --cite full.txt:1`
+- **THEN** the exit code is 2, the error object carries `rule: policy/evidence-outside-ticket` naming the file and `.bdk/.machine/checks/A-7f3k9m2q/`, and no manifest is written
+
+#### Scenario: file in the ticket's directory
+
+- **WHEN** the same call names `.bdk/.machine/checks/A-7f3k9m2q/full.txt`
+- **THEN** the citation is checked and the manifest is written
 
 ### Requirement: bdk evidence check
 

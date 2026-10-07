@@ -157,15 +157,12 @@ describe("hooks pre-tool: the judge (#158)", () => {
   /** A judge whose registry row holds a package listing `entries`; none without them. */
   function judgeFacts(entries?: readonly string[]): AgentFacts {
     return {
-      ticketTarget: () => undefined,
       scouts: 0,
       scoutLimit: 3,
       messageLimit: 300,
       stateOf: () => undefined,
       entryExists: () => true,
-      ...(entries === undefined
-        ? {}
-        : { caller: { ticket: "A-r1v2w3x4", target: "2026-09-25-login" }, entries }),
+      ...(entries === undefined ? {} : { entries }),
     };
   }
   const judge = (argv: string, facts: AgentFacts) =>
@@ -301,6 +298,48 @@ describe("hooks pre-tool: read-only adapters", () => {
 
   it("lets a worker write", () => {
     expect(passes(subagentBash("echo x > notes.md", "bdk:worker"))).toBe(true);
+  });
+});
+
+describe("hooks pre-tool: report drafts (#166)", () => {
+  const DRAFT = `${PROJECT}/.bdk/.machine/drafts/A-7f3k9m2q.md`;
+  const subagentWrite = (path: string, adapter: string): Payload => ({
+    ...recorded(preWrite, { file_path: path }),
+    agent_id: "a1b2c3",
+    agent_type: adapter,
+  });
+  const roundDecide = (payload: Payload, round?: string) =>
+    decidePreTool(index, JSON.stringify(payload), undefined, undefined, round);
+
+  it.each(["bdk:reader", "bdk:integrator", "bdk:judge", "bdk:reviewer", "bdk:scout", "bdk:runner"])(
+    "holds %s to its draft",
+    (adapter) => {
+      expect(passes(subagentWrite(DRAFT, adapter))).toBe(true);
+      const { rule, why } = denied(subagentWrite(`${PROJECT}/src/app.ts`, adapter));
+      expect(rule).toBe("guard/draft-only");
+      expect(why).toContain(`not ${PROJECT}/src/app.ts`);
+    },
+  );
+
+  it("lets a worker write anywhere", () => {
+    expect(passes(subagentWrite(`${PROJECT}/src/app.ts`, "bdk:worker"))).toBe(true);
+  });
+
+  it("holds the main thread to drafts only while a review round is open", () => {
+    const source = recorded(preWrite, { file_path: `${PROJECT}/src/app.ts` });
+    expect(isRefusal(roundDecide(source))).toBe(false);
+    const outcome = roundDecide(source, "A-0review1");
+    expect(outcome).toMatchObject({
+      rule: "guard/draft-only",
+      instead: ["write the report to its draft path under .bdk/.machine/drafts/"],
+    });
+    expect(isRefusal(outcome) && outcome.why).toMatch(/^review round A-0review1 is open/);
+    expect(isRefusal(roundDecide(recorded(preWrite, { file_path: DRAFT }), "A-0review1"))).toBe(
+      false,
+    );
+    expect(
+      isRefusal(roundDecide(subagentWrite(`${PROJECT}/src/app.ts`, "bdk:worker"), "A-0review1")),
+    ).toBe(false);
   });
 });
 

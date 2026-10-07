@@ -520,8 +520,8 @@ Take over a Change whose previous session died with open tickets. The kernel SHA
 
 #### Scenario: taken-over ticket keeps the budget
 
-- **WHEN** ticket `A-7f3k9m2q` of `task-redispatch 02-3` is open after one failed attempt and `bdk change takeover --close-tickets` runs
-- **THEN** the ticket's record has `outcome: not-run` and body `taken over`, `attempt list --for 02-3` shows `budgets.task-redispatch.used: 1` and `budgets.not-run.used: 1`, and a new `attempt open task-redispatch 02-3` exits 0
+- **WHEN** ticket `A-7f3k9m2q` of `part 02` is open after one failed attempt and `bdk change takeover --close-tickets` runs
+- **THEN** the ticket's record has `outcome: not-run` and body `taken over`, `attempt list --for 02` shows `budgets.part.used: 1` and `budgets.not-run.used: 1`, and a new `attempt open part 02` exits 0
 
 #### Scenario: previous session named
 

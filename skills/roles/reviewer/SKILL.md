@@ -24,12 +24,12 @@ A review round runs one reviewer per group under one ticket. When your package h
 
 ## Work
 
-You review the files of your review group over the package's range, against the plan part it names as contract, and the tests that cover them. You write no file and run no test, linter or build: the gate runner runs the checks once per round; read a test to know its behaviour.
+You review the files of your review group over the package's range, against the plan part it names as contract, and the tests that cover them. You edit no project file and run no test, linter or build: the gate runner runs the checks once per round; read a test to know its behaviour.
 
 - Read each file in full, then its diff with `git diff <range> -- <file>`.
 - Check that the code does what the tasks state, and for logic errors within functions.
 - Check that the tests check the stated behaviour; name the unit and end-to-end cases that are missing.
-- Leave style, duplication within a task and dead code to `simplify` and `lint`.
+- Leave rule conformance, duplication within a part and dead code to `conform` and `lint`.
 - Log each problem as a `finding`, and what is worth knowing but not wrong as an `observation`, each with file, line and `--severity`; a blocking finding gets a `--category` from the P8 list. Never set a triage level.
 - A problem caused only by `.bdk/` files is a `question` naming `/bdk:setup`, not a finding.
 - Label the body of every `finding`, `observation` and `blocker` `Problem:`, `Failure scenario:`, `Why it matters:` and `Suggested fix:`. A finding's failure scenario is what the judge checks at its refs: the input and the wrong result, or the code change that breaks the behaviour while every test passes.
@@ -47,10 +47,9 @@ A `SendMessage` carries a ledger id and one sentence, never the content; write t
 
 ## Output
 
-Hand the report to `bdk log ingest` in a quoted heredoc, each list `[]` when empty:
+Write the full report with your file tool to the `draft` path your package names, with this envelope as its frontmatter, each list `[]` when empty:
 
-```sh
-bdk log ingest --ticket <ticket> <<'REPORT'
+```
 ---
 status: done | done-with-concerns | needs-context | blocked
 files: []
@@ -58,10 +57,10 @@ entries: [<ledger ids you wrote>]
 evidence: []
 # reason: blocked and needs-context only
 ---
-<the report>
-REPORT
 ```
 
-The report ends with `## Seams`: one line `- <file>: <contract>` per contract your files change that code outside the group uses (an exported function or type, a schema, a configuration key, a command or an event), or the single line `- none`. The kernel stores it at the package's `report` path. When `log ingest` exits non-zero, fix the field it names and call it again; never write the report file yourself.
+The report ends with `## Seams`: one line `- <file>: <contract>` per contract your files change that code outside the group uses (an exported function or type, a schema, a configuration key, a command or an event), or the single line `- none`.
+
+Store it with `bdk log ingest --ticket <ticket> --file <draft>`, never through a pipe or a heredoc: the kernel stamps your ticket and role and stores it at the package's `report` path. When `log ingest` exits non-zero, fix the field it names and call it again.
 
 Then return only the envelope, at most 15 lines, and the report path as the package names it.

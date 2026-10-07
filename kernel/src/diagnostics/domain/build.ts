@@ -23,7 +23,10 @@ import type {
 import { stageLines, windowSessions } from "./scope.ts";
 import type { AgentTranscript, SessionTranscripts } from "./transcript.ts";
 
-const TASK_LOOP = "task-redispatch";
+/** The loops whose agents change a part's code (#166). */
+const WORK_LOOPS: readonly string[] = ["part", "verify-fix"];
+/** A task id; a ticket of an older Change could target one. */
+const TASK_ID = /^\d{2}-\d+$/;
 const MAIN_AGENT = "main";
 
 export interface ReportInput {
@@ -254,9 +257,12 @@ function ticketHolders(rows: readonly AgentFacts[]): ReadonlyMap<string, readonl
   return holders;
 }
 
+/** The tickets whose agents change code: the part work and the tickets of a task. */
 function taskTickets(attempts: readonly AttemptFacts[]): Set<string> {
   return new Set(
-    attempts.filter((attempt) => attempt.loop === TASK_LOOP).map((attempt) => attempt.ticket),
+    attempts
+      .filter((attempt) => WORK_LOOPS.includes(attempt.loop) || TASK_ID.test(attempt.target))
+      .map((attempt) => attempt.ticket),
   );
 }
 
@@ -274,7 +280,7 @@ function taskMetrics(
 ): TaskRow[] {
   const byTask = new Map<string, AttemptFacts[]>();
   for (const attempt of attempts) {
-    if (attempt.loop !== TASK_LOOP) continue;
+    if (!TASK_ID.test(attempt.target)) continue;
     byTask.set(attempt.target, [...(byTask.get(attempt.target) ?? []), attempt]);
   }
   return [...byTask].map(([task, tickets]) => ({
@@ -303,7 +309,7 @@ function partMetrics(
   }
   const partIds = new Set(partOf.values());
   for (const attempt of attempts) {
-    if (attempt.loop === TASK_LOOP || !partIds.has(attempt.target)) continue;
+    if (TASK_ID.test(attempt.target) || !partIds.has(attempt.target)) continue;
     parts.set(attempt.target, [...(parts.get(attempt.target) ?? []), attempt]);
   }
   return [...parts]

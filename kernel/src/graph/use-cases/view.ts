@@ -23,6 +23,7 @@ import {
 import type { AttemptRecord, EntryRow, Store } from "../../shared/store/index.ts";
 import type { Profile } from "../../shared/vocabulary/index.ts";
 import { deltaCapabilities, deltaProblems } from "../../spec/index.ts";
+import { planPartModule } from "../config.ts";
 
 export interface ViewInput {
   readonly store: Store;
@@ -84,6 +85,7 @@ export function changeView(input: ViewInput): ChangeView {
     return typeof report === "string" ? documentData(store, join(dir, report)) : undefined;
   };
   const tools = moduleValue(toolsModule, input.settings);
+  const partLimits = moduleValue(planPartModule, input.settings);
   return {
     id: input.id,
     kind: input.kind,
@@ -108,6 +110,10 @@ export function changeView(input: ViewInput): ChangeView {
     coverageTools: toolGroup(tools, "test")
       .entries.filter((entry) => entry.coverage?.min !== undefined)
       .map((entry) => entry.id),
+    partLimits: {
+      maxTasks: partLimits["max-tasks"],
+      maxFiles: partLimits["max-files"],
+    },
     toolGroups: toolGroupStates(tools),
     ticketLoop,
     ticketOutcome,

@@ -165,11 +165,11 @@ a row end the ladder at once.
 
 ## Evidence
 
-A task is done only with evidence. After the implementer, the same ticket runs
-the post-task steps in pipeline order: `simplify`, then `tests-scoped` and
-`lint`, scoped to the task's executable files. The runner records each result
-with `bdk evidence record`, citing the output line that shows the pass, and
-`bdk attempt close` refuses a missing step, a failure, a pass without a
+A part is done only with evidence. After the implementer, the same part ticket
+runs the post-task steps in pipeline order: `conform`, then `tests-scoped` and
+`lint`, scoped to the part's executable files. The conformer runs
+`bdk check run <part>`, which runs the commands and records each result with
+the output line that shows the pass, and `bdk attempt close` refuses a missing step, a failure, a pass without a
 citation, or evidence recorded on a different working tree. Before the review
 verdict, `tests-full` and `lint-full` run the whole suite once against the whole
 Change. [Verification scoping](verification-scoping.md) explains how the kernel
@@ -179,10 +179,10 @@ decides that evidence is still fresh.
 
 The orchestrating skills never write code. Each piece of work goes to a role
 agent whose whole prompt is one file, the dispatch package:
-`bdk dispatch build <target> <role> <ticket>` writes it with the task, its files and
+`bdk dispatch build <target> <role> <ticket>` writes it with the part, its tasks, files and
 `do-not-touch`, the decisions and blockers on it, the role's contract, and the
 commands that fetch its rules and store its report. The agent stores its report
-with `bdk log ingest` and records findings with `bdk log add`; the
+with `bdk log ingest --file` and records findings with `bdk log add`; the
 orchestrator closes the ticket with `bdk attempt close`, which compares the
 real diff with the plan. See [Context](context.md) and
 [Agents](agents.md).

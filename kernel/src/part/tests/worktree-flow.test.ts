@@ -22,7 +22,7 @@ import { REPO_ROOT } from "../../../tests/support/run.ts";
 import { TOOL_SETTINGS } from "../../log/tests/support.ts";
 import { registrations, settingsRegistry } from "../../registrations.ts";
 import { systemClock } from "../../shared/clock/index.ts";
-import { findWorkTree, systemGit } from "../../shared/git/index.ts";
+import { findWorkTree, runCommand, systemGit } from "../../shared/git/index.ts";
 import { createRegistry, loadIndex } from "../../shared/registry/index.ts";
 import {
   fileIndex,
@@ -80,6 +80,7 @@ async function bdk(argv: readonly string[], cwd = root): Promise<Ran> {
       commands: index,
       settings: settingsRegistry(),
       git: systemGit,
+      shell: runCommand,
       openIndex: fileIndex,
       openRegistry: fileRegistry,
       clock: systemClock,
@@ -98,6 +99,7 @@ async function bdk(argv: readonly string[], cwd = root): Promise<Ran> {
       workTree: findWorkTree,
       which: () => undefined,
       readStdin: () => "",
+      readBody: () => Promise.resolve({ text: "" }),
     },
     streams: { stdout: (text) => (stdout += text), stderr: () => undefined },
   });
@@ -175,19 +177,20 @@ describe("a worktree part in-process", { timeout: 30_000 }, () => {
     await refusedWith(["attempt", "close", ticket, "ok"], "policy/merge-unresolved");
     write(workdir, { "lock.txt": "merged\n" });
     // The ticket holds an implementer package, so its steps record evidence first.
-    write(root, { ".bdk/.machine/check.txt": "clean\n" });
-    for (const kind of ["simplify", "tests-scoped", "lint"]) {
+    const check = `.bdk/.machine/checks/${ticket}/check.txt`;
+    write(root, { [check]: "clean\n" });
+    for (const kind of ["conform", "tests-scoped", "lint"]) {
       await ok([
         "evidence",
         "record",
         kind,
-        ".bdk/.machine/check.txt",
+        check,
         "--ticket",
         ticket,
         "--verdict",
         "pass",
         "--cite",
-        ".bdk/.machine/check.txt:1",
+        `${check}:1`,
       ]);
     }
     const closed = await ok(["attempt", "close", ticket, "ok"]);

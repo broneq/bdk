@@ -15,10 +15,10 @@ import { readDocument, writeDocument } from "../../shared/store/index.ts";
 import type { Store } from "../../shared/store/index.ts";
 import {
   KIND_NAMES,
-  executionTreeModule,
   executionWorktreeModule,
   gatesModule,
   pipelinePrompts,
+  planPartModule,
 } from "../config.ts";
 import { graphConfig } from "../index.ts";
 import { doneOutput, explainOutput, nextOutput, validateOutput } from "../schema/outputs.ts";
@@ -107,7 +107,7 @@ describe("settings", () => {
       KIND_NAMES.map((kind) => [`pipeline/${kind}`, `pipeline/${kind}.md`]),
     );
     expect(graphConfig).toStrictEqual({
-      modules: [gatesModule, executionTreeModule, executionWorktreeModule],
+      modules: [gatesModule, planPartModule, executionWorktreeModule],
       prompts: pipelinePrompts,
     });
   });
@@ -169,11 +169,24 @@ describe("bdk next", () => {
     expect(plan).not.toMatch(/^### /m);
     expect(plan).toContain("no implementation code");
     expect(plan).toContain("spec deltas");
+    expect(plan).toContain("At most 5 tasks, 10 distinct `Files:` paths and 8 KB per part");
     writePlanPart(h.store, "01");
     expect((await h.run(["done", "plan"], T2)).code).toBe(0);
     const verify = nextOutput.parse((await h.run(["next", "--json"], T3)).json);
     expect(verify.artifact).toMatchObject({ id: "plan-verify", kind: "plan-verify" });
     expect(verify.instruction).toContain("/bdk:verify-plan");
+  });
+
+  it("states the plan part limits of plan.part in the plan instruction (#166)", async () => {
+    const h = harness();
+    setChange(h.store, { kind: "bug" });
+    h.store.write(
+      `${ROOT}/.bdk/settings.yaml`,
+      "plan:\n  part:\n    max-tasks: 3\n    max-files: 7\n",
+    );
+    const plan = (await h.run(["next"])).stdout;
+    expect(plan).toContain("At most 3 tasks, 7 distinct `Files:` paths and 8 KB per part");
+    expect(plan).not.toMatch(/\{max-(tasks|files)\}/);
   });
 
   it("appends a project template with mode extends", async () => {
@@ -342,7 +355,7 @@ describe("bdk next", () => {
       at: T0,
       "input-hash": `sha256:${"a".repeat(64)}`,
     });
-    for (const kind of ["simplify", "tests-scoped", "lint"])
+    for (const kind of ["conform", "tests-scoped", "lint"])
       await writeManifest(h.store, kind, "01");
     for (const kind of ["tests-full", "lint-full"]) await writeManifest(h.store, kind, CHANGE);
     const text = (await h.run(["next"], T1)).stdout;
@@ -580,12 +593,12 @@ describe("plan part and execute-part checks", () => {
   it("execute-part hashes its plan part and names an uncommitted task and an open ticket", async () => {
     const h = await started();
     withCommits(h, [["a".repeat(40), "01", "01-1"]]);
-    writeDocument(h.store, `${DIR}/attempts/task-redispatch-01-2-A-7h3k9m2p.md`, {
+    writeDocument(h.store, `${DIR}/attempts/part-01-A-7h3k9m2p.md`, {
       data: {
         schema: 1,
         ticket: "A-7h3k9m2p",
-        loop: "task-redispatch",
-        target: "01-2",
+        loop: "part",
+        target: "01",
         attempt: 1,
         of: 3,
         scope: "full",
@@ -612,7 +625,7 @@ describe("plan part and execute-part checks", () => {
       {
         id: "tickets",
         ok: false,
-        why: "ticket A-7h3k9m2p is open on 01-2",
+        why: "ticket A-7h3k9m2p is open on 01",
         instead: "bdk attempt close A-7h3k9m2p <outcome>",
       },
     ]);

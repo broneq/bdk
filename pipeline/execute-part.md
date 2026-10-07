@@ -1,1 +1,1 @@
-Execute plan part {node} of Change {change} as the `wave` of `bdk next` marks it, `flat` or `tree`: one commit per task with its trailer, tests first. Close it with `bdk part done`, then run `bdk next`: one `/bdk:execute` runs every ready part.
+Execute plan part {node} of Change {change} as one `part` ticket: one implementer commits each task after `bdk check run`, then one conformer checks the part. Close it with `bdk part done`, then run `bdk next`: one `/bdk:execute` runs every ready part.

@@ -92,12 +92,12 @@ function writeAttempt(
   closed: boolean,
   findings?: readonly Record<string, string>[],
 ): void {
-  writeDocument(store, `${DIR}/attempts/task-redispatch-02-3-${ticket}.md`, {
+  writeDocument(store, `${DIR}/attempts/part-02-${ticket}.md`, {
     data: {
       schema: 1,
       ticket,
-      loop: "task-redispatch",
-      target: "02-3",
+      loop: "part",
+      target: "02",
       attempt: 1,
       of: 3,
       scope: "full",
@@ -116,11 +116,11 @@ function writeDispatch(
   role: string,
   rules: readonly string[] = [],
 ): void {
-  writeDocument(store, `${DIR}/dispatch/02-3-${role}-${ticket}.md`, {
+  writeDocument(store, `${DIR}/dispatch/02-${role}-${ticket}.md`, {
     data: {
       schema: 1,
       ticket,
-      target: "02-3",
+      target: "02",
       role,
       adapter: "worker",
       attempt: 1,
@@ -129,7 +129,8 @@ function writeDispatch(
       at: "2026-09-25T10:00:01.000Z",
       "kernel-version": "3.0.0-dev",
       "template-hash": `sha256:${"a".repeat(64)}`,
-      report: `.bdk/changes/${CHANGE}/reports/02-3-${role}-${ticket}.md`,
+      report: `.bdk/changes/${CHANGE}/reports/02-${role}-${ticket}.md`,
+      draft: `.bdk/.machine/drafts/02-${role}-${ticket}.md`,
       rules: [...rules],
     },
     body: "",
@@ -251,8 +252,8 @@ describe("refresh", () => {
     expect(openAttempts(index, CHANGE)).toEqual([
       {
         ticket: "A-bbbbbbb1",
-        loop: "task-redispatch",
-        target: "02-3",
+        loop: "part",
+        target: "02",
         attempt: 1,
         of: 3,
         scope: "full",
@@ -262,7 +263,7 @@ describe("refresh", () => {
     expect(
       selectReadOnly(index, "SELECT role, path FROM dispatches WHERE ticket = 'A-bbbbbbb1'").rows,
     ).toStrictEqual([
-      ["implementer", `.bdk/changes/${CHANGE}/dispatch/02-3-implementer-A-bbbbbbb1.md`],
+      ["implementer", `.bdk/changes/${CHANGE}/dispatch/02-implementer-A-bbbbbbb1.md`],
     ]);
   });
 

@@ -7,8 +7,8 @@ import { homedir } from "node:os";
 import { registrations, settingsRegistry } from "./registrations.ts";
 import { systemClock } from "./shared/clock/index.ts";
 import { pluginRootOf } from "./shared/config/index.ts";
-import { findWorkTree, systemGit } from "./shared/git/index.ts";
-import { createRegistry, loadIndex } from "./shared/registry/index.ts";
+import { findWorkTree, runCommand, systemGit } from "./shared/git/index.ts";
+import { createRegistry, loadIndex, STDIN_WAIT_SECONDS } from "./shared/registry/index.ts";
 import {
   appendJournal,
   fileIndex,
@@ -17,6 +17,7 @@ import {
   findExecutable,
   findProjectRoot,
   readStdin,
+  readStdinBody,
   resolveActiveChange,
 } from "./shared/store/index.ts";
 
@@ -31,6 +32,7 @@ const registry = createRegistry(
     commands: index,
     settings: settingsRegistry(),
     git: systemGit,
+    shell: runCommand,
     openIndex: fileIndex,
     openRegistry: fileRegistry,
     clock: systemClock,
@@ -55,6 +57,7 @@ try {
       workTree: findWorkTree,
       which: (name) => findExecutable(name, { env: process.env, platform: process.platform }),
       readStdin,
+      readBody: () => readStdinBody(STDIN_WAIT_SECONDS * 1000),
     },
     streams: {
       stdout: (text) => process.stdout.write(text),

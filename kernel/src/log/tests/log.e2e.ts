@@ -16,6 +16,7 @@ import {
   read,
   refused,
   repository,
+  ingestArgs,
 } from "../../../tests/support/repo.ts";
 import { executed, opened as openedTicket, started } from "../../attempt/tests/e2e-support.ts";
 import { fileStore, stampPackage, writeDocument } from "../../shared/store/index.ts";
@@ -455,6 +456,7 @@ function ticketed(dir: string, closed = false, role = "verifier"): string {
       "kernel-version": "3.0.0",
       "template-hash": `sha256:${"0".repeat(64)}`,
       report,
+      draft: `.bdk/.machine/drafts/02-${role}-${TICKET}.md`,
       rules: [],
     },
     body: "",
@@ -520,8 +522,8 @@ const REPORT =
   "---\n" +
   "# Plan verification\n\nPart 02 leans on a helper that does not exist.\n";
 
-function ingest(root: string, stdin: string, ...args: string[]) {
-  return bdk(["log", "ingest", "--ticket", TICKET, ...args, "--json"], root, { stdin });
+function ingest(root: string, text: string, ...args: string[]) {
+  return bdk([...ingestArgs(root, TICKET, text), ...args, "--json"], root);
 }
 
 describe("bdk log ingest", () => {
@@ -601,6 +603,26 @@ describe("bdk log ingest", () => {
     expect(() => read(root, report)).toThrow();
   });
 
+  it("exit 3 input/not-found: --file names no file", () => {
+    const { root, dir } = opened();
+    ticketed(dir);
+    refused(
+      bdk(["log", "ingest", "--ticket", TICKET, "--file", "missing.md", "--json"], root),
+      3,
+      "input/not-found",
+    );
+  });
+
+  it("exit 3 input/missing-argument: no --file; stdin is never read", () => {
+    const { root, dir } = opened();
+    ticketed(dir);
+    refused(
+      bdk(["log", "ingest", "--ticket", TICKET, "--json"], root, { stdin: REPORT }),
+      3,
+      "input/missing-argument",
+    );
+  });
+
   it("exit 3 input/missing-argument: no --ticket", () => {
     const { root } = opened();
     refused(bdk(["log", "ingest", "--json"], root, { stdin: REPORT }), 3, "input/missing-argument");
@@ -670,11 +692,11 @@ describe("a review round in the ledger (T42-A1, B1, T)", () => {
     const report = (entries: string[]) =>
       `---\nstatus: done\nfiles: []\nentries: [${entries.join(", ")}]\nevidence: []\n---\n# Review\n`;
     answered(
-      run(["log", "ingest", "--ticket", `${round}@p01`], report([added.id])),
+      run(ingestArgs(change.root, `${round}@p01`, report([added.id]))),
       "output/log-ingest.json",
     );
     const merged = answered(
-      run(["log", "ingest", "--ticket", `${round}@merge`], report([added.id])),
+      run(ingestArgs(change.root, `${round}@merge`, report([added.id]))),
       "output/log-ingest.json",
     );
     expect(merged).toMatchObject({ role: "orchestrator" });

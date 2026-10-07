@@ -1,8 +1,10 @@
 // Task progress from git (`kernel-loops`, Progress from git): a task is
 // committed when a commit reachable from `HEAD`, or from its live part branch,
-// carries the three BDK trailers; a part merge commit carries two of them, and
+// carries the three BDK trailers; a part merge commit carries two of them,
 // `BDK-Change` with the `BDK-Ticket` of a `review-fix` ticket is a review fix
-// and commits no task (T42). Trailers that disagree with the plan or the attempt records are
+// (T42), and `BDK-Part` with the `BDK-Ticket` of a `part` or `verify-fix`
+// ticket of that part is part work, the conformer's fixes (#166); neither
+// commits a task. Trailers that disagree with the plan or the attempt records are
 // reported naming both sides, never repaired.
 import type { Git, TrailerCommit } from "../git/index.ts";
 import { trailerCommits } from "../git/index.ts";
@@ -30,6 +32,12 @@ export async function taskProgress(
   const reviewFixes = new Set(
     attempts.filter(({ data }) => data.loop === "review-fix").map(({ data }) => data.ticket),
   );
+  /** Ticket -> part of every `part` and `verify-fix` ticket. */
+  const partTickets = new Map(
+    attempts
+      .filter(({ data }) => data.loop === "part" || data.loop === "verify-fix")
+      .map(({ data }) => [data.ticket, data.target]),
+  );
   const committed = new Map<string, string>();
   const mismatches: string[] = [];
   for (const commit of commits) {
@@ -46,6 +54,14 @@ export async function taskProgress(
       if (!reviewFixes.has(commit.ticket)) {
         mismatches.push(
           `commit ${short} carries BDK-Ticket: ${commit.ticket}, but no review-fix ticket of ${change} is ${commit.ticket}`,
+        );
+      }
+      continue;
+    }
+    if (commit.part !== undefined && commit.task === undefined && commit.ticket !== undefined) {
+      if (partTickets.get(commit.ticket) !== commit.part) {
+        mismatches.push(
+          `commit ${short} carries BDK-Part: ${commit.part} and BDK-Ticket: ${commit.ticket}, but no part or verify-fix ticket of part ${commit.part} is ${commit.ticket}`,
         );
       }
       continue;
@@ -75,11 +91,9 @@ export async function taskProgress(
     }
     if (!committed.has(commit.task)) committed.set(commit.task, commit.commit);
   }
-  for (const { data } of attempts) {
-    if (data.loop === "task-redispatch" && !holders.has(data.target)) {
-      mismatches.push(
-        `attempt record ${data.ticket} targets task ${data.target}, but no plan part holds ${data.target}`,
-      );
+  for (const [ticket, part] of partTickets) {
+    if (!parts.some((found) => found.id === part)) {
+      mismatches.push(`attempt record ${ticket} targets part ${part}, but no plan part is ${part}`);
     }
   }
   return { commits, committed, mismatches };

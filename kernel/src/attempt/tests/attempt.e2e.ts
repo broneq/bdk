@@ -1,9 +1,8 @@
 // `kernel-cli/attempt` (T22 records) through the built bundle in real
 // repositories: one case per exit code and per declared rule of `attempt
 // open`, `close` and `list`, every output validated against its schema.
-// `policy/stale-evidence` and `policy/missing-citation` of `attempt close`
-// are emitted from T23 and tested there. The dispatch package a ticket needs
-// for `log add --ticket` is a hand-written fixture until T23 builds it.
+// A `part` ticket closes `ok` only after its agent committed every task with
+// the command `bdk check run` prints (#166).
 import { rmSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -11,15 +10,18 @@ import { describe, expect, it } from "vitest";
 import {
   answered,
   bdk,
+  git,
   outsideRepository,
   read,
   refused,
   repository,
+  ingestArgs,
 } from "../../../tests/support/repo.ts";
 import { fileStore } from "../../shared/store/index.ts";
 import {
   close,
   closed,
+  conformed,
   dispatched,
   envelope,
   logUnder,
@@ -28,110 +30,109 @@ import {
   recorded,
   started,
   stepsDone,
+  tasksCommitted,
 } from "./e2e-support.ts";
 
 describe("bdk attempt open", () => {
   it("exit 0: attempt 1 of the budget, the record on disk", () => {
     const change = started();
-    const report = answered(open(change, "task-redispatch", "01-1"), "output/attempt-open.json");
-    expect(report).toMatchObject({ attempt: 1, of: 3, scope: "full" });
+    const head = git(change.root, "rev-parse", "HEAD").trim();
+    const report = answered(open(change, "part", "01"), "output/attempt-open.json");
+    expect(report).toMatchObject({ attempt: 1, of: 3, scope: "full", base: head });
     expect(report.steps).toStrictEqual([
-      { kind: "simplify", role: "simplifier" },
-      { kind: "tests-scoped", role: "runner" },
-      { kind: "lint", role: "runner" },
+      { kind: "conform", role: "conformer" },
+      { kind: "tests-scoped", command: "bdk check run" },
+      { kind: "lint", command: "bdk check run" },
     ]);
-    expect(
-      read(
-        change.root,
-        `.bdk/changes/${change.id}/attempts/task-redispatch-01-1-${String(report.ticket)}.md`,
-      ),
-    ).toContain("loop: task-redispatch");
-    expect(bdk(["attempt", "open", "task-redispatch", "01-2"], change.root).stdout).toContain(
+    const record = read(
+      change.root,
+      `.bdk/changes/${change.id}/attempts/part-01-${String(report.ticket)}.md`,
+    );
+    expect(record).toContain("loop: part");
+    expect(record).toContain(`base: ${head}`);
+    expect(bdk(["attempt", "open", "part", "01"], started().root).stdout).toContain(
       "attempt 1 of 3, scope full",
     );
   });
 
-  it("exit 3 input/invalid-argument", () => {
-    refused(open(started(), "task-redispatch", "01"), 3, "input/invalid-argument");
+  it("exit 3 input/invalid-argument: a task id, and the removed loops", () => {
+    const change = started();
+    refused(open(change, "part", "01-1"), 3, "input/invalid-argument");
+    refused(open(change, "task-redispatch", "01-1"), 3, "input/invalid-argument");
+    refused(open(change, "part-lead", "01"), 3, "input/invalid-argument");
   });
 
   it("exit 3 input/not-found", () => {
-    refused(open(started(), "task-redispatch", "01-9"), 3, "input/not-found");
+    refused(open(started(), "part", "09"), 3, "input/not-found");
   });
 
   it("exit 2 policy/not-ready", () => {
-    const result = refused(open(started(), "task-redispatch", "02-1"), 2, "policy/not-ready");
+    const result = refused(open(started(), "part", "02"), 2, "policy/not-ready");
     expect(result.instead).toStrictEqual(["bdk part start 02"]);
   });
 
-  it("exit 2 policy/ticket-open, not for a sibling", () => {
+  it("exit 2 policy/ticket-open", () => {
     const change = started();
-    opened(change, "task-redispatch", "01-1");
-    refused(open(change, "task-redispatch", "01-1"), 2, "policy/ticket-open");
-    opened(change, "task-redispatch", "01-2");
+    opened(change, "part", "01");
+    refused(open(change, "part", "01"), 2, "policy/ticket-open");
   });
 
-  it("exit 2 policy/files-busy for a task sharing a file with an open ticket", () => {
+  it("exit 2 policy/files-busy for a part sharing a file with an open ticket's part", () => {
     const root = repository();
     const created = bdk(
       ["change", "new", "Fix the login typo", "--profile", "tiny", "--reason", "r", "--json"],
       root,
     );
     const id = (created.json as { change: string }).change;
-    const task = (k: string) =>
-      `## 01-${k} Task ${k}\n\n**Files:**\n\n- \`src/login.ts\`\n\n**Test cases:**\n\n- works\n`;
-    fileStore().write(
-      join(root, ".bdk/changes", id, "plan/parts/01-part.md"),
-      `---\nschema: 1\nid: "01"\ntitle: Part 01\ngoal: g\nsuccess-measure: m\ndo-not-touch: []\ndepends-on: []\nspec-impact: none\n---\n${task("1")}\n${task("2")}`,
-    );
+    const part = (nn: string) => {
+      fileStore().write(
+        join(root, ".bdk/changes", id, `plan/parts/${nn}-part.md`),
+        `---\nschema: 1\nid: "${nn}"\ntitle: Part ${nn}\ngoal: g\nsuccess-measure: m\ndo-not-touch: []\ndepends-on: []\nspec-impact: none\n---\n` +
+          `## ${nn}-1 Task 1\n\n**Files:**\n\n- \`src/login.ts\`\n\n**Test cases:**\n\n- works\n`,
+      );
+    };
+    part("01");
+    part("02");
     answered(bdk(["done", "plan", "--json"], root), "output/done.json");
     answered(bdk(["part", "start", "01", "--json"], root), "output/part-start.json");
+    answered(bdk(["part", "start", "02", "--json"], root), "output/part-start.json");
     const change = { root, dir: join(root, ".bdk/changes", id), id };
-    const first = opened(change, "task-redispatch", "01-1");
-    const busy = refused(open(change, "task-redispatch", "01-2"), 2, "policy/files-busy");
-    expect(busy.why).toBe(
-      `src/login.ts of 01-2 is in the Files: of ticket ${first} (task-redispatch 01-1)`,
-    );
+    const first = opened(change, "part", "01");
+    const busy = refused(open(change, "part", "02"), 2, "policy/files-busy");
+    expect(busy.why).toBe(`src/login.ts of 02 is in the Files: of ticket ${first} (part 01)`);
     closed(change, first, "not-run", "--reason", "r");
-    opened(change, "task-redispatch", "01-2");
+    opened(change, "part", "02");
   });
 
   it("exit 2 policy/budget-exhausted", () => {
-    const change = started("policy:\n  budgets:\n    task-redispatch: 1\n");
-    closed(change, opened(change, "task-redispatch", "01-1"), "fail");
-    const result = refused(open(change, "task-redispatch", "01-1"), 2, "policy/budget-exhausted");
-    expect(result.instead).toStrictEqual(["bdk attempt open task-redispatch 01-1 --escalate"]);
+    const change = started("policy:\n  budgets:\n    part: 1\n");
+    closed(change, opened(change, "part", "01"), "fail");
+    const result = refused(open(change, "part", "01"), 2, "policy/budget-exhausted");
+    expect(result.instead).toStrictEqual(["bdk attempt open part 01 --escalate"]);
   });
 
   it("exit 2 policy/oscillation", () => {
-    const change = started("policy:\n  budgets:\n    task-redispatch: 5\n");
+    const change = started("policy:\n  budgets:\n    part: 5\n");
     for (const summary of ["expired token accepted", "Expired token accepted!"]) {
-      const ticket = opened(change, "task-redispatch", "01-1");
-      dispatched(change, ticket, "01-1");
+      const ticket = opened(change, "part", "01");
+      dispatched(change, ticket, "01");
       logUnder(change, ticket, summary, "src/01-1.ts#verifyToken");
       closed(change, ticket, "fail");
     }
-    refused(open(change, "task-redispatch", "01-1"), 2, "policy/oscillation");
+    refused(open(change, "part", "01"), 2, "policy/oscillation");
   });
 
   it("exit 2 policy/invalid-transition: --escalate with budget left", () => {
-    refused(
-      open(started(), "task-redispatch", "01-1", "--escalate"),
-      2,
-      "policy/invalid-transition",
-    );
+    refused(open(started(), "part", "01", "--escalate"), 2, "policy/invalid-transition");
   });
 
   it("exit 0: the escalation ticket, then a failed close parks the Change", () => {
-    const change = started("policy:\n  budgets:\n    task-redispatch: 1\n");
-    const first = closed(change, opened(change, "task-redispatch", "01-1"), "fail");
+    const change = started("policy:\n  budgets:\n    part: 1\n");
+    const first = closed(change, opened(change, "part", "01"), "fail");
     expect(first.next).toMatchObject({ action: "escalate" });
-    const report = answered(
-      open(change, "task-redispatch", "01-1", "--escalate"),
-      "output/attempt-open.json",
-    );
+    const report = answered(open(change, "part", "01", "--escalate"), "output/attempt-open.json");
     expect(report).toMatchObject({ escalation: { model: "opus" } });
-    refused(open(change, "task-redispatch", "01-1", "--escalate"), 2, "policy/ticket-open");
+    refused(open(change, "part", "01", "--escalate"), 2, "policy/ticket-open");
     const last = closed(change, report.ticket as string, "fail");
     expect(last.next).toMatchObject({
       action: "parked",
@@ -145,18 +146,18 @@ describe("bdk attempt open", () => {
   });
 
   it("exit 0: the escalation ticket's agents run on its model (T41-D14)", () => {
-    const change = started("policy:\n  budgets:\n    task-redispatch: 1\n");
-    closed(change, opened(change, "task-redispatch", "01-1"), "fail");
-    const ticket = opened(change, "task-redispatch", "01-1", "--escalate");
+    const change = started("policy:\n  budgets:\n    part: 1\n");
+    closed(change, opened(change, "part", "01"), "fail");
+    const ticket = opened(change, "part", "01", "--escalate");
     const build = (role: string) =>
       answered(
-        bdk(["dispatch", "build", "01-1", role, ticket, "--json"], change.root),
+        bdk(["dispatch", "build", "01", role, ticket, "--json"], change.root),
         "output/dispatch-build.json",
       );
     const implementer = build("implementer");
     expect(implementer.model).toBe("opus");
     expect(read(change.root, implementer.path as string)).toMatch(/^model: opus$/m);
-    expect(build("runner")).not.toHaveProperty("model");
+    expect(build("conformer")).toMatchObject({ model: "opus" });
 
     const start = (model?: string) =>
       bdk(["hooks", "pre-tool"], change.root, {
@@ -181,16 +182,14 @@ describe("bdk attempt open", () => {
   });
 
   it("exit 0: an answer opens a new round", () => {
-    const change = started(
-      "policy:\n  budgets:\n    task-redispatch: 1\n  escalation:\n    enabled: false\n",
-    );
-    const last = closed(change, opened(change, "task-redispatch", "01-1"), "fail");
+    const change = started("policy:\n  budgets:\n    part: 1\n  escalation:\n    enabled: false\n");
+    const last = closed(change, opened(change, "part", "01"), "fail");
     expect(last.next).toMatchObject({ action: "parked" });
     answered(
       bdk(["change", "resume", change.id, "--option", "1", "--json"], change.root),
       "output/change-resume.json",
     );
-    const report = answered(open(change, "task-redispatch", "01-1"), "output/attempt-open.json");
+    const report = answered(open(change, "part", "01"), "output/attempt-open.json");
     expect(report).toMatchObject({ attempt: 1, scope: "full" });
   });
 
@@ -204,11 +203,8 @@ describe("bdk attempt open", () => {
 
   it("exit 4 state/ledger-invalid", () => {
     const change = started();
-    fileStore().write(
-      join(change.dir, "attempts/task-redispatch-01-1-A-broken00.md"),
-      "---\nschema: 1\n---\n",
-    );
-    refused(open(change, "task-redispatch", "01-1"), 4, "state/ledger-invalid");
+    fileStore().write(join(change.dir, "attempts/part-01-A-broken00.md"), "---\nschema: 1\n---\n");
+    refused(open(change, "part", "01"), 4, "state/ledger-invalid");
   });
 
   it("exit 5 runtime/not-a-repo", () => {
@@ -223,8 +219,8 @@ describe("bdk attempt open", () => {
 describe("bdk attempt close", () => {
   it("exit 0: the envelope's entries, the diff, the fingerprints and next", () => {
     const change = started();
-    const ticket = opened(change, "task-redispatch", "01-1");
-    dispatched(change, ticket, "01-1");
+    const ticket = opened(change, "part", "01");
+    dispatched(change, ticket, "01");
     const entry = logUnder(change, ticket, "expired token accepted", "src/01-1.ts#verifyToken");
     fileStore().write(join(change.root, "src/01-1.ts"), "export {};\n");
     fileStore().write(join(change.root, "src/util.ts"), "export {};\n");
@@ -264,15 +260,15 @@ describe("bdk attempt close", () => {
 
   it("exit 2 policy/do-not-touch, the ticket stays open", () => {
     const change = started();
-    const ticket = opened(change, "task-redispatch", "01-1");
+    const ticket = opened(change, "part", "01");
     fileStore().write(join(change.root, "src/billing/invoice.ts"), "export {};\n");
     refused(close(change, ticket, "ok"), 2, "policy/do-not-touch");
-    refused(open(change, "task-redispatch", "01-1"), 2, "policy/ticket-open");
+    refused(open(change, "part", "01"), 2, "policy/ticket-open");
   });
 
   it("exit 2 policy/entries-missing: an envelope claiming entries that do not exist [R-16]", () => {
     const change = started();
-    const ticket = opened(change, "task-redispatch", "01-1");
+    const ticket = opened(change, "part", "01");
     const result = refused(
       close(change, ticket, "ok", "--envelope", envelope(change, ticket, ["L-missing0"])),
       2,
@@ -283,15 +279,15 @@ describe("bdk attempt close", () => {
 
   it("exit 2 policy/entries-missing: the ids log ingest checked are checked again at close", () => {
     const change = started();
-    const ticket = opened(change, "task-redispatch", "01-1");
-    dispatched(change, ticket, "01-1");
+    const ticket = opened(change, "part", "01");
+    dispatched(change, ticket, "01");
     const ids = [
       logUnder(change, ticket, "expired link accepted", "src/01-1.ts"),
       logUnder(change, ticket, "clock skew on the token", "src/01-1.ts"),
     ];
     const report = `---\nstatus: done\nfiles: [src/01-1.ts]\nentries: [${ids.join(", ")}]\nevidence: []\n---\n# Done\n`;
     const ingested = answered(
-      bdk(["log", "ingest", "--ticket", ticket, "--json"], change.root, { stdin: report }),
+      bdk([...ingestArgs(change.root, ticket, report), "--json"], change.root),
       "output/log-ingest.json",
     );
     expect(ingested.entries).toStrictEqual(ids);
@@ -306,7 +302,7 @@ describe("bdk attempt close", () => {
 
   it("exit 5 runtime/git-missing", () => {
     const change = started();
-    const ticket = opened(change, "task-redispatch", "01-1");
+    const ticket = opened(change, "part", "01");
     refused(
       bdk(["attempt", "close", ticket, "ok", "--json"], change.root, { git: false }),
       5,
@@ -316,8 +312,9 @@ describe("bdk attempt close", () => {
 
   it("exit 0: an implementer closing without rules-read gets one reviewed finding (T23-D28)", () => {
     const change = started();
-    const ticket = opened(change, "task-redispatch", "01-1");
-    dispatched(change, ticket, "01-1");
+    const ticket = opened(change, "part", "01");
+    dispatched(change, ticket, "01");
+    tasksCommitted(change, ticket, "01");
     stepsDone(change, ticket);
     const report = closed(change, ticket, "ok");
     expect(report.rulesFinding).toMatch(/^L-/);
@@ -328,69 +325,74 @@ describe("bdk attempt close", () => {
     expect(shown.entry).toMatchObject({
       review: true,
       summary: `implementer closed ${ticket} without reading its rules`,
-      refs: ["01-1", ticket],
+      refs: ["01", ticket],
     });
   });
 
-  it("exit 0: a simplifier reading its rules stamps nothing; the close still finds the implementer's (T23-D42)", () => {
+  it("exit 0: a conformer reading its rules stamps nothing; the close still finds the implementer's (T23-D42)", () => {
     const change = started();
-    const ticket = opened(change, "task-redispatch", "01-1");
-    dispatched(change, ticket, "01-1");
-    dispatched(change, ticket, "01-1", "simplifier");
+    const ticket = opened(change, "part", "01");
+    dispatched(change, ticket, "01");
+    tasksCommitted(change, ticket, "01");
+    dispatched(change, ticket, "01", "conformer");
     const rules = answered(
       bdk(["rules", "show", "--ticket", ticket, "--json"], change.root),
       "output/rules-show.json",
     );
-    expect(rules).toMatchObject({ role: "simplifier" });
+    expect(rules).toMatchObject({ role: "conformer" });
     expect(rules).not.toHaveProperty("rulesRead");
+    tasksCommitted(change, ticket, "01");
     stepsDone(change, ticket);
     expect(closed(change, ticket, "ok").rulesFinding).toMatch(/^L-/);
   });
 
   it("exit 0: no rules finding after rules show --ticket", () => {
     const change = started();
-    const ticket = opened(change, "task-redispatch", "01-1");
-    dispatched(change, ticket, "01-1");
+    const ticket = opened(change, "part", "01");
+    dispatched(change, ticket, "01");
     answered(
       bdk(["rules", "show", "--ticket", ticket, "--json"], change.root),
       "output/rules-show.json",
     );
+    tasksCommitted(change, ticket, "01");
     stepsDone(change, ticket);
     expect(closed(change, ticket, "ok").rulesFinding).toBeUndefined();
   });
 });
 
 describe("bdk attempt close ok: post-task step evidence (T23-D41)", () => {
-  it("exit 0: fresh cited evidence closes; the kernel records simplify from the simplifier report", () => {
+  it("exit 0: fresh cited evidence closes; the kernel records conform from the conformer report", () => {
     const change = started();
-    const ticket = opened(change, "task-redispatch", "01-1");
-    dispatched(change, ticket, "01-1");
+    const ticket = opened(change, "part", "01");
+    dispatched(change, ticket, "01");
+    tasksCommitted(change, ticket, "01");
     stepsDone(change, ticket);
-    expect(closed(change, ticket, "ok").next).toStrictEqual({ action: "commit" });
-    const simplify = answered(
-      bdk(["evidence", "check", "01-1", "--json"], change.root),
+    expect(closed(change, ticket, "ok").next).toStrictEqual({ action: "part-done" });
+    const conform = answered(
+      bdk(["evidence", "check", "01", "--json"], change.root),
       "output/evidence-check.json",
     ) as { evidence: { kind: string; verdict?: string }[] };
-    expect(simplify.evidence).toContainEqual(
-      expect.objectContaining({ kind: "simplify", verdict: "pass" }),
+    expect(conform.evidence).toContainEqual(
+      expect.objectContaining({ kind: "conform", verdict: "pass" }),
     );
   });
 
-  it("exit 2 policy/missing-evidence: a code ticket without lint evidence stays open", () => {
+  it("exit 2 policy/missing-evidence: a part ticket without the conformer's report stays open", () => {
     const change = started();
-    const ticket = opened(change, "task-redispatch", "01-1");
-    dispatched(change, ticket, "01-1");
-    dispatched(change, ticket, "01-1", "runner");
-    recorded(change, ticket, "tests-scoped");
+    const ticket = opened(change, "part", "01");
+    dispatched(change, ticket, "01");
+    tasksCommitted(change, ticket, "01");
     const result = refused(close(change, ticket, "ok"), 2, "policy/missing-evidence");
-    expect(result.why).toContain("simplify");
+    expect(result.why).toContain("conform");
+    expect(result.instead).toContain(`bdk dispatch build 01 conformer ${ticket}`);
     expect(close(change, ticket, "fail").code).toBe(0);
   });
 
-  it("exit 2 policy/stale-evidence: a file of the part changed after the runner recorded [TSH-10]", () => {
+  it("exit 2 policy/stale-evidence: a file of the part changed after its checks were recorded [TSH-10]", () => {
     const change = started();
-    const ticket = opened(change, "task-redispatch", "01-1");
-    dispatched(change, ticket, "01-1");
+    const ticket = opened(change, "part", "01");
+    dispatched(change, ticket, "01");
+    tasksCommitted(change, ticket, "01");
     stepsDone(change, ticket);
     fileStore().write(join(change.root, "src/01-2.ts"), "export const two = 2;\n");
     const result = refused(close(change, ticket, "ok"), 2, "policy/stale-evidence");
@@ -399,68 +401,39 @@ describe("bdk attempt close ok: post-task step evidence (T23-D41)", () => {
 
   it("exit 0: failing tests walk the ladder to a new implementer package", () => {
     const change = started();
-    const ticket = opened(change, "task-redispatch", "01-1");
-    dispatched(change, ticket, "01-1");
-    dispatched(change, ticket, "01-1", "runner");
+    const ticket = opened(change, "part", "01");
+    dispatched(change, ticket, "01");
     recorded(change, ticket, "tests-scoped", "fail");
     expect(closed(change, ticket, "fail").next).toMatchObject({ action: "narrow" });
-    const next = opened(change, "task-redispatch", "01-1");
-    expect(read(change.root, dispatched(change, next, "01-1"))).toContain("## Role: implementer");
+    const next = opened(change, "part", "01");
+    expect(read(change.root, dispatched(change, next, "01"))).toContain("## Role: implementer");
   });
 
   it("exit 0: lint not-run within policy.budgets.not-run", () => {
     const change = started();
-    const ticket = opened(change, "task-redispatch", "01-1");
-    dispatched(change, ticket, "01-1");
-    dispatched(change, ticket, "01-1", "simplifier");
-    answered(
-      bdk(["log", "ingest", "--ticket", ticket, "--json"], change.root, {
-        stdin: "---\nstatus: done\nfiles: []\nentries: []\nevidence: []\n---\n",
-      }),
-      "output/log-ingest.json",
-    );
-    dispatched(change, ticket, "01-1", "runner");
+    const ticket = opened(change, "part", "01");
+    dispatched(change, ticket, "01");
+    tasksCommitted(change, ticket, "01");
+    conformed(change, ticket);
     recorded(change, ticket, "tests-scoped");
     recorded(change, ticket, "lint", "not-run");
     closed(change, ticket, "ok");
   });
 });
 
-describe("the part-lead loop (T41-D11)", () => {
-  it("opens on a started part with its budget and no post-task steps", () => {
-    const change = started();
-    const report = answered(open(change, "part-lead", "01"), "output/attempt-open.json");
-    expect(report).toMatchObject({ loop: "part-lead", target: "01", attempt: 1, of: 2 });
-    expect(report.steps).toBeUndefined();
-    refused(open(change, "part-lead", "01-1"), 3, "input/invalid-argument");
-    refused(open(change, "part-lead", "02"), 2, "policy/not-ready");
-  });
-
-  it("closes ok to part-done only after every task ticket of the part", () => {
-    const change = started();
-    const lead = opened(change, "part-lead", "01");
-    const task = opened(change, "task-redispatch", "01-1");
-    const refusal = refused(close(change, lead, "ok"), 2, "policy/ticket-open");
-    expect(refusal.why).toContain(task);
-    closed(change, task, "fail");
-    const report = closed(change, lead, "ok");
-    expect(report.next).toStrictEqual({ action: "part-done" });
-  });
-});
-
 describe("bdk attempt list", () => {
   it("exit 0: open first, budgets, and the same answer after .machine/ is rebuilt", () => {
     const change = started();
-    closed(change, opened(change, "task-redispatch", "01-1"), "fail");
-    closed(change, opened(change, "task-redispatch", "01-1"), "not-run", "--reason", "no runner");
-    const ticket = opened(change, "task-redispatch", "01-1");
+    closed(change, opened(change, "part", "01"), "fail");
+    closed(change, opened(change, "part", "01"), "not-run", "--reason", "no runner");
+    const ticket = opened(change, "part", "01");
     const report = answered(
       bdk(["attempt", "list", "--for", "01-1", "--json"], change.root),
       "output/attempt-list.json",
     );
     expect((report.items as { ticket: string }[])[0]?.ticket).toBe(ticket);
     expect(report.budgets).toStrictEqual({
-      "task-redispatch": { used: 1, of: 3 },
+      part: { used: 1, of: 3 },
       "not-run": { used: 1, of: 3 },
     });
     rmSync(join(change.root, ".bdk/.machine"), { recursive: true, force: true });

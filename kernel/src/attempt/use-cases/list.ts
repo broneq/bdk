@@ -51,7 +51,7 @@ export function listAttempts(
       const { current, latest } = rounds(key, entries);
       shown.push(...(input.all ? key : latest));
       const first = key[0];
-      if (first === undefined || first.target !== input.for) continue;
+      if (first === undefined || targets === undefined) continue;
       const policy = ladderPolicy(resolved.value, first.loop);
       const state = roundState(current, policy);
       budgets[first.loop] = { used: state.used, of: state.of };
@@ -61,8 +61,9 @@ export function listAttempts(
     }
     if (notRun !== undefined) budgets["not-run"] = notRun;
 
-    const counted = input.for !== undefined && TASK_ID.test(input.for);
-    const items = shown.sort(order).map((record) => item(record, counted ? entries : undefined));
+    const items = shown
+      .sort(order)
+      .map((record) => item(record, targets === undefined ? undefined : entries));
     return {
       items,
       ...(Object.keys(budgets).length === 0 ? {} : { budgets }),
@@ -70,10 +71,13 @@ export function listAttempts(
   });
 }
 
-/** `--for` a task names the task; `--for` a part names the part and its tasks. */
+/** `--for` a part names the part; `--for` a task names the part holding it (#166). */
 function targetsOf(deps: AttemptDeps, change: ActiveChange, value: string): Set<string> {
-  const part = readPlanParts(deps.store, change.dir).find((found) => found.id === value);
-  return new Set([value, ...(part?.tasks.map((task) => task.id) ?? [])]);
+  if (!TASK_ID.test(value)) return new Set([value]);
+  const part = readPlanParts(deps.store, change.dir).find((found) =>
+    found.tasks.some((task) => task.id === value),
+  );
+  return new Set([part?.id ?? value]);
 }
 
 /** Open tickets first, then the newest `opened-at`, then the ticket. */

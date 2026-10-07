@@ -20,8 +20,8 @@ function journal(root: string): Record<string, unknown>[] {
 describe("run journal of an execute run", () => {
   it("validates every line and records the refusals with their ticket and Change", () => {
     const change = started();
-    const ticket = opened(change, "task-redispatch", "01-1");
-    dispatched(change, ticket, "01-1");
+    const ticket = opened(change, "part", "01");
+    dispatched(change, ticket, "01");
     const refusal = close(change, ticket, "ok");
     expect(refusal.code).toBe(2);
     closed(change, ticket, "not-run", "--reason", "probe");

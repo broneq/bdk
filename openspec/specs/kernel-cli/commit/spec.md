@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Task commits (`commit`). The one kernel command that creates a task commit with BDK trailers.
+Review fix commits (`commit`). The kernel command that commits a review round's fix under the round's `BDK-Ticket` trailer; a part agent commits a task or a part with the `git` command `bdk check run` prints (#166).
 
 Common rules, not repeated per requirement: every command may emit `input/unknown-command`, `input/unknown-flag`, `input/missing-argument`, `input/invalid-argument`, `runtime/node-version`, `runtime/not-a-repo`; every Change-scoped command additionally `policy/no-active-change`, `state/corrupted-index`, `state/ledger-invalid`, `state/change-dir-missing`. Their meaning and exit codes are in `kernel-cli`, Exit codes and the error object; a command's `exits` in the index is derived from the classes of its specific and common rules.
 
@@ -24,37 +24,34 @@ Representative refusal:
 
 ### Requirement: bdk commit
 
-Commit a task, or the fix of a review round: code plus Change directory, with BDK trailers, after the diff check. The kernel SHALL implement the command as this requirement and its output schema specify.
+Commit the fix of a review round: code plus Change directory, with BDK trailers, after the diff check. The kernel SHALL implement the command as this requirement and its output schema specify.
 
-- **Synopsis:** `bdk commit <task|change-id> [--message <text>]`
+- **Synopsis:** `bdk commit <change-id> [--message <text>]`
 - **Availability:** `orchestrator`
 - **Mode:** `command`; Change-scoped
 - **Arguments:**
-  - `<task|change-id>` (required). A task id, or the id of the active Change for a review fix.
-  - `--message <text>`. Subject line; default the task title, or `fix(review): <ticket>` for a review fix.
-- **Behaviour:** Runs under the commit lock (Serialised commits). Runs the diff check of `kernel-loops`, Diff check, for the task, exactly as `attempt close` does (P6): a forbidden path refuses, an undeclared file is committed and recorded as one kernel `finding`. Stages the task's touched declared paths, its undeclared paths and `.bdk/changes/<id>/`, and commits only those paths with a pathspec commit, so files the user staged elsewhere stay staged and uncommitted. The message is the subject followed by a trailer block `BDK-Change: <change id>`, `BDK-Part: <part id>`, `BDK-Task: <task id>`, the trailers `rebuild` and `part done` read. The user's git hooks run; a failing hook refuses with `policy/git-hook-failed` and creates no commit. Refuses during a rebase, merge or cherry-pick (`policy/git-in-progress`), while a ticket whose target is the task is open (`policy/ticket-open`), and when neither a path of the task nor the Change directory changed (`policy/nothing-to-commit`). For a `tiny` Change the tiny guard runs after the commit (`kernel-loops`, Tiny guard) and its entry is part of the next commit. Main-thread git stays the user's; this is the only kernel command that creates a task commit, which is why `hooks pre-tool` denies it to subagents (T3).
-  **Review fix (T42).** With the active Change's id, the command commits the fix of a review round. It needs an open `review-fix` ticket of the Change (`policy/no-open-ticket` otherwise) and, unlike a task, commits while that ticket is open, because the round reviews the fix after it is committed. The diff check runs for the Change target (`kernel-loops`, Diff check): a forbidden path refuses and no path is reported undeclared. It stages every touched path and `.bdk/changes/<id>/` in one pathspec commit, whose trailers are `BDK-Change: <change id>` and `BDK-Ticket: <ticket>`; the output carries `ticket` in place of `task`. Every other check is the task's.
+  - `<change-id>` (required). The id of the active Change.
+  - `--message <text>`. Subject line; default `fix(review): <ticket>`.
+- **Behaviour:** Runs under the commit lock (Serialised commits). A task is committed by its part agent with a plain `git commit` carrying the trailers `bdk check run` prints (`kernel-cli/check`; user decision 2026-10-07, #166), so a task id is no longer an argument: it is `input/invalid-argument` with `instead` naming `bdk check run <task> --ticket <ticket>`. The command needs an open `review-fix` ticket of the Change (`policy/no-open-ticket` otherwise) and commits while that ticket is open, because the round reviews the fix after it is committed (T42). The diff check runs for the Change target (`kernel-loops`, Diff check): a forbidden path refuses and no path is reported undeclared. It stages every touched path and `.bdk/changes/<id>/` in one pathspec commit, so files the user staged elsewhere stay staged and uncommitted; the message is the subject followed by the trailers `BDK-Change: <change id>` and `BDK-Ticket: <ticket>`. The user's git hooks run; a failing hook refuses with `policy/git-hook-failed` and creates no commit. Refuses during a rebase, merge or cherry-pick (`policy/git-in-progress`) and when neither a touched path nor the Change directory changed (`policy/nothing-to-commit`). For a `tiny` Change the tiny guard runs after the commit (`kernel-loops`, Tiny guard) and its entry is part of the next commit. Main-thread git stays the user's (T3).
 - **Writes:** `git:commit`, `.bdk/changes/<id>/log/`
 - **Output:** `schema/cli/output/commit.json`
-- **Exit codes and rules:** `0, 2, 3, 4, 5`. Specific rules: `input/not-found`, `policy/commit-busy`, `policy/do-not-touch`, `policy/git-in-progress`, `policy/git-hook-failed`, `policy/no-open-ticket`, `policy/nothing-to-commit`, `policy/ticket-open`, `runtime/git-missing`; plus the common rules of every command and of Change-scoped commands (`kernel-cli`, Exit codes and the error object).
+- **Exit codes and rules:** `0, 2, 3, 4, 5`. Specific rules: `input/not-found`, `policy/commit-busy`, `policy/do-not-touch`, `policy/git-in-progress`, `policy/git-hook-failed`, `policy/no-open-ticket`, `policy/nothing-to-commit`, `runtime/git-missing`; plus the common rules of every command and of Change-scoped commands (`kernel-cli`, Exit codes and the error object).
 - **Example:**
 
   ```bash
-  bdk commit 02-3 --json
+  bdk commit 2026-09-25-passwordless-login --json
   ```
 
   ```json
   {
-    "task": "02-3",
+    "ticket": "A-r2v2w3x4",
     "commit": "d8e4f21",
     "trailers": {
       "BDK-Change": "2026-09-25-passwordless-login",
-      "BDK-Part": "02",
-      "BDK-Task": "02-3"
+      "BDK-Ticket": "A-r2v2w3x4"
     },
     "files": [
       "src/auth/login.ts",
-      "src/auth/login.test.ts",
       ".bdk/changes/2026-09-25-passwordless-login/log/20260925T101502Z-finding-L-e8k2s5vw.md"
     ]
   }
@@ -65,13 +62,18 @@ Commit a task, or the fix of a review round: code plus Change directory, with BD
 
 #### Scenario: example run
 
-- **WHEN** `bdk commit 02-3 --json` runs as in the example
+- **WHEN** `bdk commit 2026-09-25-passwordless-login --json` runs as in the example with an open `review-fix` ticket
 - **THEN** the exit code is 0 and stdout validates against `schema/cli/output/commit.json`
 
 #### Scenario: input/not-found
 
 - **WHEN** the referenced object does not exist in the active Change, the configuration or the bundle
 - **THEN** the exit code is 3 and the error object carries `rule: input/not-found`
+
+#### Scenario: a task id is refused
+
+- **WHEN** `bdk commit 02-3` runs
+- **THEN** the exit code is 3, the error object carries `rule: input/invalid-argument`, `instead` names `bdk check run 02-3 --ticket <ticket>`, and no commit is created
 
 #### Scenario: policy/do-not-touch
 
@@ -90,51 +92,56 @@ Commit a task, or the fix of a review round: code plus Change directory, with BD
 
 #### Scenario: policy/nothing-to-commit
 
-- **WHEN** neither the code nor the Change directory changed since the last commit for this task
+- **WHEN** neither the code nor the Change directory changed since the last commit
 - **THEN** the exit code is 2 and the error object carries `rule: policy/nothing-to-commit`
-
-#### Scenario: policy/ticket-open
-
-- **WHEN** a ticket is still open
-- **THEN** the exit code is 2 and the error object carries `rule: policy/ticket-open`
 
 #### Scenario: runtime/git-missing
 
 - **WHEN** no `git` executable on `PATH`
 - **THEN** the exit code is 5 and the error object carries `rule: runtime/git-missing`
 
-#### Scenario: trailers and staged user files
+#### Scenario: review fix committed
 
-- **WHEN** the user staged `README.md`, task `02-3` changed `src/auth/login.ts`, and `bdk commit 02-3` runs
-- **THEN** the new commit holds `src/auth/login.ts` and the Change directory but not `README.md`, which is still staged, and `git log -1 --format=%(trailers:key=BDK-Task,valueonly)` prints `02-3`
+- **WHEN** `review-fix` ticket `A-r2v2w3x4` of the Change is open, the user staged `README.md`, its implementer changed `src/auth/login.ts`, and `bdk commit <change-id> --json` runs
+- **THEN** the exit code is 0, the output names `ticket: A-r2v2w3x4`, the new commit holds `src/auth/login.ts` and the Change directory but not `README.md`, which is still staged, its trailers are `BDK-Change` and `BDK-Ticket: A-r2v2w3x4`, and the ticket is still open
 
 #### Scenario: policy/commit-busy
 
-- **WHEN** a live process holds `.bdk/.machine/commit.lock` for longer than 60 s and `bdk commit 02-3 "..."` runs
+- **WHEN** a live process holds `.bdk/.machine/commit.lock` for longer than 60 s and `bdk commit <change-id>` runs
 - **THEN** the exit code is 2, the error object carries `rule: policy/commit-busy` naming the holder, and no commit is created
-
-#### Scenario: review fix committed
-
-- **WHEN** `review-fix` ticket `A-r2v2w3x4` of the Change is open, its implementer changed `src/auth/login.ts`, and `bdk commit <change-id> --json` runs
-- **THEN** the exit code is 0, the output names `ticket: A-r2v2w3x4`, the new commit holds `src/auth/login.ts` and the Change directory, its trailers are `BDK-Change` and `BDK-Ticket: A-r2v2w3x4`, and the ticket is still open
 
 #### Scenario: policy/no-open-ticket
 
 - **WHEN** `bdk commit <change-id>` runs while the Change has no open `review-fix` ticket
 - **THEN** the exit code is 2, the error object carries `rule: policy/no-open-ticket`, and no commit is created
 
+#### Scenario: policy/ticket-open
+
+- **WHEN** `bdk commit 02-3` runs while a `part` ticket of part `02` is open
+- **THEN** the exit code is 3 with `rule: input/invalid-argument`, not `policy/ticket-open`: a task is committed by its part agent and not by `bdk commit`, so an open ticket no longer refuses the command
+
+#### Scenario: trailers and staged user files
+
+- **WHEN** the user staged `README.md`, a `review-fix` ticket is open, its fix changed `src/auth/login.ts`, and `bdk commit <change-id>` runs
+- **THEN** the new commit holds `src/auth/login.ts` and the Change directory but not `README.md`, which is still staged, and `git log -1 --format=%(trailers:key=BDK-Ticket,valueonly)` prints the ticket
+
 ### Requirement: Serialised commits
 
-`commit` SHALL serialise with every other `commit` of the same repository, so that leads of one wave can commit their tasks at the same time (T41-D12).
+`commit` SHALL serialise with every other `commit` and with the merge back of `part done` in the same repository.
 
-Before it stages anything, `commit` takes an exclusive lock `.bdk/.machine/commit.lock` and holds it until its commit exists or it refuses. A call that finds the lock held waits for it up to 60 s, then refuses with `policy/commit-busy`, whose `why` names the holder's process id and task and whose `instead` is to run the same `commit` again. A lock whose holder process no longer exists is taken over at once. The lock covers only the kernel's own commits; a user committing by hand at the same moment still meets git's `index.lock`, reported as today.
+Before it stages anything, `commit` takes an exclusive lock `.bdk/.machine/commit.lock` and holds it until its commit exists or it refuses. A call that finds the lock held waits for it up to 60 s, then refuses with `policy/commit-busy`, whose `why` names the holder's process id and whose `instead` is to run the same `commit` again. A lock whose holder process no longer exists is taken over at once. `part done` takes the same lock for the merge back of a worktree part (`kernel-cli/part`). The lock covers only these kernel commits; a part agent's or the user's `git commit` at the same moment meets git's `index.lock`, which git reports and the agent runs again (`role-contracts`, Role contract content).
 
-#### Scenario: two leads commit at once
+#### Scenario: two commits at once
 
-- **WHEN** two processes run `bdk commit 02-3 "..."` and `bdk commit 03-1 "..."` at the same moment, each task with its own changed files
-- **THEN** both exit 0, git has two commits, each holding only its own task's paths and its own `BDK-Task` trailer
+- **WHEN** two processes run `bdk commit <change-id>` at the same moment with an open `review-fix` ticket
+- **THEN** one exits 0 with a commit, the other exits 0 with its own commit or 2 with `rule: policy/nothing-to-commit`, and no call fails on git's `index.lock`
 
 #### Scenario: lock of a dead process
 
 - **WHEN** `.bdk/.machine/commit.lock` names a process that no longer exists
-- **THEN** `bdk commit` takes the lock and exits 0
+- **THEN** `bdk commit <change-id>` takes the lock and exits 0
+
+#### Scenario: two leads commit at once
+
+- **WHEN** two part agents run the `git commit` commands `bdk check run` printed for tasks `02-3` and `03-1` at the same moment
+- **THEN** each commit holds only its own task's paths and its own `BDK-Task` trailer; one that meets git's `index.lock` is run again by its agent, and the kernel lock is not involved

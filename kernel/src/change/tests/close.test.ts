@@ -80,12 +80,12 @@ describe("change close refusals, in contract order, writing nothing", () => {
 
   it("policy/ticket-open with a ticket open", async () => {
     const h = closing();
-    writeDocument(h.store, `${DIR}/attempts/task-redispatch-01-1-A-00000001.md`, {
+    writeDocument(h.store, `${DIR}/attempts/part-01-A-00000001.md`, {
       data: {
         schema: 1,
         ticket: "A-00000001",
-        loop: "task-redispatch",
-        target: "01-1",
+        loop: "part",
+        target: "01",
         attempt: 1,
         of: 3,
         scope: "full",

@@ -19,6 +19,7 @@ export type {
   Inputs,
   Kind,
   KindRegistry,
+  PartLimits,
   PlanPartFacts,
   WorkFacts,
 } from "./kind.ts";

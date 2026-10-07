@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Agent registry commands (`agents`). They read the registry that the agent hooks write (`kernel-state`, Agent registry): which subagents run in this session, who started whom, which package each one works on, whom a ledger entry affects, and a blocking wait that lets a lead react to its children and to messages without ending its turn.
+Agent registry commands (`agents`). They read the registry that the agent hooks write (`kernel-state`, Agent registry): which subagents run in this session, who started whom, which package each one works on, whom a ledger entry affects, and a blocking wait that lets an agent react to its children and to messages without ending its turn.
 
 Common rules, not repeated per requirement: every command may emit `input/unknown-command`, `input/unknown-flag`, `input/missing-argument`, `input/invalid-argument`, `runtime/node-version`, `runtime/not-a-repo`; a command that is Change-scoped only with a flag emits the Change-scoped common rules (`policy/no-active-change`, `state/corrupted-index`, `state/ledger-invalid`, `state/change-dir-missing`) only with that flag. Their meaning and exit codes are in `kernel-cli`, Exit codes and the error object.
 
@@ -51,11 +51,11 @@ The agents of the registry with their state, parent and package. The kernel SHAL
         "id": "a1b2c3d4e5f6a7b8c",
         "type": "bdk:worker",
         "state": "running",
-        "parent": "a9f8e7d6c5b4a3f2e",
+        "parent": "main",
         "session": "5d1c9e0a-2b7f-4c3e-9a61-0f2d8b7c4e11",
-        "package": ".bdk/changes/2026-09-25-login/dispatch/02-4-implementer-A-9k2m4n6p.md",
+        "package": ".bdk/changes/2026-09-25-login/dispatch/02-implementer-A-9k2m4n6p.md",
         "ticket": "A-9k2m4n6p",
-        "target": "02-4",
+        "target": "02",
         "startedAt": "2026-09-30T10:14:03.120Z",
         "lastSeenAt": "2026-09-30T10:19:44.901Z"
       }
@@ -73,13 +73,13 @@ The agents of the registry with their state, parent and package. The kernel SHAL
 
 #### Scenario: affected by a file ref
 
-- **WHEN** worker A runs task `02-3` with `Files: src/auth/token.ts`, worker B runs task `02-4` with `Files: src/auth/session.ts`, and entry `L-q7w2e9r4` has the ref `src/auth/session.ts`
+- **WHEN** worker A runs part `02` with `Files: src/auth/token.ts`, worker B runs part `03` with `Files: src/auth/session.ts`, and entry `L-q7w2e9r4` has the ref `src/auth/session.ts`
 - **THEN** `bdk agents list --affected-by L-q7w2e9r4 --json` lists worker B and not worker A
 
-#### Scenario: affected by a part ref reaches the lead
+#### Scenario: affected by a task ref reaches the part's worker
 
-- **WHEN** a lead runs the `part-lead` ticket of part `02` and an entry has the ref `02`
-- **THEN** `--affected-by` lists the lead and every running worker of a task of part `02`
+- **WHEN** a worker runs the implementer package of the part ticket of part `02` and an entry has the ref `02-4`
+- **THEN** `--affected-by` lists that worker, since `02-4` is a task of its part target
 
 #### Scenario: suspect without a hook
 
@@ -88,8 +88,8 @@ The agents of the registry with their state, parent and package. The kernel SHAL
 
 #### Scenario: ended agents hidden by default
 
-- **WHEN** one child of a lead has ended and one runs
-- **THEN** `bdk agents list --children-of <lead> --json` lists one agent and `--all` lists two
+- **WHEN** one child of a worker has ended and one runs
+- **THEN** `bdk agents list --children-of <worker> --json` lists one agent and `--all` lists two
 
 #### Scenario: input/not-found
 
@@ -118,11 +118,11 @@ One agent of the registry with its lifecycle signals and children. The kernel SH
   ```json
   {
     "id": "a9f8e7d6c5b4a3f2e",
-    "type": "bdk:lead",
+    "type": "bdk:worker",
     "state": "running",
     "parent": "main",
     "session": "5d1c9e0a-2b7f-4c3e-9a61-0f2d8b7c4e11",
-    "package": ".bdk/changes/2026-09-25-login/dispatch/02-lead-A-3h5j7k9m.md",
+    "package": ".bdk/changes/2026-09-25-login/dispatch/02-implementer-A-3h5j7k9m.md",
     "ticket": "A-3h5j7k9m",
     "target": "02",
     "startedAt": "2026-09-30T10:13:58.004Z",
@@ -133,7 +133,7 @@ One agent of the registry with its lifecycle signals and children. The kernel SH
     "endedBy": null,
     "continuations": 0,
     "children": [
-      { "id": "a1b2c3d4e5f6a7b8c", "type": "bdk:worker", "state": "running", "target": "02-4" }
+      { "id": "a1b2c3d4e5f6a7b8c", "type": "bdk:scout", "state": "running", "target": null }
     ]
   }
   ```
@@ -166,14 +166,14 @@ Block until something happens that the calling agent must react to. The kernel S
 - **Arguments:**
   - `<agent-id>` (required). The caller's own id, from its start context.
   - `--timeout <seconds>`. How long to block with nothing to report; default 300, at most 540, so the call ends before the host's 10-minute `Bash` limit.
-- **Behaviour:** The call a lead makes between dispatches instead of ending its turn (a lead that ends its turn ends, HOST-FACTS `lead-detach`). It returns every event for `<agent-id>` that no earlier `wait` of the same agent returned, at once when there is one, otherwise as soon as one occurs, checking at least once per second:
+- **Behaviour:** The call an agent makes while a child it started runs, instead of ending its turn (a subagent that ends its turn ends, HOST-FACTS `lead-detach`). It returns every event for `<agent-id>` that no earlier `wait` of the same agent returned, at once when there is one, otherwise as soon as one occurs, checking at least once per second:
   - `message`: a `SendMessage` to the caller that `hooks pre-tool` admitted, with the sender and the ledger id it names; the host delivers the message itself when this tool call returns (HOST-FACTS `send-live`), so the event tells the caller to read it;
   - `report`: a child's report was stored by `log ingest`, with the child, its ticket and the envelope's `status`; a report at the child's package's `report` path whose `at` is earlier than the child's link or start is an earlier agent's and never the child's (#133);
   - `ended`: a child ended without a stored report, with the signal that ended it;
   - `suspect`: a child turned `suspect`;
   - `timeout`: nothing happened within `--timeout`.
 
-  Every answer also carries `elapsed`, the seconds since the caller's start, and the count of the caller's children in each state; this is the lead's time signal (T41-D8), with no budget. The Markdown output is one line per event followed by the one sentence `Read each message and report, act on it, then dispatch or wait again.` The call never ends the caller's turn and never writes to the Change. An id the registry does not hold is `input/not-found`; an `ended` caller is `input/invalid-argument`.
+  Every answer also carries `elapsed`, the seconds since the caller's start, and the count of the caller's children in each state; this is the caller's time signal (T41-D8), with no budget. The Markdown output is one line per event followed by the one sentence `Read each message and report, act on it, then dispatch or wait again.` The call never ends the caller's turn and never writes to the Change. An id the registry does not hold is `input/not-found`; an `ended` caller is `input/invalid-argument`.
 
 - **Writes:** `.bdk/.machine/agents.sqlite`
 - **Output:** `schema/cli/output/agents-wait.json`
@@ -214,32 +214,32 @@ Block until something happens that the calling agent must react to. The kernel S
 
 #### Scenario: returns on a stored report
 
-- **WHEN** a lead waits and its child stores its report with `bdk log ingest` two seconds later
+- **WHEN** a worker waits and its child stores its report with `bdk log ingest` two seconds later
 - **THEN** `wait` returns within three seconds of the ingest with one `report` event naming the child and its ticket
 
 #### Scenario: returns on an admitted message
 
-- **WHEN** a lead waits and a worker's `SendMessage` to the lead, naming `L-q7w2e9r4`, passes `hooks pre-tool`
+- **WHEN** a worker waits and a worker's `SendMessage` to the waiting worker, naming `L-q7w2e9r4`, passes `hooks pre-tool`
 - **THEN** `wait` returns with one `message` event carrying the worker's id and `L-q7w2e9r4`
 
 #### Scenario: child cut off without a signal
 
-- **WHEN** a lead waits and its child stops calling tools without any end signal, as with `maxTurns` (HOST-FACTS `stop-on-maxturns`)
+- **WHEN** a worker waits and its child stops calling tools without any end signal, as with `maxTurns` (HOST-FACTS `stop-on-maxturns`)
 - **THEN** `wait` returns a `suspect` event for the child once its heartbeat is older than `agents.ttl`
 
 #### Scenario: no event is returned twice
 
-- **WHEN** a `wait` returned a `report` event and the lead calls `wait` again
+- **WHEN** a `wait` returned a `report` event and the worker calls `wait` again
 - **THEN** the second call does not return that event
 
 #### Scenario: event between two waits
 
-- **WHEN** a child's report is stored while the lead is not in `wait`
-- **THEN** the lead's next `wait` returns the `report` event at once
+- **WHEN** a child's report is stored while the worker is not in `wait`
+- **THEN** the worker's next `wait` returns the `report` event at once
 
 #### Scenario: a report older than the child
 
-- **WHEN** a step is dispatched again with the package of an earlier agent whose report is stored, and the lead waits
+- **WHEN** a step is dispatched again with the package of an earlier agent whose report is stored, and the worker waits
 - **THEN** `wait` returns no `report` event for the new child until the new child stores its own report
 
 #### Scenario: timeout

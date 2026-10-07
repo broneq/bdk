@@ -34,7 +34,8 @@ describe("swarm skill", () => {
     expect(body).toMatch(/package path/);
     expect(body).toMatch(/`SendMessage` to `main`/);
     expect(body).toContain("](references/hosts/claude-code.md)");
-    expect(body).toContain("`bdk agents wait <own id>`");
+    expect(body).toMatch(/one `implementer` per part/);
+    expect(body).toContain("`conformer`");
     expect(body).toMatch(/in the background/);
     expect(existsSync(join(DIR, "references", "hosts", "claude-code.md"))).toBe(true);
   });
@@ -51,23 +52,25 @@ describe("swarm skill", () => {
     expect(body).toMatch(/`model` that its `bdk dispatch build` returns/);
   });
 
-  it("holds no flat-swarm sentence", () => {
-    const flat = sentences(readSkill().body).filter(
+  it("holds no flat-swarm sentence and names the worker's only spawn", () => {
+    const { body } = readSkill();
+    const flat = sentences(body).filter(
       (sentence) =>
         /\bswarm (is|stays|runs) flat\b|\bflat swarm\b/i.test(sentence) ||
         /no adapter carries/i.test(sentence),
     );
     expect(flat).toEqual([]);
+    expect(body).toContain("`Agent(scout)`");
   });
 
-  it("takes the tree or flat mode from the wave of bdk next", () => {
+  it("takes the parts from the wave of bdk next and names no tree, flat or lead (#166)", () => {
     const { body } = readSkill();
-    const tree = sentences(body).filter((sentence) => sentence.includes("`tree`"));
     expect(
-      tree.some((sentence) => sentence.includes("`wave`") && sentence.includes("`bdk next`")),
+      sentences(body).some(
+        (sentence) => sentence.includes("`wave`") && sentence.includes("`bdk next`"),
+      ),
     ).toBe(true);
-    expect(body).toContain("`flat`");
-    expect(body).not.toMatch(/`min-parts`|`large`/);
+    expect(body).not.toMatch(/`tree`|`flat`|\blead\b|`min-parts`/);
   });
 
   it("resumes an agent once and closes the ticket fail after a second failure", () => {

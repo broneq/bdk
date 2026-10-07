@@ -5,11 +5,13 @@ import { describe, expect, it } from "vitest";
 import { setChange, writeEntry, writePlanPart } from "../../graph/tests/support.ts";
 import { ROOT } from "../../log/tests/support.ts";
 import {
+  mergeReportName,
   readAttempts,
   readDocument,
   readManifests,
   writeDocument,
 } from "../../shared/store/index.ts";
+import { openTicket } from "../../part/tests/support.ts";
 import type { Store } from "../../shared/store/index.ts";
 import {
   attemptCloseOutput,
@@ -20,15 +22,16 @@ import {
 import {
   close,
   cycle,
+  delivered,
   DIR,
   envelope,
   harness,
   open,
   packaged,
   recorded,
-  simplified,
+  conformed,
   started,
-  stepsDone,
+  tasksCommitted,
   underTicket,
 } from "./support.ts";
 
@@ -53,30 +56,31 @@ function entries(store: Store, type: string) {
 describe("attempt open", () => {
   it("opens attempt 1 of the budget in scope full and writes the record", async () => {
     const h = await started();
-    const opened = await open(h, "task-redispatch", "01-1");
+    const opened = await open(h, "part", "01");
     expect(opened.code, opened.stdout).toBe(0);
     expect(attemptOpenOutput.parse(opened.json)).toMatchObject({
-      loop: "task-redispatch",
-      target: "01-1",
+      loop: "part",
+      target: "01",
       attempt: 1,
       of: 3,
       scope: "full",
+      base: "d8e4f21c0ffee000000000000000000000000000",
     });
-    expect(h.store.read(`${DIR}/attempts/task-redispatch-01-1-${opened.ticket}.md`)).toBeDefined();
-    const text = await h.step(["attempt", "open", "task-redispatch", "01-2"]);
-    expect(text.stdout).toMatch(
-      /^A-\w{8} opened: task-redispatch 01-2, attempt 1 of 3, scope full/,
+    expect(h.store.read(`${DIR}/attempts/part-01-${opened.ticket}.md`)).toContain(
+      "base: d8e4f21c0ffee000000000000000000000000000",
     );
+    const text = await (await started()).step(["attempt", "open", "part", "01"]);
+    expect(text.stdout).toMatch(/^A-\w{8} opened: part 01, attempt 1 of 3, scope full/);
   });
 
-  it("lists the post-task steps in pipeline order with their roles for the code loops (T23-D41)", async () => {
+  it("lists the post-task steps in pipeline order with their role or command for the code loops (#166)", async () => {
     const h = await started();
     const steps = [
-      { kind: "simplify", role: "simplifier" },
-      { kind: "tests-scoped", role: "runner" },
-      { kind: "lint", role: "runner" },
+      { kind: "conform", role: "conformer" },
+      { kind: "tests-scoped", command: "bdk check run" },
+      { kind: "lint", command: "bdk check run" },
     ];
-    const task = attemptOpenOutput.parse((await open(h, "task-redispatch", "01-1")).json);
+    const task = attemptOpenOutput.parse((await open(h, "part", "01")).json);
     expect(task.steps).toStrictEqual(steps);
     await close(h, task.ticket, "not-run", "--reason", "r");
     expect(attemptOpenOutput.parse((await open(h, "verify-fix", "01")).json).steps).toStrictEqual(
@@ -89,7 +93,7 @@ describe("attempt open", () => {
 
   it.each([
     ["an unknown loop", ["task-escalation", "01-1"]],
-    ["a part id for task-redispatch", ["task-redispatch", "01"]],
+    ["a task id for part", ["part", "01-1"]],
     ["a task id for verify-fix", ["verify-fix", "01-1"]],
     ["another id for review-fix", ["review-fix", "01"]],
     ["a task id for verifier", ["verifier", "01-1"]],
@@ -101,7 +105,7 @@ describe("attempt open", () => {
   });
 
   it.each([
-    ["task-redispatch", "01-9"],
+    ["part", "09"],
     ["verify-fix", "07"],
     ["verifier", "nothing"],
   ])("refuses %s %s with input/not-found", async (loop, target) => {
@@ -111,9 +115,9 @@ describe("attempt open", () => {
     expect(refusal(result).rule).toBe("input/not-found");
   });
 
-  it("refuses a task of a part that is not started with policy/not-ready", async () => {
+  it("refuses a part that is not started with policy/not-ready", async () => {
     const h = await started();
-    const result = await open(h, "task-redispatch", "02-1");
+    const result = await open(h, "part", "02");
     expect(result.code).toBe(2);
     expect(refusal(result)).toMatchObject({
       rule: "policy/not-ready",
@@ -138,98 +142,109 @@ describe("attempt open", () => {
     });
   });
 
-  it("refuses a second ticket of the same key, not of a sibling", async () => {
+  it("asks a review round for the post-task steps only when it holds a fix", async () => {
     const h = await started();
-    const first = await open(h, "task-redispatch", "01-1");
-    const again = await open(h, "task-redispatch", "01-1");
+    const change = "2026-09-25-login";
+    const round = (ticket: string) => {
+      openTicket(h.store, ticket, change, "review-fix");
+      h.store.write(`${DIR}/reports/${mergeReportName(change, ticket)}`, "---\nschema: 1\n---\n");
+    };
+    round("A-0review1");
+    expect((await close(h, "A-0review1", "ok")).code).toBe(0);
+
+    round("A-000fixed");
+    packaged(h, "A-000fixed", "implementer", change);
+    const fixed = await close(h, "A-000fixed", "ok");
+    expect(fixed.code, fixed.stdout).toBe(2);
+    expect(refusal(fixed)).toMatchObject({ rule: "policy/missing-evidence" });
+    expect(refusal(fixed).why).toContain("conform");
+  });
+
+  it("refuses a second ticket of the same key", async () => {
+    const h = await started();
+    const first = await open(h, "part", "01");
+    const again = await open(h, "part", "01");
     expect(again.code).toBe(2);
     expect(refusal(again)).toMatchObject({
       rule: "policy/ticket-open",
       instead: [`bdk attempt close ${first.ticket} ok|fail|not-run`],
     });
-    expect((await open(h, "task-redispatch", "01-2")).code).toBe(0);
   });
 
-  it("refuses a target whose Files: overlap the files of another open ticket, in any part", async () => {
+  it("refuses a part whose Files: overlap the files of another open ticket's part", async () => {
     const h = harness();
     setChange(h.store, { profile: "tiny" });
     const task = (id: string, files: string[]) =>
       `## ${id} Task\n\n**Files:**\n\n${files.map((file) => `- \`${file}\``).join("\n")}\n\n**Test cases:**\n\n- works\n`;
-    writePlanPart(h.store, "01", {
-      body: [
-        task("01-1", ["src/a.ts"]),
-        task("01-2", ["src/a.ts", "src/c.ts"]),
-        task("01-3", ["src/b.ts"]),
-      ].join("\n"),
-    });
-    writePlanPart(h.store, "02", { body: task("02-1", ["src/b.ts"]) });
+    writePlanPart(h.store, "01", { body: task("01-1", ["src/a.ts"]) });
+    writePlanPart(h.store, "02", { body: task("02-1", ["src/a.ts", "src/c.ts"]) });
+    writePlanPart(h.store, "03", { body: task("03-1", ["src/b.ts"]) });
     expect((await h.step(["done", "plan", "--json"])).code).toBe(0);
-    expect((await h.step(["part", "start", "01", "--json"])).code).toBe(0);
-    expect((await h.step(["part", "start", "02", "--json"])).code).toBe(0);
+    for (const part of ["01", "02", "03"]) {
+      expect((await h.step(["part", "start", part, "--json"])).code).toBe(0);
+    }
 
-    const first = await open(h, "task-redispatch", "01-1");
+    const first = await open(h, "part", "01");
     expect(first.code).toBe(0);
-    const sibling = await open(h, "task-redispatch", "01-2");
-    expect(sibling.code).toBe(2);
-    expect(refusal(sibling)).toMatchObject({
+    const busy = await open(h, "part", "02");
+    expect(busy.code).toBe(2);
+    expect(refusal(busy)).toMatchObject({
       rule: "policy/files-busy",
-      why: `src/a.ts of 01-2 is in the Files: of ticket ${first.ticket} (task-redispatch 01-1)`,
+      why: `src/a.ts of 02 is in the Files: of ticket ${first.ticket} (part 01)`,
     });
-    expect(records(h.store).map((record) => record.target)).toStrictEqual(["01-1"]);
-
-    expect((await open(h, "task-redispatch", "01-3")).code).toBe(0);
-    expect(refusal(await open(h, "task-redispatch", "02-1")).rule).toBe("policy/files-busy");
+    expect(records(h.store).map((record) => record.target)).toStrictEqual(["01"]);
     expect(refusal(await open(h, "verify-fix", "02")).rule).toBe("policy/files-busy");
+    expect((await open(h, "part", "03")).code).toBe(0);
 
     expect((await close(h, first.ticket, "not-run", "--reason", "r")).code).toBe(0);
-    expect((await open(h, "task-redispatch", "01-2")).code).toBe(0);
+    expect((await open(h, "part", "02")).code).toBe(0);
   });
 
   it("refuses an exhausted budget with --escalate as instead", async () => {
-    const h = await started("policy:\n  budgets:\n    task-redispatch: 1\n");
-    await cycle(h, "task-redispatch", "01-1", "fail");
-    const result = await open(h, "task-redispatch", "01-1");
+    const h = await started("policy:\n  budgets:\n    part: 1\n");
+    await cycle(h, "part", "01", "fail");
+    const result = await open(h, "part", "01");
     expect(result.code).toBe(2);
     expect(refusal(result)).toMatchObject({
       rule: "policy/budget-exhausted",
-      instead: ["bdk attempt open task-redispatch 01-1 --escalate"],
+      instead: ["bdk attempt open part 01 --escalate"],
     });
   });
 
   it("budget 0 allows no plain attempt", async () => {
-    const h = await started("policy:\n  budgets:\n    task-redispatch: 0\n");
-    expect(refusal(await open(h, "task-redispatch", "01-1")).rule).toBe("policy/budget-exhausted");
+    const h = await started("policy:\n  budgets:\n    part: 0\n");
+    expect(refusal(await open(h, "part", "01")).rule).toBe("policy/budget-exhausted");
   });
 
   it("refuses an oscillating round with policy/oscillation although budget is left", async () => {
-    const h = await started("policy:\n  budgets:\n    task-redispatch: 5\n");
+    const h = await started("policy:\n  budgets:\n    part: 5\n");
     const finding = { summary: "expired token accepted", refs: ["src/01-1.ts#verify"] };
-    await cycle(h, "task-redispatch", "01-1", "fail", finding);
-    await cycle(h, "task-redispatch", "01-1", "fail", {
+    await cycle(h, "part", "01", "fail", finding);
+    await cycle(h, "part", "01", "fail", {
       ...finding,
       summary: "Expired token accepted!",
     });
-    const result = await open(h, "task-redispatch", "01-1");
+    const result = await open(h, "part", "01");
     expect(refusal(result)).toMatchObject({
       rule: "policy/oscillation",
-      instead: ["bdk attempt open task-redispatch 01-1 --escalate"],
+      instead: ["bdk attempt open part 01 --escalate"],
     });
   });
 
   it("--escalate with budget left is policy/invalid-transition", async () => {
     const h = await started();
-    await cycle(h, "task-redispatch", "01-1", "fail");
-    const result = await open(h, "task-redispatch", "01-1", "--escalate");
+    await cycle(h, "part", "01", "fail");
+    const result = await open(h, "part", "01", "--escalate");
     expect(result.code).toBe(2);
     expect(refusal(result).rule).toBe("policy/invalid-transition");
   });
 
   it("--escalate opens the one-shot ticket with the model, after a checkpoint", async () => {
-    const h = await started("policy:\n  budgets:\n    task-redispatch: 2\n");
-    await cycle(h, "task-redispatch", "01-1", "fail");
-    await cycle(h, "task-redispatch", "01-1", "fail");
+    const h = await started("policy:\n  budgets:\n    part: 2\n");
+    await cycle(h, "part", "01", "fail");
+    await cycle(h, "part", "01", "fail");
     h.git.status = [".bdk/changes/2026-09-25-login/log/x.md"];
-    const opened = await open(h, "task-redispatch", "01-1", "--escalate");
+    const opened = await open(h, "part", "01", "--escalate");
     expect(opened.code, opened.stdout).toBe(0);
     expect(attemptOpenOutput.parse(opened.json)).toMatchObject({
       attempt: 3,
@@ -241,38 +256,42 @@ describe("attempt open", () => {
       "commit --quiet --only -m chore(bdk): checkpoint 2026-09-25-login -- .bdk/changes/2026-09-25-login/",
     ]);
     expect(records(h.store).at(-1)).toMatchObject({ escalation: true });
-    expect(refusal(await open(h, "task-redispatch", "01-1", "--escalate"))).toMatchObject({
+    expect(refusal(await open(h, "part", "01", "--escalate"))).toMatchObject({
       rule: "policy/ticket-open",
     });
-    await close(h, opened.ticket, "ok");
+    await delivered(h, opened.ticket);
+    expect((await close(h, opened.ticket, "ok")).code).toBe(0);
     // The escalation ticket's `ok` ends the round: the next one starts with the full budget.
-    const again = await open(h, "task-redispatch", "01-1");
+    const again = await open(h, "part", "01");
     expect(attemptOpenOutput.parse(again.json)).toMatchObject({ attempt: 1, scope: "full" });
     expect(records(h.store).at(-1)).toMatchObject({ after: opened.ticket });
   });
 
   it("--escalate is refused when disabled or over per-change", async () => {
     const disabled = await started(
-      "policy:\n  budgets:\n    task-redispatch: 1\n  escalation:\n    enabled: false\n",
+      "policy:\n  budgets:\n    part: 1\n  escalation:\n    enabled: false\n",
     );
-    await cycle(disabled, "task-redispatch", "01-1", "fail");
-    expect(refusal(await open(disabled, "task-redispatch", "01-1", "--escalate")).why).toContain(
+    await cycle(disabled, "part", "01", "fail");
+    expect(refusal(await open(disabled, "part", "01", "--escalate")).why).toContain(
       "policy.escalation.enabled is false",
     );
     const capped = await started(
-      "policy:\n  budgets:\n    task-redispatch: 1\n  escalation:\n    per-change: 1\n",
+      "policy:\n  budgets:\n    part: 1\n  escalation:\n    per-change: 1\n",
     );
-    await cycle(capped, "task-redispatch", "01-1", "fail");
-    await cycle(capped, "task-redispatch", "01-2", "fail");
-    expect((await open(capped, "task-redispatch", "01-1", "--escalate")).code).toBe(0);
-    expect(refusal(await open(capped, "task-redispatch", "01-2", "--escalate")).why).toContain(
+    await cycle(capped, "part", "01", "fail");
+    const escalation = await open(capped, "part", "01", "--escalate");
+    expect(escalation.code).toBe(0);
+    await delivered(capped, escalation.ticket);
+    expect((await close(capped, escalation.ticket, "ok")).code).toBe(0);
+    await cycle(capped, "part", "01", "fail");
+    expect(refusal(await open(capped, "part", "01", "--escalate")).why).toContain(
       "policy.escalation.per-change",
     );
   });
 
   it("narrowing drops the previous fail's findings outside the scope into one entry", async () => {
     const h = await started();
-    const first = await open(h, "task-redispatch", "01-1");
+    const first = await open(h, "part", "01");
     const high = underTicket(h, first.ticket, {
       summary: "token not checked",
       refs: ["src/01-1.ts"],
@@ -284,7 +303,7 @@ describe("attempt open", () => {
       severity: "low",
     });
     await close(h, first.ticket, "fail");
-    const second = await open(h, "task-redispatch", "01-1");
+    const second = await open(h, "part", "01");
     const report = attemptOpenOutput.parse(second.json);
     expect(report).toMatchObject({
       attempt: 2,
@@ -294,7 +313,7 @@ describe("attempt open", () => {
     });
     expect(records(h.store).at(-1)).toMatchObject({ dropped: [low], "narrowed-from": "full" });
     const kernel = entries(h.store, "finding").find((entry) => entry.id === report.entry);
-    expect(kernel).toMatchObject({ source: "kernel", review: true, refs: ["01-1", low] });
+    expect(kernel).toMatchObject({ source: "kernel", review: true, refs: ["01", low] });
     expect(JSON.stringify(report)).not.toContain(high);
   });
 
@@ -307,11 +326,11 @@ describe("attempt open", () => {
       if (raced || !path.includes("/attempts/")) return;
       raced = true;
       write(
-        `${DIR}/attempts/task-redispatch-01-1-A-rival000.md`,
+        `${DIR}/attempts/part-01-A-rival000.md`,
         text.replace(/ticket: A-\w{8}/, "ticket: A-rival000"),
       );
     };
-    const result = await open(h, "task-redispatch", "01-1");
+    const result = await open(h, "part", "01");
     expect(refusal(result)).toMatchObject({ rule: "policy/ticket-open" });
     expect(records(h.store).map((record) => record.ticket)).toStrictEqual(["A-rival000"]);
   });
@@ -321,7 +340,7 @@ describe("attempt close", () => {
   it("refuses an unknown ticket and a closed one", async () => {
     const h = await started();
     expect(refusal(await close(h, "A-nothing0", "ok")).rule).toBe("input/not-found");
-    const { ticket } = await cycle(h, "task-redispatch", "01-1", "ok");
+    const { ticket } = await cycle(h, "part", "01", "ok");
     const again = await close(h, ticket, "ok");
     expect(again.code).toBe(2);
     expect(refusal(again).rule).toBe("policy/no-open-ticket");
@@ -329,7 +348,7 @@ describe("attempt close", () => {
 
   it("not-run needs --reason and leaves the record open", async () => {
     const h = await started();
-    const { ticket } = await open(h, "task-redispatch", "01-1");
+    const { ticket } = await open(h, "part", "01");
     const result = await close(h, ticket, "not-run");
     expect(result.code).toBe(3);
     expect(refusal(result).rule).toBe("input/missing-argument");
@@ -338,7 +357,7 @@ describe("attempt close", () => {
 
   it("a do-not-touch path refuses and leaves the ticket open", async () => {
     const h = await started();
-    const { ticket } = await open(h, "task-redispatch", "01-1");
+    const { ticket } = await open(h, "part", "01");
     h.git.status = ["src/billing/invoice.ts"];
     const result = await close(h, ticket, "ok");
     expect(refusal(result)).toMatchObject({
@@ -350,7 +369,8 @@ describe("attempt close", () => {
 
   it("records undeclared files as one kernel finding and in diff", async () => {
     const h = await started();
-    const { ticket } = await open(h, "task-redispatch", "01-1");
+    const { ticket } = await open(h, "part", "01");
+    await delivered(h, ticket);
     h.git.status = ["src/01-1.ts", "src/util.ts"];
     const report = attemptCloseOutput.parse((await close(h, ticket, "ok")).json);
     expect(report).toMatchObject({
@@ -359,15 +379,15 @@ describe("attempt close", () => {
         touched: ["src/01-1.ts", "src/util.ts"],
         undeclared: ["src/util.ts"],
       },
-      next: { action: "commit" },
+      next: { action: "part-done" },
     });
     const finding = entries(h.store, "finding").find((entry) => entry.id === report.findings?.[0]);
-    expect(finding).toMatchObject({ source: "kernel", refs: ["01-1", "src/util.ts"] });
+    expect(finding).toMatchObject({ source: "kernel", refs: ["01", "src/util.ts"] });
   });
 
   it("refuses an envelope naming entries not written under the ticket", async () => {
     const h = await started();
-    const { ticket } = await open(h, "task-redispatch", "01-1");
+    const { ticket } = await open(h, "part", "01");
     const mine = underTicket(h, ticket, { summary: "a finding", refs: ["src/01-1.ts"] });
     const stranger = writeEntry(h.store, { type: "finding", at: "2026-09-25T11:30:00.000Z" });
     const path = envelope(h, ticket, [mine, stranger]);
@@ -381,7 +401,7 @@ describe("attempt close", () => {
 
   it("a fail stores the fingerprints of located findings only", async () => {
     const h = await started();
-    const { ticket } = await open(h, "task-redispatch", "01-1");
+    const { ticket } = await open(h, "part", "01");
     underTicket(h, ticket, {
       summary: "expired token accepted",
       refs: ["src/auth/login.ts#verifyToken"],
@@ -402,10 +422,10 @@ describe("attempt close", () => {
   });
 
   it("different problems on one symbol do not oscillate", async () => {
-    const h = await started("policy:\n  budgets:\n    task-redispatch: 5\n");
+    const h = await started("policy:\n  budgets:\n    part: 5\n");
     const at = ["src/01-1.ts#verify"];
-    await cycle(h, "task-redispatch", "01-1", "fail", { summary: "first problem", refs: at });
-    const second = await cycle(h, "task-redispatch", "01-1", "fail", {
+    await cycle(h, "part", "01", "fail", { summary: "first problem", refs: at });
+    const second = await cycle(h, "part", "01", "fail", {
       summary: "another problem",
       refs: at,
     });
@@ -413,13 +433,13 @@ describe("attempt close", () => {
   });
 
   it("oscillation returns escalate naming the fingerprint", async () => {
-    const h = await started("policy:\n  budgets:\n    task-redispatch: 5\n");
+    const h = await started("policy:\n  budgets:\n    part: 5\n");
     const at = ["src/01-1.ts#verify"];
-    await cycle(h, "task-redispatch", "01-1", "fail", {
+    await cycle(h, "part", "01", "fail", {
       summary: "expired token accepted",
       refs: at,
     });
-    const second = await cycle(h, "task-redispatch", "01-1", "fail", {
+    const second = await cycle(h, "part", "01", "fail", {
       summary: "Expired token accepted!",
       refs: at,
     });
@@ -430,7 +450,7 @@ describe("attempt close", () => {
 
   it("not-run retries in the same scope without consuming the budget", async () => {
     const h = await started();
-    const { close: closed } = await cycle(h, "task-redispatch", "01-1", "not-run");
+    const { close: closed } = await cycle(h, "part", "01", "not-run");
     expect(attemptCloseOutput.parse(closed.json)).toMatchObject({
       notRunCount: 1,
       next: { action: "retry", scope: "full" },
@@ -438,17 +458,17 @@ describe("attempt close", () => {
     expect(h.store.read(`${DIR}/attempts/${h.store.list(`${DIR}/attempts`)[0] ?? ""}`)).toContain(
       "no test runner",
     );
-    const next = await open(h, "task-redispatch", "01-1");
+    const next = await open(h, "part", "01");
     expect(attemptOpenOutput.parse(next.json)).toMatchObject({ attempt: 1, scope: "full" });
   });
 
   it("exhausting the budget without escalation parks the Change with the ladder question", async () => {
     const h = await started(
-      "policy:\n  budgets:\n    task-redispatch: 2\n  escalation:\n    enabled: false\n",
+      "policy:\n  budgets:\n    part: 2\n  escalation:\n    enabled: false\n",
     );
-    const first = await cycle(h, "task-redispatch", "01-1", "fail");
+    const first = await cycle(h, "part", "01", "fail");
     h.git.status = [".bdk/changes/2026-09-25-login/log/x.md"];
-    const second = await cycle(h, "task-redispatch", "01-1", "fail");
+    const second = await cycle(h, "part", "01", "fail");
     const next = attemptCloseOutput.parse(second.close.json).next;
     expect(next).toMatchObject({
       action: "parked",
@@ -462,13 +482,13 @@ describe("attempt close", () => {
       park: true,
       review: true,
       source: "kernel",
-      options: ["retry 01-1 with a fresh budget", "accept 01-1 as debt", "split part 01"],
-      refs: ["01-1", first.ticket, second.ticket],
+      options: ["retry 01 with a fresh budget", "accept 01 as debt", "split part 01"],
+      refs: ["01", first.ticket, second.ticket],
     });
     expect(h.git.committed).toHaveLength(1);
     const status = await h.step(["change", "status", "--json"]);
     expect(status.json).toMatchObject({ parked: { entry: next.entry, resume: next.resume } });
-    const refused = await open(h, "task-redispatch", "01-1");
+    const refused = await open(h, "part", "01");
     expect(refusal(refused)).toMatchObject({
       rule: "policy/budget-exhausted",
       instead: ["bdk change resume 2026-09-25-login --option <n>"],
@@ -477,9 +497,9 @@ describe("attempt close", () => {
 
   it("an answer opens a new round with attempt 1 and scope full", async () => {
     const h = await started(
-      NO_ESCALATION.replace("policy:\n", "policy:\n  budgets:\n    task-redispatch: 1\n"),
+      NO_ESCALATION.replace("policy:\n", "policy:\n  budgets:\n    part: 1\n"),
     );
-    await cycle(h, "task-redispatch", "01-1", "fail");
+    await cycle(h, "part", "01", "fail");
     const resumed = await h.step([
       "change",
       "resume",
@@ -489,19 +509,19 @@ describe("attempt close", () => {
       "--json",
     ]);
     expect(resumed.code, resumed.stdout).toBe(0);
-    const opened = await open(h, "task-redispatch", "01-1");
+    const opened = await open(h, "part", "01");
     expect(attemptOpenOutput.parse(opened.json)).toMatchObject({ attempt: 1, scope: "full" });
     expect(opened.json).not.toHaveProperty("narrowedFrom");
   });
 
   it("the escalation ticket's fail parks the Change", async () => {
-    const h = await started("policy:\n  budgets:\n    task-redispatch: 1\n");
-    const first = await cycle(h, "task-redispatch", "01-1", "fail");
+    const h = await started("policy:\n  budgets:\n    part: 1\n");
+    const first = await cycle(h, "part", "01", "fail");
     expect(attemptCloseOutput.parse(first.close.json).next).toMatchObject({
       action: "escalate",
       why: "1 of 1 attempts used",
     });
-    const escalation = await open(h, "task-redispatch", "01-1", "--escalate");
+    const escalation = await open(h, "part", "01", "--escalate");
     const closed = await close(h, escalation.ticket, "fail");
     expect(attemptCloseOutput.parse(closed.json).next).toMatchObject({
       action: "parked",
@@ -534,14 +554,14 @@ describe("attempt close", () => {
 });
 
 describe("attempt list", () => {
-  it("open tickets first, then newest first, with budgets and entries for a task", async () => {
+  it("open tickets first, then newest first, with budgets and entries for a part", async () => {
     const h = await started();
-    const first = await cycle(h, "task-redispatch", "01-1", "fail");
-    await cycle(h, "task-redispatch", "01-1", "not-run");
-    const opened = await open(h, "task-redispatch", "01-1");
+    const first = await cycle(h, "part", "01", "fail");
+    await cycle(h, "part", "01", "not-run");
+    const opened = await open(h, "part", "01");
     underTicket(h, opened.ticket, { summary: "one", refs: ["src/01-1.ts"] });
     const list = attemptListOutput.parse(
-      (await h.step(["attempt", "list", "--for", "01-1", "--json"])).json,
+      (await h.step(["attempt", "list", "--for", "01", "--json"])).json,
     );
     expect(
       list.items.map((item) => [item.ticket === opened.ticket, item.outcome, item.entries]),
@@ -552,38 +572,43 @@ describe("attempt list", () => {
     ]);
     expect(list.items.at(-1)?.ticket).toBe(first.ticket);
     expect(list).toMatchObject({
-      for: "01-1",
+      for: "01",
       total: 3,
-      budgets: { "task-redispatch": { used: 1, of: 3 }, "not-run": { used: 1, of: 3 } },
+      budgets: { part: { used: 1, of: 3 }, "not-run": { used: 1, of: 3 } },
     });
   });
 
-  it("--for a part includes its tasks; without --for no budgets", async () => {
+  it("--for a task lists its part's tickets; without --for no budgets nor entries", async () => {
     const h = await started();
-    await cycle(h, "task-redispatch", "01-1", "ok");
-    await cycle(h, "verify-fix", "01", "ok");
+    await cycle(h, "part", "01", "ok");
+    await cycle(h, "verify-fix", "01", "not-run");
     const part = attemptListOutput.parse(
-      (await h.step(["attempt", "list", "--for", "01", "--json"])).json,
+      (await h.step(["attempt", "list", "--for", "01-2", "--json"])).json,
     );
-    expect(part.items.map((item) => item.target).sort()).toStrictEqual(["01", "01-1"]);
+    expect(part.items.map((item) => [item.loop, item.target])).toStrictEqual([
+      ["verify-fix", "01"],
+      ["part", "01"],
+    ]);
     // The `ok` ended the round, so it no longer counts; the list still shows it.
     expect(part.budgets).toStrictEqual({
+      part: { used: 0, of: 3 },
       "verify-fix": { used: 0, of: 2 },
-      "not-run": { used: 0, of: 3 },
+      "not-run": { used: 1, of: 3 },
     });
-    expect(part.items[0]).not.toHaveProperty("entries");
+    expect(part.items[0]).toHaveProperty("entries", 0);
     const all = attemptListOutput.parse((await h.step(["attempt", "list", "--json"])).json);
     expect(all.total).toBe(2);
     expect(all).not.toHaveProperty("budgets");
+    expect(all.items[0]).not.toHaveProperty("entries");
   });
 
   it("shows the current round only, every round with --all", async () => {
     const h = await started(
-      NO_ESCALATION.replace("policy:\n", "policy:\n  budgets:\n    task-redispatch: 1\n"),
+      NO_ESCALATION.replace("policy:\n", "policy:\n  budgets:\n    part: 1\n"),
     );
-    await cycle(h, "task-redispatch", "01-1", "fail");
+    await cycle(h, "part", "01", "fail");
     await h.step(["change", "resume", "2026-09-25-login", "--option", "1"]);
-    await open(h, "task-redispatch", "01-1");
+    await open(h, "part", "01");
     const current = attemptListOutput.parse((await h.step(["attempt", "list", "--json"])).json);
     expect(current.total).toBe(1);
     const all = attemptListOutput.parse(
@@ -602,26 +627,26 @@ describe("attempt list", () => {
 describe("attempt show", () => {
   it("shows an open ticket with its state and its steps", async () => {
     const h = await started();
-    const opened = await open(h, "task-redispatch", "01-1");
+    const opened = await open(h, "part", "01");
     const shown = await h.step(["attempt", "show", opened.ticket, "--json"]);
     expect(shown.code, shown.stdout).toBe(0);
     const report = attemptShowOutput.parse(shown.json);
     expect(report).toMatchObject({
       ticket: opened.ticket,
-      loop: "task-redispatch",
-      target: "01-1",
+      loop: "part",
+      target: "01",
       attempt: 1,
       scope: "full",
     });
     expect(report).not.toHaveProperty("outcome");
     expect(report.steps?.length).toBeGreaterThan(0);
     const text = await h.step(["attempt", "show", opened.ticket]);
-    expect(text.stdout).toContain(`${opened.ticket} open: task-redispatch 01-1`);
+    expect(text.stdout).toContain(`${opened.ticket} open: part 01`);
   });
 
   it("shows the outcome of a closed ticket and changes nothing", async () => {
     const h = await started();
-    const closed = await cycle(h, "task-redispatch", "01-1", "fail");
+    const closed = await cycle(h, "part", "01", "fail");
     const before = records(h.store);
     const report = attemptShowOutput.parse(
       (await h.step(["attempt", "show", closed.ticket, "--json"])).json,
@@ -643,8 +668,8 @@ describe("attempt show", () => {
 describe("attempt close: rules read (T23-D28)", () => {
   it("writes one reviewed finding when an implementer closes without rules-read; the close goes on", async () => {
     const h = await started();
-    const { ticket } = await open(h, "task-redispatch", "01-1");
-    await stepsDone(h, ticket);
+    const { ticket } = await open(h, "part", "01");
+    await delivered(h, ticket);
     const result = await close(h, ticket, "ok");
     expect(result.code, result.stdout).toBe(0);
     const report = attemptCloseOutput.parse(result.json);
@@ -656,15 +681,15 @@ describe("attempt close: rules read (T23-D28)", () => {
         source: "kernel",
         review: true,
         summary: `implementer closed ${ticket} without reading its rules`,
-        refs: ["01-1", ticket],
+        refs: ["01", ticket],
       }),
     );
   });
 
   it("writes none when the implementer read its rules", async () => {
     const h = await started();
-    const { ticket } = await open(h, "task-redispatch", "01-1");
-    await stepsDone(h, ticket);
+    const { ticket } = await open(h, "part", "01");
+    await delivered(h, ticket);
     const [record] = readAttempts(h.store, DIR);
     if (record === undefined) throw new Error("no attempt record");
     writeDocument(h.store, record.path, {
@@ -678,16 +703,16 @@ describe("attempt close: rules read (T23-D28)", () => {
 
   it("writes one when a later role's package is active", async () => {
     const h = await started();
-    const { ticket } = await open(h, "task-redispatch", "01-1");
-    await stepsDone(h, ticket);
+    const { ticket } = await open(h, "part", "01");
+    await delivered(h, ticket);
     const report = attemptCloseOutput.parse((await close(h, ticket, "ok")).json);
     expect(report.rulesFinding).toMatch(/^L-/);
   });
 
   it("writes none for another role", async () => {
     const h = await started();
-    const { ticket } = await open(h, "task-redispatch", "01-1");
-    packaged(h, ticket, "runner");
+    const { ticket } = await open(h, "verifier", "plan");
+    packaged(h, ticket, "verifier", "plan");
     const report = attemptCloseOutput.parse((await close(h, ticket, "ok")).json);
     expect(report.rulesFinding).toBeUndefined();
   });
@@ -696,64 +721,64 @@ describe("attempt close: rules read (T23-D28)", () => {
 describe("attempt close ok: the post-task step evidence (T23-D41, D43)", () => {
   async function coded(settings?: string) {
     const h = await started(settings);
-    const { ticket } = await open(h, "task-redispatch", "01-1");
+    const { ticket } = await open(h, "part", "01");
     packaged(h, ticket, "implementer");
+    tasksCommitted(h, ticket);
     return { h, ticket };
   }
 
-  it("records simplify from the simplifier report and closes with fresh cited evidence", async () => {
+  it("records conform from the conformer report and closes with fresh cited evidence", async () => {
     const { h, ticket } = await coded();
-    await stepsDone(h, ticket);
+    await delivered(h, ticket);
     const result = await close(h, ticket, "ok");
     expect(result.code, result.stdout).toBe(0);
-    const simplify = readManifests(h.store, DIR).filter((m) => m.data.kind === "simplify");
-    expect(simplify.map((m) => m.data)).toMatchObject([
-      { ticket, target: "01-1", source: "kernel", verdict: "pass" },
+    const conform = readManifests(h.store, DIR).filter((m) => m.data.kind === "conform");
+    expect(conform.map((m) => m.data)).toMatchObject([
+      { ticket, target: "01", source: "kernel", verdict: "pass" },
     ]);
-    expect(simplify[0]?.data.files[0]?.stored).toBe("committed");
+    expect(conform[0]?.data.files[0]?.stored).toBe("committed");
     expect(records(h.store)[0]).toMatchObject({ outcome: "ok" });
   });
 
-  it("records simplify as not-run from a blocked simplifier report", async () => {
+  it("records conform as not-run from a blocked conformer report", async () => {
     const { h, ticket } = await coded();
-    simplified(h, ticket, "blocked");
-    packaged(h, ticket, "runner");
+    conformed(h, ticket, "blocked");
     await recorded(h, ticket, "tests-scoped");
     await recorded(h, ticket, "lint");
     expect((await close(h, ticket, "ok")).code).toBe(0);
-    expect(readManifests(h.store, DIR).find((m) => m.data.kind === "simplify")?.data.verdict).toBe(
+    expect(readManifests(h.store, DIR).find((m) => m.data.kind === "conform")?.data.verdict).toBe(
       "not-run",
     );
   });
 
-  it("refuses a missing step with policy/missing-evidence naming its role; the ticket stays open", async () => {
+  it("refuses a missing step with policy/missing-evidence naming bdk check run; the ticket stays open", async () => {
     const { h, ticket } = await coded();
-    simplified(h, ticket);
+    conformed(h, ticket);
     await recorded(h, ticket, "tests-scoped");
     const result = await close(h, ticket, "ok");
     expect(result.code).toBe(2);
     expect(refusal(result)).toMatchObject({
       rule: "policy/missing-evidence",
-      instead: [`bdk dispatch build 01-1 runner ${ticket}`],
+      instead: [`bdk check run 01 --ticket ${ticket}`],
     });
     expect(refusal(result).why).toContain("lint");
     expect(records(h.store)[0]?.outcome).toBeUndefined();
   });
 
-  it("refuses a missing simplifier report as missing simplify evidence", async () => {
+  it("refuses a missing conformer report as missing conform evidence", async () => {
     const { h, ticket } = await coded();
     await recorded(h, ticket, "tests-scoped");
     await recorded(h, ticket, "lint");
     const result = await close(h, ticket, "ok");
     expect(refusal(result)).toMatchObject({
       rule: "policy/missing-evidence",
-      instead: [`bdk dispatch build 01-1 simplifier ${ticket}`],
+      instead: [`bdk dispatch build 01 conformer ${ticket}`],
     });
   });
 
   it("refuses a failing step with policy/missing-evidence and attempt close fail as instead", async () => {
     const { h, ticket } = await coded();
-    simplified(h, ticket);
+    conformed(h, ticket);
     await recorded(h, ticket, "tests-scoped");
     await recorded(h, ticket, "lint", "fail");
     const result = await close(h, ticket, "ok");
@@ -766,7 +791,7 @@ describe("attempt close ok: the post-task step evidence (T23-D41, D43)", () => {
 
   it("refuses stale steps with policy/stale-evidence naming the kinds and the changed file", async () => {
     const { h, ticket } = await coded();
-    simplified(h, ticket);
+    conformed(h, ticket);
     await recorded(h, ticket, "tests-scoped");
     await recorded(h, ticket, "lint");
     h.store.write(`${ROOT}/src/01-2.ts`, "export const two = 2;\n");
@@ -778,7 +803,7 @@ describe("attempt close ok: the post-task step evidence (T23-D41, D43)", () => {
 
   it("refuses a pass without a citation and a changed committed file with policy/missing-citation", async () => {
     const { h, ticket } = await coded();
-    simplified(h, ticket);
+    conformed(h, ticket);
     await recorded(h, ticket, "tests-scoped");
     await recorded(h, ticket, "lint", "not-run", false);
     const manifest = readManifests(h.store, DIR).find((m) => m.data.kind === "tests-scoped");
@@ -800,13 +825,13 @@ describe("attempt close ok: the post-task step evidence (T23-D41, D43)", () => {
 
   it("accepts not-run within policy.budgets.not-run and refuses it past the budget", async () => {
     const within = await coded();
-    simplified(within.h, within.ticket);
+    conformed(within.h, within.ticket);
     await recorded(within.h, within.ticket, "tests-scoped");
     await recorded(within.h, within.ticket, "lint", "not-run", false);
     expect((await close(within.h, within.ticket, "ok")).code).toBe(0);
 
     const past = await coded("policy:\n  budgets:\n    not-run: 0\n");
-    simplified(past.h, past.ticket);
+    conformed(past.h, past.ticket);
     await recorded(past.h, past.ticket, "tests-scoped");
     await recorded(past.h, past.ticket, "lint", "not-run", false);
     const result = await close(past.h, past.ticket, "ok");
@@ -821,10 +846,10 @@ describe("attempt close ok: the post-task step evidence (T23-D41, D43)", () => {
     const verifier = await open(h, "verifier", "plan");
     packaged(h, verifier.ticket, "verifier", "plan");
     expect((await close(h, verifier.ticket, "ok")).code).toBe(0);
-    const failed = await open(h, "task-redispatch", "01-1");
+    const failed = await open(h, "part", "01");
     packaged(h, failed.ticket, "implementer");
     expect((await close(h, failed.ticket, "fail")).code).toBe(0);
-    const skipped = await open(h, "task-redispatch", "01-1");
+    const skipped = await open(h, "part", "01");
     packaged(h, skipped.ticket, "implementer");
     expect((await close(h, skipped.ticket, "not-run", "--reason", "no runner")).code).toBe(0);
   });

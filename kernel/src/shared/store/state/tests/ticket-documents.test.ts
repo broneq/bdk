@@ -28,12 +28,9 @@ describe("attempt", () => {
     },
   );
 
-  it.each(["task-redispatch", "verify-fix", "review-fix", "verifier"])(
-    "accepts loop %s",
-    (loop) => {
-      expect(issues(attempt, { ...open, loop })).toStrictEqual([]);
-    },
-  );
+  it.each(["part", "verify-fix", "review-fix", "verifier"])("accepts loop %s", (loop) => {
+    expect(issues(attempt, { ...open, loop })).toStrictEqual([]);
+  });
 
   it("rejects a loop outside the four loops", () => {
     expect(issues(attempt, { ...open, loop: "task-escalation" })).toStrictEqual(["loop"]);

@@ -84,13 +84,13 @@ Give the file the frontmatter `mode: replace` to replace the default instead.
 
 ## Refusals
 
-| Code                            | From                     | What to do                                                                                                          |
-| ------------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------- |
-| `runtime/git-too-old`           | `bdk part start`         | Upgrade git to 2.38 or later, or set `execution.worktree.enabled: false`                                            |
-| `runtime/worktree-setup-failed` | `bdk part start`         | Fix `execution.worktree.setup` from the output tail it shows, then start the part again; or disable worktrees       |
-| `policy/worktree-dirty`         | `bdk part done`          | A declared file of the part is still changed in the worktree: commit it with `bdk commit <task>`, or restore it     |
-| `policy/merge-conflict`         | `bdk part done`          | `/bdk:execute` opens the merge ticket described above                                                               |
-| `policy/merge-blocked`          | `bdk part done`          | The merge would overwrite a file changed in the home working tree: commit that task, then run `bdk part done` again |
-| `policy/merge-unresolved`       | closing the merge ticket | Conflict markers or unmerged paths are left in the worktree: resolve them, then close the ticket again              |
+| Code                            | From                     | What to do                                                                                                                            |
+| ------------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `runtime/git-too-old`           | `bdk part start`         | Upgrade git to 2.38 or later, or set `execution.worktree.enabled: false`                                                              |
+| `runtime/worktree-setup-failed` | `bdk part start`         | Fix `execution.worktree.setup` from the output tail it shows, then start the part again; or disable worktrees                         |
+| `policy/worktree-dirty`         | `bdk part done`          | A declared file of the part is still changed in the worktree: commit it with the command `bdk check run <task>` prints, or restore it |
+| `policy/merge-conflict`         | `bdk part done`          | `/bdk:execute` opens the merge ticket described above                                                                                 |
+| `policy/merge-blocked`          | `bdk part done`          | The merge would overwrite a file changed in the home working tree: commit that task, then run `bdk part done` again                   |
+| `policy/merge-unresolved`       | closing the merge ticket | Conflict markers or unmerged paths are left in the worktree: resolve them, then close the ticket again                                |
 
 No refusal falls back to the shared tree by itself. The only downgrade is the one you set: `execution.worktree.enabled: false`.

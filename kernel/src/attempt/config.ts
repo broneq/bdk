@@ -16,11 +16,10 @@ export const budgetsModule = defineConfigModule({
   description: "How many tickets each loop may open in one round before the ladder moves on.",
   schema: z
     .strictObject({
-      "task-redispatch": budget(3, "Re-dispatches of one task."),
+      part: budget(3, "Tickets of one plan part, each one implementer and one conformer (#166)."),
       "verify-fix": budget(2, "Fix rounds after a failed verification of one part."),
       "review-fix": budget(2, "Fix rounds after the review of the Change."),
       verifier: budget(2, "Iterations of one verifier over one artifact."),
-      "part-lead": budget(2, "Lead tickets of one plan part."),
       "not-run": budget(3, "Consecutive not-run closes of one loop and target."),
     })
     .prefault({}),

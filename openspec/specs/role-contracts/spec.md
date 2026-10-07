@@ -8,12 +8,12 @@ Defines the role skills and host adapters that BDK ships for dispatched work: wh
 
 ### Requirement: Role skills
 
-The plugin SHALL ship exactly eleven role skills, one per directory `skills/roles/<role>/SKILL.md`, for the roles `implementer`, `simplifier`, `verifier`, `design-verifier`, `reviewer`, `integration-reviewer`, `judge`, `pr-reviewer`, `runner`, `scout` and `lead`. `.claude-plugin/plugin.json` SHALL declare `"skills": ["./skills/roles/"]`, because the host's default scan reads only `skills/<name>/SKILL.md` (HOST-FACTS `roles-nested-default`, `roles-nested-manifest`); the host then lists each role as `bdk:<role>` next to the skills under `skills/`. Each role skill's frontmatter SHALL carry `name` equal to the directory name, a `description`, `user-invocable: false`, `context: fork` and `agent: bdk:<adapter>`, and SHALL NOT carry `model` or `disable-model-invocation`: the adapter supplies the model, and the orchestrating skill must be able to invoke the role. A role body is plugin content and SHALL NOT be overridable by a project in 3.0: `dispatch build` embeds the plugin's body, so a forked role and a role dispatched through the Agent tool read the same text, and a project adapts behaviour through the rule prompt values and `policy.verifier` (corrects T23-D11). A role skill SHALL contain no `!` block; the agent reads its package and rules through agent-class kernel commands, so a forked role and a role dispatched through the host's Agent tool follow the same contract.
+The plugin SHALL ship exactly ten role skills, one per directory `skills/roles/<role>/SKILL.md`, for the roles `implementer`, `conformer`, `verifier`, `design-verifier`, `reviewer`, `integration-reviewer`, `judge`, `pr-reviewer`, `runner` and `scout`; `simplifier` became `conformer` and `lead` is gone (#166). `.claude-plugin/plugin.json` SHALL declare `"skills": ["./skills/roles/"]`, because the host's default scan reads only `skills/<name>/SKILL.md` (HOST-FACTS `roles-nested-default`, `roles-nested-manifest`); the host then lists each role as `bdk:<role>` next to the skills under `skills/`. Each role skill's frontmatter SHALL carry `name` equal to the directory name, a `description`, `user-invocable: false`, `context: fork` and `agent: bdk:<adapter>`, and SHALL NOT carry `model` or `disable-model-invocation`: the adapter supplies the model, and the orchestrating skill must be able to invoke the role. A role body is plugin content and SHALL NOT be overridable by a project in 3.0: `dispatch build` embeds the plugin's body, so a forked role and a role dispatched through the Agent tool read the same text, and a project adapts behaviour through the rule prompt values and `policy.verifier` (corrects T23-D11). A role skill SHALL contain no `!` block; the agent reads its package and rules through agent-class kernel commands, so a forked role and a role dispatched through the host's Agent tool follow the same contract.
 
-#### Scenario: seven roles discovered
+#### Scenario: nine roles discovered
 
 - **WHEN** the plugin loads with the `skills` key in `plugin.json`
-- **THEN** the Skill tool resolves `bdk:implementer`, `bdk:simplifier`, `bdk:verifier`, `bdk:design-verifier`, `bdk:reviewer`, `bdk:integration-reviewer`, `bdk:judge`, `bdk:pr-reviewer`, `bdk:runner`, `bdk:scout` and `bdk:lead`, the skills under `skills/` keep their names, and the roles stay out of the user's skill and slash-command listings because of `user-invocable: false`
+- **THEN** the Skill tool resolves `bdk:implementer`, `bdk:conformer`, `bdk:verifier`, `bdk:design-verifier`, `bdk:reviewer`, `bdk:integration-reviewer`, `bdk:judge`, `bdk:pr-reviewer`, `bdk:runner` and `bdk:scout`, and neither `bdk:simplifier` nor `bdk:lead`, the skills under `skills/` keep their names, and the roles stay out of the user's skill and slash-command listings because of `user-invocable: false`
 
 #### Scenario: role frontmatter
 
@@ -30,23 +30,27 @@ The plugin SHALL ship exactly eleven role skills, one per directory `skills/role
 - **WHEN** `.bdk/prompts/roles/verifier.md` exists
 - **THEN** `bdk config check` exits 2 with `rule: policy/unknown-config-key` naming `roles/verifier`
 
+#### Scenario: seven roles discovered
+
+- **WHEN** the content test lists `skills/roles/`
+- **THEN** it holds exactly the nine role directories, and neither `simplifier` nor `lead`
+
 ### Requirement: Role-to-adapter map
 
 Each role SHALL name exactly one adapter in `agent:`, as the table below fixes, and every named adapter SHALL be one that `bdk export agents --host claude` produces.
 
-| Role                   | Adapter      | Instances per dispatch round        |
-| ---------------------- | ------------ | ----------------------------------- |
-| `implementer`          | `worker`     | many (one per task package)         |
-| `simplifier`           | `worker`     | many (one per task package)         |
-| `verifier`             | `reader`     | one                                 |
-| `design-verifier`      | `reader`     | one                                 |
-| `reviewer`             | `reviewer`   | many (one per review group)         |
-| `integration-reviewer` | `integrator` | one, after the round's reviewers    |
-| `judge`                | `judge`      | one, after the integration reviewer |
-| `pr-reviewer`          | `reviewer`   | one                                 |
-| `runner`               | `runner`     | many (one per task package)         |
-| `scout`                | `scout`      | many                                |
-| `lead`                 | `lead`       | many (one per plan part)            |
+| Role                   | Adapter      | Instances per dispatch round            |
+| ---------------------- | ------------ | --------------------------------------- |
+| `implementer`          | `worker`     | many (one per plan part of the wave)    |
+| `conformer`            | `worker`     | many (one per plan part of the wave)    |
+| `verifier`             | `reader`     | one                                     |
+| `design-verifier`      | `reader`     | one                                     |
+| `reviewer`             | `reviewer`   | many (one per review group)             |
+| `integration-reviewer` | `integrator` | one, after the round's reviewers        |
+| `judge`                | `judge`      | one, after the integration reviewer     |
+| `pr-reviewer`          | `reviewer`   | one                                     |
+| `runner`               | `runner`     | one (the gate runner of a review round) |
+| `scout`                | `scout`      | many                                    |
 
 #### Scenario: every role names a produced adapter
 
@@ -60,39 +64,43 @@ Each role SHALL name exactly one adapter in `agent:`, as the table below fixes, 
 
 ### Requirement: Adapters
 
-The plugin SHALL ship eight adapter files in `agents/`, generated by `bdk export agents --host claude` and never edited by hand. An adapter carries only frontmatter (`name`, `description`, `tools`, `model`, `effort`, a generated marker) and a body of exactly one sentence; the role lives in the role skill and the package, not in the adapter. The Claude Code tool map, model tiers and effort levels SHALL be (effort: HOST-FACTS `effort-frontmatter`, T41-D13). Haiku runs without the frontmatter's effort level (HOST-FACTS `model-override`), so an adapter on the `fast` tier carries no `effort` key on Claude Code:
+The plugin SHALL ship seven adapter files in `agents/`, generated by `bdk export agents --host claude` and never edited by hand. An adapter carries only frontmatter (`name`, `description`, `tools`, `model`, `effort`, a generated marker) and a body of exactly one sentence; the role lives in the role skill and the package, not in the adapter. The Claude Code tool map, model tiers and effort levels SHALL be (effort: HOST-FACTS `effort-frontmatter`, T41-D13). Haiku runs without the frontmatter's effort level (HOST-FACTS `model-override`), so an adapter on the `fast` tier carries no `effort` key on Claude Code:
 
-| Adapter      | Tools                                                                       | Model    | Effort   |
-| ------------ | --------------------------------------------------------------------------- | -------- | -------- |
-| `lead`       | Read, Grep, Glob, Bash, SendMessage, Agent(worker, runner, reviewer, scout) | `sonnet` | `medium` |
-| `worker`     | Read, Edit, Write, Bash, Grep, Glob, SendMessage, Agent(scout)              | `sonnet` | `medium` |
-| `reader`     | Read, Grep, Glob, Bash, SendMessage                                         | `opus`   | `high`   |
-| `integrator` | Read, Grep, Glob, Bash, SendMessage                                         | `opus`   | `high`   |
-| `judge`      | Read, Grep, Glob, Bash, SendMessage                                         | `sonnet` | `high`   |
-| `reviewer`   | Read, Grep, Glob, Bash, SendMessage                                         | `sonnet` | `medium` |
-| `runner`     | Read, Bash, SendMessage                                                     | `haiku`  | none     |
-| `scout`      | Read, Grep, Glob, Bash, SendMessage                                         | `haiku`  | none     |
+| Adapter      | Tools                                                          | Model    | Effort   |
+| ------------ | -------------------------------------------------------------- | -------- | -------- |
+| `worker`     | Read, Edit, Write, Bash, Grep, Glob, SendMessage, Agent(scout) | `sonnet` | `medium` |
+| `reader`     | Read, Write, Grep, Glob, Bash, SendMessage                     | `opus`   | `high`   |
+| `integrator` | Read, Write, Grep, Glob, Bash, SendMessage                     | `opus`   | `high`   |
+| `judge`      | Read, Write, Grep, Glob, Bash, SendMessage                     | `sonnet` | `high`   |
+| `reviewer`   | Read, Write, Grep, Glob, Bash, SendMessage                     | `sonnet` | `medium` |
+| `runner`     | Read, Write, Bash, SendMessage                                 | `haiku`  | none     |
+| `scout`      | Read, Write, Grep, Glob, Bash, SendMessage                     | `haiku`  | none     |
 
-Only `worker` has a file-writing tool. `Bash` on the read-only adapters exists for kernel commands and test runs; blocking file writes through Bash from `reader`, `integrator`, `judge`, `reviewer` and `scout` is T24's. `integrator` has the tools, tier and effort of `reader` but is its own adapter, so the integration reviewer's model and effort can change without changing `verifier` and `design-verifier`. `SendMessage` lets an agent reach `main` (HOST-FACTS `send-to-main`) and any agent by its id (HOST-FACTS `send-by-id`). No adapter lists an MCP tool. Only `lead` and `worker` list `Agent`, each restricted to the adapter types it may start (T41-D4); the host resolves the types in the plugin's namespace, and `hooks pre-tool` enforces the same list (`guard/agent-spawn`), so a host that ignores the restriction is still bounded.
+Only `worker` edits files. The other adapters hold `Write` for one file, the report draft their package names, which they store with `bdk log ingest --file` (#166); `hooks pre-tool` denies them any other path (`guard/draft-only`). `Bash` on the read-only adapters exists for kernel commands and test runs; blocking file writes through Bash from `reader`, `integrator`, `judge`, `reviewer` and `scout` is T24's. `integrator` has the tools, tier and effort of `reader` but is its own adapter, so the integration reviewer's model and effort can change without changing `verifier` and `design-verifier`. `SendMessage` lets an agent reach `main` (HOST-FACTS `send-to-main`) and any agent by its id (HOST-FACTS `send-by-id`). No adapter lists an MCP tool. Only `worker` lists `Agent`, restricted to `scout` (T41-D4); the host resolves the types in the plugin's namespace, and `hooks pre-tool` enforces the same list (`guard/agent-spawn`), so a host that ignores the restriction is still bounded.
 
 #### Scenario: adapter shape
 
 - **WHEN** `pnpm skill-check` runs over `agents/`
-- **THEN** each of `lead.md`, `worker.md`, `reader.md`, `integrator.md`, `judge.md`, `reviewer.md`, `runner.md` and `scout.md` passes the adapter body-shape rule (one sentence) and has a `model`, and each but `runner.md` and `scout.md` has an `effort`
+- **THEN** each of `worker.md`, `reader.md`, `integrator.md`, `judge.md`, `reviewer.md`, `runner.md` and `scout.md` passes the adapter body-shape rule (one sentence) and has a `model`, and each but `runner.md` and `scout.md` has an `effort`
 
 #### Scenario: read-only adapters cannot edit
 
-- **WHEN** the content test reads the `tools` of `lead`, `reader`, `integrator`, `judge`, `reviewer`, `runner` and `scout`
-- **THEN** none lists `Edit`, `Write` or `NotebookEdit`
+- **WHEN** the content test reads the `tools` of `reader`, `integrator`, `judge`, `reviewer`, `runner` and `scout`
+- **THEN** none lists `Edit` or `NotebookEdit`, and each lists `Write` for its draft
+
+#### Scenario: only worker starts agents
+
+- **WHEN** the content test reads the `tools` of the seven adapters
+- **THEN** `worker` lists `Agent(scout)`, no other adapter lists `Agent`, and `agents/lead.md` does not exist
 
 #### Scenario: only lead and worker start agents
 
-- **WHEN** the content test reads the `tools` of the eight adapters
-- **THEN** `lead` lists `Agent(worker, runner, reviewer, scout)`, `worker` lists `Agent(scout)`, and no other adapter lists `Agent`
+- **WHEN** the content test reads the `tools` of the seven adapters
+- **THEN** only `worker` lists `Agent`, as `Agent(scout)`
 
 ### Requirement: Dispatch prompt
 
-An orchestrator (`main`, or a lead for the tickets of its part) SHALL start a role with a prompt that holds the path of the role's dispatch package and at most one further sentence; everything the agent needs SHALL be in the package or in a file or command the package names. Every role contract SHALL state that the agent relies on nothing outside its package and the commands the package names. For a forked role the package path is the skill argument; for a role dispatched through the Agent tool it is the prompt. Two roles start without a package: a `scout` that a worker starts, whose prompt is the worker's question (Role contract content, Scout without a package), and the `pr-reviewer`, which `/bdk:pr-review` starts as a forked skill with a PR brief as its argument (Role contract content, PR reviewer without a package; T42). A lead and every agent a lead starts run in the background (`run_in_background: true`), so the parent link exists from the start (HOST-FACTS `agent-link`). The continuation check sends an agent that ends its turn without a stored report back to it (`kernel-cli/hooks`, Continuation check). When an agent still returns without a stored report, or with a report `log ingest` refused, or turns `suspect`, the orchestrator SHALL resume that agent at most once with `SendMessage`, naming the refusal or the silence; a second failure closes the ticket `fail`. The orchestrator SHALL build a ticket's next package only after the agent of its active package has returned and any resume is over: the ticket-keyed commands find the role through the package of the agent working on the ticket, and fall back to the active package when the registry cannot name that agent (`kernel-cli`, Ticket references; `kernel-state`, Attempt record, `package`). The swarm skill carries both rules out (Swarm skill).
+The orchestrator (`main`) SHALL start a role with a prompt that holds the path of the role's dispatch package and at most one further sentence; everything the agent needs SHALL be in the package or in a file or command the package names. Every role contract SHALL state that the agent relies on nothing outside its package and the commands the package names. For a forked role the package path is the skill argument; for a role dispatched through the Agent tool it is the prompt. Two roles start without a package: a `scout` that a worker starts, whose prompt is the worker's question (Role contract content, Scout without a package), and the `pr-reviewer`, which `/bdk:pr-review` starts as a forked skill with a PR brief as its argument (Role contract content, PR reviewer without a package; T42). Every agent of a part runs in the background (`run_in_background: true`), so the parent link exists from the start (HOST-FACTS `agent-link`). The continuation check sends an agent that ends its turn without a stored report back to it (`kernel-cli/hooks`, Continuation check). When an agent still returns without a stored report, or with a report `log ingest` refused, or turns `suspect`, the orchestrator SHALL resume that agent at most once with `SendMessage`, naming the refusal or the silence; a second failure closes the ticket `fail`. The orchestrator SHALL build a ticket's next package only after the agent of its active package has returned and any resume is over: the ticket-keyed commands find the role through the package of the agent working on the ticket, and fall back to the active package when the registry cannot name that agent (`kernel-cli`, Ticket references; `kernel-state`, Attempt record, `package`). The swarm skill carries both rules out (Swarm skill).
 
 #### Scenario: contract states the file-only input
 
@@ -109,28 +117,27 @@ An orchestrator (`main`, or a lead for the tickets of its part) SHALL start a ro
 Every role skill body SHALL be the role contract only, in this order: input (read the package with `bdk dispatch show <path>`, then the rules the package names with `bdk rules show --ticket <ticket>`), the role's work, ledger writes, output. The contract SHALL NOT repeat usage documentation of any command (`--help` is the only usage source, T02 decision R-13) and SHALL name no language-specific tool.
 
 - **Ledger writes.** Every role writes its entries itself with `bdk log add <type> ... --ticket <ticket>` (superseding the `bdk-entries` block of T2 for role contracts). An agent reads the entries of other agents with `bdk log list --for <task|part|file>`.
-- **Messages (T41-D5).** An agent's own id, its parent and its ticket are the `BDK-AGENT-ID`, `BDK-PARENT` and `BDK-TICKET` lines of its start context. Every contract tells the agent that a message carries a ledger id and one sentence, never the content, and that the entry comes first: an entry that affects the rest of the part goes to the parent; one that must stop other work goes to `main`, as before; one that affects particular siblings goes to the ids that `bdk agents list --affected-by <entry>` returns, its own id left out. On a message, the agent reads the named entry with `bdk log show <id>`, then continues, adapts its work within its package, or returns `blocked` with the entry id.
+- **Messages (T41-D5).** An agent's own id, its parent and its ticket are the `BDK-AGENT-ID`, `BDK-PARENT` and `BDK-TICKET` lines of its start context. Every contract tells the agent that a message carries a ledger id and one sentence, never the content, and that the entry comes first: an entry that affects other work goes to its parent; one that must stop other work goes to `main`; one that affects particular siblings goes to the ids that `bdk agents list --affected-by <entry>` returns, its own id left out. On a message, the agent reads the named entry with `bdk log show <id>`, then continues, adapts its work within its package, or returns `blocked` with the entry id.
 - **PR reviewer without a package (T42).** The `pr-reviewer` contract covers a reviewer that `/bdk:pr-review` starts as a forked skill with a PR brief as its argument (`review-skills`, pr-review reviews without state): it relies on nothing but the brief; it reads the rules of the PR's changed files with `bdk rules show --role pr-reviewer --file <path>...`; it reviews the range of the brief in its worktree against the brief's intent and, when the brief names one, the Change directory as contract; it writes no ledger entry and stores no report, because the PR has no ticket; it returns one result block holding each finding with its file, line, category, severity, rule id when a rule applies, problem and fix, and whether it blocks. The verdict is computed from that block by `/bdk:pr-review`, never by the role. The Ledger writes, Messages and Output bullets do not apply to it.
-- **Review fix (T42).** The `implementer` contract covers a package on a `review-fix` ticket: it fixes each blocking entry the package embeds, names each entry it fixed by id in its report, and resolves none, because the orchestrator resolves them after the commit.
+- **Review fix (T42).** The `implementer` contract covers a package on a `review-fix` ticket: it fixes each blocking entry the package embeds, runs the `bdk check run <change-id>` call of its `Checks` until it passes (#166), names each entry it fixed by id in its report, and resolves none and commits nothing, because the orchestrator commits the fix and resolves the entries after the commit.
 - **Scout without a package (T41-D4).** The `scout` contract covers a scout that a worker starts with a question instead of a package: it answers the question from the code, returns the answer in at most 15 lines naming files and lines, and writes a finding worth keeping with `bdk log add` and file refs.
-- **Output.** Every role, the `implementer` included, pipes its report (the envelope fields `status`, `files`, `entries`, `evidence` and `reason` as frontmatter, then the full report) to `bdk log ingest --ticket <ticket>`, which stamps `schema`, `ticket` and `role` and stores it at the active package's `report` path (`kernel-state`, Report envelope). The contract SHALL tell the agent to check that `log ingest` exits 0 and, when it refuses, to fix the named field and call it again before returning. The agent then returns only the envelope of at most 15 lines, plus the report path.
-- **No file for a reader (#158).** The `reviewer`, `integration-reviewer` and `judge` contracts show once the form of `bdk log ingest --ticket <ticket>@<group>` that reads the report from a stdin heredoc, and tell the agent to write no file: it reads a diff from `git diff` output one file at a time, and a file of the head, an image included, with the Read tool from the worktree.
+- **Output.** Every role, the `implementer` included, writes its report (the envelope fields `status`, `files`, `entries`, `evidence` and `reason` as frontmatter, then the full report) with the host's file tool to the `draft` path its package names and stores it with `bdk log ingest --ticket <ticket> --file <draft>` (#166), never through a pipe or a heredoc into the command, which stamps `schema`, `ticket` and `role` and stores it at the active package's `report` path (`kernel-state`, Report envelope). The contract SHALL tell the agent to check that `log ingest` exits 0 and, when it refuses, to fix the named field and call it again before returning. The agent then returns only the envelope of at most 15 lines, plus the report path.
 - **Verdict record.** The `verifier` and `design-verifier` contracts tell the agent, after `log ingest` stored its report, to record it with `bdk log add report "<verdict in one line>" --ref <target> --ticket <ticket>`, so the verdict node of its target reads the report (`kernel-pipeline`, Artifact kinds; `kernel-cli/log`, bdk log add).
 - **No authorisation (P3).** The `verifier`, `design-verifier`, `reviewer`, `integration-reviewer`, `judge` and `pr-reviewer` contracts state a verdict and findings only, and contain no statement that approves, signs off, or tells anyone to merge or proceed.
-- **Working tree (T3).** The `implementer` contract carries one sentence forbidding git commands that discard or rewrite work or history, with the reason: return `blocked` with the cause instead.
+- **Working tree (T3).** The `implementer` and `conformer` contracts carry one sentence forbidding git commands that discard or rewrite work or history, other than running the `git add` and `git commit` command `bdk check run` prints, with the reason: return `blocked` with the cause instead.
 - **Blocking categories (P8).** The `verifier` and `design-verifier` contracts tell the agent to raise a `blocker` only with a category from the closed list in its package and to treat everything on the package's "not a FAIL" list as an `observation` or nothing; the list itself comes from policy through the package, not from the role body.
-- **Simplify (T23-D43).** The `simplifier` contract tells the agent to simplify the ticket's uncommitted diff without changing behaviour, within the task's `Files:`, and to leave the changes uncommitted; it carries the implementer's working-tree sentence (T3).
-- **Evidence (T4).** The `runner` contract tells the agent to run each check of its package's `Checks` section and record it with `bdk evidence record <kind> <file> --ticket <ticket>` and a verdict, citing the output line or JSON value that shows the result for `pass`, and to record `not-run` with the reason when a check cannot run.
-- **Rule citations (S4).** The `implementer`, `simplifier`, `reviewer`, `integration-reviewer`, `pr-reviewer`, `verifier` and `design-verifier` contracts tell the agent to cite the id of every rule that forced a decision or that a finding violates, as a `--ref <id>` of the entry it writes (`BDK-CQ-4`, `API-2`) and by id in its report; a rule id is written exactly as `rules show --ticket` prints it. The kernel counts those refs as citations (`kernel-cli/rules`, bdk rules stats).
-- **Lead (T41-D2, D11).** The `lead` contract tells the agent that it runs one plan part and writes no file: from its package's `Tasks` section it starts, in the background, every task whose `Depends on:` tasks are committed and whose `Files:` are disjoint from the running ones, through `bdk attempt open task-redispatch <task>`, `bdk dispatch build` and `Agent` with the package path; between dispatches it calls `bdk agents wait <own id>` instead of ending its turn, and acts on each event: a report leads to the ticket's steps, `bdk attempt close` and `bdk commit`; `next.action: escalate` leads to `bdk attempt open task-redispatch <task> --escalate`, whose agents it starts on the `model` that `bdk dispatch build` returns, and `parked` to a `blocked` return; a message leads to the named entry and, when it affects other running agents, a message to them; a `suspect` child gets one resume. When every task is committed it stores its report with `bdk log ingest --ticket <own ticket>` and returns the envelope. It names `elapsed` from `wait` as its time signal and states that an earlier correct result is better.
-- **Review groups (T42-A1).** The `reviewer` and `integration-reviewer` contracts tell the agent that its ticket is the `<ticket>@<group>` reference its package names, and to use that reference in every `--ticket`. The `reviewer` reviews its group's files over the package's range against the plan part named as contract: whether the code does what the tasks state, logic errors within functions, and whether the tests check the stated behaviour, with the unit and end-to-end cases that are missing; it leaves style, duplication within a task and dead code to `simplify` and `lint`. The `integration-reviewer` runs after the group reviewers and looks top-down, never at the internals of a file, which belong to its group reviewer: it reads the group reports its package names, and the code only to confirm a row of its `Intent` table or a seam. It checks (1) intent to code: each scenario of the Change's spec deltas maps to the code that implements it, and code that implements something no scenario names is an `outside the intent` finding when it changes behaviour; (2) behaviour to test: each scenario has a test that proves it, named with its level (unit, integration, end to end), and a scenario that runs through several paths needs a proof on each path, with no line coverage, which stays the gate's; (3) test cases: the edge cases a scenario implies have a test, and a test case document of the range agrees with the code; (4) seams: the contracts the group reports list under `## Seams` against their users in other groups, configuration, dependency manifests and public API, and the files changed outside every task's `Files:`; (5) each item of the package's `Risks` section the range touches. A group the package names as not reviewed gets its seams checked from the code. Duplication across parts is not its work (`simplify` and the duplicate check). The `reviewer`, `integration-reviewer` and `judge` run no test, linter or build: the gate runner runs the full checks once per round, and its evidence is what the gate counts; a reviewer that needs a test's behaviour reads the test. Their skill `description` names no test run. Both reviewers write each finding with a `category` from the P8 list when it blocks, and never write `level`, which is the judge's or the orchestrator's (`kernel-cli/log`, bdk log triage).
+- **Part agent (#166).** The `implementer` contract tells the agent that it implements a whole plan part under the part's ticket: it works through the open tasks of its package's `Tasks` section in `Depends on:` order, for each task writes the failing test first, then the code, runs the `bdk check run <task> --ticket <ticket>` its `Checks` section names, fixes what fails and runs it again, and on a passing verdict runs the commit command the output prints, unchanged, running it once more when git reports the index lock held; it never composes, runs or records a check itself and never commits otherwise. It runs no command that spends money, needs credentials or reaches a shared or external system unless an accepted `decision` entry names that command, and returns `blocked` naming the command otherwise. A task it cannot finish ends its work with `blocked` and the committed tasks named, since the next ticket of the part continues from them.
+- **Conform (#166).** The `conformer` contract tells the agent to check the part's diff over the package's `Range`, or a review round's uncommitted fix its `Fix` section names, against each rule `bdk rules show --ticket` prints, each file of the `Project instructions` section and each task of the part file, and to write in its report a section `## Conformance` with one line per rule, instruction file and task: `yes`, or `<file>:<line>` and the violation. It fixes a violation within the part's `Files:` without changing behaviour, writes each violation it leaves as a `finding` whose `--ref` names the rule id or the instruction file, adds no feature and no test of a new behaviour, then, whether or not it changed a file, runs `bdk check run <part> --ticket <ticket>` (the Change id for a review fix) and the commit command it prints, if any. It carries the implementer's working-tree sentence (T3).
+- **Evidence (T4).** The `runner` contract, which only the gate runner of a review round follows (#166), tells the agent to run each check of its package's `Checks` section and record it with `bdk evidence record <kind> <file> --ticket <ticket>` and a verdict, citing the output line or JSON value that shows the result for `pass`, and to record `not-run` with the reason when a check cannot run.
+- **Rule citations (S4).** The `implementer`, `conformer`, `reviewer`, `integration-reviewer`, `pr-reviewer`, `verifier` and `design-verifier` contracts tell the agent to cite the id of every rule that forced a decision or that a finding violates, as a `--ref <id>` of the entry it writes (`BDK-CQ-4`, `API-2`) and by id in its report; a rule id is written exactly as `rules show --ticket` prints it. The kernel counts those refs as citations (`kernel-cli/rules`, bdk rules stats).
+- **Review groups (T42-A1).** The `reviewer` and `integration-reviewer` contracts tell the agent that its ticket is the `<ticket>@<group>` reference its package names, and to use that reference in every `--ticket`. The `reviewer` reviews its group's files over the package's range against the plan part named as contract: whether the code does what the tasks state, logic errors within functions, and whether the tests check the stated behaviour, with the unit and end-to-end cases that are missing; it leaves rule conformance, duplication within a part and dead code to `conform` and `lint`. The `integration-reviewer` runs after the group reviewers and looks top-down, never at the internals of a file, which belong to its group reviewer: it reads the group reports its package names, and the code only to confirm a row of its `Intent` table or a seam. It checks (1) intent to code: each scenario of the Change's spec deltas maps to the code that implements it, and code that implements something no scenario names is an `outside the intent` finding when it changes behaviour; (2) behaviour to test: each scenario has a test that proves it, named with its level (unit, integration, end to end), and a scenario that runs through several paths needs a proof on each path, with no line coverage, which stays the gate's; (3) test cases: the edge cases a scenario implies have a test, and a test case document of the range agrees with the code; (4) seams: the contracts the group reports list under `## Seams` against their users in other groups, configuration, dependency manifests and public API, and the files changed outside every task's `Files:`; (5) each item of the package's `Risks` section the range touches. A group the package names as not reviewed gets its seams checked from the code. Duplication across parts is not its work (`conform` and the duplicate check). The `reviewer`, `integration-reviewer` and `judge` run no test, linter or build: the gate runner runs the full checks once per round, and its evidence is what the gate counts; a reviewer that needs a test's behaviour reads the test. Their skill `description` names no test run. Both reviewers write each finding with a `category` from the P8 list when it blocks, and never write `level`, which is the judge's or the orchestrator's (`kernel-cli/log`, bdk log triage).
 - **Finding body (T42-H, #158).** The `reviewer` and `integration-reviewer` contracts tell the agent to write the body of every `finding`, `observation` and `blocker` as labelled paragraphs, `Problem:`, `Failure scenario:`, `Why it matters:` and `Suggested fix:`, so the human report can show why an entry is worth fixing. `Failure scenario:` states the concrete consequence the judge can check at the entry's refs: for a logic error the input or state and the wrong result it gives; for a test gap the change to the code that breaks the behaviour while every test still passes; for an intent gap the scenario of the spec delta that no code implements; for a security entry who reaches what through which path. A `finding` or `blocker` needs one; an `observation` may leave it out. The contracts also tell the agent to give every `finding` and `observation` a `--severity` (`kernel-cli/log`, bdk log add), which the report shows (`kernel-cli/review`, bdk review render). The `pr-reviewer` result block gives each finding the fields `problem`, `why` and `fix` for the same reason.
 - **Seams (#158).** The `reviewer` contract tells the agent to end its report with a section `## Seams`: one line `- <file>: <contract>` for each contract its group's files change that code outside the group uses (an exported function or type, a schema, a configuration key, a command or an event), or the single line `- none`. The integration reviewer starts from these lines.
 - **Intent table (#158).** The `integration-reviewer` contract tells the agent, when its package names spec deltas, to put the `## Intent` table right before its `## Areas` section, in the format the package's `Review` section gives (`kernel-cli/dispatch`, bdk dispatch build): `Code` and `Test` name a file, with a line or a test name, or `-`; `State` is `ok` or the ids of the entries it logged for that row. When the package says that the Change holds no spec delta, the agent writes no `## Intent` section, checks seams and risks only, and logs one `observation` that the Change states no behaviour to trace, unless `bdk log list` already shows a live one.
-- **Judge (#158).** The `judge` contract tells the agent that it looks for no new problem and writes no `finding`, `observation` or `blocker`: it judges each entry its package lists, once. For each it reads the body with `bdk log show <id>` and the code at its refs only, and decides: (1) whether the failure scenario holds in the code at the refs, or something already prevents it, such as a check upstream, a type or a test; (2) whether it is worth fixing for this Change, against the intent, the spec deltas, the accepted decisions, the `not-a-fail` list and any rule the entry cites, read with `bdk rules show <id>`; (3) whether it repeats another entry it judged. It then sets the level with `bdk log triage <id> <level> --reason "<one sentence>"`. A `blocker`-type entry, which a verifier or an implementer wrote, gets `blocker`, or `not-a-problem` when the judge refutes it, never a level in between. A `finding` or `observation` gets `blocker` only in a blocking category whose failure scenario holds; `should-fix` when its failure scenario holds; `nice-to-have` for an improvement without a failure, which includes every one without a `Failure scenario:` paragraph; `not-a-problem` for a scenario that does not hold, an entry on the `not-a-fail` list, or a repeat, naming the entry it repeats. It never changes an entry's text, type or refs. It stores its report with `bdk log ingest --ticket <ticket>@judge`, which ends with a section `## Verdicts`: one line `- <id>: <level>: <reason>` per entry, in package order.
+- **Judge (#158).** The `judge` contract tells the agent that it looks for no new problem and writes no `finding`, `observation` or `blocker`: it judges each entry its package lists, once. For each it reads the body with `bdk log show <id>` and the code at its refs only, and decides: (1) whether the failure scenario holds in the code at the refs, or something already prevents it, such as a check upstream, a type or a test; (2) whether it is worth fixing for this Change, against the intent, the spec deltas, the accepted decisions, the `not-a-fail` list and any rule the entry cites, read with `bdk rules show <id>`; (3) whether it repeats another entry it judged. It then sets the level with `bdk log triage <id> <level> --reason "<one sentence>"`. A `blocker`-type entry, which a verifier or an implementer wrote, gets `blocker`, or `not-a-problem` when the judge refutes it, never a level in between. A `finding` or `observation` gets `blocker` only in a blocking category whose failure scenario holds; `should-fix` when its failure scenario holds; `nice-to-have` for an improvement without a failure, which includes every one without a `Failure scenario:` paragraph; `not-a-problem` for a scenario that does not hold, an entry on the `not-a-fail` list, or a repeat, naming the entry it repeats. It never changes an entry's text, type or refs. It stores its report with `bdk log ingest --ticket <ticket>@judge --file <draft>`; the report ends with a section `## Verdicts`: one line `- <id>: <level>: <reason>` per entry, in package order.
 - **Area summaries (T42-H).** The `integration-reviewer` contract tells the agent to end its report with a section `## Areas`: one line `- <risk-id>: <sentence>` for each enabled risk of its package that the range touches, saying in one sentence of at most 300 characters what changed in that area and why, in terms of behaviour rather than files. When files outside the plan changed, one more line `- unplanned: <sentence>` says the same for them.
-- **Work root (T45).** The `implementer`, `simplifier`, `runner`, `scout` and `lead` contracts carry one sentence: when the package has a `Work root` section, every file read or edit and every command, its `Checks` included, happens inside that path, and kernel commands stay as they are, since the kernel finds the home checkout itself (`kernel-cli`, Invocation).
-- **Conflict (T45).** The `implementer` contract carries one sentence: when the package has a `Conflict` section, edit only its paths and follow its instruction, leave staging and the merge commit to the kernel (the working-tree sentence already forbids `git commit`), and return `blocked` naming the paths the instruction does not settle.
+- **Work root (T45).** The `implementer`, `conformer`, `runner` and `scout` contracts carry one sentence: when the package has a `Work root` section, every file read or edit and every command, its `Checks` included, happens inside that path, and kernel commands stay as they are, since the kernel finds the home checkout itself (`kernel-cli`, Invocation).
+- **Conflict (T45).** The `implementer` contract carries one sentence: when the package has a `Conflict` section, edit only its paths and follow its instruction, leave staging and the merge commit to the kernel and run no commit command, and return `blocked` naming the paths the instruction does not settle.
 - **Size.** A role skill body, without frontmatter, SHALL be at most 4 096 bytes. The body is the part of the contract that does not vary: every agent of the role pays for it, nine reviewers in one round of the diagnosed run, so it holds what the role always does. What varies with the Change or the round, such as the format of the `## Intent` table only when spec deltas exist, belongs in a package section that `dispatch build` adds when it applies (`kernel-cli/dispatch`, bdk dispatch build), not in the body. A role body links no `references/` file: the agent reads the package only, where a relative link resolves to nothing.
 
 #### Scenario: P3 wording
@@ -145,8 +152,8 @@ Every role skill body SHALL be the role contract only, in this order: input (rea
 
 #### Scenario: git sentence in the implementer contract
 
-- **WHEN** the content test reads `skills/roles/implementer/SKILL.md` and `skills/roles/simplifier/SKILL.md`
-- **THEN** each has exactly one sentence that forbids discarding or history-writing git commands and tells the agent to return `blocked`
+- **WHEN** the content test reads `skills/roles/implementer/SKILL.md` and `skills/roles/conformer/SKILL.md`
+- **THEN** each has exactly one sentence that forbids discarding or history-writing git commands other than the commit command `bdk check run` prints, and tells the agent to return `blocked`
 
 #### Scenario: no bdk-entries block
 
@@ -160,33 +167,33 @@ Every role skill body SHALL be the role contract only, in this order: input (rea
 
 #### Scenario: every role stores its report through ingest
 
-- **WHEN** the content test reads each of the eleven role bodies
-- **THEN** each but `pr-reviewer` names `bdk log ingest --ticket` and tells the agent to fix a refused report and call again, and none tells the agent to write a report file itself
+- **WHEN** the content test reads each of the ten role bodies
+- **THEN** each but `pr-reviewer` names `bdk log ingest --ticket` with `--file`, the package's draft path and fixing a refused report before calling again, and none pipes a report into `bdk log ingest`
 
 #### Scenario: runner records evidence
 
 - **WHEN** the content test reads `skills/roles/runner/SKILL.md`
 - **THEN** it names `bdk evidence record`, a citation for `pass` and `not-run` with the reason
 
-#### Scenario: simplifier keeps behaviour
+#### Scenario: conformer answers each rule
 
-- **WHEN** the content test reads `skills/roles/simplifier/SKILL.md`
-- **THEN** it tells the agent to keep behaviour unchanged and to stay within the task's `Files:`
+- **WHEN** the content test reads `skills/roles/conformer/SKILL.md`
+- **THEN** it names the `## Conformance` section, the `Range` and `Project instructions` sections, `bdk check run`, keeping behaviour unchanged and staying within the part's `Files:`
+
+#### Scenario: part agent commits each task after its checks
+
+- **WHEN** the content test reads `skills/roles/implementer/SKILL.md`
+- **THEN** it names the `Tasks` section, `bdk check run` before each commit, the commit command the output prints, and the `decision` a costly command needs
 
 #### Scenario: rule ids are cited
 
-- **WHEN** the content test reads the bodies of `implementer`, `simplifier`, `reviewer`, `integration-reviewer`, `pr-reviewer`, `verifier` and `design-verifier`
-- **THEN** each but `pr-reviewer` tells the agent to cite the rule id with `--ref` on the entry and in the report, `pr-reviewer` tells it to cite the rule id in each finding of its result block, and the bodies of `runner`, `scout`, `lead` and `judge` carry no such line
+- **WHEN** the content test reads the bodies of `implementer`, `conformer`, `reviewer`, `integration-reviewer`, `pr-reviewer`, `verifier` and `design-verifier`
+- **THEN** each but `pr-reviewer` tells the agent to cite the rule id with `--ref` on the entry and in the report, `pr-reviewer` tells it to cite the rule id in each finding of its result block, and the bodies of `runner`, `scout` and `judge` carry no such line
 
 #### Scenario: messages in every contract
 
-- **WHEN** the content test reads each of the eleven role bodies
+- **WHEN** the content test reads each of the ten role bodies
 - **THEN** each but `pr-reviewer` names `BDK-AGENT-ID`, `bdk agents list --affected-by`, `bdk log show` and returning `blocked` on a message it cannot absorb
-
-#### Scenario: lead waits instead of ending its turn
-
-- **WHEN** the content test reads `skills/roles/lead/SKILL.md`
-- **THEN** it names `bdk agents wait`, background dispatch, `bdk attempt close`, `bdk commit` and `bdk log ingest --ticket`, and names no `Edit` or `Write`
 
 #### Scenario: verifiers record their verdict
 
@@ -215,13 +222,18 @@ Every role skill body SHALL be the role contract only, in this order: input (rea
 
 #### Scenario: work root sentence
 
-- **WHEN** the content test reads the `implementer`, `simplifier`, `runner`, `scout` and `lead` role bodies
+- **WHEN** the content test reads the `implementer`, `conformer`, `runner` and `scout` role bodies
 - **THEN** each names the `Work root` section of its package, and the `implementer` body names the `Conflict` section
 
-#### Scenario: readers hand over without a file
+#### Scenario: simplifier keeps behaviour
 
-- **WHEN** the content test reads `skills/roles/reviewer/SKILL.md`, `skills/roles/integration-reviewer/SKILL.md` and `skills/roles/judge/SKILL.md`
-- **THEN** each holds `bdk log ingest --ticket` with a quoted heredoc on stdin and tells the agent to write no file, and the first two tell it to read a diff per file from `git diff` output
+- **WHEN** the content test reads `skills/roles/conformer/SKILL.md`
+- **THEN** it tells the agent to keep behaviour unchanged and to stay within the part's `Files:`, and `skills/roles/simplifier/` does not exist
+
+#### Scenario: lead waits instead of ending its turn
+
+- **WHEN** the content test lists `skills/roles/`
+- **THEN** no `lead` role exists, and no role body names `bdk agents wait`
 
 #### Scenario: reviewer lists its seams
 
@@ -255,15 +267,15 @@ Every role skill body SHALL be the role contract only, in this order: input (rea
 
 ### Requirement: Swarm skill
 
-The plugin SHALL ship `skills/swarm/SKILL.md`, `user-invocable: false`, which the stage skills that dispatch roles (`execute` of T41, `cr` of T42) and the `lead` role follow, holding principles only (T23-D6, D15; T41-D1 to D9, which supersede T23-D50's flat swarm) and no command usage beyond naming the commands:
+The plugin SHALL ship `skills/swarm/SKILL.md`, `user-invocable: false`, which the stage skills that dispatch roles (`execute`, `cr` of T42) follow, holding principles only (T23-D6, D15; T41-D1, D4 to D9; #166) and no command usage beyond naming the commands:
 
-- **Isolation.** A wave dispatches in parallel only tasks whose `Files:` are disjoint (P6); overlapping tasks wait for the next wave.
+- **Isolation.** A wave dispatches in parallel only parts whose `Files:` are disjoint (P6); `bdk next` lists them in `wave`, and an overlapping part waits for a later wave.
 - **Prompt.** Each agent gets its package path and at most one sentence (Dispatch prompt).
-- **Concurrency.** Each orchestrating agent, `main` or a lead, runs at most `execution.concurrency` children at once; the value comes from the skill's context (`Concurrency` section of `bdk ctx skill swarm`).
-- **Tree.** `bdk next` marks each part of the execute wave `tree` or `flat` (`wave`, `kernel-cli/graph`, bdk next): `main` starts one lead per `tree` part and that lead runs the part's tasks; `main` runs the tasks of `flat` parts itself. The orchestrator never decides the mode. `main` never builds a deeper tree than lead, role agent and, under a worker, a scout.
-- **Waiting.** Every agent is started in the background. A lead waits with `bdk agents wait <own id>` between dispatches, never by ending its turn; `main` ends its turn and is woken by the host's task notification.
+- **Concurrency.** `main` runs at most `execution.concurrency` children at once; the value comes from the skill's context (`Concurrency` section of `bdk ctx skill swarm`).
+- **One agent per part.** `main` opens one `part` ticket per part of the wave and starts one `implementer` per part, never one agent per task; the implementer works through the part's tasks and commits each, and the checks run in `bdk check run`, not in an agent (#166). `main` never builds a deeper tree than role agent and, under a worker, a scout.
+- **Waiting.** Every agent is started in the background; `main` ends its turn and is woken by the host's task notification.
 - **Files carry the substance.** Everything an agent must know is in its package, the ledger or a report; a message names a ledger id and adds one sentence. Before the next wave the orchestrator reads what the finished tickets logged with `bdk log list --since-ticket-start <ticket>`, and a `SendMessage` to `main` about a critical finding stops the wave.
-- **Steps under the ticket.** After an implementer returns with its report stored, its orchestrator dispatches the ticket's `steps` from `attempt open` in order under the same ticket, then closes it; `attempt close` decides whether the evidence suffices.
+- **Steps under the ticket.** After an implementer returns with its report stored, `main` dispatches the `conformer` under the same ticket, the agent step of the ticket's `steps` from `attempt open`, then closes the ticket; `attempt close` decides whether the commits and the evidence suffice.
 - **Escalation.** On `next.action: escalate` the orchestrator opens the escalation ticket with `bdk attempt open <loop> <target> --escalate` and starts each agent of that ticket on the `model` its `bdk dispatch build` returns, through the host's model parameter (T41-D14); `guard/escalation-model` denies a start without it. On `parked` it stops the target and reports.
 - **Single resume.** An agent that returns without a stored report, with a refused one, or turns `suspect`, is resumed once with the cause named; a second failure closes the ticket `fail`.
 
@@ -272,22 +284,27 @@ Host specifics live in `skills/swarm/references/hosts/claude-code.md`, the only 
 #### Scenario: swarm skill shape
 
 - **WHEN** the content test reads `skills/swarm/SKILL.md`
-- **THEN** its frontmatter has `user-invocable: false`, its body carries the skill context lines, names `--escalate` with the `model` of `bdk dispatch build`, `execution.concurrency`, `bdk log list --since-ticket-start`, `bdk agents wait`, disjoint `Files:`, the package path as the prompt, background dispatch, `SendMessage` to `main`, and links `references/hosts/claude-code.md`
+- **THEN** its frontmatter has `user-invocable: false`, its body carries the skill context lines, names `--escalate` with the `model` of `bdk dispatch build`, `execution.concurrency`, `bdk log list --since-ticket-start`, one implementer per part, the conformer, disjoint `Files:`, the package path as the prompt, background dispatch, `SendMessage` to `main`, and links `references/hosts/claude-code.md`
 
 #### Scenario: single resume wording
 
 - **WHEN** the content test reads `skills/swarm/SKILL.md`
 - **THEN** it tells the orchestrator to resume an agent with a missing or refused report, or a `suspect` one, once, naming the cause, and to close the ticket `fail` after a second failure
 
+#### Scenario: wave from the kernel
+
+- **WHEN** the content test reads `skills/swarm/SKILL.md`
+- **THEN** it names `wave` of `bdk next` as the source of the parts to start, and names no `tree`, `flat` or lead
+
 #### Scenario: mode from the kernel
 
 - **WHEN** the content test reads `skills/swarm/SKILL.md`
-- **THEN** it names `wave` of `bdk next` as the source of `tree` and `flat`, and holds no rule of its own on when a wave runs as a tree
+- **THEN** it holds no rule of its own on which parts run in a wave and names `wave` of `bdk next`
 
 #### Scenario: no flat-swarm sentence
 
 - **WHEN** the content test reads `skills/swarm/SKILL.md`
-- **THEN** it holds no sentence stating that the swarm is flat or that adapters carry no Agent tool
+- **THEN** it holds no sentence stating that adapters carry no Agent tool, and names `Agent(scout)` as the worker's only spawn
 
 ### Requirement: The verifier checks a whole plan
 
@@ -299,6 +316,7 @@ The `verifier` contract SHALL verify every plan part its package names, together
 - **Between parts.** A part that consumes another part's output names it in `depends-on`; two parts of the same wave do not both modify one file; a signature one part changes is used in its new form by the parts that call it.
 - **Isolation (T45).** Two parts of the same wave that both touch state outside their `Files:` (a lockfile or codegen output both regenerate, migration numbering, snapshot files, a whole-project build or typecheck that would see the other part's unfinished code, a shared port, database or fixtures) while both are `isolation: shared` are a blocker of category `integration-failure` naming the parts and the state; one of them set to `worktree` with a reason naming that state settles it. A `worktree` part whose `isolation-reason` names no state outside `Files:`, or names only files of its own `Files:`, is a finding, since a worktree costs a setup and a merge. Overlapping `Files:` stay a `depends-on` matter: a worktree does not settle them.
 - **No implementation code.** A task that carries a function body in a code block is a finding, since the plan states contracts and test cases.
+- **Exact commands (#166).** Every acceptance or `Verification:` line names the exact commands to run. One that can run a command that spends money, needs credentials or reaches a shared or external system, or that names its commands by exclusion ("every test except ..."), is a blocker of category `costly-command` naming the task and the command, so the user decides before any agent runs it.
 
 #### Scenario: verifier contract covers the plan checks
 
@@ -325,16 +343,26 @@ The `verifier` contract SHALL verify every plan part its package names, together
 - **WHEN** part `02` sets `isolation: worktree` with the reason "keeps it apart" and touches nothing outside its `Files:`
 - **THEN** the verifier writes a finding naming part `02` and no blocker for it
 
+#### Scenario: acceptance with a paid command
+
+- **WHEN** a task's acceptance runs `pnpm test:live`, which calls a paid API, and no accepted `decision` names it
+- **THEN** the verifier raises a blocker of category `costly-command` naming the task and the command, and `plan-verify` is not done
+
+#### Scenario: commands named by exclusion
+
+- **WHEN** an acceptance reads "run every test except the e2e suite"
+- **THEN** the verifier raises a blocker of category `costly-command` asking for the exact commands
+
 ### Requirement: Contracts steer the kernel calls that repeat as refusals
 
 Each role contract SHALL carry the call forms that the `execute` probes of T41 showed refused, so an agent following the contract does not meet the refusal:
 
-- The runner contract names the citation grammar with a worked `--cite <file>:<line>=<text>` example and states that a console line is not a citation.
+- The runner contract (the review gate runner) names the citation grammar with a worked `--cite <file>:<line>=<text>` example and states that a console line is not a citation.
 - The envelope example in every role contract is a complete frontmatter with its opening and closing `---` lines and shows `reason` as an optional field for `blocked` and `needs-context` only, not as a field to fill with an empty value.
-- Every role contract shows each `bdk log add` with `--ticket`. The dispatch package's `Return` section, which every role reads, states that envelope `entries` are the ids `log add` printed, the summary limit of 120 characters and the entry types, and that the envelope is piped to `bdk log ingest --ticket <ticket>` with no frontmatter flag.
-- The lead contract states that a task ticket closes only after the last of its `steps` has recorded evidence, that task commands take the task's ticket and never the lead's own, and that the earlier ticket of a task is closed before `attempt open task-redispatch` opens the next.
+- Every role contract shows each `bdk log add` with `--ticket`. The dispatch package's `Return` section, which every role reads, states that envelope `entries` are the ids `log add` printed, the summary limit of 120 characters and the entry types, and that the report is written to the package's `draft` path and stored with `bdk log ingest --ticket <ticket> --file <draft>`, with no frontmatter flag.
+- The implementer contract states that every command of the part takes the part's ticket, that a task is committed only after `bdk check run <task>` passed and only with the command it printed, and that the agent never records evidence itself.
 
-The dispatch package's `Return` section SHALL name the summary limit, the entry types and the `log ingest` pipe form.
+The dispatch package's `Return` section SHALL name the summary limit, the entry types and the `log ingest --file` form with the draft path.
 
 #### Scenario: Runner contract shows the citation form
 
@@ -346,30 +374,35 @@ The dispatch package's `Return` section SHALL name the summary limit, the entry 
 - **WHEN** the envelope example of any role contract is parsed as frontmatter
 - **THEN** it has opening and closing `---` lines and `reason` is not given a value in the example's `status: done` form
 
-#### Scenario: Lead contract orders close after steps
+#### Scenario: Implementer contract orders commit after checks
 
-- **WHEN** the lead contract is read
-- **THEN** it orders `attempt close` after every step's evidence, and names the task ticket for task commands
+- **WHEN** the implementer contract is read
+- **THEN** it orders the commit after a passing `bdk check run <task>`, names the part's ticket for every command, and names no `bdk evidence record`
 
 #### Scenario: Package Return section
 
 - **WHEN** `bdk dispatch build` writes a package
-- **THEN** its `Return` section names the 120 character summary limit and the entry types
+- **THEN** its `Return` section names the 120 character summary limit, the entry types and `bdk log ingest --ticket <ticket> --file` with the package's draft path
+
+#### Scenario: Lead contract orders close after steps
+
+- **WHEN** the content test lists `skills/roles/`
+- **THEN** no lead contract exists, and the implementer contract orders each commit after a passing `bdk check run`
 
 ### Requirement: Contracts leave BDK's own files to setup
 
 The files under `.bdk/` are written by the kernel; a project tool that reports them is misconfigured, and only the user may change that configuration (T51). The role contracts SHALL say so in one line each:
 
 - `reviewer` and `integration-reviewer`: a problem caused only by files under `.bdk/` is a `question` entry naming `/bdk:setup`, not a finding.
-- `implementer` and `simplifier`: never change the project's tool configuration for `.bdk/` files, and never rewrite them with a formatter; log a `question` naming `/bdk:setup` instead.
+- `implementer` and `conformer`: never change the project's tool configuration for `.bdk/` files, and never rewrite them with a formatter; log a `question` naming `/bdk:setup` instead.
 - `runner`: paths under `.bdk/` get no finding but one `question` naming `/bdk:setup`, and a check that fails only on them is recorded `not-run` with that reason.
 
 Every role body SHALL stay within the 4 096-byte budget of `Role contract content`.
 
 #### Scenario: the line in each contract
 
-- **WHEN** the content test reads the bodies of `implementer`, `simplifier`, `runner`, `reviewer` and `integration-reviewer`
-- **THEN** each names `.bdk/`, `question` and `/bdk:setup`; `implementer` and `simplifier` also forbid changing the project's tool configuration and rewriting `.bdk/` files with a formatter; `runner` names `not-run`
+- **WHEN** the content test reads the bodies of `implementer`, `conformer`, `runner`, `reviewer` and `integration-reviewer`
+- **THEN** each names `.bdk/`, `question` and `/bdk:setup`; `implementer` and `conformer` also forbid changing the project's tool configuration and rewriting `.bdk/` files with a formatter; `runner` names `not-run`
 
 #### Scenario: run-auto with the project's own lint
 

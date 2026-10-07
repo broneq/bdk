@@ -15,7 +15,7 @@ import type { AgentsReport } from "../domain/report.ts";
 
 const PLUGIN = "/plugins/bdk";
 const ROOT = "/work/repo";
-const NAMES = ["lead", "worker", "reader", "integrator", "judge", "reviewer", "runner", "scout"];
+const NAMES = ["worker", "reader", "integrator", "judge", "reviewer", "runner", "scout"];
 
 function generated(): Record<string, string> {
   return Object.fromEntries(
@@ -27,7 +27,7 @@ function generated(): Record<string, string> {
 }
 
 describe("adapter definitions", () => {
-  it("define exactly the eight adapters in a fixed order", () => {
+  it("define exactly the seven adapters in a fixed order", () => {
     expect(ADAPTERS.map((adapter) => adapter.name)).toEqual(NAMES);
   });
 
@@ -44,14 +44,9 @@ describe("adapter definitions", () => {
         effort: /^effort: (.+)$/m.exec(adapterFile(adapter, HOSTS.claude))?.[1],
       };
     });
-    const readOnly = ["Read", "Grep", "Glob", "Bash", "SendMessage"];
+    // `Write` of a read-only adapter is its draft tool: `guard/draft-only` keeps it on the draft (#166).
+    const readOnly = ["Read", "Write", "Grep", "Glob", "Bash", "SendMessage"];
     expect(rows).toEqual([
-      {
-        name: "lead",
-        tools: [...readOnly, "Agent(worker, runner, reviewer, scout)"],
-        model: "sonnet",
-        effort: "medium",
-      },
       {
         name: "worker",
         tools: ["Read", "Edit", "Write", "Bash", "Grep", "Glob", "SendMessage", "Agent(scout)"],
@@ -62,14 +57,19 @@ describe("adapter definitions", () => {
       { name: "integrator", tools: readOnly, model: "opus", effort: "high" },
       { name: "judge", tools: readOnly, model: "sonnet", effort: "high" },
       { name: "reviewer", tools: readOnly, model: "sonnet", effort: "medium" },
-      { name: "runner", tools: ["Read", "Bash", "SendMessage"], model: "haiku", effort: undefined },
+      {
+        name: "runner",
+        tools: ["Read", "Write", "Bash", "SendMessage"],
+        model: "haiku",
+        effort: undefined,
+      },
       { name: "scout", tools: readOnly, model: "haiku", effort: undefined },
     ]);
   });
 
-  it("let only the lead and the worker start agents", () => {
+  it("let only the worker start agents", () => {
     const starters = ADAPTERS.filter((adapter) => adapter.starts !== undefined);
-    expect(starters.map((adapter) => adapter.name)).toEqual(["lead", "worker"]);
+    expect(starters.map((adapter) => adapter.name)).toEqual(["worker"]);
   });
 
   it("give only the worker a file-writing tool", () => {
@@ -128,7 +128,7 @@ describe("adapterFile", () => {
 });
 
 describe("exportAgents", () => {
-  it("writes the eight adapter files and reports them as changed", () => {
+  it("writes the seven adapter files and reports them as changed", () => {
     const store = memoryStore();
     const report = exportAgents(
       { store, pluginRoot: PLUGIN },
@@ -137,8 +137,8 @@ describe("exportAgents", () => {
     expect(report.changed).toBe(true);
     expect(report.files.map((file) => file.adapter)).toEqual(NAMES);
     expect(report.files[0]).toEqual({
-      adapter: "lead",
-      path: "../../plugins/bdk/agents/lead.md",
+      adapter: "worker",
+      path: "../../plugins/bdk/agents/worker.md",
       changed: true,
     });
     for (const [path, content] of Object.entries(generated())) {
@@ -235,6 +235,7 @@ describe("export agents handler", () => {
         workTree: () => ROOT,
         which: () => undefined,
         readStdin: () => "",
+        readBody: () => Promise.resolve({ text: "" }),
       },
       streams: { stdout: (text) => (stdout += text), stderr: () => undefined },
     });
@@ -276,6 +277,6 @@ describe("export agents handler", () => {
 
   it("prints the text rendering without --json", async () => {
     const result = await run(["export", "agents", "--host", "claude"]);
-    expect(result.stdout).toContain("claude: 8 of 8 adapter files changed");
+    expect(result.stdout).toContain("claude: 7 of 7 adapter files changed");
   });
 });

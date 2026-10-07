@@ -4,13 +4,7 @@
 import type { ChangeKind, Profile } from "../../shared/vocabulary/index.ts";
 
 /** The loop names a node's `budget` may carry; their values live in `policy.budgets` (T22). */
-export const LOOPS = [
-  "task-redispatch",
-  "verify-fix",
-  "review-fix",
-  "verifier",
-  "not-run",
-] as const;
+export const LOOPS = ["part", "verify-fix", "review-fix", "verifier", "not-run"] as const;
 
 type Loop = (typeof LOOPS)[number];
 

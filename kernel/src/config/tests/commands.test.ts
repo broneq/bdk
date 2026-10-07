@@ -42,6 +42,7 @@ async function run(argv: string[], files: Record<string, string> = {}) {
       workTree: () => ROOT,
       which: () => undefined,
       readStdin: () => "",
+      readBody: () => Promise.resolve({ text: "" }),
     },
     streams: { stdout: (text) => (stdout += text), stderr: () => undefined },
   });

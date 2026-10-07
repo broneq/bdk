@@ -46,7 +46,7 @@ const LOG = {
 const ATTEMPTS = {
   items: [
     { ticket: "A-review", loop: "review-fix" },
-    { ticket: "A-task", loop: "task-redispatch" },
+    { ticket: "A-task", loop: "part" },
   ],
 };
 

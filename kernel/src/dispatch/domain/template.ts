@@ -7,8 +7,11 @@
 /** A section a package carries only when the build names its kind. */
 export type SectionKind =
   | "categories"
-  | "runner"
-  | "lead"
+  | "checks"
+  | "tasks"
+  | "range"
+  | "fix"
+  | "instructions"
   | "review"
   | "risks"
   | "work-root"
@@ -21,8 +24,10 @@ interface Section {
   readonly name: string;
   readonly skeleton: string;
   /**
-   * Only packages of this kind carry it: the P8 lists of the verifiers and the reviewing roles, the runner's
-   * checks, the lead's tasks, a grouped package's review scope (T42-A1) and the
+   * Only packages of this kind carry it: the P8 lists of the verifiers and the
+   * reviewing roles, the checks of a part's agents, a review fix and the gate
+   * runner, a part's tasks, the conformer's range and project instructions
+   * (#166), a grouped package's review scope (T42-A1) and the
    * integration reviewer's risks (T42-K), a worktree target's work root and a
    * merge ticket's conflict for its implementer and the merge note for its steps (T45),
    * the implementer's installed craft skills (T42, R-8), and the ledger
@@ -59,9 +64,27 @@ const SECTIONS: readonly Section[] = [
   },
   {
     name: "tasks",
-    only: "lead",
+    only: "tasks",
     skeleton:
-      "## Tasks\n\nThe tasks of the part in plan order. A committed task is done; start the others as their dependencies are committed.\n\n{{tasks}}",
+      "## Tasks\n\nThe tasks of the part in plan order. A committed task is done; work through the others in this order, each after its dependencies are committed.\n\n{{tasks}}",
+  },
+  {
+    name: "range",
+    only: "range",
+    skeleton:
+      "## Range\n\nThe part's work since ticket {{ticket}} opened at `{{base}}`:\n\n- `git log --format='%h %s' {{base}}..HEAD`\n- `git diff {{base}}..HEAD -- {{part-files}}`\n\nThe working tree holds nothing else of the part: its tasks are committed.",
+  },
+  {
+    name: "fix",
+    only: "fix",
+    skeleton:
+      "## Fix\n\nThe fix of review round {{ticket}}, not committed yet: `git diff HEAD`. Check this diff, not the rest of the Change; the orchestrator commits it after you return.",
+  },
+  {
+    name: "instructions",
+    only: "instructions",
+    skeleton:
+      "## Project instructions\n\nRead each file below and check the range against every instruction in it, beside the rules:\n\n{{instructions}}",
   },
   {
     name: "review",
@@ -93,11 +116,11 @@ const SECTIONS: readonly Section[] = [
     skeleton:
       "## Risks\n\nThe project's risky areas. Call out every change in the range that touches one, with a finding naming the risk id.\n\n{{risks}}",
   },
-  { name: "checks", only: "runner", skeleton: "## Checks\n\n{{checks}}" },
+  { name: "checks", only: "checks", skeleton: "## Checks\n\n{{checks}}" },
   {
     name: "return",
     skeleton:
-      "## Return\n\nWrite your entries with `bdk log add <type> <summary> --ref <ref> --ticket {{ref}}`: the summary is 1 to 120 characters (put detail in `--body`), the type is one of decision, finding, observation, blocker, question, assumption, risk, learning, report. Then hand the full report to `bdk log ingest --ticket {{ref}}` on stdin from a quoted heredoc, never from a file, with the envelope (`status`, `files`, `entries`, `evidence`) as its frontmatter between two `---` lines; there is no frontmatter flag:\n\n```sh\nbdk log ingest --ticket {{ref}} <<'REPORT'\n---\nstatus: done\nfiles: []\nentries: [<ids>]\nevidence: []\n---\n<the report>\nREPORT\n```\n\n`entries` lists the ids `log add` printed. Leave `reason` out, except for `blocked` or `needs-context`. When it refuses, fix the named field and call it again. Return only the envelope and the report path `{{report}}`.",
+      "## Return\n\nWrite your entries with `bdk log add <type> <summary> --ref <ref> --ticket {{ref}}`: the summary is 1 to 120 characters (put detail in `--body`), the type is one of decision, finding, observation, blocker, question, assumption, risk, learning, report. Then write the full report with your file tool to `{{draft}}`, the envelope (`status`, `files`, `entries`, `evidence`) as its frontmatter between two `---` lines, and store it with `bdk log ingest --ticket {{ref}} --file {{draft}}`; never pipe it. `entries` lists the ids `log add` printed. Leave `reason` out, except for `blocked` or `needs-context`. When it refuses, fix the named field and call it again. Return only the envelope and the report path `{{report}}`.",
   },
 ];
 

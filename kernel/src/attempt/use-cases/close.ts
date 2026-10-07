@@ -1,7 +1,8 @@
 // `bdk attempt close <ticket> ok|fail|not-run` (`kernel-cli/attempt`; T22
-// design D-3, D-4, D-9; T23-D41): the diff check, the envelope's entries,
-// the post-task step evidence of an `ok` code ticket, the fingerprints of a
-// `fail`, then the record is closed in place and the next rung returned. At the end of the ladder the kernel writes the ladder
+// design D-3, D-4, D-9; T23-D41; #166): the diff check, the envelope's
+// entries, the trailer commit of every task and the post-task step evidence
+// of an `ok` part ticket, the fingerprints of a `fail`, then the record is
+// closed in place and the next rung returned. At the end of the ladder the kernel writes the ladder
 // question, which parks the Change, and runs the checkpoint. A `review-fix` round closes
 // `ok` or `fail` only once its merged review is stored (T42).
 import { isAbsolute, join } from "node:path";
@@ -32,10 +33,12 @@ import {
   listEntries,
   mergeReportName,
   readDocument,
+  readAttempts,
   readPlanParts,
-  taskHolders,
+  taskProgress,
   packageRoles,
   partWorktree,
+  removeReviewRound,
   writeDocument,
 } from "../../shared/store/index.ts";
 import type { AttemptRecord, EntryRow, IndexDb } from "../../shared/store/index.ts";
@@ -125,20 +128,9 @@ export function closeAttempt(
       if (unmerged !== undefined) return unmerged;
     }
 
-    if (outcome === "ok" && record.loop === "part-lead") {
-      const open = records.find(
-        (found) =>
-          found.outcome === undefined &&
-          found.ticket !== record.ticket &&
-          (found.target === record.target || found.target.startsWith(`${record.target}-`)),
-      );
-      if (open !== undefined) {
-        return refuse(
-          "policy/ticket-open",
-          `ticket ${open.ticket} of ${open.target} in part ${record.target} is still open; a lead closes ok only after every task ticket of its part`,
-          [`bdk attempt close ${open.ticket} ok|fail|not-run`],
-        );
-      }
+    if (outcome === "ok" && record.loop === "part") {
+      const uncommitted = await uncommittedTasks(deps, change, record);
+      if (uncommitted !== undefined) return uncommitted;
     }
     const conflicts = record.file.data.conflicts;
     if (outcome === "ok" && conflicts !== undefined) {
@@ -175,6 +167,7 @@ export function closeAttempt(
       },
       body: reason === "" ? record.file.body : `${reason}\n`,
     });
+    if (record.loop === "review-fix") removeReviewRound(deps.store, change.projectRoot);
 
     const after = keyedRecords(deps.store, change.dir);
     const entries = listEntries(index, change.id);
@@ -190,13 +183,10 @@ export function closeAttempt(
       blocked,
       okAction(record),
     );
-    // The kernel committed the merge ticket's work: nothing is left to commit.
     const next =
       rung.action === "parked"
         ? await park(deps, change, index, resolved.value, record, round, rung)
-        : rung.action === "commit" && conflicts !== undefined
-          ? { ...rung, action: "part-done" as const }
-          : rung;
+        : rung;
     if ("refused" in next) return next;
 
     const prints = [...new Set(findings.map((finding) => finding.fingerprint))];
@@ -214,10 +204,10 @@ export function closeAttempt(
 }
 
 /**
- * The post-task step evidence of an `ok` close of a code ticket, one that
- * holds an `implementer` or a `simplifier` package (T23-D41; a `verify-fix`
- * ticket rerunning a done part's steps has no implementer); undefined when it
- * holds or the ticket is no code ticket.
+ * The post-task step evidence of an `ok` close of a `part` or `verify-fix`
+ * ticket, or of a `review-fix` round that holds a fix, an `implementer`
+ * package (T23-D41, #166); undefined when it holds or the ticket changes no
+ * code.
  */
 async function stepEvidence(
   deps: AttemptDeps,
@@ -227,8 +217,10 @@ async function stepEvidence(
   record: KeyedRecord,
   resolved: Resolved,
 ): Promise<Refusal | undefined> {
-  const roles = packageRoles(deps.store, change.dir, record.ticket);
-  if (!roles.includes("implementer") && !roles.includes("simplifier")) return undefined;
+  const fix =
+    record.loop === "review-fix" &&
+    packageRoles(deps.store, change.dir, record.ticket).includes("implementer");
+  if (record.loop !== "part" && record.loop !== "verify-fix" && !fix) return undefined;
   const steps = await targetSteps(deps, change, index, globalDir, record.target);
   if ("refused" in steps) return steps;
   return closeEvidence(deps, change, globalDir, {
@@ -239,10 +231,43 @@ async function stepEvidence(
   });
 }
 
-/** What remains after an `ok` close: the task's commit, the lead's `part done`, the round's `done review`. */
+/**
+ * What remains after an `ok` close: the part's `part done`, the round's
+ * `done review`, the verified artifact's `done`.
+ */
 function okAction(record: KeyedRecord): OkAction {
-  if (record.loop === "part-lead") return "part-done";
+  if (record.loop === "part" || record.loop === "verify-fix") return "part-done";
   return record.loop === "review-fix" ? "review-done" : "commit";
+}
+
+/**
+ * `policy/tasks-uncommitted` while a task of the part has no trailer commit:
+ * its agent commits each task with the command `check run` prints (#166).
+ */
+async function uncommittedTasks(
+  deps: AttemptDeps,
+  change: ActiveChange,
+  record: KeyedRecord,
+): Promise<Refusal | undefined> {
+  const parts = readPlanParts(deps.store, change.dir);
+  const tasks = parts.find((part) => part.id === record.target)?.tasks ?? [];
+  const progress = await taskProgress(
+    deps.git,
+    change.projectRoot,
+    change.id,
+    parts,
+    readAttempts(deps.store, change.dir),
+  );
+  const open = tasks.filter((task) => !progress.committed.has(task.id)).map((task) => task.id);
+  if (open.length === 0) return undefined;
+  return refuse(
+    "policy/tasks-uncommitted",
+    `part ${record.target} has no trailer commit of ${open.join(", ")}`,
+    [
+      ...open.map((task) => `bdk check run ${task} --ticket ${record.ticket}`),
+      `git commit --amend --trailer "BDK-Task: <task>" for a commit that lost its trailers`,
+    ],
+  );
 }
 
 /**
@@ -269,16 +294,15 @@ function missingMerge(
 }
 
 function diffTarget(change: ActiveChange, record: KeyedRecord): DiffTarget {
-  const conflicts = record.file.data.conflicts;
+  const { conflicts, base } = record.file.data;
   switch (record.loop) {
-    case "task-redispatch":
-      return { task: record.target };
+    case "part":
     case "verify-fix":
-      return conflicts === undefined
-        ? { part: record.target }
-        : { part: record.target, merge: { ref: change.branch, conflicts } };
-    case "part-lead":
-      return { part: record.target };
+      return {
+        part: record.target,
+        ...(base === undefined ? {} : { base }),
+        ...(conflicts === undefined ? {} : { merge: { ref: change.branch, conflicts } }),
+      };
     case "review-fix":
       return { change: true };
     case "verifier":
@@ -418,12 +442,7 @@ async function park(
   round: readonly KeyedRecord[],
   rung: Next,
 ): Promise<AttemptCloseReport["next"] | Refusal> {
-  const part =
-    record.loop === "verify-fix" || record.loop === "part-lead"
-      ? record.target
-      : record.loop === "task-redispatch"
-        ? taskHolders(readPlanParts(deps.store, change.dir)).get(record.target)?.id
-        : undefined;
+  const part = record.loop === "part" || record.loop === "verify-fix" ? record.target : undefined;
   const written = await appendEntry(
     deps,
     change,

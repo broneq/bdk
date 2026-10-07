@@ -1,6 +1,7 @@
 import { globalDir } from "../../shared/config/index.ts";
 import { isRefusal, refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
+import { stdinBody } from "../../shared/registry/index.ts";
 import type { Handler } from "../../shared/registry/index.ts";
 import { findProjectRoot, resolveActiveChange } from "../../shared/store/index.ts";
 import { renderLogPath, renderReport, renderSlice, renderWritePath } from "../render/report.ts";
@@ -93,10 +94,12 @@ function count(context: Context, name: string): number | Refusal {
 
 export function writeCommand(deps: DiagnosticsDeps): Handler {
   return async (context) => {
+    const markdown = await stdinBody(context.runtime, ["bdk diagnostics write < report.md"]);
+    if (typeof markdown !== "string") return markdown;
     const report = await diagnosticsWrite(
       deps,
       place(deps, context),
-      { session: text(context, "--session"), markdown: context.runtime.readStdin() },
+      { session: text(context, "--session"), markdown },
       activeChange(deps, context),
     );
     return isRefusal(report) ? report : { data: report, text: renderWritePath(report) };

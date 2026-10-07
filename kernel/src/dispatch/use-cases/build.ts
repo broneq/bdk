@@ -4,7 +4,8 @@
 // role, and the last one built is its active package. A review round's
 // `--group` builds one package per group under the same ticket and leaves the
 // active package alone (T42-A1). Nothing is written before every check has
-// passed.
+// passed. A ticket targets a whole part, so a part package embeds the part
+// file and names the `bdk check run` calls of its agents (#166).
 import { createHash } from "node:crypto";
 import { join, posix } from "node:path";
 
@@ -50,9 +51,10 @@ import { isBlocking, ROLE_STAGE, ROLES } from "../../shared/vocabulary/index.ts"
 import { rangeBinary, risksModule } from "../../review/index.ts";
 import type { Role } from "../../shared/vocabulary/index.ts";
 import { mergeConflictsPrompt } from "../config.ts";
-import { checksText, fullChecksText } from "../domain/checks.ts";
-import type { ToolLists } from "../domain/checks.ts";
-import { fileRefs, selectEntries, taskText } from "../domain/entries.ts";
+import { stepCommands } from "../../check/index.ts";
+import type { ToolLists } from "../../check/index.ts";
+import { fullChecksText, partChecksText } from "../domain/checks.ts";
+import { fileRefs, selectEntries } from "../domain/entries.ts";
 import type { BuildReport } from "../domain/report.ts";
 import {
   groupFlagProblem,
@@ -81,6 +83,9 @@ import type { DispatchDeps } from "./deps.ts";
 const PACKAGE_LIMIT = 163_840;
 
 const PART_ID = /^\d{2}$/;
+
+/** Where an agent writes its report before `log ingest --file` (#166); `guard/draft-only` allows it. */
+const DRAFTS_DIR = ".bdk/.machine/drafts";
 
 export interface BuildInput extends GroupFlags {
   readonly target: string;
@@ -130,6 +135,18 @@ export function buildPackage(
       ]),
     );
   }
+  if (role === "runner" && input.group === undefined) {
+    return Promise.resolve(
+      refuse(
+        "input/invalid-argument",
+        "a runner runs only the review gate's group; the checks of a part or a round's fix run in bdk check run",
+        [
+          `bdk dispatch build ${input.target} runner ${input.ticket} --group gate`,
+          `bdk check run ${input.target} --ticket ${input.ticket}`,
+        ],
+      ),
+    );
+  }
   const group = input.group;
   const { globalDir } = where;
   return withChangeIndex(deps, change, async (index): Promise<BuildReport | Refusal> => {
@@ -166,19 +183,6 @@ export function buildPackage(
         ["bdk part list"],
       );
     }
-    if ((role === "lead") !== (record.data.loop === "part-lead")) {
-      return refuse(
-        "input/invalid-argument",
-        role === "lead"
-          ? `lead runs a part-lead ticket; ${input.ticket} is a ${record.data.loop} ticket`
-          : `a part-lead ticket takes the lead role, not ${role}`,
-        [
-          role === "lead"
-            ? `bdk attempt open part-lead <part>`
-            : `bdk dispatch build ${input.target} lead ${input.ticket}`,
-        ],
-      );
-    }
     const resolved = resolveOrRefuse(
       {
         store: deps.store,
@@ -195,14 +199,35 @@ export function buildPackage(
     const policy = p8 ? verifierPolicy(deps, change, globalDir) : undefined;
     if (policy !== undefined && isRefusal(policy)) return policy;
     const ref = group === undefined ? input.ticket : `${input.ticket}@${group}`;
+    // The agents of a part: its implementer works through the tasks, its conformer checks them.
+    const partAgent =
+      (role === "implementer" || role === "conformer") &&
+      (record.data.loop === "part" || record.data.loop === "verify-fix");
+    const progress = partAgent ? await partProgress(deps, change, input.target) : undefined;
     const checks =
-      role !== "runner"
-        ? ""
-        : group === undefined
-          ? await runnerChecks(deps, change, index, globalDir, input, resolved)
-          : await gateChecks(deps, change, index, globalDir, input, resolved, ref);
+      role === "runner"
+        ? await gateChecks(deps, change, index, globalDir, input, resolved, ref)
+        : progress !== undefined
+          ? await partChecks(deps, change, index, globalDir, {
+              ticket: input.ticket,
+              part: input.target,
+              targets:
+                role === "implementer" && record.data.loop === "part"
+                  ? progress.open
+                  : [input.target],
+              resolved,
+            })
+          : (role === "implementer" || role === "conformer") && record.data.loop === "review-fix"
+            ? await partChecks(deps, change, index, globalDir, {
+                ticket: input.ticket,
+                part: change.id,
+                targets: [change.id],
+                resolved,
+                round: change.id,
+              })
+            : "";
     if (typeof checks !== "string") return checks;
-    const tasks = role === "lead" ? await leadTasks(deps, change, input.target) : "";
+    const tasks = progress === undefined ? "" : progress.text;
 
     const name = `${input.target}-${role}-${input.ticket}${group === undefined ? "" : `-${group}`}.md`;
     const changeRel = posix.relative(change.projectRoot, change.dir);
@@ -249,17 +274,27 @@ export function buildPackage(
         focus: input.focus,
       });
     }
+    const draft = `${DRAFTS_DIR}/${name}`;
     const risks =
       role === "integration-reviewer" ? risksText(moduleValue(risksModule, resolved.value)) : "";
+    const workdir = await workRootOf(deps.git, deps.store, change, parts, input.target);
+    const conformer = role === "conformer" && progress !== undefined;
+    // A review round's conformer checks the round's uncommitted fix (#166).
+    const roundConformer = role === "conformer" && record.data.loop === "review-fix";
+    const base = record.data.base;
+    const instructions = conformer || roundConformer ? projectInstructions(deps, workdir) : [];
     const kinds: SectionKind[] = [
       // The judge reads each entry's body with `bdk log show`, so its package holds none (#158).
       ...(role === "judge" ? [] : (["ledger"] as const)),
       ...(p8 ? (["categories"] as const) : []),
-      ...(role === "runner" || role === "lead" ? [role] : []),
+      ...(checks === "" ? [] : (["checks"] as const)),
+      ...(progress === undefined ? [] : (["tasks"] as const)),
+      ...(conformer && base !== undefined ? (["range"] as const) : []),
+      ...(roundConformer ? (["fix"] as const) : []),
+      ...(instructions.length > 0 ? (["instructions"] as const) : []),
       ...(group === undefined ? [] : (["review"] as const)),
       ...(role === "integration-reviewer" ? (["risks"] as const) : []),
     ];
-    const workdir = await workRootOf(deps.git, deps.store, change, parts, input.target);
     const isolated = workdir !== change.projectRoot;
     const conflicts = record.data.conflicts;
     // Only the implementer resolves a merge; the steps of the ticket check the merged state.
@@ -306,6 +341,10 @@ export function buildPackage(
         "categories-rule": verifier
           ? `A blocker names one of these with \`bdk log add blocker <summary> --ref <ref> --ticket ${ref} --category <id>\`; any other blocker is stored as an observation for review.`
           : "Only an entry in one of these categories can be triaged `blocker`.",
+        draft,
+        base: base === undefined ? "" : base.slice(0, 7),
+        "part-files": (target.files ?? []).join(" "),
+        instructions: instructions.map((path) => `- \`${path}\``).join("\n"),
         blocking: categoryList(policy?.blocking ?? []),
         "not-a-fail": categoryList(policy?.notAFail ?? []),
         checks,
@@ -356,6 +395,7 @@ export function buildPackage(
       "kernel-version": kernelVersion,
       "template-hash": templateHash,
       report,
+      draft,
       rules: rules.selected.map(({ rule }) => rule.id),
       ...(group === undefined ? {} : { group, files: [...input.files] }),
       ...(role === "judge" ? { entries: judged.map((entry) => entry.id) } : {}),
@@ -419,19 +459,31 @@ function escalationModel(model: string | undefined, role: Role): string | undefi
   return role === "runner" || role === "scout" ? undefined : model;
 }
 
-/** The runner's `Checks` text: the runner's steps in pipeline order with the project's commands. */
-async function runnerChecks(
+/** The `Checks` text of a part's or a review fix's agent: its `bdk check run` calls and the kernel-run kinds. */
+async function partChecks(
   deps: DispatchDeps,
   change: ActiveChange,
   index: IndexDb,
   globalDir: string,
-  input: BuildInput,
-  resolved: Resolved,
+  input: {
+    readonly ticket: string;
+    readonly part: string;
+    readonly targets: readonly string[];
+    readonly resolved: Resolved;
+    readonly round?: string;
+  },
 ): Promise<string | Refusal> {
-  const steps = await targetSteps(deps, change, index, globalDir, input.target);
+  const steps = await targetSteps(deps, change, index, globalDir, input.part);
   if (isRefusal(steps)) return steps;
-  const kinds = steps.steps.filter((step) => step.role === "runner").map((step) => step.kind);
-  return checksText(kinds, toolLists(resolved), steps.files, input.ticket);
+  const tools = toolLists(input.resolved);
+  return partChecksText({
+    ticket: input.ticket,
+    targets: input.targets.length === 0 ? [input.part] : input.targets,
+    kinds: steps.steps
+      .filter((step) => "command" in step)
+      .map((step) => ({ kind: step.kind, commands: stepCommands(step.kind, tools, "{files}") })),
+    round: input.round,
+  });
 }
 
 /** The gate runner's `Checks` text: the change-level checks the Change applies (T42-D9, T49). */
@@ -456,11 +508,15 @@ function toolLists(resolved: Resolved): ToolLists {
 }
 
 /**
- * The lead's `Tasks` text (T41-D11): each task of the part in plan order with
- * its files, its dependencies and whether a trailer commit already carries it,
- * so a lead that replaces an earlier one continues with the rest.
+ * The part's `Tasks` text (#166): each task in plan order with its files, its
+ * dependencies and whether a trailer commit already carries it, so the agent
+ * of a later ticket continues with the rest; and the open task ids.
  */
-async function leadTasks(deps: DispatchDeps, change: ActiveChange, part: string): Promise<string> {
+async function partProgress(
+  deps: DispatchDeps,
+  change: ActiveChange,
+  part: string,
+): Promise<{ readonly text: string; readonly open: readonly string[] }> {
   const parts = readPlanParts(deps.store, change.dir);
   const progress = await taskProgress(
     deps.git,
@@ -470,7 +526,7 @@ async function leadTasks(deps: DispatchDeps, change: ActiveChange, part: string)
     readAttempts(deps.store, change.dir),
   );
   const tasks = parts.find((found) => found.id === part)?.tasks ?? [];
-  return tasks
+  const text = tasks
     .map((task) => {
       const files = task.files.map((file) => `\`${file.path}\``).join(", ");
       const depends =
@@ -479,6 +535,22 @@ async function leadTasks(deps: DispatchDeps, change: ActiveChange, part: string)
       return `- \`${task.id}\` ${task.title} (${state}). Files: ${files}. Depends on: ${depends}.`;
     })
     .join("\n");
+  const open = tasks.filter((task) => !progress.committed.has(task.id)).map((task) => task.id);
+  return { text, open };
+}
+
+/** The project instruction files of the work root the conformer answers, those that exist (#166). */
+function projectInstructions(deps: DispatchDeps, workdir: string): string[] {
+  const top = ["CLAUDE.md", "AGENTS.md"].filter((path) => deps.store.exists(join(workdir, path)));
+  const rulesDir = join(workdir, ".claude", "rules");
+  const rules = deps.store.isDirectory(rulesDir)
+    ? deps.store
+        .list(rulesDir)
+        .filter((name) => name.endsWith(".md"))
+        .sort()
+        .map((name) => `.claude/rules/${name}`)
+    : [];
+  return [...top, ...rules];
 }
 
 /** A merge ticket's rule selection adds its conflicted paths, so a lockfile rule applies (T45). */
@@ -531,32 +603,33 @@ async function targetFacts(
   const parts = readPlanParts(deps.store, change.dir);
   if (TASK_ID.test(target)) {
     const part = taskHolders(parts).get(target);
-    const task = part?.tasks.find((found) => found.id === target);
-    const text = part === undefined ? undefined : taskText(part.body, target);
-    if (part === undefined || task === undefined || text === undefined) {
-      return notFound(change, `no plan part holds task ${target}`);
-    }
-    const placeholders = planPlaceholders(part.data, [task]).filter((field) =>
+    if (part === undefined) return notFound(change, `no plan part holds task ${target}`);
+    return refuse(
+      "input/invalid-argument",
+      `a ticket targets a whole part, so task ${target} has no package; build the package of part ${part.id}`,
+      [`bdk dispatch build ${part.id} <role> <ticket>`],
+    );
+  }
+  if (PART_ID.test(target)) {
+    const part = parts.find((found) => found.id === target);
+    if (part === undefined) return notFound(change, `no plan part ${target}`);
+    const placeholders = planPlaceholders(part.data, part.tasks).filter((field) =>
       field.startsWith("task "),
     );
     if (placeholders.length > 0) {
       return refuse(
         "policy/placeholder",
         `${placeholders.join(", ")} of ${part.file} holds a placeholder`,
-        [`finish task ${target} in ${changeRel}/${part.file}, then build the package again`],
+        [`finish part ${target} in ${changeRel}/${part.file}, then build the package again`],
       );
     }
-    const body = `From \`${changeRel}/${part.file}\`:\n\n${demoteHeadings(text)}\n\n${doNotTouch(part)}`;
-    const files = task.files.map((file) => file.path);
-    return { body, names: [target, part.id, ...files], files: targetFiles(parts, target) };
-  }
-  if (PART_ID.test(target)) {
-    const part = parts.find((found) => found.id === target);
-    if (part === undefined) return notFound(change, `no plan part ${target}`);
+    // The whole part file: its preamble states context every task needs (#166).
+    const body = `From \`${changeRel}/${part.file}\`:\n\n${demoteHeadings(part.body.trim())}\n\n${doNotTouch(part)}`;
+    const files = targetFiles(parts, target);
     return {
-      body: `${readList([`${changeRel}/${part.file}`])}\n\n${doNotTouch(part)}`,
-      names: [target],
-      files: targetFiles(parts, target),
+      body,
+      names: [target, ...part.tasks.map((task) => task.id), ...(files ?? [])],
+      files,
     };
   }
   if (target === change.id) {

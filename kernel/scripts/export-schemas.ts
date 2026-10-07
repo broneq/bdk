@@ -37,6 +37,7 @@ import {
 } from "../src/graph/schema/outputs.ts";
 import { pipelineSchema } from "../src/graph/schema/pipeline.ts";
 import { queryOutput } from "../src/query/schema/query.ts";
+import { checkRunOutput } from "../src/check/schema/output.ts";
 import { commitOutput } from "../src/commit/schema/output.ts";
 import { configCheckOutput } from "../src/config/schema/check.ts";
 import { configSchemaOutput } from "../src/config/schema/schema.ts";
@@ -166,6 +167,7 @@ const CLI_FILES: readonly (readonly [string, z.ZodType])[] = [
   ["output/agents-list.json", agentsListOutput],
   ["output/agents-show.json", agentsShowOutput],
   ["output/agents-wait.json", agentsWaitOutput],
+  ["output/check-run.json", checkRunOutput],
   ["output/commit.json", commitOutput],
   ["output/rules-accept.json", rulesAcceptOutput],
   ["output/rules-check.json", rulesCheckOutput],

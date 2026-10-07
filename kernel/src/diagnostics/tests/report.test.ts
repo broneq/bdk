@@ -130,7 +130,7 @@ function attempt(
 ): AttemptFacts {
   return {
     ticket,
-    loop: "task-redispatch",
+    loop: "part",
     target,
     attempt: 1,
     escalation: false,
@@ -345,14 +345,11 @@ describe("attribution", () => {
   it("joins two kernel calls of one Bash use to their own lines, through a variable", () => {
     const lines = journal(
       sessionLine(0),
-      command(20, "attempt-open", ["task-redispatch", "01-1"], { rule: "policy/ticket-open" }),
+      command(20, "attempt-open", ["part", "01"], { rule: "policy/ticket-open" }),
       command(21, "attempt-show", ["A-s189"]),
     );
     const lead = transcript("a1", [
-      bash(
-        19,
-        "B=/p/bdk.mjs; node $B attempt open task-redispatch 01-1 | head; node $B attempt show A-s189",
-      ),
+      bash(19, "B=/p/bdk.mjs; node $B attempt open part 01 | head; node $B attempt show A-s189"),
     ]);
     const result = report({
       journal: lines,
@@ -401,9 +398,9 @@ describe("attribution", () => {
     ]);
     expect(
       invokes(
-        shellCommands("B=/p/dist/bdk.mjs; node $B attempt open task-redispatch 01-1")[1] ?? [],
+        shellCommands("B=/p/dist/bdk.mjs; node $B attempt open part 01")[1] ?? [],
         ["attempt", "open"],
-        ["task-redispatch", "01-1"],
+        ["part", "01"],
       ),
     ).toBe(true);
   });
@@ -613,17 +610,17 @@ describe("detectors", () => {
 
   it("D6: a second ticket with the previous close reason, an escalation and a park", () => {
     const attempts = [
-      attempt("A-1", "01-1", 10, { reason: "tests failed in the parser" }),
-      attempt("A-2", "01-1", 50, { attempt: 2 }),
-      attempt("A-3", "01-1", 90, { attempt: 2, escalation: true }),
+      attempt("A-1", "01", 10, { reason: "tests failed in the parser" }),
+      attempt("A-2", "01", 50, { attempt: 2 }),
+      attempt("A-3", "01", 90, { attempt: 2, escalation: true }),
     ];
     const result = report({ journal: window, attempts, parks: [{ id: "L-park0001", at: t(200) }] });
     expect(detectors(result, "D6")).toStrictEqual([
       expect.objectContaining({
         ticket: "A-2",
-        summary: "ticket 2 on task-redispatch 01-1: tests failed in the parser",
+        summary: "ticket 2 on part 01: tests failed in the parser",
       }),
-      expect.objectContaining({ ticket: "A-3", summary: "escalation on task-redispatch 01-1" }),
+      expect.objectContaining({ ticket: "A-3", summary: "escalation on part 01" }),
       expect.objectContaining({ ticket: null, cite: "L-park0001" }),
     ]);
     expect(result).toMatchObject({ retries: 1, escalations: 1, parks: 1 });

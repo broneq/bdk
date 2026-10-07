@@ -1,6 +1,6 @@
 // The evidence an `ok` close of a code ticket needs (`kernel-cli/attempt`,
-// attempt close; P5, T4, T23-D41, D43): the kernel first records `simplify`
-// from the simplifier's stored report, then every post-task step must have a
+// attempt close; P5, T4, T23-D41, D43, #166): the kernel first records
+// `conform` from the conformer's stored report, then every post-task step must have a
 // latest manifest under the ticket that passed or did not run within budget,
 // is fresh against the target's tree and, for a pass, still cites what it
 // recorded.
@@ -24,10 +24,10 @@ import { recordEvidence } from "./record.ts";
 import { evidenceSettings, filePolicy, scopeOf, scopeTree } from "./scope.ts";
 import { changedSince, sha256 } from "./tree.ts";
 
-interface CloseStep {
-  readonly kind: string;
-  readonly role: string;
-}
+/** A step an agent of `role` runs, or one the kernel records through `command`. */
+type CloseStep =
+  | { readonly kind: string; readonly role: string }
+  | { readonly kind: string; readonly command: string };
 
 export interface CloseEvidenceInput {
   readonly ticket: string;
@@ -62,8 +62,8 @@ export async function closeEvidence(
   input: CloseEvidenceInput,
 ): Promise<Refusal | undefined> {
   const { ticket, target } = input;
-  if (input.steps.some((step) => step.kind === "simplify")) {
-    const recorded = await recordSimplify(deps, change, globalDir, ticket, target);
+  if (input.steps.some((step) => step.kind === "conform")) {
+    const recorded = await recordConform(deps, change, globalDir, ticket, target);
     if (recorded !== undefined) return recorded;
   }
 
@@ -81,7 +81,10 @@ export async function closeEvidence(
 
   const problems: Problem[] = [];
   for (const step of input.steps) {
-    const dispatch = `bdk dispatch build ${target} ${step.role} ${ticket}`;
+    const dispatch =
+      "role" in step
+        ? `bdk dispatch build ${target} ${step.role} ${ticket}`
+        : `${step.command} ${target} --ticket ${ticket}`;
     const latest = latestOf(own, step.kind, fresh);
     if (latest === undefined) {
       problems.push({
@@ -140,8 +143,8 @@ export async function closeEvidence(
   ]);
 }
 
-/** The `simplify` manifest from the ticket's stored simplifier report, when there is one. */
-async function recordSimplify(
+/** The `conform` manifest from the ticket's stored conformer report, when there is one. */
+async function recordConform(
   deps: EvidenceDeps,
   change: ActiveChange,
   globalDir: string,
@@ -150,7 +153,7 @@ async function recordSimplify(
 ): Promise<Refusal | undefined> {
   const pkg = readDocument(
     deps.store,
-    join(change.dir, "dispatch", `${target}-simplifier-${ticket}.md`),
+    join(change.dir, "dispatch", `${target}-conformer-${ticket}.md`),
   );
   const reportPath = pkg !== undefined && "data" in pkg ? pkg.data.report : undefined;
   if (typeof reportPath !== "string") return undefined;
@@ -163,7 +166,7 @@ async function recordSimplify(
     deps,
     change,
     { cwd: change.projectRoot, globalDir },
-    { kind: "simplify", files: [path], ticket, verdict, citations: [], kernel: true },
+    { kind: "conform", files: [path], ticket, verdict, citations: [], kernel: true },
   );
   return "refused" in recorded ? recorded : undefined;
 }

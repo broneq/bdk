@@ -1,5 +1,8 @@
 // The log handlers (T20, T23 `ingest`): flags in, use case, `--json` object or text out.
+import { resolve } from "node:path";
+
 import { globalDir } from "../../shared/config/index.ts";
+import { stdinBody } from "../../shared/registry/index.ts";
 import type { FlagValue, Handler } from "../../shared/registry/index.ts";
 import { isRefusal, refuse } from "../../shared/refusal/index.ts";
 import { capLines, listPage } from "../../shared/output/index.ts";
@@ -40,12 +43,17 @@ function active(change: ActiveChange | undefined): ActiveChange {
 
 export function addCommand(deps: LogDeps): Handler {
   return async (context) => {
-    const body = text(context.flags["--body"]);
+    const flag = text(context.flags["--body"]);
+    const body =
+      flag === "-"
+        ? await stdinBody(context.runtime, ['bdk log add <type> "<summary>" --body "<text>"'])
+        : (flag ?? "");
+    if (typeof body !== "string") return body;
     const result = await addEntry(deps, active(context.change), globalDir(context.runtime), {
       type: context.positionals.type ?? "",
       summary: context.positionals["<summary>"] ?? "",
       refs: list(context.flags["--ref"]),
-      body: body === "-" ? context.runtime.readStdin() : (body ?? ""),
+      body,
       review: context.flags["--review"] === true,
       ...optional("status", text(context.flags["--status"])),
       ...optional("ticket", text(context.flags["--ticket"])),
@@ -63,17 +71,25 @@ export function addCommand(deps: LogDeps): Handler {
 export function ingestCommand(deps: LogDeps): Handler {
   return async (context) => {
     const ticket = text(context.flags["--ticket"]);
-    if (ticket === undefined) {
-      return refuse("input/missing-argument", "log ingest needs --ticket, the role's open ticket", [
-        "bdk log ingest --ticket <ticket> <<'REPORT'",
+    const file = text(context.flags["--file"]);
+    if (ticket === undefined || file === undefined) {
+      return refuse(
+        "input/missing-argument",
+        "log ingest needs --ticket, the role's open ticket, and --file, the report; stdin is never read",
+        [`bdk log ingest --ticket ${ticket ?? "<ticket>"} --file <draft>`],
+      );
+    }
+    const input = deps.store.read(resolve(context.cwd, file));
+    if (input === undefined) {
+      return refuse("input/not-found", `--file ${file} names no file`, [
+        "write the report to the draft path of your package, then run log ingest again",
       ]);
     }
-    const input = context.runtime.readStdin();
     if (input.trim() === "") {
       return refuse(
         "input/missing-argument",
-        "stdin is empty; log ingest reads the report, its envelope as frontmatter",
-        [`bdk log ingest --ticket ${ticket} <<'REPORT'`],
+        `${file} is empty; log ingest reads the report, its envelope as frontmatter`,
+        [`bdk log ingest --ticket ${ticket} --file <draft>`],
       );
     }
     const report = await ingestReport(deps, active(context.change), { ticket, text: input });

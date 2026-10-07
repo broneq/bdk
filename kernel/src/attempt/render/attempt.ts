@@ -60,7 +60,9 @@ export function renderShow(report: AttemptShowReport): string {
     line(report),
     ...(report.steps === undefined || report.steps.length === 0
       ? []
-      : [`steps: ${report.steps.map((step) => `${step.kind} (${step.role})`).join(", ")}`]),
+      : [
+          `steps: ${report.steps.map((step) => `${step.kind} (${"role" in step ? step.role : step.command})`).join(", ")}`,
+        ]),
     "",
   ].join("\n");
 }

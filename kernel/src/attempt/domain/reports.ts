@@ -2,6 +2,11 @@
 // Optional fields carry `| undefined` so the zod output schemas satisfy them.
 import type { NextAction, Outcome, Scope } from "./ladder.ts";
 
+/** A post-task step: an agent's role, or the kernel command that records it (#166). */
+type PostTaskStep =
+  | { readonly kind: string; readonly role: string }
+  | { readonly kind: string; readonly command: string };
+
 export interface DroppedFinding {
   readonly id: string;
   readonly summary: string;
@@ -15,13 +20,15 @@ export interface AttemptOpenReport {
   readonly of: number;
   readonly scope: Scope;
   readonly openedAt: string;
+  /** A part or verify-fix ticket: `HEAD` of the part's work root at open (#166). */
+  readonly base?: string | undefined;
   readonly narrowedFrom?: Scope | undefined;
   readonly dropped?: readonly DroppedFinding[] | undefined;
   /** The kernel `finding` recording the dropped findings for the human. */
   readonly entry?: string | undefined;
   readonly escalation?: { readonly model: string } | undefined;
   /** The post-task steps a code loop runs under the ticket, in pipeline order (T23-D41). */
-  readonly steps?: readonly { readonly kind: string; readonly role: string }[] | undefined;
+  readonly steps?: readonly PostTaskStep[] | undefined;
   /** A merge ticket of a worktree part (T45). */
   readonly merge?: true | undefined;
   /** The unmerged paths of a merge ticket. */
@@ -78,5 +85,6 @@ export interface AttemptListReport {
 
 /** One ticket's record (`bdk attempt show`): the list item and, for a code loop, its post-task steps. */
 export interface AttemptShowReport extends AttemptItem {
-  readonly steps?: readonly { readonly kind: string; readonly role: string }[] | undefined;
+  readonly base?: string | undefined;
+  readonly steps?: readonly PostTaskStep[] | undefined;
 }

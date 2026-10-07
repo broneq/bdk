@@ -75,13 +75,7 @@ export const SOURCE_PATTERN = new RegExp(`^(${FIXED_SOURCES.join("|")}|${AGENT})
 export const RULE_ID = /^[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*-[1-9][0-9]*$/;
 
 /** The loops a ticket counts against; `not-run` is a counter of each loop, not a loop. */
-export const LOOPS = [
-  "task-redispatch",
-  "verify-fix",
-  "review-fix",
-  "verifier",
-  "part-lead",
-] as const;
+export const LOOPS = ["part", "verify-fix", "review-fix", "verifier"] as const;
 
 export type Loop = (typeof LOOPS)[number];
 
@@ -99,7 +93,7 @@ export const GATE_PASSERS = ["user", "policy"] as const;
 /** The role skills under `skills/roles/` (`role-contracts`, Role skills). */
 export const ROLES = [
   "implementer",
-  "simplifier",
+  "conformer",
   "verifier",
   "design-verifier",
   "reviewer",
@@ -108,7 +102,6 @@ export const ROLES = [
   "pr-reviewer",
   "runner",
   "scout",
-  "lead",
 ] as const;
 
 export type Role = (typeof ROLES)[number];
@@ -125,7 +118,7 @@ export function isRuleStage(value: string): value is RuleStage {
 /** The stage whose rules a role reads; a role without one reads no rules. */
 export const ROLE_STAGE: Readonly<Record<Role, RuleStage | undefined>> = {
   implementer: "execute",
-  simplifier: "execute",
+  conformer: "execute",
   verifier: "plan",
   "design-verifier": "design",
   reviewer: "review",
@@ -135,7 +128,6 @@ export const ROLE_STAGE: Readonly<Record<Role, RuleStage | undefined>> = {
   "pr-reviewer": "review",
   runner: undefined,
   scout: undefined,
-  lead: undefined,
 };
 
 /** The fields of a ledger entry the blocking predicate reads. */

@@ -42,7 +42,7 @@ describe("evidence check", () => {
   it("answers fresh for evidence recorded on the current tree", async () => {
     const h = await started();
     const id = await recorded(h, await ticketOf(h));
-    const out = await checked(h, "01-1");
+    const out = await checked(h, "01");
     expect(out).toStrictEqual({
       fresh: true,
       treeHash: treeHashOf(h, ["src/01-1.ts", "src/01-2.ts"]),
@@ -63,7 +63,7 @@ describe("evidence check", () => {
     const h = await started();
     await recorded(h, await ticketOf(h));
     h.put("src/01-2.ts", "// changed\n");
-    const out = await checked(h, "01-1");
+    const out = await checked(h, "01");
     expect(out.fresh).toBe(false);
     expect(out.evidence[0]).toMatchObject({ fresh: false, changedSince: ["src/01-2.ts"] });
     expect(out.treeHash).not.toBe(out.evidence[0]?.treeHash);
@@ -75,7 +75,7 @@ describe("evidence check", () => {
     h.put("docs/login.md", "# Login\n");
     await recorded(h, await ticketOf(h));
     h.put("docs/login.md", "# Login, reworded\n");
-    expect((await checked(h, "01-1")).fresh).toBe(true);
+    expect((await checked(h, "01")).fresh).toBe(true);
   });
 
   it("makes evidence stale when a build-config file outside every Files: list changes", async () => {
@@ -83,7 +83,7 @@ describe("evidence check", () => {
     h.put("package.json", "{}\n");
     await recorded(h, await ticketOf(h));
     h.put("package.json", '{"private":true}\n');
-    const out = await checked(h, "01-1");
+    const out = await checked(h, "01");
     expect(out.fresh).toBe(false);
     expect(out.evidence[0]?.changedSince).toStrictEqual(["package.json"]);
   });
@@ -93,7 +93,7 @@ describe("evidence check", () => {
     await recorded(h, await ticketOf(h));
     h.put("pnpm-lock.yaml", "lockfileVersion: 9\n");
     h.store.remove(`${ROOT}/src/01-1.ts`);
-    const out = await checked(h, "01-1");
+    const out = await checked(h, "01");
     expect(out.evidence[0]?.changedSince).toStrictEqual(["pnpm-lock.yaml", "src/01-1.ts"]);
   });
 
@@ -122,7 +122,7 @@ describe("evidence check", () => {
     h.put("src/01-1.ts", "// changed\n");
     const latest = await recorded(h, ticket, "tests-scoped");
     const lint = await recorded(h, ticket, "lint");
-    const out = await checked(h, "01-1");
+    const out = await checked(h, "01");
     expect(out.evidence.map((entry) => [entry.evidence, entry.kind])).toStrictEqual([
       [latest, "tests-scoped"],
       [lint, "lint"],
@@ -153,11 +153,11 @@ describe("evidence check", () => {
   it("exits 2 with policy/stale-evidence in text mode, 0 when fresh", async () => {
     const h = await started();
     await recorded(h, await ticketOf(h));
-    const fresh = await check(h, "01-1", false);
+    const fresh = await check(h, "01", false);
     expect(fresh.code).toBe(0);
     expect(fresh.stdout).toContain("fresh");
     h.put("src/01-2.ts", "// changed\n");
-    const stale = await check(h, "01-1", false);
+    const stale = await check(h, "01", false);
     expect(stale.code).toBe(2);
     expect(stale.stdout).toContain("policy/stale-evidence");
     expect(stale.stdout).toContain("src/01-2.ts");

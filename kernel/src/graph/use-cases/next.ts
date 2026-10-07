@@ -1,6 +1,6 @@
 // `bdk next` (`kernel-cli/graph`): the first actionable node with its
 // instruction, or what the Change waits for. Never writes.
-import { executionTreeModule, executionWorktreeModule } from "../config.ts";
+import { executionWorktreeModule } from "../config.ts";
 import { fillTemplate } from "../domain/instruction.ts";
 import { stageCommand, stageOfTarget } from "../domain/pipeline.ts";
 import { nodeView } from "../domain/reports.ts";
@@ -70,6 +70,7 @@ export function nextStep(
                 node: waitingGate.gate,
                 profile: read.view.profile,
                 paths: [],
+                partLimits: read.view.partLimits,
               }),
             }),
       };
@@ -99,8 +100,6 @@ async function waveOf(
   );
   return executeWave({
     graph: read.graph,
-    profile: read.view.profile,
-    tree: moduleValue(executionTreeModule, read.resolved.value),
     files: new Map(
       parts.map((part) => [
         part.id,

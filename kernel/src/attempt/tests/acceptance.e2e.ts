@@ -6,9 +6,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { answered, bdk, git, refused } from "../../../tests/support/repo.ts";
+import { answered, bdk, git, refused, ingestArgs } from "../../../tests/support/repo.ts";
 import { fileStore } from "../../shared/store/index.ts";
 import {
+  checkedIn,
   close,
   closed,
   dispatched,
@@ -43,10 +44,8 @@ function budgets(root: string, target: string) {
 
 describe("T22 acceptance", () => {
   it("an exhausted budget ends in a parked Change with a question and its options [AC-3] [S2]", () => {
-    const change = started(
-      "policy:\n  budgets:\n    task-redispatch: 1\n  escalation:\n    enabled: false\n",
-    );
-    const last = closed(change, opened(change, "task-redispatch", "01-1"), "fail");
+    const change = started("policy:\n  budgets:\n    part: 1\n  escalation:\n    enabled: false\n");
+    const last = closed(change, opened(change, "part", "01"), "fail");
     expect(last.next).toMatchObject({ action: "parked" });
     const entry = (last.next as { entry: string }).entry;
     const shown = answered(
@@ -61,34 +60,28 @@ describe("T22 acceptance", () => {
   });
 
   it("an oscillating finding shortens the ladder while budget remains [AC-4] [R-8]", () => {
-    const change = started("policy:\n  budgets:\n    task-redispatch: 5\n");
+    const change = started("policy:\n  budgets:\n    part: 5\n");
     let last: Record<string, unknown> = {};
     for (const summary of ["expired token accepted", "Expired token accepted!"]) {
-      const ticket = opened(change, "task-redispatch", "01-1");
-      dispatched(change, ticket, "01-1");
+      const ticket = opened(change, "part", "01");
+      dispatched(change, ticket, "01");
       logUnder(change, ticket, summary, "src/01-1.ts#verifyToken");
       last = closed(change, ticket, "fail");
     }
     expect(last.next).toMatchObject({ action: "escalate" });
-    expect(budgets(change.root, "01-1")["task-redispatch"]).toMatchObject({ used: 2, of: 5 });
-    refused(open(change, "task-redispatch", "01-1"), 2, "policy/oscillation");
+    expect(budgets(change.root, "01").part).toMatchObject({ used: 2, of: 5 });
+    refused(open(change, "part", "01"), 2, "policy/oscillation");
   });
 
   it("three not-run closes leave the loop budget unused and write the question [S2] [TSH-8]", () => {
     const change = started();
     let last: Record<string, unknown> = {};
     for (let n = 0; n < 3; n++) {
-      last = closed(
-        change,
-        opened(change, "task-redispatch", "01-1"),
-        "not-run",
-        "--reason",
-        "no test runner",
-      );
+      last = closed(change, opened(change, "part", "01"), "not-run", "--reason", "no test runner");
     }
     expect(last.next).toMatchObject({ action: "parked" });
-    expect(budgets(change.root, "01-1")).toMatchObject({
-      "task-redispatch": { used: 0 },
+    expect(budgets(change.root, "01")).toMatchObject({
+      part: { used: 0 },
       "not-run": { used: 3, of: 3 },
     });
     expect(questions(change.root).map((entry) => entry.id)).toContain(
@@ -98,7 +91,7 @@ describe("T22 acceptance", () => {
 
   it("a diff touching do-not-touch is rejected at attempt close [TSH-11]", () => {
     const change = started();
-    const ticket = opened(change, "task-redispatch", "01-1");
+    const ticket = opened(change, "part", "01");
     fileStore().write(join(change.root, "src/billing/invoice.ts"), "export {};\n");
     const result = refused(close(change, ticket, "ok"), 2, "policy/do-not-touch");
     expect(result.why).toContain("src/billing/invoice.ts");
@@ -106,15 +99,16 @@ describe("T22 acceptance", () => {
 
   it("a killed session on a fresh clone: resume and rebuild give the same progress and budgets [AC-2] [S5]", () => {
     const change = started();
-    closed(change, opened(change, "task-redispatch", "01-1"), "ok");
+    const first = opened(change, "part", "01");
     fileStore().write(join(change.root, "src/01-1.ts"), "export {};\n");
-    answered(bdk(["commit", "01-1", "--json"], change.root), "output/commit.json");
-    closed(change, opened(change, "task-redispatch", "01-2"), "fail");
-    const open = opened(change, "task-redispatch", "01-2");
+    checkedIn(change, first, "01-1");
+    closed(change, first, "fail");
+    const open = opened(change, "part", "01");
     git(change.root, "add", "--all");
     git(change.root, "commit", "--quiet", "-m", "wip before the session died");
     const parts = bdk(["part", "list", "--json"], change.root).json;
-    const before = budgets(change.root, "01-2");
+    expect(parts).toMatchObject({ items: [{ part: "01", done: 1 }, { part: "02" }] });
+    const before = budgets(change.root, "01");
 
     const clone = realpathSync(mkdtempSync(join(tmpdir(), "bdk-clone-")));
     clones.push(clone);
@@ -123,9 +117,9 @@ describe("T22 acceptance", () => {
     answered(bdk(["change", "resume", change.id, "--json"], clone), "output/change-resume.json");
     answered(bdk(["rebuild", "--json"], clone), "output/rebuild.json");
     expect(bdk(["part", "list", "--json"], clone).json).toStrictEqual(parts);
-    expect(budgets(clone, "01-2")).toStrictEqual(before);
+    expect(budgets(clone, "01")).toStrictEqual(before);
     const listed = answered(
-      bdk(["attempt", "list", "--for", "01-2", "--json"], clone),
+      bdk(["attempt", "list", "--for", "01", "--json"], clone),
       "output/attempt-list.json",
     ) as { items: { ticket: string; outcome?: string }[] };
     expect(listed.items.find((item) => item.outcome === undefined)?.ticket).toBe(open);
@@ -156,12 +150,12 @@ describe("T22 acceptance", () => {
   // T23-D26 replaced the `bdk-entries` block by the report envelope.
   it("a report envelope with a wrong status is refused with its line number", () => {
     const change = started();
-    const ticket = opened(change, "task-redispatch", "01-1");
-    dispatched(change, ticket, "01-1");
+    const ticket = opened(change, "part", "01");
+    dispatched(change, ticket, "01");
     const report =
       "---\nfiles: [src/01-1.ts]\nstatus: finished\nentries: []\nevidence: []\n---\n# Done\n";
     const result = refused(
-      bdk(["log", "ingest", "--ticket", ticket, "--json"], change.root, { stdin: report }),
+      bdk([...ingestArgs(change.root, ticket, report), "--json"], change.root),
       3,
       "input/invalid-envelope",
     );

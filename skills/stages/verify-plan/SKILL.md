@@ -33,7 +33,7 @@ Start one agent with the `Agent` tool and wait for it in the foreground:
 - the prompt is the package `path` and nothing else;
 - `model` set to the build output's `model` when it has one; the kernel's guard refuses an escalation start without it.
 
-The role stores its report with `bdk log ingest --ticket <ticket>` and records it with `bdk log add report ... --ticket <ticket>`. When the agent returns, check both: the file at `report` exists, and `bdk log list --type report --for plan-verify --json` has an entry with this `ticket`. If either is missing, or the agent says `log ingest` refused its report, resume it once with `SendMessage`, naming what is missing in one sentence. A second failure closes the ticket `fail` with the cause.
+The role stores its report with `bdk log ingest --ticket <ticket> --file <draft>` and records it with `bdk log add report ... --ticket <ticket>`. When the agent returns, check both: the file at `report` exists, and `bdk log list --type report --for plan-verify --json` has an entry with this `ticket`. If either is missing, or the agent says `log ingest` refused its report, resume it once with `SendMessage`, naming what is missing in one sentence. A second failure closes the ticket `fail` with the cause.
 
 ## Close the round
 

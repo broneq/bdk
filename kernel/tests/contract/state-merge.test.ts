@@ -11,7 +11,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import commands from "../../../schema/cli/commands.json" with { type: "json" };
 import { registrations, settingsRegistry } from "../../src/registrations.ts";
 import { systemClock } from "../../src/shared/clock/index.ts";
-import { currentBranch, findWorkTree } from "../../src/shared/git/index.ts";
+import { currentBranch, findWorkTree, runCommand } from "../../src/shared/git/index.ts";
 import type { Git } from "../../src/shared/git/index.ts";
 import { newId } from "../../src/shared/ids/index.ts";
 import { createRegistry, loadIndex } from "../../src/shared/registry/index.ts";
@@ -75,6 +75,7 @@ async function kernel(root: string, ...argv: string[]): Promise<Record<string, u
       commands: index,
       settings: settingsRegistry(),
       git: testGit,
+      shell: runCommand,
       openIndex: fileIndex,
       openRegistry: fileRegistry,
       clock: systemClock,
@@ -93,6 +94,7 @@ async function kernel(root: string, ...argv: string[]): Promise<Record<string, u
       workTree: findWorkTree,
       which: () => undefined,
       readStdin: () => "",
+      readBody: () => Promise.resolve({ text: "" }),
     },
     streams: { stdout: (text) => (stdout += text), stderr: () => undefined },
   });
@@ -192,12 +194,12 @@ function work(root: string, branch: string, at: string, rule: string, capability
   entry("decision", {});
   entry("learning", { applies: ["**/*.ts"] });
 
-  const attempt = change(`attempts/task-redispatch-02-3-${ticket}.md`);
+  const attempt = change(`attempts/part-02-${ticket}.md`);
   const opened = {
     schema: 1,
     ticket,
-    loop: "task-redispatch",
-    target: "02-3",
+    loop: "part",
+    target: "02",
     attempt: 2,
     of: 3,
     scope: "high+",
@@ -228,12 +230,12 @@ function work(root: string, branch: string, at: string, rule: string, capability
     body: "",
   });
 
-  const report = `.bdk/changes/${CHANGE_ID}/reports/02-3-implementer-${ticket}.md`;
-  writeDocument(store, change(`dispatch/02-3-implementer-${ticket}.md`), {
+  const report = `.bdk/changes/${CHANGE_ID}/reports/02-implementer-${ticket}.md`;
+  writeDocument(store, change(`dispatch/02-implementer-${ticket}.md`), {
     data: {
       schema: 1,
       ticket,
-      target: "02-3",
+      target: "02",
       role: "implementer",
       adapter: "worker",
       attempt: 2,
@@ -243,9 +245,10 @@ function work(root: string, branch: string, at: string, rule: string, capability
       "kernel-version": "3.0.0-dev",
       "template-hash": HASH,
       report,
+      draft: `.bdk/.machine/drafts/02-implementer-${ticket}.md`,
       rules: [],
     },
-    body: "## Task 02-3\n",
+    body: "## Part 02\n",
   });
   writeDocument(store, join(root, report), {
     data: {
@@ -431,14 +434,12 @@ describe("two-branch merge", () => {
 
   it("conflicts when the per-ticket attempt files of D-2 are given up", () => {
     const root = forked();
-    const shared = join(root, `.bdk/changes/${CHANGE_ID}/attempts/task-redispatch-02-3.md`);
+    const shared = join(root, `.bdk/changes/${CHANGE_ID}/attempts/part-02.md`);
     const append = (branch: string) => () => {
       fileStore().write(shared, `---\nschema: 1\n---\nattempt 2 on ${branch}\n`);
     };
     on(root, "a", append("a"));
     on(root, "b", append("b"));
-    expect(merge(root)).toStrictEqual([
-      `.bdk/changes/${CHANGE_ID}/attempts/task-redispatch-02-3.md`,
-    ]);
+    expect(merge(root)).toStrictEqual([`.bdk/changes/${CHANGE_ID}/attempts/part-02.md`]);
   });
 });

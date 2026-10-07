@@ -249,7 +249,7 @@ export function nextRung(
   ok: OkAction = "commit",
 ): Next {
   // The step evidence was checked before the close (T23-D41): what remains is the commit.
-  // A lead committed its part's tasks itself (T41-D11): what remains is `part done`.
+  // A part agent committed its tasks itself (#166): what remains is `part done`.
   // A review round committed its fix under the open ticket (T42): what remains is `done review`.
   if (outcome === "ok") return { action: ok };
   if (outcome === "not-run") {

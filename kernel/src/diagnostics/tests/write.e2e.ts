@@ -45,7 +45,7 @@ function analysis(
     "## What went wrong",
     wrong,
     "## Where the fix belongs",
-    "The role contract of `lead`.",
+    "The role contract of `conformer`.",
     "## For a BDK issue",
     issue,
     "",
@@ -60,7 +60,7 @@ describe("bdk diagnostics write", () => {
   it("stores the whole analysis, project code above the issue section included", () => {
     const root = project();
     const markdown = analysis(
-      "`policy/missing-evidence` was refused three times on `bdk attempt close`; role `lead`, ticket `A-k2m4abcd`, key `diagnostics.repeat-read`, `/bdk:execute`, `.bdk/changes/x`.",
+      "`policy/missing-evidence` was refused three times on `bdk attempt close`; role `conformer`, ticket `A-k2m4abcd`, key `diagnostics.repeat-read`, `/bdk:execute`, `.bdk/changes/x`.",
     );
     const result = answered(write(root, markdown), "output/diagnostics-write.json");
     expect(result.path).toBe(`.bdk/.machine/diagnostics/${SESSION}.md`);

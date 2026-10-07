@@ -1,0 +1,240 @@
+## MODIFIED Requirements
+
+### Requirement: bdk next
+
+The next ready artifact with its instruction, plus the gate status; the skill's entry point. The kernel SHALL implement the command as this requirement and its output schema specify.
+
+- **Synopsis:** `bdk next`
+- **Availability:** `read`
+- **Mode:** `inject`; Change-scoped
+- **Arguments:**
+  - none beyond `--json` and `--help`.
+- **Behaviour:** Inject mode: called from stage skills' `!` blocks and by `hooks prompt-expansion`. Always exits 0; never writes. Returns the first node in pipeline order that is `ready` or `stale` and not sealed by a done gate (`kernel-pipeline`, Node states), with its instruction (`kernel-pipeline`, Instruction), `command`, the command of that node's stage in the pipeline's `stages` (the stage skill that does the node), and the status of every gate of the Change's graph. `stage` is the stage the Change is in, from its latest transition; it can differ from the node's stage, such as `plan` while `execute-part:01` is next, so a caller that starts the skill for the node reads `command` (`/bdk:run`, T41). An instance collection without instances (no plan part written yet) is returned as the collection itself (`plan`). When that node is an `execute-part` instance, the output also carries `wave`: one item per `execute-part` instance that is `ready` or `stale`, in part order, except a part not started whose tasks' `Files:` overlap those of a started part or of a part listed before it, which waits for a later wave because parts share one working tree; each with `part`, `started` (the part has a `part start` marker), `tickets` (the ids of its open `part` and `verify-fix` tickets). Every part runs the same way, one `implementer` and one `conformer` under a `part` ticket (#166), so an item carries no mode. Each item also carries `isolation`, the part's `isolation` field (`shared` when absent), and, for a live worktree part, `workdir`, the absolute path of its worktree (`kernel-state`, Part worktree), which the orchestrator passes to the agents it starts for the part. A worktree runs no other part, so isolation adds two rules to the wave, both after the `Files:` rule: while `execution.worktree.enabled` is false, a part not started with `isolation: worktree` is listed only when no other part is started or listed before it, and while it is started without a worktree no part not started is listed; while the kernel worktrees of the project number `execution.worktree.max-live` or more, a part not started with `isolation: worktree` waits for a later wave (`kernel-settings`, Keys of execution and archive). `artifact` and `instruction` stay those of the first instance. Without an actionable node it says what the Change waits for: `waiting: gate` when a gate is ready and not done (the Markdown output is then the gate status the previous stage skill shows the user: the command to type and the pending `review: true` entries with ids and summaries), `waiting: user` when the Change is parked (with the park question and the resume command), `waiting: nothing` when every node is done. A refusal a Change-scoped command would emit (no active Change, invalid ledger) is rendered as a STOP block with exit 0 (`kernel-cli`, Output modes).
+- **Writes:** nothing
+- **Output:** `schema/cli/output/next.json` for `--json`; Markdown otherwise (`kernel-cli`, Output modes).
+- **Exit codes and rules:** `0` always (inject mode). Rules rendered as a STOP block: none; plus the common rules of every command and of Change-scoped commands (`kernel-cli`, Exit codes and the error object).
+- **Example:**
+
+  ```bash
+  bdk next --json
+  ```
+
+  ```json
+  {
+    "change": "2026-09-25-passwordless-login",
+    "stage": "plan",
+    "artifact": {
+      "id": "plan-part:01",
+      "kind": "plan-part",
+      "state": "ready",
+      "requires": [
+        "gate:design"
+      ]
+    },
+    "instruction": "Write plan part 01 ...",
+    "gates": [
+      {
+        "gate": "gate:design",
+        "ready": true,
+        "done": true,
+        "passedBy": "user",
+        "pending": []
+      }
+    ]
+  }
+  ```
+
+- **Owner:** T21
+- **Slice:** `graph`
+
+#### Scenario: example run
+
+- **WHEN** `bdk next --json` runs as in the example
+- **THEN** the exit code is 0 and stdout is the composed Markdown, or under `--json` an object that validates against `schema/cli/output/next.json`
+
+#### Scenario: new small Change asks for the design
+
+- **WHEN** `bdk change new "Add passwordless login"` has just run and `bdk next --json` runs
+- **THEN** `artifact.id` is `design`, `artifact.state` is `ready` and `instruction` names `bdk done design`
+
+#### Scenario: waiting at the design gate
+
+- **WHEN** `design` and `architecture` are done and no transition names `gate:design`
+- **THEN** there is no `artifact`, `waiting` is `gate`, and the gate entry has `ready: true`, `done: false`, `command: /bdk:plan` and the pending `review: true` entries
+
+#### Scenario: gate passed by the user
+
+- **WHEN** a fixture then inserts a `transition` with `gate: gate:design`, `to: plan` and `source: user`
+- **THEN** `artifact.id` is `plan` and the gate entry has `done: true` and `passedBy: user`
+
+#### Scenario: two independent parts of a large Change
+
+- **WHEN** a `large` Change has done `plan` and `plan-verify`, plan parts `01` and `02` without `depends-on`, neither started, and `bdk next --json` runs with the default settings
+- **THEN** `artifact.id` is `execute-part:01`, `stage` is `plan`, `command` is `/bdk:execute`, and `wave` lists `01` and `02`, each with `started: false`, `tickets: []` and no `mode`
+
+#### Scenario: overlapping parts wait
+
+- **WHEN** parts `01` and `02` of a `large` Change have no `depends-on` and both declare `src/client.ts`
+- **THEN** `wave` lists only `01`, and still lists only `01` once it is started
+
+#### Scenario: worktree part in the wave
+
+- **WHEN** parts `01` (`isolation: shared`) and `02` (`isolation: worktree`) of a `large` Change have disjoint `Files:` and no `depends-on`, and part `02` is started
+- **THEN** `wave` lists `01` with `isolation: shared` and no `workdir`, and `02` with `isolation: worktree` and `workdir` naming its worktree
+
+#### Scenario: worktree part alone when disabled
+
+- **WHEN** the same plan runs with `execution.worktree.enabled: false` and neither part is started
+- **THEN** `wave` lists only `01`; after part `01` is done, `wave` lists `02`
+
+#### Scenario: worktree limit reached
+
+- **WHEN** `execution.worktree.max-live` is 1, worktree part `02` is live and worktree part `03`, disjoint and without `depends-on`, is not started
+- **THEN** `wave` lists `02` and not `03`
+
+#### Scenario: dependent part waits
+
+- **WHEN** part `02` depends on part `01` and part `01` is not done
+- **THEN** `wave` lists only `01`
+
+#### Scenario: no wave outside execute
+
+- **WHEN** the next node is `plan-verify`
+- **THEN** the output has no `wave`
+
+#### Scenario: parked Change
+
+- **WHEN** the Change is parked
+- **THEN** there is no `artifact`, `waiting` is `user` and the Markdown names `bdk change resume <id> --option <n>`
+
+#### Scenario: a started part lists its ticket
+
+- **WHEN** part `01` is started with an open `part` ticket `A-7f3k9m2q`, part `02` is done, and part `03`, which depends on `02`, is ready and not started
+- **THEN** `wave` lists `01` with `started: true` and `tickets: [A-7f3k9m2q]`, and `03` with `started: false` and `tickets: []`
+
+#### Scenario: same wave in every profile
+
+- **WHEN** the same two-part plan belongs to a `small` and to a `large` Change
+- **THEN** both outputs list the same `wave` items
+
+#### Scenario: small Change stays flat
+
+- **WHEN** the two-part plan belongs to a `small` Change
+- **THEN** `wave` lists `01` and `02`, each without `mode`
+
+#### Scenario: tree disabled
+
+- **WHEN** `.bdk/settings.yaml` sets `execution.tree.enabled: false`
+- **THEN** `bdk next` renders `policy/unknown-config-key` naming `execution.tree.enabled` as a STOP block, since the key is gone (#166)
+
+#### Scenario: a running lead keeps its mode
+
+- **WHEN** part `01` is started with an open `part` ticket and part `03` is ready and not started
+- **THEN** `wave` lists `01` with its ticket and `03` without one, and neither carries `mode`
+
+### Requirement: bdk validate
+
+Run an artifact's kind validator without marking it done. The kernel SHALL implement the command as this requirement and its output schema specify.
+
+- **Synopsis:** `bdk validate [<artifact>]`
+- **Availability:** `read`
+- **Mode:** `command`; Change-scoped
+- **Arguments:**
+  - `<artifact>` (optional). Defaults to the artifact next returns.
+- **Behaviour:** Runs the kind's validator (`kernel-pipeline`, Artifact kinds) on the node's current files and returns every check with its result and the current input hash; never writes. Without an argument and with no actionable node it answers `input/not-found` naming what the Change waits for. Exits 0 with `valid: false` and the failing checks under `--json`; in text mode it prints the checks and exits 2 with the first failing rule. The plan part checks (`kernel-loops`, Plan part checks: `size`, `tasks`, `do-not-touch`, `placeholder`, `grammar`, `spec-impact`) run in the `plan-part` kind and the trailer and ticket checks in the `execute-part` kind; the spec delta validator (T30) plugs into its kind the same way, and until it lands `spec-delta` runs the baseline checks (files present, non-empty, schema valid, size). In text mode the exit code 2 carries the rule of the first failing check: `policy/part-too-large` for `size`, `policy/part-too-many-tasks` for `tasks`, `policy/do-not-touch-overlap` for `do-not-touch`, `policy/placeholder` for `placeholder`, `policy/validation-failed` for any other.
+- **Writes:** nothing
+- **Output:** `schema/cli/output/validate.json`
+- **Exit codes and rules:** `0, 2, 3, 4, 5`. Specific rules: `input/not-found`, `policy/validation-failed`, `policy/part-too-large`, `policy/part-too-many-tasks`, `policy/part-too-many-files`, `policy/do-not-touch-overlap`, `policy/placeholder`, `policy/spec-invalid`; plus the common rules of every command and of Change-scoped commands (`kernel-cli`, Exit codes and the error object).
+- **Example:**
+
+  ```bash
+  bdk validate plan-part:01 --json
+  ```
+
+  ```json
+  {
+    "artifact": "plan-part:01",
+    "valid": true,
+    "inputHash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "checks": [
+      {
+        "id": "size",
+        "ok": true
+      },
+      {
+        "id": "tasks",
+        "ok": true
+      },
+      {
+        "id": "do-not-touch",
+        "ok": true
+      },
+      {
+        "id": "placeholders",
+        "ok": true
+      },
+      {
+        "id": "success-measure",
+        "ok": true
+      }
+    ]
+  }
+  ```
+
+- **Owner:** T21
+- **Slice:** `graph`
+
+#### Scenario: example run
+
+- **WHEN** `bdk validate plan-part:01 --json` runs as in the example
+- **THEN** the exit code is 0 and stdout validates against `schema/cli/output/validate.json`
+
+#### Scenario: input/not-found
+
+- **WHEN** the referenced object does not exist in the active Change, the configuration or the bundle
+- **THEN** the exit code is 3 and the error object carries `rule: input/not-found`
+
+#### Scenario: policy/validation-failed
+
+- **WHEN** a kind validator failed
+- **THEN** the exit code is 2 and the error object carries `rule: policy/validation-failed`
+
+#### Scenario: policy/part-too-large
+
+- **WHEN** a plan part is over 8 KB (S1, P6)
+- **THEN** the exit code is 2 and the error object carries `rule: policy/part-too-large`
+
+#### Scenario: policy/part-too-many-tasks
+
+- **WHEN** a plan part has more tasks than `plan.part.max-tasks` (S1, #166)
+- **THEN** the exit code is 2 and the error object carries `rule: policy/part-too-many-tasks`
+
+#### Scenario: policy/part-too-many-files
+
+- **WHEN** the tasks of a plan part declare more distinct `Files:` paths than `plan.part.max-files` (#166)
+- **THEN** the exit code is 2 and the error object carries `rule: policy/part-too-many-files`, and `instead` names `bdk part split`
+
+#### Scenario: policy/do-not-touch-overlap
+
+- **WHEN** a task's `Files:` intersects the part's `do-not-touch` (P6)
+- **THEN** the exit code is 2 and the error object carries `rule: policy/do-not-touch-overlap`
+
+#### Scenario: policy/placeholder
+
+- **WHEN** an executable field contains `TODO`, `<fill in>` or `...` (P6, P7)
+- **THEN** the exit code is 2 and the error object carries `rule: policy/placeholder`
+
+#### Scenario: policy/spec-invalid
+
+- **WHEN** a delta breaks the format
+- **THEN** the exit code is 2 and the error object carries `rule: policy/spec-invalid`
+
+#### Scenario: validate writes nothing
+
+- **WHEN** `bdk validate design --json` runs on a valid `design.md`
+- **THEN** the output has `valid: true` and the ledger and the index hold no new entry
+
+#### Scenario: part checks through validate
+
+- **WHEN** `plan/parts/02-login.md` holds nine tasks and `bdk validate plan-part:02 --json` runs
+- **THEN** the exit code is 0, `valid` is false and the check `tasks` fails naming 9 and the limit 8; in text mode the exit code is 2 with `rule: policy/part-too-many-tasks`

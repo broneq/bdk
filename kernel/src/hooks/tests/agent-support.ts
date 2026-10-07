@@ -32,12 +32,13 @@ import { hooksRegistrations } from "../index.ts";
 import type { HooksDeps } from "../index.ts";
 
 export const SESSION = "sess-1";
-export const LEAD = "a9f8e7d6c5b4a3f2e";
+/** A non-BDK agent that starts agents itself; no guard checks its spawns. */
+export const PARENT = "a9f8e7d6c5b4a3f2e";
 export const WORKER = "a1b2c3d4e5f6a7b8c";
 export const SCOUT = "a5e4d3c2b1a0f9e8d";
 export const TICKET = "A-00000001";
 export const T0 = Date.parse("2026-09-25T10:00:00.000Z");
-export const PACKAGE = `.bdk/changes/${CHANGE}/dispatch/02-3-implementer-${TICKET}.md`;
+export const PACKAGE = `.bdk/changes/${CHANGE}/dispatch/02-implementer-${TICKET}.md`;
 
 export interface Harness {
   readonly store: Store;
@@ -106,7 +107,7 @@ export function openTicket(
   store: Store,
   ticket: string,
   target: string,
-  loop = "task-redispatch",
+  loop = "part",
   closed = false,
 ): void {
   writeDocument(store, `${DIR}/attempts/${loop}-${target}-${ticket}.md`, {
@@ -132,10 +133,11 @@ export function spawn(
   type: string,
   prompt: string,
   status = "async_launched",
+  parentType = "bdk:worker",
 ) {
   return {
     session_id: SESSION,
-    ...(parent === undefined ? {} : { agent_id: parent, agent_type: "bdk:lead" }),
+    ...(parent === undefined ? {} : { agent_id: parent, agent_type: parentType }),
     hook_event_name: "PostToolUse",
     tool_name: "Agent",
     tool_input: { subagent_type: type, prompt, description: "d" },
@@ -165,14 +167,22 @@ export const mainStop = (running: readonly string[] = []) => ({
   background_tasks: running.map((task) => ({ id: task, status: "running" })),
 });
 
-/** The lead of the main thread and its worker on ticket A-00000001 (task 02-3), both started. */
+/** The main thread's worker on ticket A-00000001 (part 02), started. */
 export async function tree(h: Harness): Promise<void> {
-  openTicket(h.store, TICKET, "02-3");
-  writePackage(h.store, TICKET, "implementer", "02-3");
-  await h.run(["hooks", "post-tool"], spawn(undefined, LEAD, "bdk:lead", "lead"));
-  await h.run(["hooks", "subagent-start"], start(LEAD, "bdk:lead"));
-  await h.run(["hooks", "post-tool"], spawn(LEAD, WORKER, "bdk:worker", `Read ${PACKAGE}.`));
+  openTicket(h.store, TICKET, "02");
+  writePackage(h.store, TICKET, "implementer", "02");
+  await h.run(["hooks", "post-tool"], spawn(undefined, WORKER, "bdk:worker", `Read ${PACKAGE}.`));
   await h.run(["hooks", "subagent-start"], start(WORKER, "bdk:worker"));
+}
+
+/** `tree`, and a scout the worker started with a question. */
+export async function scouted(h: Harness): Promise<void> {
+  await tree(h);
+  await h.run(
+    ["hooks", "post-tool"],
+    spawn(WORKER, SCOUT, "bdk:scout", "Where is the token parsed?"),
+  );
+  await h.run(["hooks", "subagent-start"], start(SCOUT, "bdk:scout"));
 }
 
 export async function show(h: Harness, id: string) {

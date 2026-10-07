@@ -1,8 +1,8 @@
 ---
 schema: 1
 ticket: A-4m8rt2wx
-loop: task-redispatch
-target: 02-3
+loop: part
+target: "02"
 attempt: 2
 of: 3
 scope: high+

@@ -8,7 +8,16 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import upeTyped from "../../../../tests/fixtures/host-payloads/2.1.281/upe-typed.json" with { type: "json" };
-import { answered, bdk, git, read, refused, repository } from "../../../tests/support/repo.ts";
+import {
+  answered,
+  bdk,
+  ingestArgs,
+  git,
+  read,
+  refused,
+  repository,
+  shell,
+} from "../../../tests/support/repo.ts";
 import { fileStore } from "../../shared/store/index.ts";
 import { creating } from "../../spec/tests/e2e-support.ts";
 
@@ -16,8 +25,8 @@ const CAP = "auth/login";
 
 const SETTINGS =
   "tools:\n" +
-  "  test:\n    - { id: unit, tier: fast, command: vitest run }\n" +
-  "  lint:\n    - { id: eslint, tier: lint, command: eslint . }\n";
+  '  test:\n    - { id: unit, tier: fast, command: "true" }\n' +
+  '  lint:\n    - { id: eslint, tier: lint, command: "true" }\n';
 
 interface Change {
   readonly root: string;
@@ -60,9 +69,12 @@ function typed(change: Change, command: string): void {
 function report(change: Change, ticket: string, target: string, body: string): string {
   const stored = run(
     change,
-    ["log", "ingest", "--ticket", ticket],
+    ingestArgs(
+      change.root,
+      ticket,
+      `---\nstatus: done\nfiles: []\nentries: []\nevidence: []\n---\n${body}`,
+    ),
     "output/log-ingest.json",
-    `---\nstatus: done\nfiles: []\nentries: []\nevidence: []\n---\n${body}`,
   );
   run(
     change,
@@ -83,9 +95,9 @@ function verify(change: Change, node: "design-verify" | "plan-verify"): void {
   done(change, node);
 }
 
-/** The runner's cited evidence of `kind` under `ticket`. */
+/** The gate runner's cited evidence of `kind` under `ticket`, in the round's checks directory. */
 function evidence(change: Change, ticket: string, kind: string): void {
-  const file = `.bdk/.machine/${kind}-${ticket.replace("@", "-")}.json`;
+  const file = `.bdk/.machine/checks/${ticket.replace(/@.*$/, "")}/${kind}.json`;
   fileStore().write(join(change.root, file), '{"failed":0}\n');
   run(
     change,
@@ -157,21 +169,22 @@ describe("a small Change end to end [AC-1]", () => {
     // /bdk:execute
     typed(change, "bdk:execute");
     run(change, ["part", "start", "01"], "output/part-start.json");
-    const ticket = run(
-      change,
-      ["attempt", "open", "task-redispatch", "01-1"],
-      "output/attempt-open.json",
-    ).ticket as string;
-    run(change, ["dispatch", "build", "01-1", "implementer", ticket], "output/dispatch-build.json");
+    const ticket = run(change, ["attempt", "open", "part", "01"], "output/attempt-open.json")
+      .ticket as string;
+    run(change, ["dispatch", "build", "01", "implementer", ticket], "output/dispatch-build.json");
     run(change, ["rules", "show", "--ticket", ticket], "output/rules-show.json");
     fileStore().write(join(root, "src/token.ts"), "export const token = 1;\n");
-    run(change, ["dispatch", "build", "01-1", "simplifier", ticket], "output/dispatch-build.json");
-    report(change, ticket, "01-1", "# Simplify\n\nNothing to simplify.\n");
-    run(change, ["dispatch", "build", "01-1", "runner", ticket], "output/dispatch-build.json");
-    evidence(change, ticket, "tests-scoped");
-    evidence(change, ticket, "lint");
+    const checked = run(
+      change,
+      ["check", "run", "01-1", "--ticket", ticket],
+      "output/check-run.json",
+    ) as { commit: { command: string } };
+    shell(root, checked.commit.command);
+    report(change, ticket, "01", "# Part 01\n\nThe token store is in.\n");
+    run(change, ["dispatch", "build", "01", "conformer", ticket], "output/dispatch-build.json");
+    report(change, ticket, "01", "# Conform\n\n## Conformance\n\n- none apply\n");
+    run(change, ["check", "run", "01", "--ticket", ticket], "output/check-run.json");
     run(change, ["attempt", "close", ticket, "ok"], "output/attempt-close.json");
-    run(change, ["commit", "01-1"], "output/commit.json");
     run(change, ["part", "done", "01"], "output/part-done.json");
     done(change, "spec-delta");
 
@@ -199,10 +212,11 @@ describe("a small Change end to end [AC-1]", () => {
     expect(read(root, `.bdk/specs/${CAP}/spec.md`)).toContain("### Requirement: Link sent");
     expect(git(root, "log", "--format=%s").trim().split("\n")).toEqual([
       `chore(bdk): close ${id}`,
+      `chore(bdk): checkpoint ${id}`,
       "Store the token",
       "initial",
     ]);
-    expect(git(root, "log", "-1", "--format=%B", "HEAD~1")).toContain(
+    expect(git(root, "log", "-1", "--format=%B", "HEAD~2")).toContain(
       `BDK-Change: ${id}\nBDK-Part: 01\nBDK-Task: 01-1`,
     );
     refused(bdk(["change", "status", "--json"], root), 2, "policy/no-active-change");

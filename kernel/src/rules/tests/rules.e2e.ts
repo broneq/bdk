@@ -35,15 +35,15 @@ describe("bdk rules show --ticket", () => {
       join(change.root, ".bdk/rules/UI-1.md"),
       ruleFile("UI-1", { paths: ["web/**"] }),
     );
-    const ticket = opened(change, "task-redispatch", "01-1");
-    dispatched(change, ticket, "01-1");
+    const ticket = opened(change, "part", "01");
+    dispatched(change, ticket, "01");
 
     const first = answered(
       bdk(["rules", "show", "--ticket", ticket, "--json"], change.root),
       "output/rules-show.json",
     ) as unknown as Shown;
     expect(first.role).toBe("implementer");
-    expect(first.target).toBe("01-1");
+    expect(first.target).toBe("01");
     const ids = first.rules.map((rule) => rule.id);
     expect(ids).toContain("NAMING-1");
     expect(ids).not.toContain("UI-1");
@@ -55,7 +55,7 @@ describe("bdk rules show --ticket", () => {
 
     const second = bdk(["rules", "show", "--ticket", ticket], change.root);
     expect(second.code).toBe(0);
-    expect(second.stdout).toContain(`## BDK rules: ${ticket} (implementer, 01-1)`);
+    expect(second.stdout).toContain(`## BDK rules: ${ticket} (implementer, 01)`);
     expect(second.stdout).toContain("- [NAMING-1] Text of NAMING-1.");
     expect(attemptText(change.dir, ticket)).toContain(`rules-read: ${first.rulesRead}`);
   });
@@ -71,7 +71,7 @@ describe("bdk rules show --ticket", () => {
 
   it("exit 2 policy/no-open-ticket: an open ticket without a package", () => {
     const change = started();
-    const ticket = opened(change, "task-redispatch", "01-1");
+    const ticket = opened(change, "part", "01");
     refused(
       bdk(["rules", "show", "--ticket", ticket, "--json"], change.root),
       2,

@@ -1,6 +1,6 @@
 // A repository in memory for the dispatch tests: the graph harness's Change
 // and plugin files plus the shipped role skills and plugin manifest, a plan
-// part `02` whose task `02-3` is the usual target, and an open ticket on it.
+// part `02`, the usual target, and an open part ticket on it.
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -39,10 +39,10 @@ export function withDispatchPlugin(store: Store): Store {
 
 export function ticket(
   store: Store,
-  fields: { target?: string; loop?: string; closed?: boolean; id?: string } = {},
+  fields: { target?: string; loop?: string; closed?: boolean; id?: string; base?: string } = {},
 ): void {
-  const target = fields.target ?? "02-3";
-  const loop = fields.loop ?? "task-redispatch";
+  const target = fields.target ?? "02";
+  const loop = fields.loop ?? "part";
   const id = fields.id ?? TICKET;
   writeDocument(store, `${DIR}/attempts/${loop}-${target}-${id}.md`, {
     data: {
@@ -55,6 +55,7 @@ export function ticket(
       scope: "full",
       "opened-at": "2026-09-25T10:00:00.000Z",
       author: AUTHOR,
+      ...(fields.base === undefined ? {} : { base: fields.base }),
       ...(fields.closed === true ? { "closed-at": "2026-09-25T10:30:00.000Z", outcome: "ok" } : {}),
     },
     body: "",
@@ -67,7 +68,7 @@ export interface DispatchHarness {
   run(argv: readonly string[], at?: string): Promise<RunResult>;
 }
 
-/** Part 02 with TASKS, `do-not-touch: src/billing/**`, and an open ticket on 02-3. */
+/** Part 02 with TASKS, `do-not-touch: src/billing/**`, and an open part ticket on 02. */
 export function dispatchHarness(
   store = withDispatchPlugin(repository()),
   kinds?: KindRegistry,
@@ -98,6 +99,6 @@ export const build = (h: DispatchHarness, ...argv: string[]) =>
   h.run([
     "dispatch",
     "build",
-    ...(argv.length === 0 ? ["02-3", "implementer", TICKET] : argv),
+    ...(argv.length === 0 ? ["02", "implementer", TICKET] : argv),
     "--json",
   ]);

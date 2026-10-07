@@ -25,12 +25,12 @@ const LATER = "2026-09-25T10:05:00.000Z";
 function withAttempt(): Store {
   const store = memoryStore();
   writeDocument(store, `${DIR}/change.md`, { data: { ...change, id: CHANGE }, body: "" });
-  writeDocument(store, `${DIR}/attempts/task-redispatch-02-3-${TICKET}.md`, {
+  writeDocument(store, `${DIR}/attempts/part-02-${TICKET}.md`, {
     data: {
       schema: 1,
       ticket: TICKET,
-      loop: "task-redispatch",
-      target: "02-3",
+      loop: "part",
+      target: "02",
       attempt: 1,
       of: 3,
       scope: "full",

@@ -5,6 +5,7 @@ import { globalDir } from "../../shared/config/index.ts";
 import { capLines } from "../../shared/output/index.ts";
 import { isRefusal, refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
+import { stdinBody } from "../../shared/registry/index.ts";
 import type { FlagValue, Handler } from "../../shared/registry/index.ts";
 import { findProjectRoot } from "../../shared/store/index.ts";
 import { isRuleStage, RULE_STAGES } from "../../shared/vocabulary/index.ts";
@@ -131,9 +132,16 @@ export function acceptCommand(deps: RulesDeps): Handler {
         ["name each stage that reads the rule: --stage plan --stage review"],
       );
     }
-    const body = context.positionals["<text>"] ?? "";
+    const positional = context.positionals["<text>"] ?? "";
+    const body =
+      positional === "-"
+        ? await stdinBody(context.runtime, [
+            'bdk rules accept "<text>" --prefix <PREFIX> --path <glob> --stage <stage>',
+          ])
+        : positional;
+    if (typeof body !== "string") return body;
     const input: AcceptInput = {
-      text: body === "-" ? context.runtime.readStdin() : body,
+      text: body,
       prefix,
       kind: (text(context.flags["--kind"]) ?? "house") as AcceptInput["kind"],
       severity: (text(context.flags["--severity"]) ?? "medium") as AcceptInput["severity"],

@@ -94,10 +94,10 @@ Format: page - what it is for - the files that decide whether it is true.
 - **`workflows/small.md`** - what each stage leaves, where you step in, "when it goes sideways", gates
   on autopilot.
   Truth: the stage skills, `kernel/src/graph/`, `hooks/hooks.json` (UserPromptExpansion).
-- **`workflows/large.md`** - how a Change becomes `large`, design parts, `spec-impact`, execution as a
-  tree of leads, the grouped review.
-  Truth: `skills/stages/design/`, `skills/stages/execute/`, `skills/roles/lead/`, `kernel/src/graph/`
-  (`execution.tree`), `kernel/src/review/domain/groups.ts`.
+- **`workflows/large.md`** - how a Change becomes `large`, design parts, `spec-impact`, execution as
+  one part agent per plan part, the grouped review.
+  Truth: `skills/stages/design/`, `skills/stages/execute/`, `skills/roles/implementer/`,
+  `skills/roles/conformer/`, `kernel/src/graph/`, `kernel/src/check/`, `kernel/src/review/domain/groups.ts`.
 - **`workflows/debugging.md`** - a bug Change, and the `bdk-craft` debugging process inside it.
   Truth: `plugins/bdk-craft/skills/debugging/SKILL.md`, `kernel/src/dispatch/` (the `Craft` section).
 - **`workflows/code-review.md`** - the review Change, the range, a round, triage and the fix loop, `--inline`, PR review.

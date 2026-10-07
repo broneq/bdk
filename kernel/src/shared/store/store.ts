@@ -285,9 +285,41 @@ export function memoryStore(initial: Readonly<Record<string, string>> = {}): Sto
   };
 }
 
-/** All of the process's stdin (`log add --body -`). */
+/** All of the process's stdin, read at once: the hook payload the host writes first. */
 export function readStdin(): string {
   return readFileSync(0, "utf8");
+}
+
+/**
+ * A body from the process's stdin that never waits (#166): a terminal is
+ * refused at once, and a pipe or file that delivers no byte within
+ * `waitMs` is given up, its handle closed so the process can exit. Once
+ * the first byte arrives the whole input is read.
+ */
+export function readStdinBody(
+  waitMs: number,
+): Promise<{ readonly text: string } | { readonly unavailable: "terminal" | "silent" }> {
+  const stdin = process.stdin;
+  if (stdin.isTTY) return Promise.resolve({ unavailable: "terminal" });
+  return new Promise((done) => {
+    const chunks: Buffer[] = [];
+    const timer = setTimeout(() => {
+      stdin.destroy();
+      done({ unavailable: "silent" });
+    }, waitMs);
+    stdin.on("data", (chunk: Buffer) => {
+      clearTimeout(timer);
+      chunks.push(chunk);
+    });
+    stdin.on("end", () => {
+      clearTimeout(timer);
+      done({ text: Buffer.concat(chunks).toString("utf8") });
+    });
+    stdin.on("error", () => {
+      clearTimeout(timer);
+      done({ text: Buffer.concat(chunks).toString("utf8") });
+    });
+  });
 }
 
 /**

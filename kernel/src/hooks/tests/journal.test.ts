@@ -8,7 +8,7 @@ import failure from "../../../../tests/fixtures/host-payloads/2.1.289/post-tool-
 import { describe, expect, it } from "vitest";
 
 import { ROOT } from "../../log/tests/support.ts";
-import { harness, LEAD, SCOUT, SESSION, spawn, TICKET, tree, WORKER } from "./agent-support.ts";
+import { harness, SCOUT, scouted, SESSION, spawn, TICKET, WORKER } from "./agent-support.ts";
 import type { Harness } from "./agent-support.ts";
 
 const JOURNAL = `${ROOT}/.bdk/.machine/telemetry/journal.jsonl`;
@@ -89,10 +89,10 @@ describe("run journal lines of the hooks", () => {
 
   it("writes agent-start with the parent and ticket, and agent-stop for each way an agent ends", async () => {
     const h = harness();
-    await tree(h);
+    await scouted(h);
     expect(lines(h, "agent-start")).toMatchObject([
-      { agent: LEAD, type: "bdk:lead", parent: "main", ticket: null, session: SESSION },
-      { agent: WORKER, type: "bdk:worker", parent: LEAD, ticket: TICKET, session: SESSION },
+      { agent: WORKER, type: "bdk:worker", parent: "main", ticket: TICKET, session: SESSION },
+      { agent: SCOUT, type: "bdk:scout", parent: WORKER, ticket: null, session: SESSION },
     ]);
     await h.run(["hooks", "post-tool"], spawn(undefined, SCOUT, "bdk:runner", "run", "completed"));
     await h.run(["hooks", "post-tool"], {

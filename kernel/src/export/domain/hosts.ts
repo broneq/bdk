@@ -17,6 +17,7 @@ export const HOSTS = {
     id: "claude",
     tools: {
       read: ["Read"],
+      draft: ["Write"],
       search: ["Grep", "Glob"],
       edit: ["Edit", "Write"],
       shell: ["Bash"],

@@ -49,7 +49,7 @@ const itemShape = {
 
 const item = z.strictObject(itemShape) satisfies z.ZodType<AgentItem>;
 
-const LEAD = "a9f8e7d6c5b4a3f2e";
+const SCOUT = "a9f8e7d6c5b4a3f2e";
 const WORKER = "a1b2c3d4e5f6a7b8c";
 const SESSION = "5d1c9e0a-2b7f-4c3e-9a61-0f2d8b7c4e11";
 
@@ -63,11 +63,11 @@ export const agentsListOutput = z.strictObject({ agents: z.array(item) }).meta({
           id: WORKER,
           type: "bdk:worker",
           state: "running",
-          parent: LEAD,
+          parent: "main",
           session: SESSION,
-          package: ".bdk/changes/2026-09-25-login/dispatch/02-4-implementer-A-9k2m4n6p.md",
+          package: ".bdk/changes/2026-09-25-login/dispatch/02-implementer-A-9k2m4n6p.md",
           ticket: "A-9k2m4n6p",
-          target: "02-4",
+          target: "02",
           startedAt: "2026-09-30T10:14:03.120Z",
           lastSeenAt: "2026-09-30T10:19:44.901Z",
         },
@@ -100,13 +100,13 @@ export const agentsShowOutput = z
     description: "One agent of the registry with its lifecycle signals and children.",
     examples: [
       {
-        id: LEAD,
-        type: "bdk:lead",
+        id: WORKER,
+        type: "bdk:worker",
         state: "running",
         parent: "main",
         session: SESSION,
-        package: ".bdk/changes/2026-09-25-login/dispatch/02-lead-A-3h5j7k9m.md",
-        ticket: "A-3h5j7k9m",
+        package: ".bdk/changes/2026-09-25-login/dispatch/02-implementer-A-9k2m4n6p.md",
+        ticket: "A-9k2m4n6p",
         target: "02",
         startedAt: "2026-09-30T10:13:58.004Z",
         lastSeenAt: "2026-09-30T10:20:01.377Z",
@@ -115,7 +115,7 @@ export const agentsShowOutput = z
         endedAt: null,
         endedBy: null,
         continuations: 0,
-        children: [{ id: WORKER, type: "bdk:worker", state: "running", target: "02-4" }],
+        children: [{ id: SCOUT, type: "bdk:scout", state: "running", target: null }],
       },
     ],
   }) satisfies z.ZodType<AgentsShowReport>;

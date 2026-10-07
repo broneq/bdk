@@ -167,18 +167,18 @@ describe("diagnostics report of a Change with agents, attempts and parks", () =>
         type: "bdk:worker",
         session: SESSION,
         parent: "main",
-        package: `.bdk/changes/${CHANGE}/dispatch/02-3-implementer-${TICKET}.md`,
+        package: `.bdk/changes/${CHANGE}/dispatch/02-implementer-${TICKET}.md`,
         ticket: TICKET,
         startedAt: "2026-10-05T15:04:41.000Z",
       });
       registry.put("a00000000000000ff", { type: "bdk:runner", package: "missing.md" });
     });
-    writeDocument(h.store, `${DIR}/attempts/task-redispatch-02-3-${TICKET}.md`, {
+    writeDocument(h.store, `${DIR}/attempts/part-02-${TICKET}.md`, {
       data: {
         schema: 1,
         ticket: TICKET,
-        loop: "task-redispatch",
-        target: "02-3",
+        loop: "part",
+        target: "02",
         attempt: 2,
         of: 3,
         scope: "full",

@@ -21,17 +21,17 @@ function seeded(): Store {
   const store = memoryStore();
   writeDocument(store, `${DIR}/change.md`, { data: { ...change, id: CHANGE }, body: "" });
   for (const role of ["runner", "implementer"]) {
-    writeDocument(store, `${DIR}/dispatch/02-3-${role}-${TICKET}.md`, {
+    writeDocument(store, `${DIR}/dispatch/02-${role}-${TICKET}.md`, {
       data: {
         ...dispatch,
         ticket: TICKET,
         role,
-        report: `${REL}/reports/02-3-${role}-${TICKET}.md`,
+        report: `${REL}/reports/02-${role}-${TICKET}.md`,
       },
       body: `# Package for the ${role}\n`,
     });
   }
-  store.write(`${DIR}/reports/02-3-runner-${TICKET}.md`, "---\nnot: parsed\n---\nraw report\n");
+  store.write(`${DIR}/reports/02-runner-${TICKET}.md`, "---\nnot: parsed\n---\nraw report\n");
   return store;
 }
 
@@ -47,7 +47,7 @@ describe("pruneChange", () => {
     const texts = Object.fromEntries(
       store.list(`${DIR}/dispatch`).map((name) => [name, store.read(`${DIR}/dispatch/${name}`)]),
     );
-    const reportText = store.read(`${DIR}/reports/02-3-runner-${TICKET}.md`) ?? "";
+    const reportText = store.read(`${DIR}/reports/02-runner-${TICKET}.md`) ?? "";
     expect(pruneChange(store, DIR, NOW)).toStrictEqual(["dispatch", "reports"]);
 
     expect(store.list(`${DIR}/dispatch`)).toStrictEqual(["pruned.md"]);
@@ -67,7 +67,7 @@ describe("pruneChange", () => {
     });
     expect(index(store, "reports").data.files).toStrictEqual([
       {
-        path: `02-3-runner-${TICKET}.md`,
+        path: `02-runner-${TICKET}.md`,
         hash: sha(reportText),
         bytes: Buffer.byteLength(reportText),
       },
@@ -78,8 +78,8 @@ describe("pruneChange", () => {
     const store = seeded();
     pruneChange(store, DIR, NOW);
     expect(index(store, "dispatch").data.files).toMatchObject([
-      { path: `02-3-implementer-${TICKET}.md` },
-      { path: `02-3-runner-${TICKET}.md` },
+      { path: `02-implementer-${TICKET}.md` },
+      { path: `02-runner-${TICKET}.md` },
     ]);
   });
 
@@ -100,7 +100,7 @@ describe("pruneChange", () => {
     expect(store.list(`${DIR}/reports`)).toStrictEqual(["pruned.md"]);
     expect(index(store, "reports").data.files).toStrictEqual([
       { path: `01-1-runner-${TICKET}.md`, hash: sha("late\n"), bytes: 5 },
-      expect.objectContaining({ path: `02-3-runner-${TICKET}.md` }),
+      expect.objectContaining({ path: `02-runner-${TICKET}.md` }),
     ]);
   });
 
@@ -120,7 +120,7 @@ describe("pruneChange", () => {
 
   it("keeps a manifest's file hash findable in the index", () => {
     const store = seeded();
-    const reportPath = `${REL}/reports/02-3-runner-${TICKET}.md`;
+    const reportPath = `${REL}/reports/02-runner-${TICKET}.md`;
     const reportHash = sha(store.read(`/repo/${reportPath}`) ?? "");
     writeDocument(store, `${DIR}/evidence/02-3-E-00000001.md`, {
       data: {
@@ -142,7 +142,7 @@ describe("pruneChange", () => {
 
   it("keeps a report whose frontmatter is valid in the index like any other file", () => {
     const store = seeded();
-    writeDocument(store, `${DIR}/reports/02-3-implementer-${TICKET}.md`, {
+    writeDocument(store, `${DIR}/reports/02-implementer-${TICKET}.md`, {
       data: { ...report, ticket: TICKET },
       body: "done\n",
     });

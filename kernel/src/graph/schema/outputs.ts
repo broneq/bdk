@@ -71,12 +71,7 @@ const check = z.strictObject({
 const waveItem = z.strictObject({
   part: z.string().meta({ description: "The plan part's two-digit id." }),
   started: z.boolean().meta({ description: "`bdk part start` ran for the part." }),
-  tickets: z
-    .array(z.string())
-    .meta({ description: "Open tickets of the part or of its tasks, oldest first." }),
-  mode: z.enum(["flat", "tree"]).meta({
-    description: "flat: main dispatches the part's tasks; tree: one lead runs the part.",
-  }),
+  tickets: z.array(z.string()).meta({ description: "Open tickets of the part, oldest first." }),
   isolation: z.enum(["shared", "worktree"]).meta({
     description: "The part's isolation field; shared when the plan part omits it (T45).",
   }),
@@ -109,7 +104,7 @@ export const nextOutput = z
       .meta({ description: "Set when no artifact is actionable: what the Change waits for." }),
     wave: z.array(waveItem).optional().meta({
       description:
-        "With an execute-part artifact: every ready part with its tickets and mode (T41-D3).",
+        "With an execute-part artifact: every ready part with its open tickets and isolation (T41-D3, #166).",
     }),
   })
   .meta({

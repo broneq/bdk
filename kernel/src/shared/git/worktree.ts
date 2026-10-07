@@ -2,8 +2,7 @@
 // worktree; T45 design D2, D5, D10). Every merge back is computed off-tree
 // with `git merge-tree --write-tree` (git 2.38), so no working tree changes
 // until the home checkout fast-forwards.
-import { spawn } from "node:child_process";
-
+import { runCommand, tailLines } from "./run.ts";
 import type { Git } from "./index.ts";
 
 export type GitVersion = readonly [number, number, number];
@@ -217,53 +216,14 @@ const TAIL_LINES = 20;
  * `timeoutMs`; a command still running at the bound is killed with its
  * process group (`execution.worktree.setup`, T45).
  */
-export function runSetup(command: string, cwd: string, timeoutMs: number): Promise<SetupRun> {
-  const started = performance.now();
-  return new Promise((done) => {
-    const child = spawn(command, {
-      cwd,
-      shell: true,
-      detached: process.platform !== "win32",
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-    let output = "";
-    const keep = (chunk: Buffer) => {
-      output = (output + chunk.toString("utf8")).slice(-64 * 1024);
-    };
-    child.stdout.on("data", keep);
-    child.stderr.on("data", keep);
-    let timedOut = false;
-    const timer = setTimeout(() => {
-      timedOut = true;
-      try {
-        if (child.pid !== undefined && process.platform !== "win32")
-          process.kill(-child.pid, "SIGKILL");
-        else child.kill("SIGKILL");
-      } catch {
-        child.kill("SIGKILL");
-      }
-    }, timeoutMs);
-    let finished = false;
-    const finish = (code: number | null) => {
-      if (finished) return;
-      finished = true;
-      clearTimeout(timer);
-      done({
-        exitCode: timedOut || code === null ? undefined : code,
-        timedOut,
-        durationMs: Math.round(performance.now() - started),
-        tail: output
-          .split(/\r?\n/)
-          .filter((line) => line.trim() !== "")
-          .slice(-TAIL_LINES),
-      });
-    };
-    child.on("error", (error) => {
-      output += `${error.message}\n`;
-      finish(127);
-    });
-    child.on("close", finish);
-  });
+export async function runSetup(command: string, cwd: string, timeoutMs: number): Promise<SetupRun> {
+  const run = await runCommand(command, cwd, timeoutMs);
+  return {
+    exitCode: run.exitCode,
+    timedOut: run.timedOut,
+    durationMs: run.durationMs,
+    tail: tailLines(run.output, TAIL_LINES),
+  };
 }
 
 /** Whether a merge is in progress in `workTree` (`MERGE_HEAD` exists). */

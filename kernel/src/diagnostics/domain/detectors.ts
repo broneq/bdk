@@ -139,7 +139,7 @@ function frequentRule(input: DetectorInput): Finding[] {
   return findings;
 }
 
-/** D4: a whole-suite test command run by an agent that holds a task package. */
+/** D4: a whole-suite test command run by an agent that holds a code package: its checks run scoped. */
 function wholeSuite(input: DetectorInput): Finding[] {
   const suites = new Set(input.suites.map((suite) => suite.trim()));
   const findings: Finding[] = [];
@@ -154,7 +154,7 @@ function wholeSuite(input: DetectorInput): Finding[] {
           "D4",
           transcript.agent,
           event,
-          `whole test suite run under a task package: ${shown(command)}`,
+          `whole test suite run under a code package: ${shown(command)}`,
         ),
       );
     }

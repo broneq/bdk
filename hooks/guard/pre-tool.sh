@@ -38,7 +38,7 @@ esac
 
 wanted() {
   case $payload in
-    *.bdk/specs* | */bdk:* | *bdk:reader* | *bdk:integrator* | *bdk:judge* | *bdk:reviewer* | *bdk:scout* | *bdk:lead*) return 0 ;;
+    *.bdk/specs* | */bdk:* | *bdk:reader* | *bdk:integrator* | *bdk:judge* | *bdk:reviewer* | *bdk:scout* | *bdk:runner*) return 0 ;;
     *'"tool_name":"SendMessage"'* | *'"tool_name": "SendMessage"'*) return 0 ;;
   esac
   case $payload in
@@ -55,7 +55,15 @@ wanted() {
     *'"agent_id"'*) case $payload in *git* | *bdk.mjs* | *'bdk '*) return 0 ;; esac ;;
   esac
   case $payload in
-    *'"subagent_type"'*) case $payload in *bdk:worker* | *bdk:runner* | *bdk:lead*) return 0 ;; esac ;;
+    *'"subagent_type"'*) case $payload in *bdk:worker* | *bdk:runner*) return 0 ;; esac ;;
+  esac
+  # A main-thread file edit while a review round is open: only report drafts (#166).
+  case $payload in
+    *'"agent_id"'*) ;;
+    *'"tool_name":"Write"'* | *'"tool_name": "Write"'* | *'"tool_name":"Edit"'* | *'"tool_name": "Edit"'* | \
+      *'"tool_name":"MultiEdit"'* | *'"tool_name": "MultiEdit"'* | *'"tool_name":"NotebookEdit"'* | *'"tool_name": "NotebookEdit"'*)
+      [ -e "${CLAUDE_PROJECT_DIR:-$PWD}/.bdk/.machine/review-round" ] && return 0
+      ;;
   esac
   return 1
 }

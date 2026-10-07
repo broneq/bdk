@@ -1,6 +1,6 @@
 ---
 name: execute-long
-description: Coordinates the plan parts of the active BDK Change part by part, one ticket per task, implementer then post-task steps, a commit per task. Use when the user types /bdk:execute.
+description: Coordinates the plan parts of the active BDK Change part by part, one ticket per part, an implementer that commits each task, then a conformer. Use when the user types /bdk:execute.
 disable-model-invocation: true
 allowed-tools: Bash(bdk *) Bash(echo *) Bash(git status *) Bash(git log *) Agent SendMessage Read
 disallowed-tools: Edit Write NotebookEdit
@@ -10,7 +10,7 @@ disallowed-tools: Edit Write NotebookEdit
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context.
 
-This skill is a **coordinator only**. It walks the plan parts of the active Change, opens a ticket per task, dispatches role agents with the packages the kernel builds, and commits each task through the kernel. It never edits files, never runs tests or linters, never reads source code. Role agents do all work; the kernel keeps all state.
+This skill is a **coordinator only**. It walks the plan parts of the active Change, opens a ticket per part and dispatches two role agents with the packages the kernel builds: the implementer commits each task, the conformer checks the part. It never edits files, never runs tests or linters, never reads source code. Role agents do all work; the kernel keeps all state.
 
 Add `--json` to every command whose output you act on.
 
@@ -19,9 +19,9 @@ Add `--json` to every command whose output you act on.
 **Core loop:**
 
 ```
-next -> part start -> waves of tasks -> per task:
-  attempt open -> implementer -> simplifier -> runner (tests-scoped, lint)
-  -> attempt close -> commit | narrow | retry | escalate | parked
+next -> part start -> per part:
+  attempt open part -> implementer (commits each task) -> conformer (check run <part>)
+  -> attempt close -> part-done | narrow | retry | escalate | parked
 -> part done -> next part -> review gate status
 ```
 
@@ -29,16 +29,15 @@ next -> part start -> waves of tasks -> per task:
 
 ## Role agents
 
-| Role          | Adapter (`subagent_type`) | Does                                                                       | Changes files |
-| ------------- | ------------------------- | -------------------------------------------------------------------------- | ------------- |
-| `implementer` | `bdk:worker`              | Builds one task test-first within its `Files:`                             | yes           |
-| `simplifier`  | `bdk:worker`              | Simplifies the ticket's uncommitted diff, stores its report                | yes           |
-| `runner`      | `bdk:runner`              | Runs the package's `Checks` and records `tests-scoped` and `lint` evidence | no            |
+| Role          | Adapter (`subagent_type`) | Does                                                                                                     | Changes files |
+| ------------- | ------------------------- | -------------------------------------------------------------------------------------------------------- | ------------- |
+| `implementer` | `bdk:worker`              | Builds the part's tasks test-first, runs `bdk check run <task>` and commits each task as it prints       | yes           |
+| `conformer`   | `bdk:worker`              | Checks the part's commits against the rules and instructions, runs `bdk check run <part>`, commits fixes | yes           |
 
 The adapter to use is always the `adapter` field that `bdk dispatch build` returns; the table is what you should expect. Dispatch rules:
 
-- One Agent tool call per package. `subagent_type` is `bdk:<adapter>`. The prompt is the package `path` from `dispatch build` and nothing else; the package carries the task, the ledger entries, the role contract and the report path.
-- The pre-tool guard refuses a dispatch whose prompt carries more than the package path, and refuses a subagent's `git` write commands. Never work around either.
+- One Agent tool call per package. `subagent_type` is `bdk:<adapter>`. The prompt is the package `path` from `dispatch build` and nothing else; the package carries the part, the ledger entries, the role contract and the report path.
+- The pre-tool guard refuses a dispatch whose prompt carries more than the package path. Never work around it.
 - Wait for each agent; do not poll. Background agents notify you when they finish.
 
 ---
@@ -65,61 +64,49 @@ The adapter to use is always the `adapter` field that `bdk dispatch build` retur
 
 ## Step 2 - Waves
 
-Group the part's tasks into waves:
-
-- Tasks whose `Files:` are disjoint may run in one wave.
-- A task that shares a file with an earlier task of the part waits for the wave after it; keep the plan's order otherwise.
-- At most 5 agents run at once; further packages wait for a free slot.
-
-Announce each wave:
+`bdk next --json` lists the ready parts in `wave`. Parts of one wave have disjoint `Files:` and run in parallel, at most 5 agents at once. Announce each wave:
 
 ```
-[execute] Part {nn} wave {w}: tasks {ids}
+[execute] Wave: parts {ids}
 ```
 
-For every task of the wave run Step 3. Dispatch the implementers of a wave in one message; each ticket then continues on its own.
+For every part of the wave run Step 3. Dispatch the implementers of a wave in one message; each ticket then continues on its own.
 
 ---
 
-## Step 3 - One task, one ticket
+## Step 3 - One part, one ticket
 
 ### 3a. Open the ticket
 
-`bdk attempt open task-redispatch <task> --json` returns `ticket`, `attempt`, `of`, `scope` and `steps` (the post-task steps in pipeline order: `simplify` by the `simplifier`, `tests-scoped` and `lint` by the `runner`).
+`bdk attempt open part <nn> --json` returns `ticket`, `attempt`, `of`, `scope` and `steps` (the post-task steps in pipeline order: `conform` by the `conformer`, `tests-scoped` and `lint` through `bdk check run`).
 
-- `policy/budget-exhausted` or `policy/oscillation`: the ladder is over for this task; if `instead` names `--escalate`, go to 3h, otherwise go to Step 5 (the Change is parked).
-- `policy/ticket-open`: a ticket of this task is still open from an earlier run; close it first with the outcome its evidence shows (`fail` when unsure).
+- `policy/budget-exhausted` or `policy/oscillation`: the ladder is over for this part; if `instead` names `--escalate`, go to 3g, otherwise go to Step 5 (the Change is parked).
+- `policy/ticket-open`: a ticket of this part is still open from an earlier run; continue it from its next step.
 
 ### 3b. Implementer
 
-1. `bdk dispatch build <task> implementer <ticket> --json`.
-2. Dispatch it: Agent tool, `subagent_type: bdk:<adapter>`, prompt = the package `path`.
-3. Handle the envelope (3f).
+1. `bdk dispatch build <nn> implementer <ticket> --json`.
+2. Dispatch it: Agent tool, `subagent_type: bdk:<adapter>`, prompt = the package `path`. The package marks the tasks already committed.
+3. Handle the envelope (3e).
 
-### 3c. Simplifier
+### 3c. Conformer
 
-1. `bdk dispatch build <task> simplifier <ticket> --json`.
-2. Dispatch and handle the envelope. The simplifier stores its report; `attempt close` records the `simplify` evidence from it.
+1. `bdk dispatch build <nn> conformer <ticket> --json`, only after the implementer has returned.
+2. Dispatch and handle the envelope. The conformer stores its report, runs the part's checks and commits its fixes; `attempt close` records the `conform` evidence from the report.
 
-### 3d. Runner
-
-1. `bdk dispatch build <task> runner <ticket> --json`. The package's `Checks` name the scoped test command and the lint and typecheck commands from the project settings.
-2. Dispatch and handle the envelope. The runner records `tests-scoped` and `lint` evidence with a verdict and a citation, and logs a `finding` for every failure.
-3. Run the steps in the order `attempt open` listed them. Build a step's package only after the previous agent of the ticket has returned.
-
-### 3e. Close the ticket
+### 3d. Close the ticket
 
 Decide the outcome from what the agents returned, not from your own reading of the code:
 
-| Situation                                                                     | Close                                                        |
-| ----------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| Implementer `done`, simplifier `done`, runner evidence `pass` for both checks | `bdk attempt close <ticket> ok --json`                       |
-| A check recorded `fail`, or an agent returned `blocked`                       | `bdk attempt close <ticket> fail --json`                     |
-| A check could not run (`not-run` evidence: missing tool, broken setup)        | `bdk attempt close <ticket> not-run --reason "<why>" --json` |
+| Situation                                                              | Close                                                        |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Implementer `done`, conformer `done`                                   | `bdk attempt close <ticket> ok --json`                       |
+| A check recorded `fail`, or an agent returned `blocked`                | `bdk attempt close <ticket> fail --json`                     |
+| A check could not run (`not-run` evidence: missing tool, broken setup) | `bdk attempt close <ticket> not-run --reason "<why>" --json` |
 
-On `policy/missing-evidence` or `policy/stale-evidence`, the kernel names the step whose evidence is missing or stale: dispatch that step's package again (3c or 3d), then close again. On `policy/do-not-touch`, the diff touches a forbidden path: close `fail`; the next attempt's package names the finding.
+On `policy/tasks-uncommitted`, resume the implementer once naming the tasks; when they are still not committed, close `fail`. On `policy/missing-evidence` or `policy/stale-evidence`, dispatch the conformer again, then close again. On `policy/do-not-touch`, close `fail`; the next attempt's package names the finding.
 
-### 3f. Envelopes
+### 3e. Envelopes
 
 Every role agent returns an envelope (`status`, `files`, `entries`, `evidence`, `reason`) and its report path.
 
@@ -133,27 +120,23 @@ Every role agent returns an envelope (`status`, `files`, `entries`, `evidence`, 
 
 An agent's `SendMessage` to `main` about a critical finding stops the wave: start no new agent, let running agents finish, read the entry it names, then continue or close the affected tickets `fail`.
 
-### 3g. Act on `next.action`
+### 3f. Act on `next.action`
 
-| `next.action` | Action                                                                                                                                         |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `commit`      | `bdk commit <task> --json`. The commit carries the `BDK-Change`, `BDK-Part` and `BDK-Task` trailers. Print `[execute] {task} committed {sha}`. |
-| `retry`       | Same scope: back to 3a for the same task.                                                                                                      |
-| `narrow`      | Back to 3a; the new ticket has the narrower `scope` and its package drops the findings outside it.                                             |
-| `escalate`    | 3h.                                                                                                                                            |
-| `parked`      | The ladder ended with a question for the user. Stop dispatching and go to Step 5.                                                              |
+| `next.action` | Action                                                                                             |
+| ------------- | -------------------------------------------------------------------------------------------------- |
+| `part-done`   | Step 4.                                                                                            |
+| `retry`       | Same scope: back to 3a for the same part.                                                          |
+| `narrow`      | Back to 3a; the new ticket has the narrower `scope` and its package drops the findings outside it. |
+| `escalate`    | 3g.                                                                                                |
+| `parked`      | The ladder ended with a question for the user. Stop dispatching and go to Step 5.                  |
 
-`bdk commit` refusals: `policy/nothing-to-commit` means the task changed nothing - check the implementer's envelope and close the next ticket `fail` if work is missing; `policy/git-hook-failed` - report the hook output and stop.
+### 3g. Escalation
 
-### 3h. Escalation
-
-`bdk attempt open task-redispatch <task> --escalate --json` opens the escalation ticket with `escalation.model`. Dispatch the implementer package with that model on the Agent call, then continue with 3c. A `fail` close of the escalation ticket returns `parked`.
+`bdk attempt open part <nn> --escalate --json` opens the escalation ticket with `escalation.model`. Dispatch both agents with that model on the Agent call. A `fail` close of the escalation ticket returns `parked`.
 
 ---
 
 ## Step 4 - Close the part
-
-When every task of the part is committed:
 
 1. `bdk part done <nn> --json`. It refuses while a ticket is open or a task has no trailer commit; the refusal names which.
 2. `bdk next --json`. Another `execute-part:<nn>`: back to Step 1. An artifact of a later stage: Step 5.
@@ -188,5 +171,5 @@ When every task of the part is committed:
 - Coordinator only: no Edit, no Write, no test or lint commands of your own.
 - One ticket per attempt; never reuse a closed ticket.
 - The prompt of a dispatch is the package path only.
-- Commit only through `bdk commit <task>`; never `git commit` yourself.
+- Commit nothing yourself: the role agents commit with the command `bdk check run` prints.
 - Report what the kernel recorded, not what you expect: a task is done when its commit exists.

@@ -51,7 +51,7 @@ const EXECUTED = [
     inputHash: "plan/parts/01-auth.md@1",
   },
 ];
-const STEPS = ["simplify", "tests-scoped", "lint"].map((name, at) => ({
+const STEPS = ["conform", "tests-scoped", "lint"].map((name, at) => ({
   id: `E-s000000${String(at)}`,
   kind: name,
   target: "01",

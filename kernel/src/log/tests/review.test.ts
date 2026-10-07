@@ -23,6 +23,7 @@ import {
   ROOT,
   runBdk,
   writePackage,
+  ingestArgv,
 } from "./support.ts";
 
 const ROUND = "A-r1v2w3x4";
@@ -66,6 +67,7 @@ function groupPackage(store: Store, group: string, role = "reviewer"): void {
       "kernel-version": "3.0.0-dev",
       "template-hash": `sha256:${"a".repeat(64)}`,
       report: `${REPORTS}/${name}`,
+      draft: `.bdk/.machine/drafts/${name}`,
       rules: [],
       group,
       files: [],
@@ -89,7 +91,7 @@ function harness() {
   record(store, ROUND, "review-fix", CHANGE);
   groupPackage(store, "p01");
   groupPackage(store, "p02");
-  record(store, TASK, "task-redispatch", "02-3");
+  record(store, TASK, "part", "02");
   writePackage(store, TASK, "implementer");
   const run = (argv: readonly string[], stdin?: string) =>
     runBdk(logRegistrations(deps), store, git, [...argv, "--json"], stdin);
@@ -111,7 +113,7 @@ function harness() {
       return logAddOutput.parse(result.json).entry;
     },
     ingest: (ticket: string, entries: readonly string[]) =>
-      run(["log", "ingest", "--ticket", ticket], ENVELOPE(entries)),
+      run(ingestArgv(store, ticket, ENVELOPE(entries))),
   };
 }
 

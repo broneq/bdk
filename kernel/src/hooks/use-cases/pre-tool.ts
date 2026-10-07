@@ -1,8 +1,8 @@
 // `bdk hooks pre-tool` (`kernel-cli/hooks`, Pre-tool guards): the payload is
 // parsed, kernel verbs are classified against the command index exactly as the
 // kernel dispatches them, and the first guard that matches denies. The agent
-// guards read the registry only for a subagent's `Agent`, `SendMessage` and a
-// lead's Bash; an admitted message to a registered agent is recorded for its
+// guards read the registry only for a subagent's `Agent` and `SendMessage`;
+// an admitted message to a registered agent is recorded for its
 // `agents wait`. A `Skill` call to a stage skill reads the session's run
 // marker and, admitted, enters the stage as a typed command would, with the
 // run's policy at the gate (T41 design D3).
@@ -12,6 +12,7 @@ import { readGraph, stageOfCommand } from "../../graph/index.ts";
 import { withChangeIndex } from "../../log/index.ts";
 import {
   dispatchPaths,
+  EDIT_TOOLS,
   messageEntries,
   needsAgentFacts,
   preToolDecision,
@@ -26,8 +27,10 @@ import { isRefusal, refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import { resolve } from "../../shared/registry/index.ts";
 import {
+  readAttempts,
   readDocument,
   readRunMarker,
+  reviewRoundPath,
   resolveActiveChange,
   writeRunMarker,
 } from "../../shared/store/index.ts";
@@ -63,7 +66,8 @@ async function decide(
       ? await agentFacts(deps, place, payload.agentId)
       : undefined;
   const model = "missing" in payload ? undefined : packageModel(deps, payload);
-  const outcome = decidePreTool(deps.commands, raw, facts, model);
+  const round = "missing" in payload ? undefined : reviewRound(deps, place, payload);
+  const outcome = decidePreTool(deps.commands, raw, facts, model, round);
   if ("missing" in payload || "refused" in outcome) return outcome;
   if (payload.tool === "SendMessage") await recordMessage(deps, place, payload);
   const skill = stageSkillOf(payload);
@@ -128,6 +132,7 @@ export function decidePreTool(
   raw: string,
   facts?: AgentFacts,
   packageModel?: string,
+  reviewRound?: string,
 ): PreToolPass | Refusal {
   const payload = preToolPayload(raw);
   if ("missing" in payload) {
@@ -135,7 +140,7 @@ export function decidePreTool(
       "run bdk hooks pre-tool only from the PreToolUse hook of hooks/hooks.json",
     ]);
   }
-  const deny = preToolDecision(payload, classifier(commands), facts, packageModel);
+  const deny = preToolDecision(payload, classifier(commands), facts, packageModel, reviewRound);
   if (deny !== undefined) return denial(deny);
   return { decision: "pass", tool: payload.tool, subagent: payload.agentId !== undefined };
 }
@@ -158,6 +163,29 @@ function packageModel(deps: HooksDeps, payload: PreToolPayload): string | undefi
   } catch {
     return undefined;
   }
+}
+
+/**
+ * The ticket of the active Change's open review round, for a main-thread file
+ * edit; the marker spares the attempt records on every other edit.
+ */
+function reviewRound(
+  deps: HooksDeps,
+  place: HookPlace,
+  payload: PreToolPayload,
+): string | undefined {
+  if (payload.agentId !== undefined || !EDIT_TOOLS.has(payload.tool)) return undefined;
+  const projectRoot = bdkProject(deps, place);
+  if (projectRoot === undefined || place.workTree === undefined) return undefined;
+  if (!deps.store.exists(reviewRoundPath(projectRoot))) return undefined;
+  const change = resolveActiveChange(deps.store, deps.git, {
+    cwd: place.cwd,
+    workTree: place.workTree,
+  });
+  if (isRefusal(change)) return undefined;
+  return readAttempts(deps.store, change.dir).find(
+    (record) => record.data.loop === "review-fix" && record.data["closed-at"] === undefined,
+  )?.data.ticket;
 }
 
 /** A passed message to an agent the registry holds, naming a ledger id, waits for its `agents wait`. */
@@ -218,10 +246,10 @@ const INSTEAD: Readonly<Record<Deny["rule"], string>> = {
   "guard/nested-stage-command": "ask the user to type the stage command",
   "guard/subagent-git": "return blocked with the cause",
   "guard/subagent-kernel-command": "return blocked with the cause",
-  "guard/lead-scope": "return blocked with the cause",
   "guard/judge-scope": "return blocked with the cause",
   "guard/worktree-scope": "edit the same path under your work root",
   "guard/reader-write": "report through bdk log add or bdk log ingest",
+  "guard/draft-only": "write the report to its draft path under .bdk/.machine/drafts/",
   "guard/dispatch-prompt": "pass the dispatch package path and at most one sentence",
   "guard/agent-spawn": "do the work yourself or return blocked with the cause",
   "guard/agent-message":

@@ -96,6 +96,12 @@ export type EvidenceState =
   | { readonly state: "open"; readonly why?: string | undefined };
 
 /** One Change as the kinds and the engine see it. */
+/** `plan.part`: the most tasks and distinct `Files:` paths of one plan part (#166). */
+export interface PartLimits {
+  readonly maxTasks: number;
+  readonly maxFiles: number;
+}
+
 export interface ChangeView {
   readonly id: string;
   /** `feature` or `bug`. */
@@ -129,6 +135,7 @@ export interface ChangeView {
   changeTree(): string | undefined;
   /** The `tools.test` ids with `coverage.min`, whose coverage `tests-full` needs (T42-D5). */
   readonly coverageTools: readonly string[];
+  readonly partLimits: PartLimits;
   /** The state of each tool group (`kernel-settings`, Tool entries; T49). */
   readonly toolGroups: Readonly<Record<ToolGroupName, ToolGroupState>>;
   /** The loop of a ticket of the Change, or undefined when it has no attempt record. */

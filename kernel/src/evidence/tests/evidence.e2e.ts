@@ -23,7 +23,7 @@ const SUMMARY = JSON.stringify({ summary: { failed: 0, passed: 12 } });
 describe("bdk evidence record", () => {
   it("exit 0: the example run writes the manifest and copies the report into the Change", () => {
     const change = started();
-    const ticket = opened(change, "task-redispatch", "01-1");
+    const ticket = opened(change, "part", "01");
     put(change, ".bdk/.machine/evidence/01-1-tests.json", SUMMARY);
     const report = answered(
       record(
@@ -40,9 +40,9 @@ describe("bdk evidence record", () => {
       "output/evidence-record.json",
     );
     const id = String(report.evidence);
-    expect(report.path).toBe(`.bdk/changes/${change.id}/evidence/01-1-${id}.md`);
+    expect(report.path).toBe(`.bdk/changes/${change.id}/evidence/01-${id}.md`);
     expect(read(change.root, String(report.path))).toContain("kind: tests-scoped");
-    expect(read(change.root, `.bdk/changes/${change.id}/evidence/01-1-${id}-01-1-tests.json`)).toBe(
+    expect(read(change.root, `.bdk/changes/${change.id}/evidence/01-${id}-01-1-tests.json`)).toBe(
       SUMMARY,
     );
     expect(
@@ -66,13 +66,13 @@ describe("bdk evidence record", () => {
 
   it("exit 3 input/not-found", () => {
     const change = started();
-    const ticket = opened(change, "task-redispatch", "01-1");
+    const ticket = opened(change, "part", "01");
     refused(record(change, "lint", "out/lint.txt", "--ticket", ticket), 3, "input/not-found");
   });
 
   it("exit 3 input/invalid-argument for a kind that is not kebab-case", () => {
     const change = started();
-    const ticket = opened(change, "task-redispatch", "01-1");
+    const ticket = opened(change, "part", "01");
     put(change, "lint.txt", "clean\n");
     refused(record(change, "Lint", "lint.txt", "--ticket", ticket), 3, "input/invalid-argument");
   });
@@ -89,7 +89,7 @@ describe("bdk evidence record", () => {
 
   it("exit 2 policy/missing-citation: pass without a citation, and one that does not resolve", () => {
     const change = started();
-    const ticket = opened(change, "task-redispatch", "01-1");
+    const ticket = opened(change, "part", "01");
     put(change, "run.txt", "running 12 tests\nall suites loaded\n12 passed, 0 failed\n");
     refused(
       record(change, "tests-scoped", "run.txt", "--ticket", ticket, "--verdict", "pass"),
@@ -116,7 +116,7 @@ describe("bdk evidence record", () => {
 
   it("commits small text, keeps a large file on the machine, and git sees only the Change", () => {
     const change = started();
-    const ticket = opened(change, "task-redispatch", "01-1");
+    const ticket = opened(change, "part", "01");
     put(change, ".bdk/.machine/evidence/junit.txt", "ok 1\n".repeat(3600));
     put(change, ".bdk/.machine/evidence/coverage.json", `{"lines":"${"x".repeat(2_000_000)}"}`);
     git(change.root, "add", "-A");
@@ -144,13 +144,13 @@ describe("bdk evidence record", () => {
       .map((line) => line.slice(3));
     const evidence = `.bdk/changes/${change.id}/evidence/`;
     expect(status.sort()).toStrictEqual(
-      [`${evidence}01-1-${String(report.evidence)}-junit.txt`, String(report.path)].sort(),
+      [`${evidence}01-${String(report.evidence)}-junit.txt`, String(report.path)].sort(),
     );
   });
 
   it("exit 0 for a project kind", () => {
     const change = started();
-    const ticket = opened(change, "task-redispatch", "01-1");
+    const ticket = opened(change, "part", "01");
     put(change, "snap.json", "{}");
     const report = answered(
       record(change, "contract-snapshot", "snap.json", "--ticket", ticket, "--verdict", "not-run"),
@@ -162,7 +162,7 @@ describe("bdk evidence record", () => {
 
 describe("bdk evidence check", () => {
   function recorded(change: Started): string {
-    const ticket = opened(change, "task-redispatch", "01-1");
+    const ticket = opened(change, "part", "01");
     put(change, "lint.txt", "clean\n");
     const report = answered(
       record(change, "lint", "lint.txt", "--ticket", ticket, "--verdict", "fail"),
@@ -175,15 +175,13 @@ describe("bdk evidence check", () => {
     return bdk(["evidence", "check", target, ...flags], change.root);
   }
 
-  it("exit 0: fresh, then stale with the changed path after a sibling task's file changes", () => {
+  it("exit 0: fresh, then stale with the changed path after a file of the part changes", () => {
     const change = started();
     const id = recorded(change);
-    expect(answered(check(change, "01-1", "--json"), "output/evidence-check.json").fresh).toBe(
-      true,
-    );
-    expect(check(change, "01-1").stdout).toContain("fresh");
+    expect(answered(check(change, "01", "--json"), "output/evidence-check.json").fresh).toBe(true);
+    expect(check(change, "01").stdout).toContain("fresh");
     put(change, "src/01-2.ts", "export {};\n");
-    const report = answered(check(change, "01-1", "--json"), "output/evidence-check.json");
+    const report = answered(check(change, "01", "--json"), "output/evidence-check.json");
     expect(report).toMatchObject({
       fresh: false,
       evidence: [{ evidence: id, kind: "lint", fresh: false, changedSince: ["src/01-2.ts"] }],
@@ -195,7 +193,7 @@ describe("bdk evidence check", () => {
     const change = started();
     recorded(change);
     put(change, "package.json", "{}\n");
-    const report = answered(check(change, "01-1", "--json"), "output/evidence-check.json");
+    const report = answered(check(change, "01", "--json"), "output/evidence-check.json");
     expect(report).toMatchObject({ fresh: false, evidence: [{ changedSince: ["package.json"] }] });
     expect(answered(check(change, "02", "--json"), "output/evidence-check.json")).toMatchObject({
       fresh: false,
@@ -207,7 +205,7 @@ describe("bdk evidence check", () => {
     const change = started();
     recorded(change);
     put(change, "src/01-1.ts", "export {};\n");
-    const result = check(change, "01-1");
+    const result = check(change, "01");
     expect(result.code).toBe(2);
     expect(result.stdout).toContain("policy/stale-evidence");
   });
@@ -221,7 +219,7 @@ describe("bdk evidence check", () => {
 
 describe("bdk evidence coverage", () => {
   const TOOLS =
-    "tools:\n  test:\n    - id: unit\n      tier: fast\n      command: vitest run\n" +
+    'tools:\n  test:\n    - id: unit\n      tier: fast\n      command: "true"\n' +
     "      coverage:\n        command: vitest run --coverage\n        report: coverage/lcov.info\n        format: lcov\n        min: 90\n";
 
   // A whole executed Change spawns dozens of kernel and git processes: about 10 s

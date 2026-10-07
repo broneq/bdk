@@ -1,6 +1,6 @@
 // The settings the graph reads (`kernel-settings`; design D-9, D-11): the
-// `policy.gates` switches, the `execution.tree` rule of the execute wave
-// (T41-D3), the part worktrees of `execution.worktree` (T45) and one
+// `policy.gates` switches, the part size of `plan.part` (#166), the part
+// worktrees of `execution.worktree` (T45) and one
 // instruction template per artifact kind.
 // config.ts imports only shared/config and zod, so the kind names are listed
 // here; a unit test keeps the list equal to the kind registry.
@@ -24,19 +24,19 @@ export const gatesModule = defineConfigModule({
     .prefault({}),
 });
 
-export const executionTreeModule = defineConfigModule({
-  key: "execution.tree",
+export const planPartModule = defineConfigModule({
+  key: "plan.part",
   consumer: "graph",
-  owner: "T41",
+  owner: "T22",
   setup: "default",
-  description: "When bdk next marks a part of the execute wave tree: one lead per part.",
+  description: "The size of a plan part, which one agent implements whole (#166).",
   schema: z
     .strictObject({
-      enabled: z.boolean().default(true).meta({
-        description: "false runs every part flat, the main thread dispatching its tasks.",
+      "max-tasks": z.int().min(1).max(8).default(5).meta({
+        description: "Tasks one plan part holds at most (the tasks check).",
       }),
-      "min-parts": z.int().min(2).max(15).default(2).meta({
-        description: "Ready parts not started a large Change needs before they run as a tree.",
+      "max-files": z.int().min(1).max(30).default(10).meta({
+        description: "Distinct Files: paths of one plan part at most (the files check).",
       }),
     })
     .prefault({}),
@@ -91,7 +91,7 @@ export const KIND_NAMES = [
   "plan-verify",
   "gate",
   "execute-part",
-  "simplify",
+  "conform",
   "tests-scoped",
   "lint",
   "tests-full",

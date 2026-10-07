@@ -8,7 +8,6 @@ import { recordEnd } from "../../agents/index.ts";
 import { readGraph, stageWork } from "../../graph/index.ts";
 import { appendEntry, withChangeIndex } from "../../log/index.ts";
 import { moduleValue } from "../../shared/config/index.ts";
-import { trailerCommits } from "../../shared/git/index.ts";
 import { isRefusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
 import {
@@ -17,7 +16,6 @@ import {
   openAttempts,
   readAttempts,
   readDocument,
-  readPlanParts,
 } from "../../shared/store/index.ts";
 import type { AgentRow, EntryRow, IndexDb } from "../../shared/store/index.ts";
 import { continuationModule } from "../config.ts";
@@ -89,7 +87,7 @@ export async function subagentStop(
   const outcome =
     bdkAgent && row !== undefined
       ? await checked(deps, place, payload, counter, (change, index) =>
-          agentWork(deps, change, index, row, payload.agentType ?? row.type ?? ""),
+          Promise.resolve(agentWork(deps, change, index, row)),
         )
       : { report: { ...PASS, continuations: counter.continuations }, counter };
   await onRegistry(deps, projectRoot, (registry) => {
@@ -244,69 +242,21 @@ function sessionOf(deps: HooksDeps, change: ActiveChange, entry: EntryRow): stri
   return typeof session === "string" ? session : undefined;
 }
 
-async function agentWork(
+function agentWork(
   deps: HooksDeps,
   change: ActiveChange,
   index: IndexDb,
   row: AgentRow,
-  type: string,
-): Promise<OpenWork | undefined> {
-  const open = openAttempts(index, change.id);
+): OpenWork | undefined {
   const ticket = row.ticket;
   if (row.package === null || ticket === null) return undefined;
-  if (!open.some((attempt) => attempt.ticket === ticket)) return undefined;
-  const entries = entriesOf(index, change);
-  const reported = agentReport(deps.store, change.projectRoot, row) !== undefined;
-  const storeReport = `your report for ${ticket} is not stored. Pipe it to bdk log ingest --ticket ${ticket}, then return your envelope.`;
-  if (type !== "bdk:lead") {
-    if (reported) return undefined;
-    return {
-      reason: `BDK: ${storeReport}`,
-      refs: [ticket],
-      progress: progressOf(entries, 0, (entry) => entry.ticket === ticket),
-    };
+  if (!openAttempts(index, change.id).some((attempt) => attempt.ticket === ticket)) {
+    return undefined;
   }
-  const part = row.target;
-  if (part === null) return undefined;
-  const ofPart = (target: string): boolean => target === part || target.startsWith(`${part}-`);
-  const attempts = readAttempts(deps.store, change.dir).filter((record) =>
-    ofPart(record.data.target),
-  );
-  const tickets = new Set(attempts.map((record) => record.data.ticket));
-  const closed = attempts.filter((record) => record.data.outcome !== undefined).length;
-  const progress = progressOf(
-    entries,
-    closed,
-    (entry) => entry.ticket !== undefined && tickets.has(entry.ticket),
-  );
-  const elapsed = elapsedOf(deps, row);
-  const task = open.find((attempt) => attempt.ticket !== ticket && ofPart(attempt.target));
-  if (task !== undefined) {
-    return {
-      reason: `BDK: ticket ${task.ticket} for ${task.target} of part ${part} is open. Wait for its agent with bdk agents wait ${row.id}, or close it with bdk attempt close; elapsed ${elapsed}s.`,
-      refs: [task.target],
-      progress,
-    };
-  }
-  const commits = await trailerCommits(deps.git, change.projectRoot, change.id);
-  const tasks = readPlanParts(deps.store, change.dir).find(
-    (candidate) => candidate.id === part,
-  )?.tasks;
-  const uncommitted = (tasks ?? []).find(
-    (candidate) => !commits.some((commit) => commit.part === part && commit.task === candidate.id),
-  );
-  if (uncommitted !== undefined) {
-    return {
-      reason: `BDK: task ${uncommitted.id} of part ${part} is not committed. Dispatch it or commit it; end your turn only to report a blocker; elapsed ${elapsed}s.`,
-      refs: [uncommitted.id],
-      progress,
-    };
-  }
-  if (reported) return undefined;
-  return { reason: `BDK: ${storeReport} Elapsed ${elapsed}s.`, refs: [part], progress };
-}
-
-function elapsedOf(deps: HooksDeps, row: AgentRow): string {
-  const since = Date.parse(row.startedAt ?? row.linkedAt ?? deps.clock.now());
-  return String(Math.max(0, Math.floor((Date.parse(deps.clock.now()) - since) / 1000)));
+  if (agentReport(deps.store, change.projectRoot, row) !== undefined) return undefined;
+  return {
+    reason: `BDK: your report for ${ticket} is not stored. Write it to its draft and run bdk log ingest --ticket ${ticket} --file <draft>, then return your envelope.`,
+    refs: [ticket],
+    progress: progressOf(entriesOf(index, change), 0, (entry) => entry.ticket === ticket),
+  };
 }

@@ -170,13 +170,14 @@ export interface V3State {
     readonly outcome: string | null;
   }[];
   readonly packages: readonly {
-    readonly task: string;
+    /** The task or part the package targets. */
+    readonly target: string;
     readonly role: string;
     readonly ticket: string;
     readonly templateHash: string | null;
   }[];
   readonly reports: readonly {
-    readonly task: string;
+    readonly target: string;
     readonly role: string;
     readonly ticket: string;
   }[];
@@ -193,45 +194,45 @@ export interface V3State {
 }
 
 /**
- * Seven steps per task (ticket opened, implementer package, implementer
- * report, `simplify`, `tests-scoped` and `lint` evidence passing, commit with
- * the task trailer) and `part done` per part. Evidence counts only from a
- * ticket closed `ok`: `attempt close` refuses stale evidence, so an ok close
- * is where the evidence was fresh.
+ * Eight steps per part (#166: its `part` ticket opened, the implementer's
+ * package and report, the conformer's report, `conform`, `tests-scoped` and
+ * `lint` evidence passing, `part done`) and one per task, its commit with the
+ * task trailer. Evidence counts only from a ticket closed `ok`: `attempt
+ * close` refuses stale evidence, so an ok close is where the evidence was fresh.
  */
 export function v3Completeness(parts: readonly PartTasks[], state: V3State): number {
-  const passing = (task: string, kind: string, tickets: ReadonlySet<string>): boolean =>
-    state.evidence.some(
-      (entry) =>
-        entry.target === task &&
-        entry.kind === kind &&
-        entry.verdict === "pass" &&
-        tickets.has(entry.ticket),
-    );
   let present = 0;
   let expected = 0;
   for (const part of parts) {
-    for (const task of part.tasks) {
-      const attempts = state.attempts.filter(
-        (entry) => entry.loop === "task-redispatch" && entry.target === task,
+    const attempts = state.attempts.filter(
+      (entry) => entry.loop === "part" && entry.target === part.id,
+    );
+    const okTickets = new Set(
+      attempts.filter((entry) => entry.outcome === "ok").map((entry) => entry.ticket),
+    );
+    const passing = (kind: string): boolean =>
+      state.evidence.some(
+        (entry) =>
+          entry.target === part.id &&
+          entry.kind === kind &&
+          entry.verdict === "pass" &&
+          okTickets.has(entry.ticket),
       );
-      const okTickets = new Set(
-        attempts.filter((entry) => entry.outcome === "ok").map((entry) => entry.ticket),
-      );
-      const steps = [
-        attempts.length > 0,
-        state.packages.some((entry) => entry.task === task && entry.role === "implementer"),
-        state.reports.some((entry) => entry.task === task && entry.role === "implementer"),
-        passing(task, "simplify", okTickets),
-        passing(task, "tests-scoped", okTickets),
-        passing(task, "lint", okTickets),
-        state.trailerTasks.includes(task),
-      ];
-      present += steps.filter(Boolean).length;
-      expected += steps.length;
-    }
-    present += state.partsDone.includes(part.id) ? 1 : 0;
-    expected += 1;
+    const of = (entry: { readonly target: string; readonly role: string }, role: string) =>
+      entry.target === part.id && entry.role === role;
+    const steps = [
+      attempts.length > 0,
+      state.packages.some((entry) => of(entry, "implementer")),
+      state.reports.some((entry) => of(entry, "implementer")),
+      state.reports.some((entry) => of(entry, "conformer")),
+      passing("conform"),
+      passing("tests-scoped"),
+      passing("lint"),
+      state.partsDone.includes(part.id),
+      ...part.tasks.map((task) => state.trailerTasks.includes(task)),
+    ];
+    present += steps.filter(Boolean).length;
+    expected += steps.length;
   }
   return present / expected;
 }
@@ -270,7 +271,8 @@ function entries(
     });
 }
 
-const TASK_FILE = /^(\d{2}-\d+)-([a-z-]+)-(A-[a-z0-9]+)\.md$/;
+/** A package or report of a task or a part: `<target>-<role>-<ticket>.md`. */
+const TARGET_FILE = /^(\d{2}(?:-\d+)?)-([a-z-]+)-(A-[a-z0-9]+)\.md$/;
 
 export function readV3State(workDir: string): V3State {
   const attempts = entries(workDir, "attempts", /\.md$/).map(({ path }) => {
@@ -283,30 +285,32 @@ export function readV3State(workDir: string): V3State {
       outcome: outcome === "" ? null : outcome,
     };
   });
-  const packages = entries(workDir, "dispatch", TASK_FILE).map(({ path, match }) => {
+  const packages = entries(workDir, "dispatch", TARGET_FILE).map(({ path, match }) => {
     const hash = field(frontmatter(path), "template-hash");
     return {
-      task: match[1] ?? "",
+      target: match[1] ?? "",
       role: match[2] ?? "",
       ticket: match[3] ?? "",
       templateHash: hash === "" ? null : hash,
     };
   });
-  const reports = entries(workDir, "reports", TASK_FILE).map(({ match }) => ({
-    task: match[1] ?? "",
+  const reports = entries(workDir, "reports", TARGET_FILE).map(({ match }) => ({
+    target: match[1] ?? "",
     role: match[2] ?? "",
     ticket: match[3] ?? "",
   }));
   // Evidence manifests only; their stored outputs (`<id>-tests.txt`, copied reports) sit next to them.
-  const evidence = entries(workDir, "evidence", /^\d{2}-\d+-E-[a-z0-9]+\.md$/).map(({ path }) => {
-    const data = frontmatter(path);
-    return {
-      kind: field(data, "kind"),
-      target: field(data, "target"),
-      ticket: field(data, "ticket"),
-      verdict: field(data, "verdict"),
-    };
-  });
+  const evidence = entries(workDir, "evidence", /^\d{2}(?:-\d+)?-E-[a-z0-9]+\.md$/).map(
+    ({ path }) => {
+      const data = frontmatter(path);
+      return {
+        kind: field(data, "kind"),
+        target: field(data, "target"),
+        ticket: field(data, "ticket"),
+        verdict: field(data, "verdict"),
+      };
+    },
+  );
   const partsDone = entries(workDir, "log", /-transition-L-[a-z0-9]+\.md$/).flatMap(({ path }) => {
     const done = /^execute-part:(\d+) done$/.exec(field(frontmatter(path), "summary"));
     return done === null ? [] : [done[1] ?? ""];

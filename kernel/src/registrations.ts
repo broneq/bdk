@@ -5,6 +5,8 @@ import { agentsConfig, agentsRegistrations } from "./agents/index.ts";
 import type { AgentsDeps } from "./agents/index.ts";
 import { attemptConfig, attemptRegistrations } from "./attempt/index.ts";
 import { changeConfig, changeRegistrations } from "./change/index.ts";
+import { checkConfig, checkRegistrations } from "./check/index.ts";
+import type { CheckDeps } from "./check/index.ts";
 import { commitRegistrations } from "./commit/index.ts";
 import type { ChangeDeps } from "./change/index.ts";
 import { configRegistrations } from "./config/index.ts";
@@ -47,7 +49,8 @@ export type KernelDeps = ServiceDeps &
   ChangeDeps &
   QueryDeps &
   RulesDeps &
-  DiagnosticsDeps;
+  DiagnosticsDeps &
+  CheckDeps;
 
 export function registrations(deps: KernelDeps): Registration[] {
   return [
@@ -64,6 +67,7 @@ export function registrations(deps: KernelDeps): Registration[] {
     ...evidenceRegistrations(deps),
     ...reviewRegistrations(deps),
     ...commitRegistrations(deps),
+    ...checkRegistrations(deps),
     ...queryRegistrations(deps),
     ...exportRegistrations(deps),
     ...rulesRegistrations(deps),
@@ -86,6 +90,7 @@ export function settingsRegistry(): ConfigRegistry {
       ...ctxConfig.modules,
       ...graphConfig.modules,
       ...attemptConfig.modules,
+      ...checkConfig.modules,
       ...logConfig.modules,
       ...evidenceConfig.modules,
       ...changeConfig.modules,

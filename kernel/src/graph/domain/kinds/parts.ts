@@ -7,7 +7,6 @@ import type { ChangeView, Check, DoneBy, Inputs, Instance, PlanPartFacts } from 
 
 /** S1: a plan part fits one dispatch (`kernel-loops`, Plan part checks). */
 const PART_LIMIT_BYTES = 8192;
-const PART_TASK_LIMIT = 8;
 
 /** A kind with one instance per `<dir>/<nn>-<slug>.md`. */
 abstract class PartKind extends BaseKind {
@@ -72,22 +71,34 @@ function partChecks(
   facts: PlanPartFacts,
 ): Check[] {
   const count = facts.tasks.length;
+  const { maxTasks, maxFiles } = view.partLimits;
+  const files = new Set(facts.tasks.flatMap((task) => task.files)).size;
   const overlap = facts.overlaps[0];
   const impact = specImpactCheck(view, path, data["spec-impact"]);
   return [
-    count === 0 || count > PART_TASK_LIMIT
+    count === 0 || count > maxTasks
       ? {
           id: "tasks",
           ok: false,
           why:
             count === 0
               ? `${path} holds no task`
-              : `${path} holds ${String(count)} tasks, over the limit of ${String(PART_TASK_LIMIT)}`,
+              : `${path} holds ${String(count)} tasks, over plan.part.max-tasks ${String(maxTasks)}`,
           rule: "policy/part-too-many-tasks",
           instead:
             count === 0 ? `add a task under ## ${nn}-1 <title>` : `bdk part split ${nn} <task-ids>`,
         }
       : { id: "tasks", ok: true },
+    // One agent holds the whole part in its context (#166).
+    files > maxFiles
+      ? {
+          id: "files",
+          ok: false,
+          why: `the tasks of ${path} declare ${String(files)} distinct Files: paths, over plan.part.max-files ${String(maxFiles)}`,
+          rule: "policy/part-too-many-files",
+          instead: `bdk part split ${nn} <task-ids>`,
+        }
+      : { id: "files", ok: true },
     overlap === undefined
       ? { id: "do-not-touch", ok: true }
       : {

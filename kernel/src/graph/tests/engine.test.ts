@@ -268,7 +268,7 @@ describe("next", () => {
         done("close", "x", "2026-09-25T12:00:00.000Z"),
       ],
       evidence: [
-        ...["simplify", "tests-scoped", "lint"].map((kind, at) => ({
+        ...["conform", "tests-scoped", "lint"].map((kind, at) => ({
           id: `E-0000000${String(at)}`,
           kind,
           target: "01",
@@ -355,7 +355,7 @@ describe("graph variants", () => {
       "intent",
       "plan",
       "execute",
-      "simplify",
+      "conform",
       "tests-scoped",
       "lint",
       "tests-full",
@@ -378,7 +378,7 @@ describe("graph variants", () => {
       "plan",
       "plan-verify",
       "execute",
-      "simplify",
+      "conform",
       "tests-scoped",
       "lint",
       "tests-full",

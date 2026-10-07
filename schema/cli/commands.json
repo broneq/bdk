@@ -350,7 +350,7 @@
       "stdin": "The pull request results when `--pr -` is given.",
       "output": "output/review-render.json",
       "exits": [0, 2, 3, 4, 5],
-      "refusals": ["runtime/git-missing"],
+      "refusals": ["runtime/git-missing", "input/stdin-unavailable"],
       "writes": ["<out>", ".bdk/.machine/review/"]
     },
     {
@@ -415,6 +415,7 @@
         "policy/validation-failed",
         "policy/part-too-large",
         "policy/part-too-many-tasks",
+        "policy/part-too-many-files",
         "policy/do-not-touch-overlap",
         "policy/placeholder",
         "policy/spec-invalid"
@@ -494,6 +495,7 @@
         "policy/invalid-transition",
         "policy/part-too-large",
         "policy/part-too-many-tasks",
+        "policy/part-too-many-files",
         "policy/do-not-touch-overlap",
         "policy/placeholder",
         "policy/validation-failed",
@@ -580,12 +582,12 @@
         {
           "name": "<loop>",
           "required": true,
-          "description": "Loop kind from policy: task-redispatch, verify-fix, review-fix, verifier."
+          "description": "Loop kind from policy: part, verify-fix, review-fix, verifier."
         },
         {
           "name": "<target>",
           "required": true,
-          "description": "Task id for task-redispatch, part id for verify-fix, the Change id for review-fix, an artifact id for verifier."
+          "description": "Part id for part and verify-fix, the Change id for review-fix, an artifact id for verifier."
         }
       ],
       "flags": [
@@ -651,6 +653,7 @@
         "policy/missing-citation",
         "policy/missing-evidence",
         "policy/missing-report",
+        "policy/tasks-uncommitted",
         "policy/merge-unresolved",
         "policy/git-hook-failed",
         "runtime/git-missing"
@@ -791,7 +794,8 @@
         "input/forbidden-field",
         "input/not-found",
         "policy/no-open-ticket",
-        "runtime/git-missing"
+        "runtime/git-missing",
+        "input/stdin-unavailable"
       ],
       "writes": [".bdk/changes/<id>/log/"]
     },
@@ -810,12 +814,17 @@
           "name": "--ticket",
           "value": "<ticket>",
           "description": "Required; the role and the report path come from the ticket's dispatch package."
+        },
+        {
+          "name": "--file",
+          "value": "<path>",
+          "description": "Required; the report: a YAML frontmatter holding the envelope, then the Markdown body. stdin is never read."
         }
       ],
-      "stdin": "The report: a YAML frontmatter holding the envelope, then the Markdown body.",
       "output": "output/log-ingest.json",
       "exits": [0, 2, 3, 4, 5],
       "refusals": [
+        "input/not-found",
         "input/invalid-envelope",
         "input/forbidden-field",
         "policy/no-open-ticket",
@@ -1028,7 +1037,7 @@
         {
           "name": "<role>",
           "required": true,
-          "description": "Role skill under skills/roles/: implementer, simplifier, verifier, design-verifier, reviewer, integration-reviewer, judge, pr-reviewer, runner, scout, lead."
+          "description": "Role skill under skills/roles/: implementer, conformer, verifier, design-verifier, reviewer, integration-reviewer, judge, pr-reviewer, runner, scout."
         },
         {
           "name": "<ticket>",
@@ -1108,7 +1117,7 @@
         {
           "name": "<kind>",
           "required": true,
-          "description": "tests-scoped, lint, tests-full, lint-full, typecheck, ui-capture or a project-defined kind; `coverage` is recorded only by `bdk evidence coverage`."
+          "description": "tests-full, lint-full, typecheck, ui-capture or a project-defined kind; `tests-scoped` and `lint` of a part are recorded by `bdk check run`, `coverage` only by `bdk evidence coverage`."
         },
         {
           "name": "<file>",
@@ -1136,7 +1145,12 @@
       ],
       "output": "output/evidence-record.json",
       "exits": [0, 2, 3, 4, 5],
-      "refusals": ["input/not-found", "policy/no-open-ticket", "policy/missing-citation"],
+      "refusals": [
+        "input/not-found",
+        "policy/no-open-ticket",
+        "policy/missing-citation",
+        "policy/evidence-outside-ticket"
+      ],
       "writes": [".bdk/changes/<id>/evidence/", ".bdk/.machine/evidence/"]
     },
     {
@@ -1467,7 +1481,7 @@
     {
       "id": "commit",
       "argv": ["commit"],
-      "summary": "Commit a task, or the fix of a review round: code plus Change directory, with BDK trailers, after the diff check.",
+      "summary": "Commit the fix of a review round: code plus Change directory, with BDK trailers, after the diff check.",
       "availability": "orchestrator",
       "mode": "command",
       "slice": "commit",
@@ -1475,16 +1489,16 @@
       "changeScoped": true,
       "args": [
         {
-          "name": "<task|change-id>",
+          "name": "<change-id>",
           "required": true,
-          "description": "A task id, or the id of the active Change for a review fix."
+          "description": "The id of the active Change. A task id is refused: a part agent commits a task with the command `bdk check run` prints."
         }
       ],
       "flags": [
         {
           "name": "--message",
           "value": "<text>",
-          "description": "Subject line; default the task title, or `fix(review): <ticket>` for a review fix."
+          "description": "Subject line; default `fix(review): <ticket>`."
         }
       ],
       "output": "output/commit.json",
@@ -1497,10 +1511,48 @@
         "policy/git-hook-failed",
         "policy/no-open-ticket",
         "policy/nothing-to-commit",
-        "policy/ticket-open",
         "runtime/git-missing"
       ],
       "writes": ["git:commit", ".bdk/changes/<id>/log/"]
+    },
+    {
+      "id": "check-run",
+      "argv": ["check", "run"],
+      "summary": "Run the post-task checks of a task, a part or a review round's fix under its ticket, record their evidence and print the commit command.",
+      "availability": "agent",
+      "mode": "command",
+      "slice": "check",
+      "owner": "T22",
+      "changeScoped": true,
+      "args": [
+        {
+          "name": "<task|part|change-id>",
+          "required": true,
+          "description": "A task of the ticket's part, the part itself, or the Change id under a review-fix ticket."
+        }
+      ],
+      "flags": [
+        {
+          "name": "--ticket",
+          "value": "<ticket>",
+          "description": "Required; an open part or verify-fix ticket of the part holding the target, or the open review-fix round."
+        },
+        {
+          "name": "--skip",
+          "value": "<tool-id>",
+          "description": "Repeatable; a tools.test or tools.lint entry whose when says it does not apply to the target.",
+          "repeatable": true
+        }
+      ],
+      "output": "output/check-run.json",
+      "exits": [0, 2, 3, 4, 5],
+      "refusals": [
+        "input/not-found",
+        "policy/no-open-ticket",
+        "policy/do-not-touch",
+        "runtime/git-missing"
+      ],
+      "writes": [".bdk/.machine/checks/", ".bdk/changes/<id>/evidence/", ".bdk/.machine/evidence/"]
     },
     {
       "id": "rules-check",
@@ -1624,13 +1676,15 @@
           "description": "YYYY-MM-DD; required with --kind knowledge."
         }
       ],
+      "stdin": "The rule text when <text> is -.",
       "output": "output/rules-accept.json",
       "exits": [0, 2, 3, 4, 5],
       "refusals": [
         "input/not-found",
         "policy/rule-format",
         "policy/duplicate-rule-id",
-        "state/corrupted-index"
+        "state/corrupted-index",
+        "input/stdin-unavailable"
       ],
       "writes": [".bdk/rules/", ".bdk/.prettierrc"]
     },
@@ -1654,7 +1708,7 @@
           "name": "--role",
           "values": [
             "implementer",
-            "simplifier",
+            "conformer",
             "reviewer",
             "pr-reviewer",
             "verifier",
@@ -1822,8 +1876,8 @@
         "guard/spec-dir-write",
         "guard/subagent-git",
         "guard/subagent-kernel-command",
-        "guard/lead-scope",
         "guard/judge-scope",
+        "guard/draft-only",
         "guard/worktree-scope",
         "guard/hooks-from-bash",
         "guard/nested-stage-command",
@@ -2184,9 +2238,10 @@
           "description": "The host session; default the session of the latest journal `session` line of the active Change, or the latest session."
         }
       ],
+      "stdin": "The Markdown report.",
       "output": "output/diagnostics-write.json",
       "exits": [0, 2, 3, 5],
-      "refusals": ["policy/project-code"],
+      "refusals": ["policy/project-code", "input/stdin-unavailable"],
       "writes": [".bdk/.machine/diagnostics/"]
     }
   ]

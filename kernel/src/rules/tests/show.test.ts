@@ -60,12 +60,12 @@ function ticket(
   role: string | undefined,
   fields: { closed?: boolean; rules?: readonly string[] } = {},
 ): void {
-  writeDocument(store, `${DIR}/attempts/task-redispatch-02-3-${id}.md`, {
+  writeDocument(store, `${DIR}/attempts/part-02-${id}.md`, {
     data: {
       schema: 1,
       ticket: id,
-      loop: "task-redispatch",
-      target: "02-3",
+      loop: "part",
+      target: "02",
       attempt: 1,
       of: 3,
       scope: "full",
@@ -80,21 +80,22 @@ function ticket(
 
 /** What `dispatch build` leaves: the role's package, stamped as the ticket's active one. */
 function built(store: Store, id: string, role: string, rules: readonly string[] = []): void {
-  const path = `.bdk/changes/${CHANGE}/dispatch/02-3-${role}-${id}.md`;
+  const path = `.bdk/changes/${CHANGE}/dispatch/02-${role}-${id}.md`;
   writeDocument(store, `${ROOT}/${path}`, {
     data: {
       schema: 1,
       ticket: id,
-      target: "02-3",
+      target: "02",
       role,
-      adapter: role === "implementer" ? "worker" : "reader",
+      adapter: role === "implementer" || role === "conformer" ? "worker" : "reader",
       attempt: 1,
       of: 3,
       scope: "full",
       at: "2026-09-25T10:00:01.000Z",
       "kernel-version": "3.0.0-dev",
       "template-hash": `sha256:${"a".repeat(64)}`,
-      report: `.bdk/changes/${CHANGE}/reports/02-3-${role}-${id}.md`,
+      report: `.bdk/changes/${CHANGE}/reports/02-${role}-${id}.md`,
+      draft: `.bdk/.machine/drafts/02-${role}-${id}.md`,
       rules: [...rules],
     },
     body: "",
@@ -127,7 +128,7 @@ describe("rules show --ticket", () => {
     expect(ticketRulesOutput.parse(result.json)).toStrictEqual({
       ticket: "A-7f3k9m2q",
       role: "implementer",
-      target: "02-3",
+      target: "02",
       rules: [
         {
           id: "API-1",
@@ -161,12 +162,12 @@ describe("rules show --ticket", () => {
     expect(ticketRulesOutput.parse(result.json).rules).toStrictEqual([]);
   });
 
-  it("stamps nothing under a simplifier's package (R2)", async () => {
+  it("stamps nothing under a conformer's package (R2)", async () => {
     const store = withRules(repository());
     ticket(store, "A-s1m2p3l4", "implementer");
-    built(store, "A-s1m2p3l4", "simplifier", ["API-1"]);
+    built(store, "A-s1m2p3l4", "conformer", ["API-1"]);
     const output = ticketRulesOutput.parse((await show(store, "A-s1m2p3l4")).json);
-    expect(output.role).toBe("simplifier");
+    expect(output.role).toBe("conformer");
     expect(output.rulesRead).toBeUndefined();
     expect(readAttempts(store, DIR)[0]?.data["rules-read"]).toBeUndefined();
   });
@@ -195,7 +196,7 @@ describe("rules show --ticket", () => {
     ticket(store, "A-9c2d4f6h", "reviewer", { rules: ["API-1"] });
     const result = await run(store, ["rules", "show", "--ticket", "A-9c2d4f6h"]);
     expect(result.code).toBe(0);
-    expect(result.stdout).toContain("## BDK rules: A-9c2d4f6h (reviewer, 02-3)");
+    expect(result.stdout).toContain("## BDK rules: A-9c2d4f6h (reviewer, 02)");
     expect(result.stdout).toContain("- [API-1] Text of API-1. (matched by src/api/**)");
   });
 
@@ -264,6 +265,7 @@ describe("rules show --ticket", () => {
             "kernel-version": "3.0.0-dev",
             "template-hash": `sha256:${"a".repeat(64)}`,
             report: `.bdk/changes/${CHANGE}/reports/${CHANGE}-reviewer-${ROUND}-${group}.md`,
+            draft: `.bdk/.machine/drafts/${CHANGE}-reviewer-${ROUND}-${group}.md`,
             rules: [...rules],
             group,
             files: [...files],

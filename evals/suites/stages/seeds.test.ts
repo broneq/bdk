@@ -64,18 +64,18 @@ const TASKS = join(import.meta.dirname, "seeds", "executed-two-parts", "tasks");
 
 // Each seed spawns about twenty kernel and git processes: seconds, more on a loaded CI runner.
 describe("runSeed", { timeout: 60_000 }, () => {
-  it("audit-csv leaves part 01 of a tiny Change next, flat, with part 02 waiting on it", () => {
+  it("audit-csv leaves part 01 of a tiny Change next, with part 02 waiting on it", () => {
     const dir = base();
     const kernel = { bundle: BUNDLE, configHome: temp() };
     runSeed("audit-csv", dir, kernel);
     expect(bdkNext(dir, kernel)).toMatchObject({
       artifact: { id: "execute-part:01", state: "ready" },
-      wave: [{ part: "01", started: false, tickets: [], mode: "flat" }],
+      wave: [{ part: "01", started: false, tickets: [] }],
     });
     expect(git(dir, "status", "--porcelain")).toBe("");
   });
 
-  it("two-independent-parts leaves a large Change with both parts in one tree wave", () => {
+  it("two-independent-parts leaves a large Change with both parts in one wave", () => {
     const dir = base();
     const kernel = { bundle: BUNDLE, configHome: temp() };
     runSeed("two-independent-parts", dir, kernel);
@@ -84,8 +84,8 @@ describe("runSeed", { timeout: 60_000 }, () => {
       command: "/bdk:execute",
       artifact: { id: "execute-part:01", state: "ready" },
       wave: [
-        { part: "01", started: false, tickets: [], mode: "tree" },
-        { part: "02", started: false, tickets: [], mode: "tree" },
+        { part: "01", started: false, tickets: [] },
+        { part: "02", started: false, tickets: [] },
       ],
     });
     expect(git(dir, "status", "--porcelain")).toBe("");

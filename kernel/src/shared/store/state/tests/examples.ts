@@ -67,8 +67,8 @@ export const transition = {
 export const attempt = {
   schema: 1,
   ticket: "A-7f3kx2p9",
-  loop: "task-redispatch",
-  target: "02-3",
+  loop: "part",
+  target: "02",
   attempt: 1,
   of: 3,
   scope: "full",
@@ -110,13 +110,13 @@ export const pruned = {
   schema: 1,
   dir: "dispatch",
   at: "2026-09-26T08:00:00.000Z",
-  files: [{ path: "02-3-implementer-A-7f3kx2p9.md", hash: HASH, bytes: 3771 }],
+  files: [{ path: "02-implementer-A-7f3kx2p9.md", hash: HASH, bytes: 3771 }],
 };
 
 export const dispatch = {
   schema: 1,
   ticket: "A-7f3kx2p9",
-  target: "02-3",
+  target: "02",
   role: "implementer",
   adapter: "worker",
   attempt: 1,
@@ -125,7 +125,8 @@ export const dispatch = {
   at: "2026-09-25T11:02:41.000Z",
   "kernel-version": "3.0.0-dev",
   "template-hash": HASH,
-  report: ".bdk/changes/2026-09-25-passwordless-login/reports/02-3-implementer-A-7f3kx2p9.md",
+  report: ".bdk/changes/2026-09-25-passwordless-login/reports/02-implementer-A-7f3kx2p9.md",
+  draft: ".bdk/.machine/drafts/02-implementer-A-7f3kx2p9.md",
   rules: [],
 };
 

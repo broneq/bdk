@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 
 import { globalDir } from "../../shared/config/index.ts";
 import { isRefusal, refuse } from "../../shared/refusal/index.ts";
+import { stdinBody } from "../../shared/registry/index.ts";
 import type { Handler } from "../../shared/registry/index.ts";
 import { findProjectRoot } from "../../shared/store/index.ts";
 import { firstField, prInputSchema } from "../schema/render.ts";
@@ -30,7 +31,10 @@ export function renderCommand(deps: ReviewDeps): Handler {
     if (typeof pr === "string") {
       if (typeof out !== "string") return missingOut();
       const raw =
-        pr === "-" ? context.runtime.readStdin() : deps.store.read(resolve(context.cwd, pr));
+        pr === "-"
+          ? await stdinBody(context.runtime, ["bdk review render --pr <file> --out <file>"])
+          : deps.store.read(resolve(context.cwd, pr));
+      if (typeof raw === "object") return raw;
       if (raw === undefined) {
         return refuse("input/not-found", `--pr ${pr} names no file`, [
           "bdk review render --pr - --out <file>",

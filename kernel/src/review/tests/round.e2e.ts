@@ -8,19 +8,21 @@ import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { answered, bdk, git, refused } from "../../../tests/support/repo.ts";
+import { answered, bdk, ingestArgs, git, refused } from "../../../tests/support/repo.ts";
 import {
   closed,
+  dispatched,
   executed,
   opened,
   recorded,
   started,
-  stepsDone,
+  checkedIn,
+  conformed,
 } from "../../attempt/tests/e2e-support.ts";
 import type { Started } from "../../attempt/tests/e2e-support.ts";
 
 const TOOLS =
-  "tools:\n  test:\n    - id: unit\n      tier: fast\n      command: vitest run\n" +
+  'tools:\n  test:\n    - id: unit\n      tier: fast\n      command: "true"\n' +
   "      coverage:\n        command: vitest run --coverage\n        report: coverage/lcov.info\n        format: lcov\n        min: 50\n";
 
 interface Plan {
@@ -81,7 +83,7 @@ function gate(change: Started, round: string): void {
 /** The merged review of the round under `merge`, naming every entry of the round. */
 function mergedReview(change: Started, round: string, entries: string[], summary: string): void {
   answered(
-    run(change, ["log", "ingest", "--ticket", `${round}@merge`], report(entries)),
+    run(change, ingestArgs(change.root, `${round}@merge`, report(entries))),
     "output/log-ingest.json",
   );
   answered(
@@ -140,7 +142,7 @@ describe("a review round end to end", { timeout: 120_000 }, () => {
       );
       entries.push(id);
       answered(
-        run(change, ["log", "ingest", "--ticket", `${first}@${group.id}`], report([id])),
+        run(change, ingestArgs(change.root, `${first}@${group.id}`, report([id]))),
         "output/log-ingest.json",
       );
     }
@@ -159,7 +161,7 @@ describe("a review round end to end", { timeout: 120_000 }, () => {
       "output/dispatch-build.json",
     );
     answered(
-      run(change, ["log", "ingest", "--ticket", `${first}@integration`], report([])),
+      run(change, ingestArgs(change.root, `${first}@integration`, report([]))),
       "output/log-ingest.json",
     );
     gate(change, first);
@@ -186,6 +188,7 @@ describe("a review round end to end", { timeout: 120_000 }, () => {
 
     // The implementer's fix at the start of the next round, committed by the kernel.
     const second = opened(change, "review-fix", change.id);
+    dispatched(change, second, change.id);
     put(change, "src/01-1.ts", 'export const value = "validated";\n');
     expect(answered(run(change, ["commit", change.id]), "output/commit.json")).toMatchObject({
       ticket: second,
@@ -204,11 +207,15 @@ describe("a review round end to end", { timeout: 120_000 }, () => {
       ["p01", ["src/01-1.ts"]],
       ["integration", ["src/01-1.ts"]],
     ]);
-    // The fix's post-task steps under the round's ticket, then the full gate again.
-    stepsDone(change, second, change.id);
+    // The full gate again; the fix's post-task steps run under the round's ticket.
     gate(change, second);
     mergedReview(change, second, [], "fix verified");
-    // `attempt close ok` records the fix's simplify evidence (`kernel-pipeline`, Artifact kinds).
+    expect(
+      refused(run(change, ["attempt", "close", second, "ok"]), 2, "policy/missing-evidence").why,
+    ).toContain("conform");
+    conformed(change, second, change.id);
+    checkedIn(change, second, change.id);
+    // `attempt close ok` records the fix's conform evidence (`kernel-pipeline`, Artifact kinds).
     closed(change, second, "ok");
     expect(answered(run(change, ["done", "review"]), "output/done.json")).toMatchObject({
       artifact: "review",

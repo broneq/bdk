@@ -59,8 +59,8 @@ describe("readChange", () => {
   });
 
   it("names both files of a duplicate ticket", () => {
-    const first = "attempts/task-redispatch-02-3-A-7f3kx2p9.md";
-    const second = "attempts/verify-fix-02-3-A-7f3kx2p9.md";
+    const first = "attempts/part-02-A-7f3kx2p9.md";
+    const second = "attempts/verify-fix-02-A-7f3kx2p9.md";
     const store = memoryStore({
       [at(first)]: renderDocument(example.attempt, ""),
       [at(second)]: renderDocument({ ...example.attempt, loop: "verify-fix" }, ""),
@@ -73,9 +73,9 @@ describe("readChange", () => {
 
   it("lets a ticket repeat across its attempt, package and report", () => {
     const store = memoryStore({
-      [at("attempts/task-redispatch-02-3-A-7f3kx2p9.md")]: renderDocument(example.attempt, ""),
-      [at("dispatch/02-3-implementer-A-7f3kx2p9.md")]: renderDocument(example.dispatch, ""),
-      [at("reports/02-3-implementer-A-7f3kx2p9.md")]: renderDocument(example.report, ""),
+      [at("attempts/part-02-A-7f3kx2p9.md")]: renderDocument(example.attempt, ""),
+      [at("dispatch/02-implementer-A-7f3kx2p9.md")]: renderDocument(example.dispatch, ""),
+      [at("reports/02-implementer-A-7f3kx2p9.md")]: renderDocument(example.report, ""),
       [at("evidence/02-3-E-5hq0m2vd.md")]: renderDocument(example.evidence, ""),
     });
     expect(readChange(store, DIR).size).toBe(4);

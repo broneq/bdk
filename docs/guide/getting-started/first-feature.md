@@ -87,12 +87,13 @@ will make pass.
 /bdk:execute
 ```
 
-The skill never edits a file itself. For each task it opens a ticket, builds a
-dispatch package and starts a `bdk:worker` agent with it; after the
-implementer, the same ticket runs the simplifier and a `bdk:runner` agent that
-runs the tests related to the task's files and the scoped lint, recording each
-result as evidence. The kernel closes the ticket only on fresh, passing
-evidence, and the task becomes one commit:
+The skill never edits a file itself. For each plan part it opens a ticket,
+builds a dispatch package and starts a `bdk:worker` implementer with it, which
+builds the part's tasks and commits each one after `bdk check run <task>`. A
+`bdk:worker` conformer then checks the part and runs `bdk check run <part>`,
+which runs the tests related to the part's files and the scoped lint,
+recording each result as evidence. The kernel closes the ticket only on fresh,
+passing evidence, and each task is one commit:
 
 ```
 Store the login token

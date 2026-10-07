@@ -6,12 +6,12 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { answered, bdk, refused } from "../../../tests/support/repo.ts";
+import { answered, bdk, refused, ingestArgs } from "../../../tests/support/repo.ts";
 import { executed, opened, recorded, started } from "../../attempt/tests/e2e-support.ts";
 import type { Started } from "../../attempt/tests/e2e-support.ts";
 
 const TOOLS =
-  "tools:\n  test:\n    - id: unit\n      tier: fast\n      command: vitest run\n" +
+  'tools:\n  test:\n    - id: unit\n      tier: fast\n      command: "true"\n' +
   "      coverage:\n        command: vitest run --coverage\n        report: coverage/lcov.info\n        format: lcov\n        min: 50\n";
 
 function put(change: Started, path: string, content: string): void {
@@ -132,7 +132,7 @@ describe("the review verdict", () => {
       ).entry as { id: string }
     ).id;
     answered(
-      run(change, ["log", "ingest", "--ticket", `${ticket}@p01`], REPORT([finding])),
+      run(change, ingestArgs(change.root, `${ticket}@p01`, REPORT([finding]))),
       "output/log-ingest.json",
     );
     answered(
@@ -153,7 +153,7 @@ describe("the review verdict", () => {
     );
 
     answered(
-      run(change, ["log", "ingest", "--ticket", `${ticket}@merge`], REPORT([finding])),
+      run(change, ingestArgs(change.root, `${ticket}@merge`, REPORT([finding]))),
       "output/log-ingest.json",
     );
     answered(

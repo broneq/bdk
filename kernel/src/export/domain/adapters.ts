@@ -1,12 +1,16 @@
-// The eight host adapters (`role-contracts`, Adapters; design T23-D19, D20 of
+// The seven host adapters (`role-contracts`, Adapters; design T23-D19, D20 of
 // v3-t23a-roles-adapters). An adapter binds a role to a tool set and a model
 // tier; the role itself lives in the role skill and the dispatch package, so
 // the body is one sentence. Host names for tools and tiers are in `hosts.ts`.
 
 import type { Role } from "../../shared/vocabulary/index.ts";
 
-/** A group of host tools, mapped per host. Only `edit` writes files. */
-export type ToolClass = "read" | "search" | "edit" | "shell" | "message";
+/**
+ * A group of host tools, mapped per host. Only `edit` changes files; `draft`
+ * writes the report draft a package names, and `hooks pre-tool` denies it any
+ * other path (`guard/draft-only`, #166).
+ */
+export type ToolClass = "read" | "draft" | "search" | "edit" | "shell" | "message";
 
 export type Tier = "fast" | "balanced" | "deep";
 
@@ -32,23 +36,13 @@ function sentence(name: string, rule: string): string {
   return CONTRACT.replace("%s", name) + rule;
 }
 
-const READ_ONLY: readonly ToolClass[] = ["read", "search", "shell", "message"];
+const READ_ONLY: readonly ToolClass[] = ["read", "draft", "search", "shell", "message"];
 
 export const ADAPTERS: readonly AdapterDefinition[] = [
   {
-    name: "lead",
-    description:
-      "BDK adapter for the lead of one plan part, which dispatches its tasks to background agents, waits for them and commits them. Started by the swarm skill; not for general tasks.",
-    sentence: sentence("lead", "change no file yourself."),
-    tools: READ_ONLY,
-    tier: "balanced",
-    effort: "medium",
-    starts: ["worker", "runner", "reviewer", "scout"],
-  },
-  {
     name: "worker",
     description:
-      "BDK adapter for dispatched work that edits files (implementer and simplify packages). Started by BDK role skills and the swarm skill; not for general tasks.",
+      "BDK adapter for dispatched work that edits files (implementer and conformer packages). Started by BDK role skills and the swarm skill; not for general tasks.",
     sentence: sentence("worker", "change only the files it allows."),
     tools: ["read", "edit", "shell", "search", "message"],
     tier: "balanced",
@@ -94,9 +88,9 @@ export const ADAPTERS: readonly AdapterDefinition[] = [
   {
     name: "runner",
     description:
-      "BDK adapter that runs the project's tests and checks for a dispatch package (runner). Started by BDK role skills and the swarm skill; not for general tasks.",
+      "BDK adapter that runs the project's full tests and lint at the review gate (runner). Started by BDK role skills and the swarm skill; not for general tasks.",
     sentence: sentence("runner", "never change a project file yourself."),
-    tools: ["read", "shell", "message"],
+    tools: ["read", "draft", "shell", "message"],
     tier: "fast",
     effort: "low",
   },
@@ -114,7 +108,7 @@ export const ADAPTERS: readonly AdapterDefinition[] = [
 /** The adapter each role runs on (`role-contracts`, Role-to-adapter map). */
 export const ROLE_ADAPTERS: Readonly<Record<Role, string>> = {
   implementer: "worker",
-  simplifier: "worker",
+  conformer: "worker",
   verifier: "reader",
   "design-verifier": "reader",
   reviewer: "reviewer",
@@ -123,5 +117,4 @@ export const ROLE_ADAPTERS: Readonly<Record<Role, string>> = {
   "pr-reviewer": "reviewer",
   runner: "runner",
   scout: "scout",
-  lead: "lead",
 };

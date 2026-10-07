@@ -22,8 +22,7 @@ const loop = z.enum(LOOPS).meta({
   description: "The loop the ticket counts against (`kernel-loops`, Loops, targets and rounds).",
 });
 const target = z.string().min(1).meta({
-  description:
-    "Task id (task-redispatch), part id (verify-fix), Change id (review-fix) or artifact id (verifier).",
+  description: "Part id (part, verify-fix), Change id (review-fix) or artifact id (verifier).",
 });
 const scope = z.enum(TICKET_SCOPES);
 const outcome = z.enum(["ok", "fail", "not-run"]);
@@ -32,6 +31,23 @@ const timestamp = z.iso
   .meta({ description: "ISO 8601 UTC with milliseconds." });
 const count = z.int().min(0);
 const path = z.string().meta({ description: "Path relative to the project root." });
+const step = z.union([
+  z.strictObject({
+    kind: z.string().min(1).meta({ description: "The step's evidence kind." }),
+    role: z.string().min(1).meta({ description: "The role whose agent runs the step." }),
+  }),
+  z.strictObject({
+    kind: z.string().min(1).meta({ description: "The step's evidence kind." }),
+    command: z.string().min(1).meta({ description: "The kernel command that records it." }),
+  }),
+]);
+const base = z
+  .string()
+  .regex(/^[0-9a-f]{40,64}$/)
+  .meta({
+    description:
+      "A part or verify-fix ticket: the commit HEAD of the part's work root pointed at when it opened (#166).",
+  });
 
 export const attemptOpenOutput = z
   .strictObject({
@@ -42,6 +58,7 @@ export const attemptOpenOutput = z
     of: z.int().min(1).meta({ description: "The loop's budget for the round." }),
     scope,
     openedAt: timestamp,
+    base: base.optional(),
     narrowedFrom: scope.optional(),
     dropped: z
       .array(z.strictObject({ id: entryId, summary: z.string() }))
@@ -56,18 +73,10 @@ export const attemptOpenOutput = z
       })
       .optional()
       .meta({ description: "Present on the round's escalation ticket (--escalate)." }),
-    steps: z
-      .array(
-        z.strictObject({
-          kind: z.string().min(1).meta({ description: "The step's evidence kind." }),
-          role: z.string().min(1).meta({ description: "The role that runs the step." }),
-        }),
-      )
-      .optional()
-      .meta({
-        description:
-          "The post-task steps the orchestrator dispatches under the ticket after the implementer, in pipeline order; only for task-redispatch, verify-fix and review-fix.",
-      }),
+    steps: z.array(step).optional().meta({
+      description:
+        "The post-task steps of the ticket after the implementer, in pipeline order: the agent step and the kernel checks; only for part, verify-fix and review-fix.",
+    }),
     merge: z.literal(true).optional().meta({
       description:
         "A merge ticket: the kernel started merging the Change branch into the part's worktree (T45).",
@@ -84,19 +93,20 @@ export const attemptOpenOutput = z
     examples: [
       {
         ticket: "A-7f3k9m2q",
-        loop: "task-redispatch",
-        target: "02-3",
+        loop: "part",
+        target: "02",
         attempt: 2,
         of: 3,
         scope: "high+",
         openedAt: "2026-09-25T10:02:11.482Z",
+        base: "4c1d2e3f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d",
         narrowedFrom: "full",
         dropped: [{ id: "L-d3f6g8h2", summary: "rename helper for clarity" }],
         entry: "L-k4n8p2rt",
         steps: [
-          { kind: "simplify", role: "simplifier" },
-          { kind: "tests-scoped", role: "runner" },
-          { kind: "lint", role: "runner" },
+          { kind: "conform", role: "conformer" },
+          { kind: "tests-scoped", command: "bdk check run" },
+          { kind: "lint", command: "bdk check run" },
         ],
       },
     ],
@@ -132,7 +142,7 @@ export const attemptCloseOutput = z
         .enum(["commit", "part-done", "review-done", "retry", "narrow", "escalate", "parked"])
         .meta({
           description:
-            "commit after ok, the step evidence having passed; part-done after ok of a part-lead ticket; review-done after ok of a review-fix ticket; the ladder's rung after fail or not-run.",
+            "part-done after ok of a part or verify-fix ticket; review-done after ok of a review-fix ticket; commit after ok of a verifier ticket; the ladder's rung after fail or not-run.",
         }),
       scope: scope.optional(),
       entry: entryId.optional().meta({ description: "The ladder question that parks the Change." }),
@@ -173,24 +183,17 @@ const attemptItem = z.strictObject({
   outcome: outcome.optional(),
   escalation: z.literal(true).optional(),
   entries: count.optional().meta({
-    description: "Ledger entries written under the ticket; with --for naming a task.",
+    description: "Ledger entries written under the ticket; with --for.",
   }),
 }) satisfies z.ZodType<AttemptItem>;
 
 const attemptShowFields = {
   ...attemptItem.shape,
-  steps: z
-    .array(
-      z.strictObject({
-        kind: z.string().min(1).meta({ description: "The step's evidence kind." }),
-        role: z.string().min(1).meta({ description: "The role that runs the step." }),
-      }),
-    )
-    .optional()
-    .meta({
-      description:
-        "The post-task steps of the ticket, as `attempt open` returned them; only for task-redispatch, verify-fix and review-fix.",
-    }),
+  base: base.optional(),
+  steps: z.array(step).optional().meta({
+    description:
+      "The post-task steps of the ticket, as `attempt open` returned them; only for part, verify-fix and review-fix.",
+  }),
 };
 
 const budget = z.strictObject({ used: count, of: count });
@@ -214,8 +217,8 @@ export const attemptListOutput = z
         items: [
           {
             ticket: "A-7f3k9m2q",
-            loop: "task-redispatch",
-            target: "02-3",
+            loop: "part",
+            target: "02",
             attempt: 2,
             of: 3,
             scope: "high+",
@@ -227,8 +230,8 @@ export const attemptListOutput = z
         ],
         total: 1,
         truncated: false,
-        for: "02-3",
-        budgets: { "task-redispatch": { used: 2, of: 3 }, "not-run": { used: 0, of: 3 } },
+        for: "02",
+        budgets: { part: { used: 2, of: 3 }, "not-run": { used: 0, of: 3 } },
       },
     ],
   }) satisfies z.ZodType<AttemptListReport>;
@@ -239,15 +242,17 @@ export const attemptShowOutput = z.strictObject(attemptShowFields).meta({
   examples: [
     {
       ticket: "A-7f3k9m2q",
-      loop: "task-redispatch",
-      target: "02-3",
+      loop: "part",
+      target: "02",
       attempt: 2,
       of: 3,
       scope: "high+",
       openedAt: "2026-09-25T10:02:11.482Z",
+      base: "4c1d2e3f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d",
       steps: [
-        { kind: "simplify", role: "simplifier" },
-        { kind: "tests-scoped", role: "runner" },
+        { kind: "conform", role: "conformer" },
+        { kind: "tests-scoped", command: "bdk check run" },
+        { kind: "lint", command: "bdk check run" },
       ],
     },
   ],

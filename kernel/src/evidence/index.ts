@@ -8,6 +8,7 @@ import type { EvidenceDeps } from "./use-cases/deps.ts";
 
 export type { EvidenceDeps } from "./use-cases/deps.ts";
 export { closeEvidence } from "./use-cases/close.ts";
+export { recordEvidence } from "./use-cases/record.ts";
 export { currentTrees, filePolicy } from "./use-cases/scope.ts";
 export { fileClass } from "./use-cases/tree.ts";
 

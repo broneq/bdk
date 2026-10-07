@@ -58,6 +58,8 @@ export interface PartDoneReport {
   readonly merge?: string | undefined;
   /** Leftovers of the worktree no task declares, dropped with it. */
   readonly discarded?: readonly string[] | undefined;
+  /** The checkpoint commit of the Change directory, short SHA; absent when it skipped (#166). */
+  readonly checkpoint?: string | undefined;
 }
 
 export interface PartSplitReport {

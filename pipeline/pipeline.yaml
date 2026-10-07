@@ -82,13 +82,13 @@ nodes:
     kind: execute-part
     stage: execute
     requires: [plan, plan-verify]
-    budget: task-redispatch
+    budget: part
     kinds: [feature, bug]
 
-  # The post-task steps run inside each task's ticket, in this order
-  # (T23-D40, D41); each instance is done from the evidence covering its part.
-  - id: simplify
-    kind: simplify
+  # The post-task steps run inside each part's ticket, in this order
+  # (T23-D40, D41, #166); each instance is done from the evidence covering its part.
+  - id: conform
+    kind: conform
     stage: execute
     requires: [execute]
     kinds: [feature, bug]
@@ -96,13 +96,13 @@ nodes:
   - id: tests-scoped
     kind: tests-scoped
     stage: execute
-    requires: [simplify]
+    requires: [conform]
     kinds: [feature, bug]
 
   - id: lint
     kind: lint
     stage: execute
-    requires: [simplify]
+    requires: [conform]
     kinds: [feature, bug]
 
   - id: spec-delta
@@ -116,17 +116,17 @@ nodes:
   - id: tests-full
     kind: tests-full
     stage: review
-    requires: [execute, simplify, tests-scoped, lint, spec-delta]
+    requires: [execute, conform, tests-scoped, lint, spec-delta]
 
   - id: lint-full
     kind: lint-full
     stage: review
-    requires: [execute, simplify, tests-scoped, lint, spec-delta]
+    requires: [execute, conform, tests-scoped, lint, spec-delta]
 
   - id: review
     kind: review
     stage: review
-    requires: [execute, simplify, tests-scoped, lint, spec-delta, tests-full, lint-full]
+    requires: [execute, conform, tests-scoped, lint, spec-delta, tests-full, lint-full]
     budget: review-fix
 
   - id: gate:review

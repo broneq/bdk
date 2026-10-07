@@ -39,6 +39,7 @@ async function run(argv: string[], nodeVersion: string, workTree: string | undef
       workTree: () => workTree,
       which: () => undefined,
       readStdin: () => "",
+      readBody: () => Promise.resolve({ text: "" }),
     },
     streams: { stdout: (text) => (stdout += text), stderr: () => undefined },
   });

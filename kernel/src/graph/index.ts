@@ -3,12 +3,7 @@
 // node states and gates through `changeGraph`.
 import type { Registration } from "../shared/registry/index.ts";
 import { doneCommand, explainCommand, nextCommand, validateCommand } from "./commands/graph.ts";
-import {
-  executionTreeModule,
-  executionWorktreeModule,
-  gatesModule,
-  pipelinePrompts,
-} from "./config.ts";
+import { executionWorktreeModule, gatesModule, pipelinePrompts, planPartModule } from "./config.ts";
 import type { GraphDeps } from "./use-cases/deps.ts";
 
 export type { GraphDeps } from "./use-cases/deps.ts";
@@ -28,7 +23,7 @@ export { writeDoneMarker } from "./use-cases/done.ts";
 export { gateRefusal, requireGate } from "./use-cases/gate.ts";
 
 export const graphConfig = {
-  modules: [gatesModule, executionTreeModule, executionWorktreeModule],
+  modules: [gatesModule, planPartModule, executionWorktreeModule],
   prompts: [...pipelinePrompts],
 };
 

@@ -8,7 +8,7 @@ import commands from "../../schema/cli/commands.json" with { type: "json" };
 import { registrations, settingsRegistry } from "../src/registrations.ts";
 import { loadIndex } from "../src/shared/registry/index.ts";
 import { systemClock } from "../src/shared/clock/index.ts";
-import { systemGit } from "../src/shared/git/index.ts";
+import { runCommand, systemGit } from "../src/shared/git/index.ts";
 import { memoryIndex, memoryRegistry, memoryStore } from "../src/shared/store/index.ts";
 import type { CommandRecord } from "../src/shared/registry/index.ts";
 import { createFixture } from "./support/fixture.ts";
@@ -24,6 +24,7 @@ const implemented = new Set(
     commands: index,
     settings: settingsRegistry(),
     git: systemGit,
+    shell: runCommand,
     openIndex: memoryIndex,
     openRegistry: memoryRegistry(),
     clock: systemClock,

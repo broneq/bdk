@@ -15,7 +15,7 @@
 // `shared-lockfile-unisolated` is its plan with both parts shared, done and
 // not yet verified.
 import { execFileSync } from "node:child_process";
-import { cpSync, existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -50,15 +50,42 @@ function envOf(kernel: Kernel): NodeJS.ProcessEnv {
   return kernel.configHome === undefined ? ENV : { ...ENV, XDG_CONFIG_HOME: kernel.configHome };
 }
 
-function run(dir: string, kernel: Kernel, args: readonly string[], stdin?: string): unknown {
+function run(dir: string, kernel: Kernel, args: readonly string[]): unknown {
   const stdout = execFileSync("node", [kernel.bundle, ...args, "--json"], {
     cwd: dir,
     env: envOf(kernel),
     encoding: "utf8",
     stdio: "pipe",
-    ...(stdin === undefined ? {} : { input: stdin }),
   });
   return stdout.trim() === "" ? undefined : (JSON.parse(stdout) as unknown);
+}
+
+/** A role's report stored as the role stores it: written to a draft, then `log ingest --file`. */
+function ingest(dir: string, kernel: Kernel, ticket: string, report: string): void {
+  const draft = `.bdk/.machine/drafts/seed-${ticket.replace("@", "-")}.md`;
+  mkdirSync(join(dir, ".bdk/.machine/drafts"), { recursive: true });
+  writeFileSync(join(dir, draft), report);
+  run(dir, kernel, ["log", "ingest", "--ticket", ticket, "--file", draft]);
+}
+
+/** A passing check result recorded as `kind` under `ticket`, in the ticket's checks directory. */
+function passed(dir: string, kernel: Kernel, ticket: string, kind: string): void {
+  const checks = `.bdk/.machine/checks/${ticket.replace(/@.*$/, "")}`;
+  mkdirSync(join(dir, checks), { recursive: true });
+  const result = `${checks}/${kind}.json`;
+  writeFileSync(join(dir, result), '{"failed":0}\n');
+  run(dir, kernel, [
+    "evidence",
+    "record",
+    kind,
+    result,
+    "--ticket",
+    ticket,
+    "--verdict",
+    "pass",
+    "--cite",
+    "/failed",
+  ]);
 }
 
 function field(value: unknown, name: string): string {
@@ -101,7 +128,7 @@ function projectTools(dir: string, kernel: Kernel): void {
 function verified(dir: string, kernel: Kernel, node: "design-verify" | "plan-verify"): void {
   const ticket = field(run(dir, kernel, ["attempt", "open", "verifier", node]), "ticket");
   const report = field(run(dir, kernel, ["dispatch", "build", node, "verifier", ticket]), "report");
-  run(dir, kernel, ["log", "ingest", "--ticket", ticket], PASS);
+  ingest(dir, kernel, ticket, PASS);
   run(dir, kernel, ["log", "add", "report", `${node} passed`, "--ref", node, "--ticket", ticket]);
   run(dir, kernel, ["attempt", "close", ticket, "ok", "--envelope", report]);
   run(dir, kernel, ["done", node]);
@@ -174,49 +201,52 @@ function unisolated(_name: string, text: string): string {
 }
 
 /**
- * One task delivered as `/bdk:execute` runs it: implementer, steps, ticket
- * closed, commit. `deliver` writes the task's code and returns its paths.
+ * A one-task part delivered as `/bdk:execute` runs it (#166): the part's
+ * implementer writes the task, its checks pass and it commits with the
+ * trailers `bdk check run` prints; the conformer passes and the ticket
+ * closes. `deliver` writes the task's code and returns its paths.
  */
-function deliveredTask(
+function deliveredPart(
   dir: string,
   kernel: Kernel,
+  change: string,
+  part: string,
   task: string,
   deliver: () => readonly string[],
 ): void {
-  const ticket = field(run(dir, kernel, ["attempt", "open", "task-redispatch", task]), "ticket");
+  const ticket = field(run(dir, kernel, ["attempt", "open", "part", part]), "ticket");
   const report = field(
-    run(dir, kernel, ["dispatch", "build", task, "implementer", ticket]),
+    run(dir, kernel, ["dispatch", "build", part, "implementer", ticket]),
     "report",
   );
   run(dir, kernel, ["rules", "show", "--ticket", ticket]);
   const files = deliver();
-  run(
+  for (const kind of ["tests-scoped", "lint"]) passed(dir, kernel, ticket, kind);
+  git(dir, "add", "--", ...files);
+  git(
+    dir,
+    "commit",
+    "-q",
+    "-m",
+    `Deliver ${task}`,
+    "--trailer",
+    `BDK-Change: ${change}`,
+    "--trailer",
+    `BDK-Part: ${part}`,
+    "--trailer",
+    `BDK-Task: ${task}`,
+    "--",
+    ...files,
+  );
+  ingest(
     dir,
     kernel,
-    ["log", "ingest", "--ticket", ticket],
+    ticket,
     `---\nstatus: done\nfiles: [${files.join(", ")}]\nentries: []\nevidence: []\n---\nDelivered.\n`,
   );
-  run(dir, kernel, ["dispatch", "build", task, "simplifier", ticket]);
-  run(dir, kernel, ["log", "ingest", "--ticket", ticket], PASS);
-  run(dir, kernel, ["dispatch", "build", task, "runner", ticket]);
-  for (const kind of ["tests-scoped", "lint"]) {
-    const result = `.bdk/.machine/${kind}-${ticket}.json`;
-    writeFileSync(join(dir, result), '{"failed":0}\n');
-    run(dir, kernel, [
-      "evidence",
-      "record",
-      kind,
-      result,
-      "--ticket",
-      ticket,
-      "--verdict",
-      "pass",
-      "--cite",
-      "/failed",
-    ]);
-  }
+  run(dir, kernel, ["dispatch", "build", part, "conformer", ticket]);
+  ingest(dir, kernel, ticket, PASS);
   run(dir, kernel, ["attempt", "close", ticket, "ok", "--envelope", report]);
-  run(dir, kernel, ["commit", task]);
 }
 
 /**
@@ -262,23 +292,8 @@ function patched(dir: string, patch: string, defects?: string): () => readonly s
 function reviewRound(dir: string, kernel: Kernel, change: string): void {
   const ticket = field(run(dir, kernel, ["attempt", "open", "review-fix", change]), "ticket");
   run(dir, kernel, ["dispatch", "build", change, "runner", ticket, "--group", "gate"]);
-  for (const kind of ["tests-full", "lint-full"]) {
-    const result = `.bdk/.machine/${kind}-${ticket}.json`;
-    writeFileSync(join(dir, result), '{"failed":0}\n');
-    run(dir, kernel, [
-      "evidence",
-      "record",
-      kind,
-      result,
-      "--ticket",
-      `${ticket}@gate`,
-      "--verdict",
-      "pass",
-      "--cite",
-      "/failed",
-    ]);
-  }
-  run(dir, kernel, ["log", "ingest", "--ticket", `${ticket}@merge`], PASS);
+  for (const kind of ["tests-full", "lint-full"]) passed(dir, kernel, `${ticket}@gate`, kind);
+  ingest(dir, kernel, `${ticket}@merge`, PASS);
   run(dir, kernel, ["log", "add", "report", "review passed", "--ticket", `${ticket}@merge`]);
   run(dir, kernel, ["attempt", "close", ticket, "ok"]);
   run(dir, kernel, ["done", "review"]);
@@ -300,7 +315,7 @@ function executedTiny(dir: string, kernel: Kernel, appName: string): string {
   cpSync(join(REVIEWED, "plan"), join(dir, ".bdk", "changes", change, "plan"), { recursive: true });
   run(dir, kernel, ["done", "plan"]);
   run(dir, kernel, ["part", "start", "01"]);
-  deliveredTask(dir, kernel, "01-1", () => {
+  deliveredPart(dir, kernel, change, "01", "01-1", () => {
     writeFileSync(join(dir, "src/app-name.ts"), appName);
     return ["src/app-name.ts"];
   });
@@ -341,7 +356,7 @@ function executedTwoParts(dir: string, kernel: Kernel, defects?: string): void {
     ["02", "02-1"],
   ] as const) {
     run(dir, kernel, ["part", "start", part]);
-    deliveredTask(dir, kernel, task, patched(dir, taskPatch(task), defects));
+    deliveredPart(dir, kernel, change, part, task, patched(dir, taskPatch(task), defects));
     run(dir, kernel, ["part", "done", part]);
   }
   run(dir, kernel, ["done", "spec-delta"]);

@@ -20,7 +20,13 @@ import preSkill from "../../../../tests/fixtures/host-payloads/2.1.287/pre-skill
 import { opened, writeDesign, done, verdict, write } from "../../graph/tests/e2e-support.ts";
 import { bdk, git, repository } from "../../../tests/support/repo.ts";
 import { REPO_ROOT } from "../../../tests/support/run.ts";
-import { agentFg, mainBash, recorded, subagentBash, preEdit } from "./payloads.ts";
+import {
+  closed as closedTicket,
+  executed,
+  opened as openedTicket,
+  started,
+} from "../../attempt/tests/e2e-support.ts";
+import { agentFg, mainBash, recorded, subagentBash, preEdit, preWrite } from "./payloads.ts";
 import type { Payload } from "./payloads.ts";
 
 interface HookFile {
@@ -72,6 +78,7 @@ function hook(event: string, cwd: string, payload: Payload, options: HookOptions
       GIT_COMMITTER_NAME: "BDK Test",
       GIT_COMMITTER_EMAIL: "test@example.com",
       HOME: cwd,
+      CLAUDE_PROJECT_DIR: cwd,
       XDG_CONFIG_HOME: join(cwd, ".xdg"),
       CLAUDE_PLUGIN_ROOT: options.pluginRoot ?? REPO_ROOT,
       PATH: options.path ?? process.env.PATH ?? "",
@@ -306,7 +313,7 @@ describe("PreToolUse guard", () => {
     expect(run.stderr).toMatch(/^guard\/spec-dir-write: /);
   });
 
-  it("denies the integrator and the judge a file write, and passes a heredoc report (#158)", () => {
+  it("denies the integrator and the judge a Bash write (#158)", () => {
     const { root } = opened();
     const integrator = hook(
       "PreToolUse",
@@ -322,15 +329,6 @@ describe("PreToolUse guard", () => {
     );
     expect(judge.code).toBe(2);
     expect(judge.stderr).toMatch(/^guard\/reader-write: the judge adapter may not write/);
-    const heredoc = hook(
-      "PreToolUse",
-      root,
-      subagentBash(
-        "bdk log ingest --ticket A-7f3k9m2q@m1 <<'REPORT'\n# Review\n\nA > B\nREPORT",
-        "bdk:integrator",
-      ),
-    );
-    expect(heredoc.code, heredoc.stderr).toBe(0);
   });
 
   it("denies a judge without a registry package its triage, and any other orchestrator verb (#158)", () => {
@@ -353,6 +351,20 @@ describe("PreToolUse guard", () => {
     expect(resolve.stderr).toMatch(
       /^guard\/subagent-kernel-command: subagents may not run bdk log resolve,/,
     );
+  });
+
+  it("holds the main thread to report drafts while a review round is open (#166)", () => {
+    const change = executed(started());
+    const write = (path: string) =>
+      hook("PreToolUse", change.root, recorded(preWrite, { file_path: join(change.root, path) }));
+    expect(write("src/app.ts").code).toBe(0);
+    const round = openedTicket(change, "review-fix", change.id);
+    const run = write("src/app.ts");
+    expect(run.code).toBe(2);
+    expect(run.stderr).toMatch(new RegExp(`^guard/draft-only: review round ${round} is open`));
+    expect(write(`.bdk/.machine/drafts/${round}-merge.md`).code).toBe(0);
+    closedTicket(change, round, "not-run", "--reason", "the reviewers did not start");
+    expect(write("src/app.ts")).toStrictEqual({ code: 0, stdout: "", stderr: "" });
   });
 
   it("passes a recorded Agent call to a non-BDK agent", () => {

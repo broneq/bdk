@@ -40,6 +40,7 @@ export interface ViewFixture {
   readonly coverageTools?: readonly string[];
   /** The state of each tool group; `configured` when left out. */
   readonly toolGroups?: Partial<Record<ToolGroupName, ToolGroupState>>;
+  readonly partLimits?: { readonly maxTasks?: number; readonly maxFiles?: number };
   /** Ticket -> its loop. */
   readonly loops?: Readonly<Record<string, string>>;
   /** Ticket -> the outcome it closed with; a ticket of `loops` missing here closed `ok`. */
@@ -92,6 +93,7 @@ export function fakeView(fixture: ViewFixture = {}): ChangeView {
     partTree: (nn) => fixture.partTrees?.[nn],
     changeTree: () => fixture.changeTree,
     coverageTools: fixture.coverageTools ?? [],
+    partLimits: { maxTasks: 5, maxFiles: 10, ...fixture.partLimits },
     toolGroups: { test: "configured", lint: "configured", ...fixture.toolGroups },
     ticketLoop: (ticket) => fixture.loops?.[ticket],
     ticketOutcome: (ticket) =>

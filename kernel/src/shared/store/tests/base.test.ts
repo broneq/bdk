@@ -1,6 +1,7 @@
 // The Change base (`kernel-cli/review`, bdk review plan; `kernel-cli/evidence`,
-// bdk evidence coverage): the parent of the first commit that added the
-// Change's `change.md`, `HEAD` before it is committed, the empty tree when that
+// bdk evidence coverage): the parent of the Change's first commit, the one
+// that added `change.md` or the first carrying its `BDK-Change` trailer,
+// `HEAD` before either exists, the empty tree when that
 // commit is the root, and the stamped `base` of a review Change; and the lines
 // added against it, untracked files whole.
 import { execFileSync } from "node:child_process";
@@ -63,6 +64,39 @@ describe("changeBase", () => {
     openChange(" Edited.");
     write("src/a.ts", "a\n");
     commit("work");
+    expect(await baseOf()).toBe(before);
+  });
+
+  it("is the parent of the first task commit when the Change directory is committed later (#166)", async () => {
+    write("README.md", "# app\n");
+    const before = commit("initial");
+    openChange();
+    write("src/a.ts", "a\n");
+    sh("add", "src/a.ts");
+    sh(
+      "commit",
+      "--quiet",
+      "-m",
+      "Task 01-1",
+      "--trailer",
+      "BDK-Change: 2026-09-25-login",
+      "--trailer",
+      "BDK-Task: 01-1",
+      "--",
+      "src/a.ts",
+    );
+    commit("checkpoint the Change");
+    expect(await baseOf()).toBe(before);
+  });
+
+  it("is the parent of the commit that added change.md before a later trailer commit", async () => {
+    write("README.md", "# app\n");
+    const before = commit("initial");
+    openChange();
+    commit("open the Change");
+    write("src/a.ts", "a\n");
+    sh("add", "src/a.ts");
+    sh("commit", "--quiet", "-m", "Task 01-1", "--trailer", "BDK-Change: 2026-09-25-login");
     expect(await baseOf()).toBe(before);
   });
 

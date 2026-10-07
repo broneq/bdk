@@ -1,7 +1,7 @@
 ---
 schema: 1
 ticket: A-7f3kx2p9
-target: 02-3
+target: "02"
 role: implementer
 adapter: worker
 attempt: 1
@@ -10,7 +10,8 @@ scope: full
 at: 2026-09-25T11:02:41.000Z
 kernel-version: 3.0.0-dev
 template-hash: sha256:ed6c03db03a785e2eb2a9935d4737aa48579b40ebb932e3b77be0adf59ae64a2
-report: .bdk/changes/2026-09-25-passwordless-login/reports/02-3-implementer-A-7f3kx2p9.md
+report: .bdk/changes/2026-09-25-passwordless-login/reports/02-implementer-A-7f3kx2p9.md
+draft: .bdk/.machine/drafts/02-implementer-A-7f3kx2p9.md
 rules: [BDK-CQ-1, BDK-TS-2]
 ---
 
@@ -18,7 +19,7 @@ rules: [BDK-CQ-1, BDK-TS-2]
 
 Users log in with a one-time link sent by email instead of a password.
 
-## Task 02-3
+## Part 02
 
 Verify the link.
 
