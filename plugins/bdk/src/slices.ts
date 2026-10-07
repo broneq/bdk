@@ -22,6 +22,10 @@ export const SLICES: Readonly<
     imports: ["config"],
     why: "the session-start context and the subagent-git guard read the resolved configuration through loadConfig",
   },
+  openspec: {
+    imports: [],
+    why: "installs the BDK OpenSpec schema the plugin ships into a project, for /bdk:setup",
+  },
   plan: {
     imports: ["config"],
     why: "bdk plan check reads the part limits plan.part.* through loadConfig, a config use case",

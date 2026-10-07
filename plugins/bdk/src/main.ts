@@ -9,6 +9,7 @@ import { configGroup } from "./config/index.ts";
 import { findingsGroup } from "./findings/index.ts";
 import { gitGroup } from "./git/index.ts";
 import { hooksGroup } from "./hooks/index.ts";
+import { openspecGroup } from "./openspec/index.ts";
 import { planGroup } from "./plan/index.ts";
 import { rulesGroup } from "./rules/index.ts";
 import { runGroup } from "./run/index.ts";
@@ -35,6 +36,12 @@ const GROUPS: readonly Group[] = [
   gitGroup({ ...deps, git: (cwd, args) => git(cwd, args) }),
   planGroup(deps),
   hooksGroup({ ...deps, stdin: readStdin }),
+  // The bundle is `<plugin root>/dist/bdk.mjs`, so the plugin root is its parent directory.
+  openspecGroup({
+    files,
+    cwd: deps.cwd,
+    pluginRoot: fileURLToPath(new URL("..", import.meta.url)),
+  }),
 ];
 
 process.exitCode = await run({

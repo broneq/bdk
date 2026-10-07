@@ -168,6 +168,24 @@ describe("bin/bdk", () => {
     });
   });
 
+  it("installs the schema shipped next to the bundle into the working directory", () => {
+    const shipped = join(PLUGIN, "openspec", "schemas", "bdk");
+    cpSync(join(PLUGIN, "openspec"), join(plugin, "openspec"), { recursive: true });
+    const { status, stdout, stderr } = bdk(join(plugin, "bin", "bdk"), ["openspec", "install"]);
+    const installed = join(elsewhere, "openspec", "schemas", "bdk");
+    const same = ["schema.yaml", "templates/part.md"].map(
+      (path) =>
+        readFileSync(join(installed, path), "utf8") === readFileSync(join(shipped, path), "utf8"),
+    );
+    rmSync(join(elsewhere, "openspec"), { recursive: true });
+    rmSync(join(plugin, "openspec"), { recursive: true });
+    expect({ status, stderr }).toEqual({ status: 0, stderr: "" });
+    expect(stdout).toMatch(
+      /^Installed the BDK OpenSpec schema in openspec\/schemas\/bdk: \d+ added/,
+    );
+    expect(same).toEqual([true, true]);
+  });
+
   it("exits 3 with one repair line when the bundle is missing", () => {
     const { status, stdout, stderr } = bdk(join(root, "unbuilt", "bin", "bdk"), ["--version"]);
     expect(status).toBe(3);
