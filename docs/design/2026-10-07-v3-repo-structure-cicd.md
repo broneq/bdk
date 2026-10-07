@@ -214,7 +214,7 @@ flowchart LR
 - Job `release-please`: manifest mode, one component per `plugins/<name>`, release type `simple` with an `extra-files` json updater on `.claude-plugin/plugin.json` (`$.version`), `tag-separator: "--"` so tags read `bdk--v3.0.0`, matching `claude plugin tag`. It runs with a GitHub App token, so its release PRs and tags trigger normal PR CI.
 - Job `publish`: needs `release-please`, runs only when a release was created, iterates over the released paths **in one job, one plugin after another** (no matrix legs competing in a concurrency group, which would cancel pending legs). Workflow-level `concurrency: release`, without cancel-in-progress. For each released plugin `P`:
   1. Check out tag `P--vX` and build `P`.
-  2. Copy the runtime files of `P` (manifest, skills, agents, hooks, `bin/`, `dist/`; no `src/`, `tests/`, `evals/`, `version.txt`) into a snapshot.
+  2. Copy the runtime files of `P` (manifest, skills, agents, hooks, `bin/`, `dist/`; no `src/`, `tests/`, `evals/`) into a snapshot.
   3. Run `claude plugin validate --strict` on the snapshot and compare `bin/<cli> --version` with `X`.
   4. Fetch the head of `release`, replace only `plugins/P/`, commit, push fast-forward with the App token.
 - A ruleset on `release` allows pushes only from that GitHub App.
@@ -264,7 +264,7 @@ flowchart TB
 ## What We Did NOT Decide
 
 - [ ] npm publishing of the CLIs: which ones, the npm scope, and authentication (prefer trusted publishing with OIDC and provenance).
-- [ ] Exact release-please config, confirmed by a dry run: the `extra-files` updater and whether `version.txt` is produced.
+- [x] Exact release-please config, confirmed by a dry run: the `extra-files` updater and whether `version.txt` is produced. Done in the OpenSpec Change `v3-173-release-please-dry-run`: release type `simple` stays and writes no `version.txt`; plugin manifests keep the layout the json updater writes.
 - [ ] Bootstrap of the `release` branch: a one-off run of the App or a manual first commit, before the first plugin release.
 - [ ] How release-please relates to `staging/v3` while v3 is in progress (target: runs on `main` only; v3 lands through the merge of `staging/v3`).
 - [ ] Re-probe `plugin-bin-hook` on newer Claude Code versions.

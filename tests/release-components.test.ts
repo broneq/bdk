@@ -36,6 +36,16 @@ function pluginDirectories(repoRoot: string): string[] {
     .sort();
 }
 
+function versionTxtFiles(repoRoot: string): string[] {
+  const plugins = join(repoRoot, "plugins");
+  if (!existsSync(plugins)) return [];
+  return readdirSync(plugins, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => `plugins/${entry.name}/version.txt`)
+    .filter((path) => existsSync(join(repoRoot, path)))
+    .sort();
+}
+
 describe("release-please configuration", () => {
   const config = readJson("release-please-config.json") as ReleasePleaseConfig;
   const manifest = readJson(".release-please-manifest.json") as Record<string, string>;
@@ -67,5 +77,24 @@ describe("release-please configuration", () => {
 
   it("keeps the manifest in step with the packages", () => {
     expect(Object.keys(manifest).sort()).toEqual(Object.keys(config.packages).sort());
+  });
+
+  // Release type `simple` bumps a version.txt that exists, which would give a
+  // plugin a second version next to plugin.json (v3-173-release-please-dry-run).
+  it("keeps plugin.json the only version file of a plugin", () => {
+    expect(versionTxtFiles(root), "plugin.json is the only version of a plugin").toEqual([]);
+  });
+
+  // The json updater of release-please rewrites the whole manifest with
+  // JSON.stringify. A manifest already in that layout gets a release PR that
+  // changes only its version line (prettier skips manifests for this reason).
+  it("keeps every plugin.json in the layout release-please writes", () => {
+    const notSerialized = pluginDirectories(root)
+      .map((dir) => `${dir}/.claude-plugin/plugin.json`)
+      .filter((path) => {
+        const content = readFileSync(join(root, path), "utf8");
+        return content !== `${JSON.stringify(JSON.parse(content), null, 2)}\n`;
+      });
+    expect(notSerialized, "rewrite as JSON.stringify(manifest, null, 2) + newline").toEqual([]);
   });
 });

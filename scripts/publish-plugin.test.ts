@@ -66,7 +66,6 @@ function writePlugin(name: string, options: PluginOptions): void {
   );
   write(join(dir, "tests", "cli.test.ts"), "// fixture test\n");
   write(join(dir, "evals", "case.json"), "{}\n");
-  write(join(dir, "version.txt"), `${options.version}\n`);
   write(join(dir, "tsconfig.json"), "{}\n");
   write(join(dir, "CHANGELOG.md"), `# ${name}\n`);
 }

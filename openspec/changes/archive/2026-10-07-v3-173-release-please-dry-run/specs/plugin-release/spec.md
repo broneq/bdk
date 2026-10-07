@@ -1,16 +1,4 @@
-# plugin-release Specification
-
-## Purpose
-Defines how a change to one plugin under `plugins/<name>/` on `main` becomes a versioned release and reaches users as built runtime files on the `release` branch, without touching any other plugin.
-
-## Requirements
-
-### Requirement: Releases run only from main
-The release workflow SHALL run only on pushes to `main`. A push to any other branch, `staging/v3` included, SHALL NOT open a release pull request, create a tag or write the `release` branch.
-
-#### Scenario: Push to staging/v3
-- **WHEN** a pull request merges into `staging/v3`
-- **THEN** no release workflow run starts and no `<name>--v*` tag is created
+## MODIFIED Requirements
 
 ### Requirement: One release pull request per changed plugin version
 On a push to `main`, release-please SHALL open or update a release pull request for every plugin under `plugins/` with releasable Conventional Commits since its last tag. The release pull request SHALL set `version` in that plugin's `.claude-plugin/plugin.json` to the new version and update that plugin's `CHANGELOG.md`. Besides those two files it SHALL change only the plugin's entry in `.release-please-manifest.json`: it creates no `version.txt` or any other version file, and it touches no file of another plugin.
@@ -64,25 +52,3 @@ For each plugin released in a run, one after another, the publish job SHALL buil
 #### Scenario: No version file besides the manifest
 - **WHEN** plugin `demo` is published after a release pull request built by release-please
 - **THEN** `plugins/demo/` on `release` holds the version only in `.claude-plugin/plugin.json` and holds no `version.txt`
-
-### Requirement: Publishing validates the snapshot before pushing
-Before it pushes, the publish job SHALL check that the plugin's `name` and `version` in `.claude-plugin/plugin.json` match the tag, run `claude plugin validate --strict` on the snapshot, and run every executable in the snapshot's `bin/` with `--version`, requiring its trimmed standard output to equal the released version. Any failure SHALL fail the job and leave the `release` branch unchanged for that plugin.
-
-#### Scenario: Version mismatch
-- **WHEN** the snapshot's `bin/<cli> --version` prints a version other than the tag's version
-- **THEN** the publish job fails, names the plugin and the two versions, and pushes nothing for that plugin
-
-#### Scenario: Invalid snapshot
-- **WHEN** the snapshot fails `claude plugin validate --strict`
-- **THEN** the publish job fails and the `release` branch is unchanged for that plugin
-
-### Requirement: Only the release App writes the release branch
-A ruleset SHALL restrict creating, updating, force-pushing and deleting `refs/heads/release`, with the release GitHub App as its only bypass actor. Release-please and the publish job SHALL authenticate as that App.
-
-#### Scenario: Push by a person
-- **WHEN** a repository administrator pushes a commit to `release`
-- **THEN** GitHub rejects the push
-
-#### Scenario: Push by the publish job
-- **WHEN** the publish job pushes a validated snapshot with the App token
-- **THEN** GitHub accepts the push
