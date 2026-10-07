@@ -2,6 +2,7 @@
 // the command groups into the frame and sets the exit code.
 
 import { findingsGroup } from "./findings/index.ts";
+import { runGroup } from "./run/index.ts";
 import { run } from "./shared/cli/index.ts";
 import type { Group } from "./shared/cli/index.ts";
 import { files } from "./shared/fs/index.ts";
@@ -9,7 +10,10 @@ import { files } from "./shared/fs/index.ts";
 /** Replaced by `build.ts` with the `plugin.json` version. */
 declare const __BDK_VERSION__: string;
 
-const GROUPS: readonly Group[] = [findingsGroup({ files })];
+const GROUPS: readonly Group[] = [
+  findingsGroup({ files }),
+  runGroup({ files, cwd: process.cwd() }),
+];
 
 process.exitCode = await run({
   argv: process.argv.slice(2),
