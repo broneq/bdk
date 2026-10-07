@@ -8,6 +8,7 @@ import { checkGroup } from "./check/index.ts";
 import { configGroup } from "./config/index.ts";
 import { findingsGroup } from "./findings/index.ts";
 import { gitGroup } from "./git/index.ts";
+import { hooksGroup } from "./hooks/index.ts";
 import { planGroup } from "./plan/index.ts";
 import { rulesGroup } from "./rules/index.ts";
 import { runGroup } from "./run/index.ts";
@@ -16,6 +17,7 @@ import type { Group } from "./shared/cli/index.ts";
 import { files } from "./shared/fs/index.ts";
 import { git } from "./shared/git/index.ts";
 import { shell } from "./shared/shell/index.ts";
+import { readStdin } from "./shared/stdin/index.ts";
 
 /** Replaced by `build.ts` with the `plugin.json` version. */
 declare const __BDK_VERSION__: string;
@@ -32,6 +34,7 @@ const GROUPS: readonly Group[] = [
   rulesGroup({ ...deps, pack: fileURLToPath(new URL("../rules", import.meta.url)) }),
   gitGroup({ ...deps, git: (cwd, args) => git(cwd, args) }),
   planGroup(deps),
+  hooksGroup({ ...deps, stdin: readStdin }),
 ];
 
 process.exitCode = await run({
