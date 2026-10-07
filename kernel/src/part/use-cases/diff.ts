@@ -21,7 +21,8 @@ import { startedParts } from "./parts.ts";
 
 /**
  * What the diff is compared with: a task, a part, the whole Change (a review
- * fix, which declares every path it touches), or a verifier (not checked).
+ * fix, which declares every path it touches and forbids none), or a verifier
+ * (not checked).
  */
 export type DiffTarget =
   | { readonly task: string }
@@ -190,11 +191,12 @@ function ownSets(target: Exclude<DiffTarget, { verifier: true }>, facts: DiffFac
       conflicts: new Set(conflicts),
     };
   }
+  // A part's `do-not-touch` binds its own tasks; a review fix belongs to no part (#160).
   return {
     tasks: new Set(),
     declared: [],
     claimsRest: true,
-    forbidden: facts.parts.filter((part) => facts.started.has(part.id)).flatMap(forbiddenOf),
+    forbidden: [],
     conflicts: new Set(),
   };
 }

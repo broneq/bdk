@@ -37,3 +37,5 @@ kernel/src/**/__snapshots__/
 .lavish/
 .claude/worktrees/
 .code-review-graph/
+.venv/
+.pytest_cache/

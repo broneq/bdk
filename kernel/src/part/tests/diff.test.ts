@@ -117,11 +117,12 @@ describe("classifyDiff", () => {
     });
   });
 
-  it("the Change target forbids every started part's do-not-touch and declares every other path", () => {
+  it("the Change target forbids no do-not-touch and declares every path not in flight", () => {
     const started = new Set(["02", "03"]);
-    expect(classifyDiff({ change: true }, facts(["docs/a.md"], { started }))).toMatchObject({
-      rule: "policy/do-not-touch",
-      why: "docs/a.md matches do-not-touch docs/** of part 03",
+    expect(classifyDiff({ change: true }, facts(["docs/a.md"], { started }))).toStrictEqual({
+      touched: ["docs/a.md"],
+      declared: ["docs/a.md"],
+      undeclared: [],
     });
     expect(
       classifyDiff({ change: true }, facts(["docs/a.md", "src/auth/login.ts", "x.ts"])),
