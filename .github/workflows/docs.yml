@@ -1,0 +1,57 @@
+name: docs
+
+# The site shows released documentation, so it deploys from main only; the
+# github-pages environment refuses deployments from any other branch
+# (v3-212-docs-github-pages, design D1).
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - pnpm-lock.yaml
+      - .github/workflows/docs.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A running deployment always finishes; a newer run waiting behind it replaces
+# an older waiting one.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile --filter @bdk/docs
+
+      - run: pnpm --filter @bdk/docs docs:build
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: docs/.vitepress/dist
+
+  # Only this job can write Pages; the build steps run without that right.
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v5
+        id: deployment
