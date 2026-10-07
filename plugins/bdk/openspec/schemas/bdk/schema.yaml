@@ -1,0 +1,149 @@
+# The BDK OpenSpec schema: a Change shaped around the BDK stages (propose, design, plan).
+# /bdk:setup copies this directory to openspec/schemas/bdk/ of a project.
+# There is no apply section: progress of the work is BDK run state, not a checklist in the Change.
+name: bdk
+version: 1
+description: BDK workflow - proposal, specs, design, plan parts
+artifacts:
+  - id: proposal
+    generates: proposal.md
+    description: Why the Change is needed, what it changes, and the capabilities it touches
+    template: proposal.md
+    instruction: |
+      Write the proposal: WHY this Change is needed and WHAT it changes. It is the
+      input of the design stage and the contract with the specs.
+
+      Sections:
+      - **Why**: the problem or opportunity in one to three sentences. When the
+        Change comes from an issue, its first line names the issue.
+      - **What Changes**: a bullet list of concrete changes. Mark a change that
+        removes or alters existing behaviour with **BREAKING**.
+      - **Capabilities**: the contract with the specs stage.
+        - **New Capabilities**: each becomes `specs/<capability-path>/spec.md`.
+          Use kebab-case and follow the project's existing spec layout.
+        - **Modified Capabilities**: existing capabilities whose requirements
+          change. Use the exact path under `openspec/specs/`. Leave empty when
+          only the implementation changes.
+        Before filling this in, run `openspec list --specs` and read every
+        related spec in full (`openspec show "<spec-id>" --type spec`). Reuse an
+        existing capability instead of adding a near-duplicate.
+      - **Out of scope**: what this Change does not do, naming the Change or
+        issue that owns it when one does.
+      - **Impact**: affected code, interfaces, dependencies and users.
+
+      A Change with no capability at all must set `skip_specs: true` in its
+      `.openspec.yaml`; do that only when no behaviour changes (refactoring,
+      tooling, documentation). Never invent a requirement to fill the section.
+
+      Keep it short and about why and what. How belongs in design.md, and the
+      order of the work belongs in the plan parts.
+    requires: []
+
+  - id: specs
+    generates: "specs/**/*.md"
+    description: Requirement and scenario deltas of every capability the proposal names
+    template: spec.md
+    instruction: |
+      Write one spec delta per capability named in the proposal, describing WHAT
+      the system does after the Change. `openspec archive` merges these deltas
+      into `openspec/specs/`, the living documentation of the product, so write
+      them as the documentation a reader needs later.
+
+      A spec is a behaviour contract: observable behaviour, inputs, outputs,
+      errors and external constraints. Leave out internal names, libraries and
+      the order of the work. If the implementation could change without anyone
+      outside noticing, it does not belong here.
+
+      Every scenario is an acceptance scenario: the plan parts copy them, and
+      tests or the E2E check drive them. Write each one so it can be run against
+      the product.
+
+      Paths:
+      - New capability: `specs/<capability-path>/spec.md`, the exact path from
+        the proposal.
+      - Modified capability: the exact existing path from `openspec/specs/`
+        (confirm with `openspec list --specs`).
+
+      Delta sections (`##` headers):
+      - **ADDED Requirements**: new behaviour.
+      - **MODIFIED Requirements**: changed behaviour. Copy the whole existing
+        requirement block, scenarios included, and edit it; the header must
+        match the existing one. Partial content loses detail on archive.
+      - **REMOVED Requirements**: with **Reason** and **Migration**.
+      - **RENAMED Requirements**: `FROM:` / `TO:` only.
+
+      Format:
+      - `### Requirement: <name>`, then the requirement with SHALL or MUST.
+      - Every requirement has at least one `#### Scenario: <name>` with exactly
+        four hashes, and **WHEN** / **THEN** bullets.
+      - A new capability starts with `## Purpose`: one or two sentences (at
+        least 50 characters) on what the capability is for. A delta to an
+        existing capability has no Purpose section.
+    requires:
+      - proposal
+
+  - id: design
+    generates: design.md
+    description: How the Change is built - decisions with their alternatives, and diagrams
+    template: design.md
+    instruction: |
+      Write the design: HOW the Change is built. The proposal says why, the
+      specs say what; point to them instead of restating them.
+
+      Sections:
+      - **Context**: the current state and constraints that shape the approach,
+        checked against the code.
+      - **Goals / Non-Goals**: design-level boundaries only.
+      - **Decisions**: one subsection per decision, numbered (D1, D2, ...). Each
+        states the choice, the reason, and the alternatives considered with why
+        each lost. Cite an ADR or an earlier decision when the choice follows
+        from it instead of arguing it again.
+      - **Diagrams**: a Mermaid diagram for every flow, structure or state
+        machine that prose alone would leave ambiguous. Keep each small.
+      - **Risks / Trade-offs**: `[risk] -> mitigation`.
+      - **Open Questions**: only unknowns whose answer changes neither the
+        specs, the decisions nor the plan. Resolve everything else now.
+
+      The plan parts are cut from this design: name the modules, interfaces and
+      data the parts will touch, so a part can list its files.
+    requires:
+      - specs
+
+  - id: plan
+    generates: "plan/parts/*.md"
+    description: The work cut into parts, one file per part, with dependencies, isolation, files, acceptance scenarios and tasks
+    template: part.md
+    instruction: |
+      Cut the work into parts and write one file per part,
+      `plan/parts/NN.md`, where NN is a two-digit number from 01 in the order
+      the parts can be done. One implementer agent does one part alone, from
+      that file, the specs and the design, so a part says everything it needs.
+
+      Frontmatter, at the very top of the file:
+      - `id`: the file stem, quoted (`"01"`). Unquoted, YAML reads 01 as 1.
+      - `depends-on`: ids of the parts that must be done first, `[]` when none.
+        Depend only on what this part really needs from another part; every
+        extra edge makes the run slower.
+      - `isolation`: `worktree` when the part can run in its own git worktree
+        in parallel with others (the default), `shared` when it cannot, for
+        example because it changes generated or global state; a `shared` part
+        runs alone.
+      - `files`: every file the part creates, changes or deletes, as exact
+        repository-relative paths, tests included. No globs, no directories.
+        Parts that run in parallel must not share a file.
+
+      Body:
+      - **Goal**: what works after this part, in one or two sentences.
+      - **Acceptance scenarios**: the spec scenarios this part makes true,
+        named as `<capability>` / `Requirement: <name>` / `Scenario: <name>`.
+        Every scenario of the Change's spec deltas is covered by exactly one
+        part. The implementer writes their tests first.
+      - **Tasks**: numbered tasks as contracts. Each says what changes, at
+        which file and interface, and how it is verified when done. Do not
+        write the code.
+
+      Size a part so one agent finishes it in one sitting. Prefer a few wide
+      waves of parallel parts over a long chain.
+    requires:
+      - specs
+      - design
