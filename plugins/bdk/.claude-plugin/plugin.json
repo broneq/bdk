@@ -1,0 +1,11 @@
+{
+  "name": "bdk",
+  "version": "2.7.0",
+  "description": "Broneq Dev Kit - reusable dev workflows, skills, agents, and hooks for any project",
+  "author": {
+    "name": "Przemysław Broniszewski",
+    "url": "https://github.com/broneq"
+  },
+  "repository": "https://github.com/broneq/bdk",
+  "license": "MIT"
+}

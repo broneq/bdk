@@ -26,8 +26,8 @@ const localEntries = marketplace.plugins.filter(
 );
 
 describe("marketplace entries of this repository", () => {
-  it("install git-identity and bdk-skill-kit from plugins/<name> on the release branch", () => {
-    for (const name of ["git-identity", "bdk-skill-kit"]) {
+  it("install bdk, git-identity and bdk-skill-kit from plugins/<name> on the release branch", () => {
+    for (const name of ["bdk", "git-identity", "bdk-skill-kit"]) {
       const entry = marketplace.plugins.find((plugin) => plugin.name === name);
       expect(entry?.source, name).toEqual({
         source: "git-subdir",

@@ -1,0 +1,14 @@
+{
+  "name": "@bdk/bdk",
+  "private": true,
+  "description": "The bdk Claude Code plugin and its CLI",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "node build.ts",
+    "typecheck": "tsc -p ."
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}

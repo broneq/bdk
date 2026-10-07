@@ -12,6 +12,7 @@
     }
   ],
   "packages": {
+    "plugins/bdk": { "component": "bdk" },
     "plugins/bdk-skill-kit": {
       "component": "bdk-skill-kit",
       "bump-minor-pre-major": true,
