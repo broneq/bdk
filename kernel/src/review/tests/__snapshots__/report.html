@@ -57,7 +57,11 @@ summary { cursor: pointer; }
 .tag.should-fix { box-shadow: inset 0 0 0 1px var(--warn); }
 .tag.blocker { box-shadow: inset 0 0 0 1px var(--bad); }
 .verdict { font-weight: 600; }
-li.warn { color: var(--warn); font-weight: 600; }
+li.warn, p.warn { color: var(--warn); font-weight: 600; }
+table.intent { border-collapse: collapse; min-width: 100%; font-size: 13px; }
+.intent th, .intent td { text-align: left; vertical-align: top; padding: 6px 8px; border-bottom: 1px solid var(--border); overflow-wrap: anywhere; }
+.intent th { font-weight: 600; }
+.intent tr.warn td:last-child { color: var(--warn); font-weight: 600; }
 .verdict.pass, .verdict.approve { color: var(--ok); }
 .verdict.fail, .verdict.request-changes { color: var(--bad); }
 dl.legend { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 0; }
@@ -104,6 +108,15 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 <tr><th class="row" scope="row">outside the plan</th><td class="w1"><span class="add">+2</span> <span class="del">-0</span><ul><li class="mono">README.md</li></ul></td><td class="empty"></td><td class="empty"></td></tr>
 </tbody>
 </table></div>
+<h2>Intent</h2>
+<div class="scroll"><table class="intent">
+<thead><tr><th>Capability</th><th>Requirement</th><th>Scenario</th><th>Code</th><th>Test</th><th>State</th></tr></thead>
+<tbody>
+<tr><td><code>auth/login</code></td><td>Magic link</td><td>link sent</td><td>src/auth/login.ts#issue</td><td>src/auth/login.test.ts: sends the link</td><td><span class="verdict pass">ok</span></td></tr>
+<tr class="warn"><td><code>auth/login</code></td><td>Magic link</td><td>link expired</td><td></td><td></td><td>untraced</td></tr>
+<tr><td><code>auth/login</code></td><td>Password login</td><td>-</td><td>src/auth/login.ts (removed)</td><td>-</td><td><a href="#entry-L-00000002">L-00000002</a> <a href="#entry-L-00000006">L-00000006</a> L-0000000z</td></tr>
+</tbody>
+</table></div>
 <h2>Change map</h2>
 <div class="card">
 <h3>auth</h3>
@@ -140,7 +153,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 <h3>should-fix (1)</h3>
 <article class="card entry" id="entry-L-00000002" data-entry="L-00000002">
 <header><code>L-00000002</code><b>finding L-00000002</b></header>
-<p class="meta">finding · high · security · by agent:reviewer · undecided</p>
+<p class="meta">finding · should-fix (real) · high · security · by agent:reviewer · undecided</p>
 <p class="meta">Refs: <code>src/auth/login.ts#verify</code></p>
 <details><summary>Details</summary><dl><dt>Problem</dt><dd>The token is compared with ==.</dd><dt>Why it matters</dt><dd>A timing attack reveals it.</dd><dt>Suggested fix</dt><dd>Use timingSafeEqual.</dd></dl><ul class="why"><li class="muted">Triaged as should-fix at 2026-09-25T10:00:00Z: real</li></ul></details>
 <div class="choices" role="radiogroup" aria-label="Decision for L-00000002"><label><input type="radio" name="d-L-00000002" value="fix">fix</label><label><input type="radio" name="d-L-00000002" value="defer">defer</label><label><input type="radio" name="d-L-00000002" value="reject">reject</label></div>
@@ -149,7 +162,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 <h3>nice-to-have (1)</h3>
 <article class="card entry" id="entry-L-00000003" data-entry="L-00000003">
 <header><code>L-00000003</code><b>observation L-00000003</b></header>
-<p class="meta">observation · by agent:reviewer · decided defer</p>
+<p class="meta">observation · nice-to-have · by agent:reviewer · decided defer</p>
 <p class="meta">Refs: <code>auth</code></p>
 <details><summary>Details</summary><p>Dates are built by hand.</p></details>
 <div class="choices" role="radiogroup" aria-label="Decision for L-00000003"><label><input type="radio" name="d-L-00000003" value="fix">fix</label><label><input type="radio" name="d-L-00000003" value="defer" checked>defer</label><label><input type="radio" name="d-L-00000003" value="reject">reject</label></div>
@@ -158,7 +171,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 <h3>untriaged (1)</h3>
 <article class="card entry" id="entry-L-00000005" data-entry="L-00000005">
 <header><code>L-00000005</code><b>finding L-00000005</b></header>
-<p class="meta">finding · by agent:reviewer · undecided</p>
+<p class="meta">finding · untriaged · by agent:reviewer · undecided</p>
 <p class="meta">Refs: <code>README.md</code></p>
 <details><summary>Details</summary><p class="muted">No details.</p></details>
 <div class="choices" role="radiogroup" aria-label="Decision for L-00000005"><label><input type="radio" name="d-L-00000005" value="fix">fix</label><label><input type="radio" name="d-L-00000005" value="defer">defer</label><label><input type="radio" name="d-L-00000005" value="reject">reject</label></div>
@@ -171,7 +184,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 </fieldset>
 </form>
 <h2>Settled</h2>
-<details class="card"><summary>1 resolved</summary><ul class="files"><li><code>L-00000006</code> finding L-00000006 <span class="muted">(fixed in 01-1)</span></li></ul></details>
+<details class="card"><summary>1 resolved</summary><ul class="files"><li id="entry-L-00000006"><code>L-00000006</code> finding L-00000006 <span class="muted">(fixed in 01-1)</span></li></ul></details>
 <h2>Context</h2>
 <div class="card"><ul class="files"><li><code>L-00000001</code> decision: Links expire</li><li><code>L-00000007</code> assumption: Mail arrives in a minute</li></ul></div>
 </main>

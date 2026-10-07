@@ -88,6 +88,35 @@ describe("reviewMetrics", () => {
       "recall_test-gap": 0,
       alarms: 3,
       false_alarms: 1,
+      false_alarms_raw: 2,
+      "found_after_triage_null-body": 1,
+      "found_after_triage_blank-title": 0,
+      "found_after_triage_missing-case": 0,
+      recall_after_triage_logic: 0.5,
+      "recall_after_triage_test-gap": 0,
+      dismissed_by_triage: 0,
+    });
+  });
+
+  it("triage that drops a seeded defect is visible", () => {
+    const entries = [
+      entry("L-null", { refs: ["src/api/http.ts:148"], level: "not-a-problem" }),
+      entry("L-case", { refs: ["src/api/http.test.ts:70"], level: "should-fix" }),
+    ];
+    const matches = {
+      defects: [
+        { id: "null-body", entries: ["L-null"] },
+        { id: "missing-case", entries: ["L-case"] },
+      ],
+    };
+    expect(reviewMetrics(KEY, entries, matches)).toMatchObject({
+      "found_null-body": 1,
+      "found_after_triage_null-body": 0,
+      "found_after_triage_missing-case": 1,
+      recall_logic: 0.5,
+      recall_after_triage_logic: 0,
+      dismissed_by_triage: 1,
+      false_alarms_raw: 0,
     });
   });
 

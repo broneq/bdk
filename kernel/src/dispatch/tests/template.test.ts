@@ -31,8 +31,8 @@ describe("the return section (T46)", () => {
     expect(text).toContain("the ids `log add` printed");
   });
 
-  it("shows the pipe form of log ingest and says there is no frontmatter flag", () => {
-    expect(text).toContain("bdk log ingest --ticket A-1 < ");
+  it("shows the heredoc form of log ingest and says there is no frontmatter flag", () => {
+    expect(text).toContain("bdk log ingest --ticket A-1 <<'REPORT'");
     expect(text).toContain("no frontmatter flag");
     expect(text).toContain("Leave `reason` out");
   });

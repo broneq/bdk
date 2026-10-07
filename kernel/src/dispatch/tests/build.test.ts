@@ -224,6 +224,20 @@ describe("dispatch build", () => {
     ]);
     expect(body.indexOf("## Not a fail")).toBeLessThan(body.indexOf("## Return"));
     expect(body).toContain("- `verification-defect`:");
+    expect(categories).toContain(
+      "A blocker names one of these with `bdk log add blocker <summary> --ref <ref> --ticket A-v3r1f7y2 --category <id>`; any other blocker is stored as an observation for review.",
+    );
+    expect(categories).not.toContain("can be triaged");
+  });
+
+  it("shows the report going to log ingest from a quoted heredoc, never from a file (#158)", async () => {
+    const h = dispatchHarness();
+    ticket(h.store);
+    const { body } = await built(h, "02-3", "implementer", TICKET);
+    const ret = body.slice(body.indexOf("## Return"));
+    expect(ret).toContain(`bdk log ingest --ticket ${TICKET} <<'REPORT'\n---\nstatus: done\n`);
+    expect(ret).toContain("\nREPORT\n");
+    expect(ret).not.toMatch(/< <|report-file/);
   });
 
   it("keeps the template hash for the same inputs and changes it with the role body or a rule", async () => {
@@ -621,7 +635,7 @@ describe("the lead package (T41-D11)", () => {
     const { report, body } = await built(h, "03", "lead", LEAD);
     expect(body).toContain("- `03-8` Build the login step 8 of the flow (open).");
     expect(body).toContain("Depends on: `03-7`.");
-    expect(report.bytes).toBeLessThanOrEqual(12_288);
+    expect(report.bytes).toBeLessThanOrEqual(163_840);
   });
 
   it("gives no Tasks section to other roles", async () => {

@@ -115,6 +115,13 @@ describe("keyProblems", () => {
     expect(hunkRanges("+++ b/x\n@@ -1 +1 @@\n-a\n+b\n")).toStrictEqual(new Map([["x", [[1, 1]]]]));
   });
 
+  it("names a file of a binary section, with no range", () => {
+    const binary =
+      "diff --git a/s/a.png b/s/a.png\nnew file mode 100644\nindex 0..1\nGIT binary patch\nliteral 1\nzc\n\n";
+    expect(hunkRanges(binary)).toStrictEqual(new Map([["s/a.png", []]]));
+    expect(patchedFiles([binary, PATCH])).toStrictEqual(new Set(["s/a.png", "src/a.ts"]));
+  });
+
   it("accepts a defect in a delivered file at a hunk of the patch", () => {
     expect(keyProblems(key, PATCH, new Set(["src/a.ts"]))).toStrictEqual([]);
   });

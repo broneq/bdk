@@ -1,4 +1,4 @@
-// The six host adapters (`role-contracts`, Adapters; design T23-D19, D20 of
+// The eight host adapters (`role-contracts`, Adapters; design T23-D19, D20 of
 // v3-t23a-roles-adapters). An adapter binds a role to a tool set and a model
 // tier; the role itself lives in the role skill and the dispatch package, so
 // the body is one sentence. Host names for tools and tiers are in `hosts.ts`.
@@ -65,9 +65,27 @@ export const ADAPTERS: readonly AdapterDefinition[] = [
     effort: "high",
   },
   {
+    name: "integrator",
+    description:
+      "BDK read-only adapter for the integration review of a Change after its group reviews (integration-reviewer). Started by /bdk:cr; not for general tasks.",
+    sentence: sentence("integrator", "never change a file."),
+    tools: READ_ONLY,
+    tier: "deep",
+    effort: "high",
+  },
+  {
+    name: "judge",
+    description:
+      "BDK read-only adapter that triages the findings of a review round (judge). Started by /bdk:cr; not for general tasks.",
+    sentence: sentence("judge", "never change a file."),
+    tools: READ_ONLY,
+    tier: "balanced",
+    effort: "high",
+  },
+  {
     name: "reviewer",
     description:
-      "BDK read-only adapter for code review with test runs (reviewer, pr-reviewer). Started by BDK role skills and the swarm skill; not for general tasks.",
+      "BDK read-only adapter for code review (reviewer, pr-reviewer). Started by BDK role skills and the swarm skill; not for general tasks.",
     sentence: sentence("reviewer", "never change a file."),
     tools: READ_ONLY,
     tier: "balanced",
@@ -100,7 +118,8 @@ export const ROLE_ADAPTERS: Readonly<Record<Role, string>> = {
   verifier: "reader",
   "design-verifier": "reader",
   reviewer: "reviewer",
-  "integration-reviewer": "reader",
+  "integration-reviewer": "integrator",
+  judge: "judge",
   "pr-reviewer": "reviewer",
   runner: "runner",
   scout: "scout",

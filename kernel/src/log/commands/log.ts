@@ -51,6 +51,7 @@ export function addCommand(deps: LogDeps): Handler {
       ...optional("ticket", text(context.flags["--ticket"])),
       ...optional("supersedes", text(context.flags["--supersedes"])),
       ...optional("category", text(context.flags["--category"])),
+      ...optional("severity", text(context.flags["--severity"])),
       ...(context.flags["--applies"] === undefined
         ? {}
         : { applies: list(context.flags["--applies"]) }),
@@ -64,7 +65,7 @@ export function ingestCommand(deps: LogDeps): Handler {
     const ticket = text(context.flags["--ticket"]);
     if (ticket === undefined) {
       return refuse("input/missing-argument", "log ingest needs --ticket, the role's open ticket", [
-        "bdk log ingest --ticket <ticket> < report.md",
+        "bdk log ingest --ticket <ticket> <<'REPORT'",
       ]);
     }
     const input = context.runtime.readStdin();
@@ -72,7 +73,7 @@ export function ingestCommand(deps: LogDeps): Handler {
       return refuse(
         "input/missing-argument",
         "stdin is empty; log ingest reads the report, its envelope as frontmatter",
-        [`bdk log ingest --ticket ${ticket} < report.md`],
+        [`bdk log ingest --ticket ${ticket} <<'REPORT'`],
       );
     }
     const report = await ingestReport(deps, active(context.change), { ticket, text: input });

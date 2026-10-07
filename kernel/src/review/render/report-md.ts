@@ -1,7 +1,7 @@
 // The Markdown fallback of `bdk review render --format md` (`kernel-cli/review`;
 // T42-H): the sections of the HTML report in the same order, without the form.
 import type { PrPage } from "../domain/pr.ts";
-import { NOT_USED_GATE } from "../domain/report.ts";
+import { levelWithReason, NOT_USED_GATE } from "../domain/report.ts";
 import type { ChangeReport, DecisionEntry, Lines } from "../domain/report.ts";
 import type { ToolGroupName } from "../../shared/vocabulary/index.ts";
 import { markdown } from "./escape.ts";
@@ -15,11 +15,15 @@ export function changeReportMd(report: ChangeReport): string {
       `- Kind: ${markdown(report.kind)}`,
       `- Range: \`${shortRange(report.range)}\``,
       `- Files: ${String(report.totals.files)}, lines ${lines(report.totals)}`,
+      ...(report.binary.length === 0
+        ? []
+        : [`- Not reviewed as text: ${report.binary.map((path) => `\`${path}\``).join(", ")}`]),
       `- Open entries by level: ${counted(report.levels)}`,
       `- By disposition: ${counted(report.dispositions)}`,
     ].join("\n"),
     "## Parts and areas",
     grid(report),
+    ...intent(report),
     "## Change map",
     ...(report.cards.length === 0
       ? ["No configured risk area is touched."]
@@ -104,6 +108,7 @@ export function prPageMd(page: PrPage): string {
 function decision(entry: DecisionEntry): string {
   const meta = [
     entry.type,
+    levelWithReason(entry),
     entry.severity,
     entry.category,
     `by ${entry.writer}`,
@@ -115,6 +120,9 @@ function decision(entry: DecisionEntry): string {
     entry.body.kind === "labelled"
       ? [
           `  - Problem: ${markdown(entry.body.problem)}`,
+          ...(entry.body.failure === undefined
+            ? []
+            : [`  - Failure scenario: ${markdown(entry.body.failure)}`]),
           `  - Why it matters: ${markdown(entry.body.why)}`,
           `  - Suggested fix: ${markdown(entry.body.fix)}`,
         ]
@@ -127,6 +135,34 @@ function decision(entry: DecisionEntry): string {
     `  - Refs: ${entry.refs.map((ref) => `\`${ref}\``).join(" ")}`,
     ...details,
   ].join("\n");
+}
+
+/** The Intent blocks; none without spec deltas. */
+function intent(report: ChangeReport): string[] {
+  if (report.trace === undefined) return [];
+  const rows = report.trace.rows.map((row) => {
+    const state =
+      row.state.kind === "entries" ? row.state.ids.map(({ id }) => id).join(", ") : row.state.kind;
+    return `| \`${row.capability}\` | ${[
+      row.requirement,
+      row.scenario,
+      row.code ?? "",
+      row.test ?? "",
+    ]
+      .map(markdown)
+      .join(" | ")} | ${state} |`;
+  });
+  return [
+    "## Intent",
+    ...(report.trace.table
+      ? []
+      : ["No integration-reviewer report holds an `## Intent` table: every scenario is untraced."]),
+    [
+      "| Capability | Requirement | Scenario | Code | Test | State |",
+      "|---|---|---|---|---|---|",
+      ...rows,
+    ].join("\n"),
+  ];
 }
 
 function grid(report: ChangeReport): string {

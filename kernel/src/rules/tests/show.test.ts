@@ -357,18 +357,23 @@ describe("rules show --role --file (T42)", () => {
     );
   });
 
-  it("prints no rule for a role without a stage", async () => {
-    const result = await run(noChange(), [
+  it.each(["runner", "judge"])("prints no rule for %s, a role without a stage", async (role) => {
+    const store = noChange();
+    store.write(
+      `${ROOT}/.bdk/rules/REV-1.md`,
+      rule("REV-1", { stages: ["review"], origin: "user" }),
+    );
+    const result = await run(store, [
       "rules",
       "show",
       "--role",
-      "runner",
+      role,
       "--file",
-      "src/api/login.ts",
+      "src/app.ts",
       "--json",
     ]);
     expect(result.code, result.stdout).toBe(0);
-    expect(result.json).toMatchObject({ role: "runner", rules: [] });
+    expect(result.json).toMatchObject({ role, rules: [] });
   });
 
   it("prints only the rules of the role's stage", async () => {

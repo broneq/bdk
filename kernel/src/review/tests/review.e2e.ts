@@ -1,6 +1,6 @@
 // `kernel-cli/review`, bdk review plan, through the built bundle in real
 // repositories: the anchor of each kind, the groups from the plan parts, the
-// uncommitted files, an empty range and the refusals.
+// uncommitted files, binary files, an empty range and the refusals.
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -15,6 +15,7 @@ interface Plan {
   range: string;
   dirty: string[];
   measure: { files: number; added: number; removed: number; modules: string[] };
+  binary: string[];
   groups: { id: string; kind: string; part?: string; files: string[] }[];
 }
 
@@ -41,6 +42,16 @@ function merged(change: Started): string {
     "output/log-add.json",
   ).entry as { head: string };
   return entry.head;
+}
+
+/** A PNG header: git counts a file with a NUL byte as binary. */
+const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d]);
+
+function commitSnapshot(change: Started, path: string): void {
+  mkdirSync(dirname(join(change.root, path)), { recursive: true });
+  writeFileSync(join(change.root, path), PNG);
+  git(change.root, "add", path);
+  git(change.root, "commit", "--quiet", "-m", "snapshot");
 }
 
 function commitFix(change: Started, path: string): void {
@@ -71,6 +82,33 @@ describe("bdk review plan", () => {
       },
     ]);
     expect(out.measure).toMatchObject({ files: 4, modules: ["docs", "src"] });
+    expect(out.binary).toStrictEqual([]);
+  });
+
+  it("names the binary files in `binary`, counts them in `measure` and puts them into no group", () => {
+    const change = executed(started());
+    commitSnapshot(change, "src/__snapshots__/load-error.png");
+    const out = plan(change);
+    expect(out.binary).toStrictEqual(["src/__snapshots__/load-error.png"]);
+    expect(out.measure.files).toBe(4);
+    for (const group of out.groups) {
+      expect(group.files, group.id).not.toContain("src/__snapshots__/load-error.png");
+    }
+    expect(out.groups.at(-1)).toStrictEqual({
+      id: "integration",
+      kind: "integration",
+      files: ["src/01-1.ts", "src/01-2.ts", "src/02-1.ts"],
+    });
+  });
+
+  it("has no groups when only binary files changed since the merged review", () => {
+    const change = executed(started());
+    merged(change);
+    commitSnapshot(change, "src/__snapshots__/load-error.png");
+    const out = plan(change);
+    expect(out.groups).toStrictEqual([]);
+    expect(out.binary).toStrictEqual(["src/__snapshots__/load-error.png"]);
+    expect(out.measure.files).toBe(1);
   });
 
   it("the next round reviews the delta since the merged review; --full overrides it", () => {
@@ -103,6 +141,7 @@ describe("bdk review plan", () => {
     const out = plan(change);
     expect(out.anchor.kind).toBe("delta");
     expect(out.groups).toStrictEqual([]);
+    expect(out.binary).toStrictEqual([]);
     expect(out.measure.files).toBe(0);
   });
 

@@ -1,4 +1,4 @@
-// `role-contracts`: the ten role skills under skills/roles/, their adapter
+// `role-contracts`: the eleven role skills under skills/roles/, their adapter
 // binding (the same table `dispatch build` stamps), and the wording every role
 // contract must and must not carry.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -16,6 +16,7 @@ const ROLES = [
   "design-verifier",
   "implementer",
   "integration-reviewer",
+  "judge",
   "lead",
   "pr-reviewer",
   "reviewer",
@@ -29,6 +30,7 @@ const REVIEWING = [
   "design-verifier",
   "reviewer",
   "integration-reviewer",
+  "judge",
   "pr-reviewer",
 ];
 /** Started by `/bdk:pr-review` with a PR brief: no package, no ticket, no ledger (T42). */
@@ -77,7 +79,7 @@ describe("role skills: refusals of the execute probes (T46)", () => {
 });
 
 describe("role skills", () => {
-  it("are exactly the ten roles", () => {
+  it("are exactly the eleven roles", () => {
     const dirs = existsSync(ROLES_DIR)
       ? readdirSync(ROLES_DIR, { withFileTypes: true })
           .filter((entry) => entry.isDirectory())
@@ -167,7 +169,8 @@ describe("role skills", () => {
     // T46: the call forms the execute probes of T41 showed refused (`role-contracts`,
     // Contracts steer the kernel calls that repeat as refusals).
     it("shows the envelope as a complete frontmatter with reason left as a comment", () => {
-      const fence = /```\n(---\n[\s\S]*?\n---)\n```/.exec(role().body)?.[1];
+      // A plain fence holds the envelope alone; a heredoc fence opens with the ingest line (#158).
+      const fence = /```(?:sh\n[^\n]*<<'REPORT')?\n(---\n[\s\S]*?\n---)\n/.exec(role().body)?.[1];
       expect(fence, "an envelope example between two --- lines").toBeDefined();
       const lines = (fence ?? "").split("\n");
       expect(lines.filter((line) => line.startsWith("reason:"))).toEqual([]);
@@ -343,7 +346,7 @@ describe("rule ids are cited [S4]", () => {
     expect(cited[0]).toMatch(/finding/);
   });
 
-  it.each(["runner", "scout", "lead"])("%s carries no citation line", (name) => {
+  it.each(["runner", "scout", "lead", "judge"])("%s carries no citation line", (name) => {
     expect(citation(readRole(name).body)).toStrictEqual([]);
   });
 });
@@ -380,9 +383,12 @@ describe("T41-D4: a scout started by a worker has no package", () => {
 });
 
 describe("T42-A1: reviewers of a round work under their group reference", () => {
-  it("runs the integration reviewer on reader and keeps the reviewer on reviewer", () => {
-    expect(readRole("integration-reviewer").meta.agent).toBe("bdk:reader");
+  it("runs the integration reviewer on integrator and keeps the others on their adapters (#158)", () => {
+    expect(readRole("integration-reviewer").meta.agent).toBe("bdk:integrator");
     expect(readRole("reviewer").meta.agent).toBe("bdk:reviewer");
+    expect(readRole("verifier").meta.agent).toBe("bdk:reader");
+    expect(readRole("design-verifier").meta.agent).toBe("bdk:reader");
+    expect(readRole("judge").meta.agent).toBe("bdk:judge");
   });
 
   it.each(["reviewer", "integration-reviewer"])(
@@ -401,7 +407,8 @@ describe("T42-A1: reviewers of a round work under their group reference", () => 
     expect(body).toContain("`Risks` section");
     expect(body).toMatch(/intent, the design and the plan/);
     expect(body).toMatch(/no task's `Files:` declares/);
-    expect(body).toMatch(/Duplication across parts/);
+    expect(body).not.toMatch(/duplication across parts/i);
+    expect(body).not.toMatch(/`git diff <range>`(?! -- <file>)/);
   });
 
   it("has the reviewer check its group against the plan part and leave style to simplify and lint", () => {
@@ -415,9 +422,15 @@ describe("T42-A1: reviewers of a round work under their group reference", () => 
 describe("T42-H: findings explain why they matter, and areas are summarised", () => {
   it.each(["reviewer", "integration-reviewer"])("%s labels the body of every entry", (name) => {
     const { body } = readRole(name);
-    for (const label of ["`Problem:`", "`Why it matters:`", "`Suggested fix:`"]) {
+    for (const label of [
+      "`Problem:`",
+      "`Failure scenario:`",
+      "`Why it matters:`",
+      "`Suggested fix:`",
+    ]) {
       expect(body, label).toContain(label);
     }
+    expect(body).toContain("`--severity`");
   });
 
   it("gives every pr-reviewer finding the fields problem, why and fix", () => {
@@ -431,6 +444,67 @@ describe("T42-H: findings explain why they matter, and areas are summarised", ()
     expect(body).toContain("- <risk-id>: <sentence>");
     expect(body).toContain("- unplanned: <sentence>");
     expect(body).toMatch(/300 characters/);
+    expect(body.indexOf("`## Intent`")).toBeGreaterThan(-1);
+    expect(body.indexOf("`## Intent`")).toBeLessThan(body.indexOf("## Areas"));
+  });
+});
+
+describe("#158: readers write no file and the integration reviewer traces the intent", () => {
+  const READERS = ["reviewer", "integration-reviewer", "judge"];
+
+  it.each(READERS)("%s hands its report over in a quoted heredoc and writes no file", (name) => {
+    const { body } = readRole(name);
+    expect(body).toMatch(/bdk log ingest --ticket \S+ <<'REPORT'/);
+    expect(body).toMatch(/write no file/i);
+  });
+
+  it.each(["reviewer", "integration-reviewer"])("%s reads a diff one file at a time", (name) => {
+    expect(readRole(name).body).toContain("`git diff <range> -- <file>`");
+  });
+
+  it.each(READERS)("%s runs no test: the gate runner runs the checks once per round", (name) => {
+    const { meta, body } = readRole(name);
+    expect(String(meta.description)).not.toMatch(/\bruns?\b[^.]*\btests?\b/i);
+    expect(body).toMatch(/the gate runner runs the checks once per round/);
+    expect(body).not.toContain("bdk evidence record");
+  });
+
+  it("the reviewer ends its report with its seams", () => {
+    const { body } = readRole("reviewer");
+    expect(body).toContain("`## Seams`");
+    expect(body).toContain("`- <file>: <contract>`");
+    expect(body).toContain("`- none`");
+  });
+
+  it("the integration reviewer traces the spec deltas from the group reports", () => {
+    const { body } = readRole("integration-reviewer");
+    expect(body).toContain("`## Intent`");
+    expect(body).toMatch(/format the package's `Review` section gives/);
+    expect(body).toMatch(/group reports/);
+    expect(body).toContain("`## Seams`");
+    expect(body).toMatch(/no spec delta[^.]*`observation`/);
+  });
+
+  it.each(ROLES)("%s links no references/ file", (name) => {
+    expect(readRole(name).body).not.toMatch(/\]\([^)]*references\//);
+  });
+});
+
+describe("#158: the judge triages the round and finds nothing new", () => {
+  it("reads each body, sets the four levels with a reason and ends with its verdicts", () => {
+    const { body } = readRole("judge");
+    expect(body).toContain("bdk log show <id>");
+    expect(body).toMatch(/`bdk log triage <id> <level> --reason "[^"]+"`/);
+    for (const level of ["blocker", "should-fix", "nice-to-have", "not-a-problem"]) {
+      expect(body).toContain(`\`${level}\``);
+    }
+    expect(body).toContain("`Failure scenario:`");
+    expect(body).toContain("`not-a-fail`");
+    expect(body).toContain("`## Verdicts`");
+    expect(body).toContain("`- <id>: <level>: <reason>`");
+    expect(body).toMatch(/look for no new problem/);
+    expect(body).not.toMatch(/bdk log add (finding|blocker|observation)/);
+    expect(body).toContain("bdk rules show <id>");
   });
 });
 

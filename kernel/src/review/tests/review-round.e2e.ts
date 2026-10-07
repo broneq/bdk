@@ -83,18 +83,15 @@ function ticketOf(review: Review, ...flags: string[]): string {
   ).ticket as string;
 }
 
-/** Every group's package as `cr` builds it, the user's focus on each reviewer. */
+/** The reviewer packages and the gate's, as `cr` builds them first, the user's focus on each reviewer. */
 function packages(review: Review, ticket: string, plan: Plan): void {
-  for (const group of plan.groups) {
-    const role = group.kind === "integration" ? "integration-reviewer" : "reviewer";
-    const files =
-      group.kind === "integration" ? [] : group.files.flatMap((file) => ["--file", file]);
+  for (const group of plan.groups.filter((group) => group.kind !== "integration")) {
     answered(
       run(review, [
         "dispatch",
         "build",
         review.id,
-        role,
+        "reviewer",
         ticket,
         "--group",
         group.id,
@@ -102,7 +99,7 @@ function packages(review: Review, ticket: string, plan: Plan): void {
         plan.range,
         "--focus",
         "input validation",
-        ...files,
+        ...group.files.flatMap((file) => ["--file", file]),
       ]),
       "output/dispatch-build.json",
     );
@@ -111,6 +108,62 @@ function packages(review: Review, ticket: string, plan: Plan): void {
     run(review, ["dispatch", "build", review.id, "runner", ticket, "--group", "gate"]),
     "output/dispatch-build.json",
   );
+}
+
+/**
+ * A package `cr` builds after the agents before it have returned (#158): the
+ * integration reviewer's after the reviewers', the judge's after the
+ * integration reviewer's. Returns the package as `dispatch show` prints it.
+ */
+function laterPackage(
+  review: Review,
+  ticket: string,
+  plan: Plan,
+  role: "integration-reviewer" | "judge",
+): string {
+  const group = role === "judge" ? "judge" : "integration";
+  const focus = role === "judge" ? [] : ["--focus", "input validation"];
+  const built = answered(
+    run(review, [
+      "dispatch",
+      "build",
+      review.id,
+      role,
+      ticket,
+      "--group",
+      group,
+      "--range",
+      plan.range,
+      ...focus,
+    ]),
+    "output/dispatch-build.json",
+  );
+  return bdk(["dispatch", "show", built.path as string], review.root).stdout;
+}
+
+/**
+ * A round whose reviewers find nothing: every package in `cr`'s order, each
+ * report stored. The judge triages what its package lists, such as a kernel
+ * finding of an earlier round; returns those ids.
+ */
+function cleanRound(review: Review, ticket: string, plan: Plan): string[] {
+  packages(review, ticket, plan);
+  for (const group of plan.groups.filter((group) => group.kind !== "integration")) {
+    ingest(review, `${ticket}@${group.id}`, []);
+  }
+  laterPackage(review, ticket, plan, "integration-reviewer");
+  ingest(review, `${ticket}@integration`, []);
+  const listed = laterPackage(review, ticket, plan, "judge");
+  const judged = [...listed.matchAll(/^- `(L-[a-z0-9]+)` /gm)].map((match) => match[1] ?? "");
+  for (const id of judged) {
+    answered(
+      run(review, ["log", "triage", id, "nice-to-have", "--reason", "no failure stated"]),
+      "output/log-triage.json",
+    );
+  }
+  ingest(review, `${ticket}@judge`, []);
+  gate(review, ticket);
+  return judged;
 }
 
 /** The gate runner's records of the full gate under `<ticket>@gate`. */
@@ -198,23 +251,30 @@ describe("a cr round on a review Change", { timeout: 120_000 }, () => {
         ).entry as { id: string }
       ).id;
     const blocker = add("login skips the password check", "src/auth/login.ts", "m1");
-    const repeat = add("password check missing in login", "src/auth/login.ts", "integration");
     const minor = add("form label wording", "web/forms/form.ts", "m1");
     ingest(review, `${first}@m1`, [blocker, minor]);
+
+    // Built only once the reviewer of m1 stored its report, the integration
+    // package names that report, not a group left unreviewed (#158).
+    const integration = laterPackage(review, first, plan, "integration-reviewer");
+    expect(integration).toContain(`reviewer-${first}-m1.md\``);
+    expect(integration).not.toContain("(not reviewed");
+    const repeat = add("password check missing in login", "src/auth/login.ts", "integration");
     ingest(review, `${first}@integration`, [repeat]);
     gate(review, first);
 
-    const round = answered(
-      run(review, ["log", "list", "--since-ticket-start", first]),
-      "output/log-list.json",
-    );
-    expect(JSON.stringify(round)).toContain(blocker);
-    answered(run(review, ["log", "triage", blocker, "blocker"]), "output/log-triage.json");
-    answered(
-      run(review, ["log", "triage", repeat, "not-a-problem", "--reason", `repeats ${blocker}`]),
-      "output/log-triage.json",
-    );
-    answered(run(review, ["log", "triage", minor, "nice-to-have"]), "output/log-triage.json");
+    // The judge's package lists every entry of the round, and it triages them.
+    const judge = laterPackage(review, first, plan, "judge");
+    for (const id of [blocker, minor, repeat]) expect(judge).toContain(`\`${id}\``);
+    const triage = (id: string, level: string, reason: string) =>
+      answered(
+        run(review, ["log", "triage", id, level, "--reason", reason]),
+        "output/log-triage.json",
+      );
+    triage(blocker, "blocker", "login accepts any password");
+    triage(repeat, "not-a-problem", `repeats ${blocker}`);
+    triage(minor, "nice-to-have", "wording only");
+    ingest(review, `${first}@judge`, []);
     merged(review, first, [blocker, repeat, minor], "1 blocker, 1 nice-to-have, 1 not-a-problem");
     expect(refused(run(review, ["done", "review"]), 2, "policy/validation-failed").why).toContain(
       blocker,
@@ -252,10 +312,7 @@ describe("a cr round on a review Change", { timeout: 120_000 }, () => {
       ["m1", ["src/auth/login.ts"]],
       ["integration", ["src/auth/login.ts"]],
     ]);
-    packages(review, second, delta);
-    ingest(review, `${second}@m1`, []);
-    ingest(review, `${second}@integration`, []);
-    gate(review, second);
+    const judged = cleanRound(review, second, delta);
     merged(review, second, [], "no entries");
     expect(
       answered(run(review, ["attempt", "close", second, "ok"]), "output/attempt-close.json"),
@@ -281,17 +338,18 @@ describe("a cr round on a review Change", { timeout: 120_000 }, () => {
       ).entry as { id: string }
     ).id;
     answered(run(review, ["log", "triage", earlier, "should-fix"]), "output/log-triage.json");
-    // The kernel's own findings of the rounds (a narrowed scope, a package
-    // closed without its rules) carry no level either.
+    // The judge of round 2 triaged the narrowed scope; the kernel finding
+    // written after it (a package closed without its rules) has no level yet.
+    expect(judged).toHaveLength(1);
     const untriaged = kernelFindings(review);
-    expect(untriaged).toHaveLength(2);
+    expect(untriaged).toHaveLength(1);
     for (const id of untriaged) {
       answered(run(review, ["log", "triage", id, "nice-to-have"]), "output/log-triage.json");
     }
     const rendered = answered(run(review, ["review", "render"]), "output/review-render.json");
     expect(rendered).toMatchObject({ decided: [] });
     expect([...(rendered.undecided as string[])].sort()).toStrictEqual(
-      [earlier, minor, ...untriaged].sort(),
+      [earlier, minor, ...judged, ...untriaged].sort(),
     );
     const page = read(review.root, rendered.path as string);
     expect(page).toContain(`id="entry-${earlier}"`);
@@ -328,9 +386,7 @@ describe("a cr round on a review Change", { timeout: 120_000 }, () => {
       run(review, ["review", "plan"]),
       "output/review-plan.json",
     ) as unknown as Plan;
-    packages(review, fixing, last);
-    for (const group of last.groups) ingest(review, `${fixing}@${group.id}`, []);
-    gate(review, fixing);
+    const judgedLater = cleanRound(review, fixing, last);
     merged(review, fixing, [], "no entries");
     answered(run(review, ["attempt", "close", fixing, "ok"]), "output/attempt-close.json");
     answered(run(review, ["done", "review"]), "output/done.json");
@@ -342,9 +398,9 @@ describe("a cr round on a review Change", { timeout: 120_000 }, () => {
       answered(run(review, ["log", "triage", id, "nice-to-have"]), "output/log-triage.json");
     }
     const again = answered(run(review, ["review", "render"]), "output/review-render.json");
-    const rest = [minor, ...untriaged, ...fixRound].sort();
+    const rest = [minor, ...judged, ...untriaged, ...judgedLater, ...fixRound].sort();
     expect([...(again.undecided as string[])].sort()).toStrictEqual(rest);
-    expect(read(review.root, again.path as string)).not.toContain(`id="entry-${earlier}"`);
+    expect(read(review.root, again.path as string)).not.toContain(`data-entry="${earlier}"`);
     for (const id of rest) {
       answered(run(review, ["log", "decide", id, "defer"]), "output/log-decide.json");
     }

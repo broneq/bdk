@@ -42,6 +42,10 @@ export const reviewPlanOutput = z
     measure: z
       .strictObject({ files: count, added: count, removed: count, modules: z.array(path) })
       .meta({ description: "The range's signals as `bdk measure` returns them." }),
+    binary: z.array(path).meta({
+      description:
+        "Sorted changed files git counts as binary: counted in `measure`, in no group, so no reviewer reads them.",
+    }),
     groups: z.array(group).meta({
       description:
         "Parts (or modules without a plan), `unplanned`, then `integration`; empty for an empty range.",
@@ -58,7 +62,8 @@ export const reviewPlanOutput = z
         head: "9a8b7c6d5e4f30211203f4e5d6c7b8a9f0e1d2c3",
         range: "4f1c2d9a7b3e5f60718293a4b5c6d7e8f9a0b1c2..9a8b7c6d5e4f30211203f4e5d6c7b8a9f0e1d2c3",
         dirty: [],
-        measure: { files: 3, added: 120, removed: 14, modules: ["src/auth", "src/mail"] },
+        measure: { files: 4, added: 120, removed: 14, modules: ["src/auth", "src/mail"] },
+        binary: ["src/auth/__snapshots__/login.png"],
         groups: [
           {
             id: "p01",

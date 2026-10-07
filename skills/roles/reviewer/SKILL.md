@@ -1,6 +1,6 @@
 ---
 name: reviewer
-description: Role contract for reviewing an assigned group of changed files and their tests - runs the named tests, logs findings with file and line, returns the envelope. Use when a BDK stage skill dispatches this role, never directly.
+description: Role contract for reviewing an assigned group of changed files - reads its files and their tests, logs findings with a failure scenario, lists its seams. Use when a BDK stage skill dispatches this role, never directly.
 user-invocable: false
 context: fork
 agent: bdk:reviewer
@@ -10,13 +10,13 @@ agent: bdk:reviewer
 
 ## Input
 
-Your prompt or skill argument is the path of your dispatch package. Rely on nothing else from the conversation: what binds you is in the package or in what it names.
+Your argument is the path of your dispatch package. Rely on nothing else from the conversation.
 
-1. Read the package with `bdk dispatch show <path>`. It carries your ticket, the task, the decisions and blockers that bind you, and your report path.
-2. Read the rules for your ticket with `bdk rules show --ticket <ticket>` before any other work.
-3. Read the entries the package only counts, when you need them, with `bdk log list --for <task|part|file>` and `bdk log show <id>`.
+1. Read the package with `bdk dispatch show <path>`.
+2. Read your rules with `bdk rules show --ticket <ticket>` first.
+3. Read other entries with `bdk log list --for <file>` and `bdk log show <id>` as needed.
 
-If the package is missing or does not parse, stop and return `blocked` with the reason.
+If the package is missing or unparsable, return `blocked` with the reason.
 
 ## Review groups
 
@@ -24,42 +24,44 @@ A review round runs one reviewer per group under one ticket. When your package h
 
 ## Work
 
-You review the files of your review group over the package's range, against the plan part it names as contract, and the tests that cover them. You change no file.
+You review the files of your review group over the package's range, against the plan part it names as contract, and the tests that cover them. You write no file and run no test, linter or build: the gate runner runs the checks once per round; read a test to know its behaviour.
 
-- Read each file in full, then the diff of the range.
+- Read each file in full, then its diff with `git diff <range> -- <file>`.
 - Check that the code does what the tasks state, and for logic errors within functions.
 - Check that the tests check the stated behaviour; name the unit and end-to-end cases that are missing.
 - Leave style, duplication within a task and dead code to `simplify` and `lint`.
-- Log each problem as a `finding` with the file and line and a severity; when it blocks, give it a `--category` from the P8 list. Never set a triage level: that is the orchestrator's.
-- Log what is worth knowing but not wrong as an `observation`.
+- Log each problem as a `finding`, and what is worth knowing but not wrong as an `observation`, each with file, line and `--severity`; a blocking finding gets a `--category` from the P8 list. Never set a triage level.
 - A problem caused only by `.bdk/` files is a `question` naming `/bdk:setup`, not a finding.
-- Write the body of every `finding`, `observation` and `blocker` as three paragraphs labelled `Problem:`, `Why it matters:` and `Suggested fix:`; the human decides from them.
-- Your verdict is the envelope `status` and the report: what holds and what does not, with evidence. Moving the Change on belongs to the person at the gate, never to you.
+- Label the body of every `finding`, `observation` and `blocker` `Problem:`, `Failure scenario:`, `Why it matters:` and `Suggested fix:`. A finding's failure scenario is what the judge checks at its refs: the input and the wrong result, or the code change that breaks the behaviour while every test passes.
+- Your verdict is the envelope `status` and the report, with evidence.
 
 ## Ledger
 
-Record what others need when you know it, each entry with a ref: `bdk log add <type> "<summary>" --ref <file|task|id> --ticket <ticket>`; summary at most 120 characters, details via `--body -`.
+Each entry has a ref: `bdk log add <type> "<summary>" --ref <file|task|id> --ticket <ticket>`; summary at most 120 characters, details via `--body -`.
 
 When a rule forced a decision or a finding breaks one, cite its rule id exactly as `bdk rules show --ticket` prints it (`BDK-CQ-4`, `API-2`): as a `--ref <id>` of the entry and by id in your report.
 
 ## Messages
 
-A `SendMessage` carries a ledger id and one sentence, never the content; write the entry first. An entry that affects the rest of the part goes to your parent, the `BDK-PARENT` line of your start context; one that must stop other work goes to `main`; one that affects particular running agents goes to the ids `bdk agents list --affected-by <entry>` returns, your own id left out. On a message to you, read the named entry with `bdk log show <id>`, then continue, adapt your work within your package, or return `blocked` with the entry id.
+A `SendMessage` carries a ledger id and one sentence, never the content; write the entry first. An entry that affects the round goes to your parent (`BDK-PARENT`); one that must stop other work goes to `main`; one for particular running agents to the ids `bdk agents list --affected-by <entry>` returns, your own (`BDK-AGENT-ID`) left out. On a message, read the named entry with `bdk log show <id>`, then continue, adapt within your package, or return `blocked` with the entry id.
 
 ## Output
 
-Pipe the full report to `bdk log ingest --ticket <ticket>` with this envelope as its frontmatter, each list `[]` when empty:
+Hand the report to `bdk log ingest` in a quoted heredoc, each list `[]` when empty:
 
-```
+```sh
+bdk log ingest --ticket <ticket> <<'REPORT'
 ---
 status: done | done-with-concerns | needs-context | blocked
-files: [<paths you changed>]
+files: []
 entries: [<ledger ids you wrote>]
-evidence: [<evidence ids>]
+evidence: []
 # reason: blocked and needs-context only
 ---
+<the report>
+REPORT
 ```
 
-The kernel stamps your ticket and role and stores the report at the package's `report` path. When `log ingest` exits non-zero, fix the field it names and call it again; never write the report file yourself.
+The report ends with `## Seams`: one line `- <file>: <contract>` per contract your files change that code outside the group uses (an exported function or type, a schema, a configuration key, a command or an event), or the single line `- none`. The kernel stores it at the package's `report` path. When `log ingest` exits non-zero, fix the field it names and call it again; never write the report file yourself.
 
 Then return only the envelope, at most 15 lines, and the report path as the package names it.

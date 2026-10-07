@@ -134,14 +134,20 @@ export function deniedPayloads(): (readonly [string, Payload])[] {
     ["relative Edit under .bdk/specs", recorded(preEdit, { file_path: ".bdk/specs/a.md" })],
     ...SPEC_WRITES.map((command) => [`main ${command}`, mainBash(command)] as const),
     ...READER_WRITES.flatMap((command) =>
-      ["bdk:reader", "bdk:reviewer", "bdk:scout"].map(
+      ["bdk:reader", "bdk:integrator", "bdk:judge", "bdk:reviewer", "bdk:scout"].map(
         (adapter) => [`${adapter} ${command}`, subagentBash(command, adapter)] as const,
       ),
     ),
     ...BAD_PROMPTS.flatMap(([label, prompt]) =>
-      ["bdk:worker", "bdk:reader", "bdk:reviewer", "bdk:runner", "bdk:scout"].map(
-        (adapter) => [`${adapter} prompt with ${label}`, agentCall(adapter, prompt)] as const,
-      ),
+      [
+        "bdk:worker",
+        "bdk:reader",
+        "bdk:integrator",
+        "bdk:judge",
+        "bdk:reviewer",
+        "bdk:runner",
+        "bdk:scout",
+      ].map((adapter) => [`${adapter} prompt with ${label}`, agentCall(adapter, prompt)] as const),
     ),
   ];
 }

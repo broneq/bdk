@@ -15,6 +15,7 @@ type GuardRule =
   | "guard/subagent-git"
   | "guard/subagent-kernel-command"
   | "guard/lead-scope"
+  | "guard/judge-scope"
   | "guard/worktree-scope"
   | "guard/reader-write"
   | "guard/dispatch-prompt"
@@ -46,6 +47,8 @@ export interface AgentFacts {
   readonly caller?: { readonly ticket: string | null; readonly target: string | null };
   /** The `workdir` of the caller's package: the part worktree it works in (T45). */
   readonly workdir?: string;
+  /** The `entries` of the caller's package: what a judge may triage (#158). */
+  readonly entries?: readonly string[];
   /** The target of a ticket of the active Change. */
   readonly ticketTarget: (ticket: string) => string | undefined;
   /** Scouts started by agents holding the caller's ticket. */
@@ -63,12 +66,21 @@ export type Classify = (argv: readonly string[]) => KernelVerb | undefined;
 const EDIT_TOOLS = new Set(["Edit", "Write", "NotebookEdit", "MultiEdit"]);
 
 /** The adapters whose Bash is for kernel commands and test runs only (T23-D20, T41-D11). */
-const READ_ONLY_ADAPTERS = new Set(["bdk:reader", "bdk:reviewer", "bdk:scout", "bdk:lead"]);
+const READ_ONLY_ADAPTERS = new Set([
+  "bdk:reader",
+  "bdk:integrator",
+  "bdk:judge",
+  "bdk:reviewer",
+  "bdk:scout",
+  "bdk:lead",
+]);
 
 /** The adapters a BDK dispatch goes to (T23-D19, T41-D2). */
 const ADAPTERS = new Set([
   "bdk:worker",
   "bdk:reader",
+  "bdk:integrator",
+  "bdk:judge",
   "bdk:reviewer",
   "bdk:runner",
   "bdk:scout",
@@ -82,6 +94,9 @@ const LEAD_VERBS = new Set([
   "bdk dispatch build",
   "bdk commit",
 ]);
+
+/** The orchestrator verb a judge runs on the entries of its package (#158). */
+const JUDGE_VERB = "bdk log triage";
 
 /** Who starts whom (T41-D4); the `Agent(...)` lists of the lead and worker adapters say the same. */
 export const SPAWNS: Readonly<Record<string, ReadonlySet<string>>> = {
@@ -163,7 +178,10 @@ export function needsAgentFacts(payload: PreToolPayload): boolean {
   if (payload.agentId === undefined) return false;
   if (payload.tool === "Agent" || payload.tool === "SendMessage") return true;
   if (EDIT_TOOLS.has(payload.tool)) return true;
-  return payload.tool === "Bash" && payload.agentType === "bdk:lead";
+  return (
+    payload.tool === "Bash" &&
+    (payload.agentType === "bdk:lead" || payload.agentType === "bdk:judge")
+  );
 }
 
 /**
@@ -198,6 +216,7 @@ export function preToolDecision(
   const commands = readCommands(text);
   const subagent = payload.agentId !== undefined;
   const lead = subagent && payload.agentType === "bdk:lead";
+  const judge = subagent && payload.agentType === "bdk:judge";
   const readOnly = subagent && READ_ONLY_ADAPTERS.has(payload.agentType ?? "");
 
   for (const check of [
@@ -205,9 +224,13 @@ export function preToolDecision(
     (command: SimpleCommand) => kernelHook(command, classify),
     nestedStage,
     ...(subagent
-      ? [subagentGit, (command: SimpleCommand) => subagentKernel(command, classify, lead)]
+      ? [
+          subagentGit,
+          (command: SimpleCommand) => subagentKernel(command, classify, { lead, judge }),
+        ]
       : []),
     ...(lead ? [(command: SimpleCommand) => leadScope(command, classify, facts)] : []),
+    ...(judge ? [(command: SimpleCommand) => judgeScope(command, classify, facts)] : []),
     ...(readOnly
       ? [(command: SimpleCommand) => readerWrite(command, payload.agentType ?? "")]
       : []),
@@ -304,11 +327,12 @@ function kernelHook(command: SimpleCommand, classify: Classify): Deny | undefine
 function subagentKernel(
   command: SimpleCommand,
   classify: Classify,
-  lead: boolean,
+  caller: { readonly lead: boolean; readonly judge: boolean },
 ): Deny | undefined {
   const verb = kernelVerb(command, classify);
   if (verb?.availability !== "orchestrator") return undefined;
-  if (lead && LEAD_VERBS.has(verb.command)) return undefined;
+  if (caller.lead && LEAD_VERBS.has(verb.command)) return undefined;
+  if (caller.judge && verb.command === JUDGE_VERB) return undefined;
   return {
     rule: "guard/subagent-kernel-command",
     verb: verb.command,
@@ -455,6 +479,34 @@ function leadScope(
     rule: "guard/lead-scope",
     verb: verb.command,
     reason: `a lead runs ${verb.command} only on targets of its own part ${part}, not ${target ?? "an unknown target"}; return blocked with the cause (BDK T41-D11)`,
+  };
+}
+
+/**
+ * The judge exception (`kernel-cli`, Availability classes; #158): `log triage`
+ * only on an entry the `entries` of the judge's registry package lists.
+ */
+function judgeScope(
+  command: SimpleCommand,
+  classify: Classify,
+  facts: AgentFacts | undefined,
+): Deny | undefined {
+  const verb = kernelVerb(command, classify);
+  if (verb?.command !== JUDGE_VERB) return undefined;
+  const entries = facts?.entries;
+  if (entries === undefined) {
+    return {
+      rule: "guard/judge-scope",
+      verb: verb.command,
+      reason: `this judge has no package in the agent registry, so it may not run ${verb.command}: a judge started in the foreground is linked to its package only when it ends; return blocked with the cause, and the orchestrator starts the judge again with run_in_background: true (BDK #158)`,
+    };
+  }
+  const id = verb.positionals[0];
+  if (id !== undefined && entries.includes(id)) return undefined;
+  return {
+    rule: "guard/judge-scope",
+    verb: verb.command,
+    reason: `a judge triages only the entries its package lists, not ${id ?? "an entry it does not name"}; return blocked with the cause (BDK #158)`,
   };
 }
 

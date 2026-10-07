@@ -4,18 +4,20 @@ BDK runs its work through subagents because of context: a subagent gets its own 
 
 ## Roles and adapters
 
-The work an agent does is a **role**: implementer, simplifier, verifier, design-verifier, reviewer, integration-reviewer, pr-reviewer, runner, scout or lead. A role is a skill under `skills/roles/`: the contract of what the agent reads, does, writes and returns. What the agent works on comes in a **dispatch package** that `bdk dispatch build` writes for one ticket: the task or review group, the decisions and blockers that bind it, the rules it reads and the report path.
+The work an agent does is a **role**: implementer, simplifier, verifier, design-verifier, reviewer, integration-reviewer, judge, pr-reviewer, runner, scout or lead. A role is a skill under `skills/roles/`: the contract of what the agent reads, does, writes and returns. What the agent works on comes in a **dispatch package** that `bdk dispatch build` writes for one ticket: the task or review group, the decisions and blockers that bind it, the rules it reads and the report path.
 
-An **adapter** is the agent file that runs a role: a tool set and a model, and nothing else. Six adapters cover the ten roles:
+An **adapter** is the agent file that runs a role: a tool set and a model, and nothing else. Eight adapters cover the eleven roles:
 
-| Adapter        | Model  | Runs                                                 |
-| -------------- | ------ | ---------------------------------------------------- |
-| `bdk:lead`     | sonnet | a lead of one plan part                              |
-| `bdk:worker`   | sonnet | implementer and simplifier, the only roles that edit |
-| `bdk:reader`   | opus   | verifier, design-verifier and integration-reviewer   |
-| `bdk:reviewer` | sonnet | reviewer and pr-reviewer                             |
-| `bdk:runner`   | haiku  | runner, which runs the project's checks              |
-| `bdk:scout`    | haiku  | scout, which answers a search question               |
+| Adapter          | Model  | Runs                                                  |
+| ---------------- | ------ | ----------------------------------------------------- |
+| `bdk:lead`       | sonnet | a lead of one plan part                               |
+| `bdk:worker`     | sonnet | implementer and simplifier, the only roles that edit  |
+| `bdk:reader`     | opus   | verifier and design-verifier                          |
+| `bdk:integrator` | opus   | integration-reviewer, after the round's group reviews |
+| `bdk:judge`      | sonnet | judge, which triages the round's findings             |
+| `bdk:reviewer`   | sonnet | reviewer and pr-reviewer                              |
+| `bdk:runner`     | haiku  | runner, which runs the project's checks               |
+| `bdk:scout`      | haiku  | scout, which answers a search question                |
 
 `bdk:web-researcher` is the one agent outside the roles; any session can start it for external documentation and issue lookups. Full tool lists are in the [Agents reference](../reference/agents.md).
 

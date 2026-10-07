@@ -95,3 +95,14 @@ index 5a3705e..0278679 100644
  export function getLoadErrorMessage(
    t: UiTranslate,
    state: { message: string; unreachable?: boolean },
+diff --git a/src/ui/__snapshots__/load-error.png b/src/ui/__snapshots__/load-error.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..4014a60498b21cc653e8a53cf6bca58d77070228
+GIT binary patch
+literal 74
+zcmeAS@N?(olHy`uVBq!ia0vp^96-#%!2~32*1ud1qy#-(978JRBwH+8*eGfk;LpVH
+XYM(M=a9FVvP?EvZ)z4*}Q$iB}7~l}^
+
+literal 0
+HcmV?d00001
+

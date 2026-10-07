@@ -15,12 +15,15 @@ export interface FileStat {
   readonly path: string;
   readonly added: number;
   readonly removed: number;
+  /** Git's own verdict: numstat reports `-` counts for a binary file (attributes included). */
+  readonly binary: boolean;
 }
 
 /**
  * Parses `--numstat -z` output: `<added>\t<removed>\t<path>\0` per file, or
  * `<added>\t<removed>\t\0<old>\0<new>\0` for a rename, counted under the new
- * path. A binary file reports `-` for both counts and counts zero lines.
+ * path. A binary file reports `-` for both counts, counts zero lines and is
+ * flagged `binary`.
  */
 function parseNumstat(output: string): FileStat[] {
   const tokens = output.split("\0");
@@ -34,7 +37,12 @@ function parseNumstat(output: string): FileStat[] {
       i += 2;
     }
     const count = (value: string | undefined): number => (value === "-" ? 0 : Number(value));
-    stats.push({ path, added: count(match[1]), removed: count(match[2]) });
+    stats.push({
+      path,
+      added: count(match[1]),
+      removed: count(match[2]),
+      binary: match[1] === "-" && match[2] === "-",
+    });
   }
   return stats;
 }
@@ -58,8 +66,8 @@ export function fileStats(output: string): FileStat[] {
     .sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
 }
 
-export function aggregate(range: string, output: string): MeasureReport {
-  const stats = fileStats(output);
+/** The signals of the per-file rows of one range. */
+export function aggregate(range: string, stats: readonly FileStat[]): MeasureReport {
   const added = stats.reduce((sum, stat) => sum + stat.added, 0);
   const removed = stats.reduce((sum, stat) => sum + stat.removed, 0);
   const modules = [...new Set(stats.map((stat) => moduleOf(stat.path)))].sort((a, b) =>

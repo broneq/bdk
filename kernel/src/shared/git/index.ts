@@ -365,24 +365,6 @@ export async function mergeBase(
   return result.code === 0 && /^[0-9a-f]{40}$/.test(sha) ? sha : undefined;
 }
 
-/** The paths `<base>..<head>` changes, renames as their new path, sorted; `base` may be the empty tree. */
-export async function diffNames(
-  git: Git,
-  workTree: string,
-  base: string,
-  head: string,
-): Promise<string[]> {
-  const result = await git.run(
-    ["diff", "--name-only", "-z", "-M", "--no-ext-diff", `${base}..${head}`, "--"],
-    workTree,
-  );
-  if (result.code !== 0) throw new Error(`git diff failed: ${result.stderr.trim()}`);
-  return result.stdout
-    .split("\0")
-    .filter((path) => path !== "")
-    .sort();
-}
-
 /** The tracked paths with staged or unstaged changes against `HEAD`, sorted; none without a commit. */
 export async function dirtyTracked(git: Git, workTree: string): Promise<string[]> {
   const result = await git.run(

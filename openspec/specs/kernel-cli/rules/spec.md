@@ -104,7 +104,7 @@ Print one rule by id, the rules selected for a ticket, or the rules selected for
 - **Arguments:**
   - `<id>`. A rule id, e.g. `BDK-CQ-4` or `API-2`. Exactly one of `<id>`, `--ticket` and `--role`.
   - `--ticket <ticket>`. Print the rules selected for the ticket's package (the working agent's, else the active one), or for `<ticket>@<group>` the group's package (`kernel-cli`, Ticket references).
-  - `--role <role>`. One of the ten roles; needs at least one `--file`.
+  - `--role <role>`. One of the eleven roles; needs at least one `--file`.
   - `--file <path>`. Repeatable. A repository-relative path of the file set; it need not exist.
 - **Behaviour:** With `<id>`, prints the rule's frontmatter and text; a tombstone prints its id and `removed: <reason>` and exits 0; a disabled rule prints with `disabled: true`. With `--ticket`, the ticket must be open and have a dispatch package, or the group must have one (`policy/no-open-ticket` otherwise), and the kernel prints the rules whose ids that package records in its `rules` field (`kernel-state`, Dispatch package), in that order, each with its id, `kind`, `severity`, `paths`, `stages` and the glob that matched. **Selection**, performed by `dispatch build`, `ctx skill` and the instruction of a pipeline node, and exposed by `rules explain`: the candidates are every non-tombstone rule of the bundle and of `.bdk/rules/` that is not in `rules.disabled`, where a bundle rule under `rules/languages/<name>/` is a candidate only when `<name>` is in `languages`; a candidate is selected for a stage when its `stages` holds that stage and a glob of its `paths` matches a file of the file set (repository-relative, `**` crosses directories). A role selects for its stage (Stage readers); a role without a stage selects nothing. The file set is the task's `Files:` for a task, the union of its tasks' `Files:` for a part, the group's file set for a grouped package (`kernel-cli/dispatch`, bdk dispatch build, Groups), and the work tree files for every other target (an artifact, the Change, a session skill, a pipeline node): every file git tracks or would add, so tracked files and untracked files that are not ignored, read once per command. There is no selection without a file set. Order: rules whose matched glob is `**` first, then by the specificity of the matched glob (more literal path segments first, then more literal characters), then by `since`, then by id. Every applying rule is selected: there is no cap, because a configured rule the agent never sees fails silently; `hooks session-start` warns when a role reads more than `rules.warn-above` rules instead (`kernel-cli/hooks`). The first `--ticket` call made while the ticket's active package is its `implementer` package stamps `rules-read` in its attempt record (`kernel-state`, Attempt record); later calls print the same rules and leave the stamp alone, and a call under another role's package stamps nothing, so a `simplifier` or `runner` reading its rules never hides an implementer that read none (risk R2). **Role and files (T42).** With `--role` and `--file`, the kernel prints the Selection for that role and file set in the same form as `--ticket`, with `role` and `files` in place of `ticket` and `target`; it needs no Change and writes nothing, so a reviewer without a package, the `pr-reviewer` of `/bdk:pr-review`, reads the rules a package of that file set would carry. `--role` without `--file`, `--file` without `--role`, and `--role` or `--file` together with `<id>` or `--ticket` are `input/invalid-argument`; an unknown role and a path outside the repository are `input/not-found`.
 - **Writes:** `.bdk/changes/<id>/attempts/`
@@ -518,7 +518,7 @@ The kernel SHALL hold one table that names the readers of each rule stage, and e
 | `execute` | none                         | none                       | `implementer`, `simplifier`                       |
 | `review`  | none                         | none                       | `reviewer`, `integration-reviewer`, `pr-reviewer` |
 
-A node of stage `execute` or `review` gets no rules in its instruction: the session only dispatches there, and the agents read their rules through their packages (`kernel-pipeline`, Instruction). `runner`, `scout` and `lead` have no stage and read no rules. No table keyed by rule prefix or pack category decides who reads a rule: a rule's `stages` and `paths` are the whole answer (`kernel-state`, Rule file frontmatter).
+A node of stage `execute` or `review` gets no rules in its instruction: the session only dispatches there, and the agents read their rules through their packages (`kernel-pipeline`, Instruction). `runner`, `scout`, `lead` and `judge` have no stage and read no rules; the judge reads only the rules an entry cites, by id. No table keyed by rule prefix or pack category decides who reads a rule: a rule's `stages` and `paths` are the whole answer (`kernel-state`, Rule file frontmatter).
 
 #### Scenario: writer and checker read the same rules
 
@@ -528,4 +528,9 @@ A node of stage `execute` or `review` gets no rules in its instruction: the sess
 #### Scenario: role without a stage
 
 - **WHEN** `bdk rules show --role runner --file src/app.ts --json` runs
+- **THEN** the exit code is 0 and `rules` is empty
+
+#### Scenario: the judge reads no stage rules
+
+- **WHEN** `bdk rules show --role judge --file src/app.ts --json` runs
 - **THEN** the exit code is 0 and `rules` is empty

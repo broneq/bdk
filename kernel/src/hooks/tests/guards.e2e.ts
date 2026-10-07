@@ -306,6 +306,55 @@ describe("PreToolUse guard", () => {
     expect(run.stderr).toMatch(/^guard\/spec-dir-write: /);
   });
 
+  it("denies the integrator and the judge a file write, and passes a heredoc report (#158)", () => {
+    const { root } = opened();
+    const integrator = hook(
+      "PreToolUse",
+      root,
+      subagentBash("git diff H0..H1 > /tmp/range.diff", "bdk:integrator"),
+    );
+    expect(integrator.code).toBe(2);
+    expect(integrator.stderr).toMatch(/^guard\/reader-write: the integrator adapter may not write/);
+    const judge = hook(
+      "PreToolUse",
+      root,
+      subagentBash("bdk log show L-a1 > /tmp/a.md", "bdk:judge"),
+    );
+    expect(judge.code).toBe(2);
+    expect(judge.stderr).toMatch(/^guard\/reader-write: the judge adapter may not write/);
+    const heredoc = hook(
+      "PreToolUse",
+      root,
+      subagentBash(
+        "bdk log ingest --ticket A-7f3k9m2q@m1 <<'REPORT'\n# Review\n\nA > B\nREPORT",
+        "bdk:integrator",
+      ),
+    );
+    expect(heredoc.code, heredoc.stderr).toBe(0);
+  });
+
+  it("denies a judge without a registry package its triage, and any other orchestrator verb (#158)", () => {
+    const { root } = opened();
+    const triage = hook(
+      "PreToolUse",
+      root,
+      subagentBash('bdk log triage L-a1a1a1a1 should-fix --reason "x"', "bdk:judge"),
+    );
+    expect(triage.code).toBe(2);
+    expect(triage.stderr).toMatch(
+      /^guard\/judge-scope: this judge has no package in the agent registry/,
+    );
+    const resolve = hook(
+      "PreToolUse",
+      root,
+      subagentBash('bdk log resolve L-a1a1a1a1 resolved --reason "x"', "bdk:judge"),
+    );
+    expect(resolve.code).toBe(2);
+    expect(resolve.stderr).toMatch(
+      /^guard\/subagent-kernel-command: subagents may not run bdk log resolve,/,
+    );
+  });
+
   it("passes a recorded Agent call to a non-BDK agent", () => {
     const { root } = opened();
     expect(hook("PreToolUse", root, recorded(agentFg)).code).toBe(0);
@@ -356,6 +405,18 @@ describe("PreToolUse guard", () => {
       expect(run.code).toBe(2);
       expect(run.stderr).toMatch(/^guard\/kernel-unavailable: /);
     });
+
+    it.each(["bdk:integrator", "bdk:judge"])(
+      "lets a %s payload through the prefilter to the kernel (#158)",
+      (adapter) => {
+        const { root } = opened();
+        const run = hook("PreToolUse", root, subagentBash("cat > /tmp/r.md", adapter), {
+          pluginRoot: withoutBundle(),
+        });
+        expect(run.code).toBe(2);
+        expect(run.stderr).toMatch(/^guard\/kernel-unavailable: /);
+      },
+    );
 
     it("passes a main-thread git status without starting node [TSH-6]", () => {
       const { root } = opened();

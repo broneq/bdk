@@ -38,7 +38,7 @@ esac
 
 wanted() {
   case $payload in
-    *.bdk/specs* | */bdk:* | *bdk:reader* | *bdk:reviewer* | *bdk:scout* | *bdk:lead*) return 0 ;;
+    *.bdk/specs* | */bdk:* | *bdk:reader* | *bdk:integrator* | *bdk:judge* | *bdk:reviewer* | *bdk:scout* | *bdk:lead*) return 0 ;;
     *'"tool_name":"SendMessage"'* | *'"tool_name": "SendMessage"'*) return 0 ;;
   esac
   case $payload in

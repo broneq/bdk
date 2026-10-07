@@ -4,9 +4,9 @@ import { describe, expect, it } from "vitest";
 
 import type { Git, GitResult } from "../../shared/git/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
-import { aggregate, moduleOf, parseRange } from "../domain/measure.ts";
+import { aggregate, fileStats, moduleOf, parseRange } from "../domain/measure.ts";
 import { renderMeasure } from "../render/measure.ts";
-import { measure } from "../use-cases/measure.ts";
+import { measure, rangeStats } from "../use-cases/measure.ts";
 
 const line = (added: string, removed: string, path: string): string =>
   `${added}\t${removed}\t${path}\0`;
@@ -19,7 +19,7 @@ describe("aggregate", () => {
       line("10", "2", "src/auth/login.ts") +
       line("-", "-", "assets/logo.png") +
       line("3", "0", "README.md");
-    expect(aggregate("main", output)).toEqual({
+    expect(aggregate("main", fileStats(output))).toEqual({
       range: "main",
       files: 3,
       added: 13,
@@ -34,13 +34,21 @@ describe("aggregate", () => {
       line("1", "1", "src/a.ts") +
       line("20", "0", ".bdk/changes/2026-09-25-x/log/20260925T090000Z-decision-L-aaaaaaaa.md") +
       line("5", "0", "packages/web/.bdk/settings.yaml");
-    expect(aggregate("HEAD", output)).toMatchObject({ files: 1, lines: 2, modules: ["src"] });
+    expect(aggregate("HEAD", fileStats(output))).toMatchObject({
+      files: 1,
+      lines: 2,
+      modules: ["src"],
+    });
   });
 
   it("counts a rename once under its new path", () => {
     const output =
       rename("2", "1", "src/old/a.ts", "lib/new/a.ts") + line("1", "0", "lib/new/b.ts");
-    expect(aggregate("main", output)).toMatchObject({ files: 2, lines: 4, modules: ["lib/new"] });
+    expect(aggregate("main", fileStats(output))).toMatchObject({
+      files: 2,
+      lines: 4,
+      modules: ["lib/new"],
+    });
   });
 
   it("gives the same output for the same input in any order", () => {
@@ -49,13 +57,13 @@ describe("aggregate", () => {
       line("2", "3", "a/b.ts"),
       rename("0", "0", "c", "d/e/f.ts"),
     ];
-    const first = JSON.stringify(aggregate("main", parts.join("")));
-    const second = JSON.stringify(aggregate("main", [...parts].reverse().join("")));
+    const first = JSON.stringify(aggregate("main", fileStats(parts.join(""))));
+    const second = JSON.stringify(aggregate("main", fileStats([...parts].reverse().join(""))));
     expect(second).toBe(first);
   });
 
   it("measures an empty diff as zero", () => {
-    expect(aggregate("HEAD", "")).toEqual({
+    expect(aggregate("HEAD", fileStats(""))).toEqual({
       range: "HEAD",
       files: 0,
       added: 0,
@@ -63,6 +71,22 @@ describe("aggregate", () => {
       lines: 0,
       modules: [],
     });
+  });
+});
+
+describe("fileStats", () => {
+  it("flags a binary file, whose counts are -, and keeps the counts of the others", () => {
+    const output = line("10", "2", "src/a.ts") + line("-", "-", "snap/a.png");
+    expect(fileStats(output)).toStrictEqual([
+      { path: "snap/a.png", added: 0, removed: 0, binary: true },
+      { path: "src/a.ts", added: 10, removed: 2, binary: false },
+    ]);
+  });
+
+  it("names a renamed binary file by its new path", () => {
+    expect(fileStats(rename("-", "-", "old/a.png", "new/a.png"))).toStrictEqual([
+      { path: "new/a.png", added: 0, removed: 0, binary: true },
+    ]);
   });
 });
 
@@ -166,6 +190,32 @@ describe("measure", () => {
     const outcome = (await measure({ git }, "/repo", "main")) as Refusal;
     expect(outcome.rule).toBe("input/invalid-argument");
     expect(outcome.why).toContain("fatal: bad object");
+  });
+});
+
+describe("rangeStats", () => {
+  it("gives the per-file rows and their aggregate from one git call", async () => {
+    const git = fakeGit([], {
+      code: 0,
+      stdout: line("4", "1", "src/auth/a.ts") + line("-", "-", "snap/a.png"),
+      stderr: "",
+    });
+    const outcome = await rangeStats({ git }, "/repo", "B", "H");
+    expect(outcome).toStrictEqual({
+      files: [
+        { path: "snap/a.png", added: 0, removed: 0, binary: true },
+        { path: "src/auth/a.ts", added: 4, removed: 1, binary: false },
+      ],
+      report: {
+        range: "B..H",
+        files: 2,
+        added: 4,
+        removed: 1,
+        lines: 5,
+        modules: ["snap", "src/auth"],
+      },
+    });
+    expect(git.calls).toHaveLength(1);
   });
 });
 

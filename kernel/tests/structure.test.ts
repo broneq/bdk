@@ -32,6 +32,7 @@ describe("import scan", () => {
     expect(matrix.get("service")).toBe("all");
     expect(matrix.get("log")).toStrictEqual(new Set());
     expect(matrix.get("rules")).toStrictEqual(new Set());
+    expect(matrix.get("review")).toStrictEqual(new Set(["measure", "spec"]));
   });
 
   it("finds no violation in kernel/src", () => {

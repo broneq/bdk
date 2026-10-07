@@ -33,6 +33,8 @@ export interface FakeGit extends Git {
   ignored: Set<string>;
   /** The paths `git ls-files -co --exclude-standard` answers, relative to the root; none by default. */
   workTree: string[];
+  /** What `git diff --numstat -z` answers; empty by default. */
+  numstat: string;
 }
 
 export function fakeGit(): FakeGit {
@@ -41,12 +43,16 @@ export function fakeGit(): FakeGit {
     ident: { code: 0, stdout: `${AUTHOR} 1758795302 +0200\n`, stderr: "" },
     ignored: new Set(),
     workTree: [],
+    numstat: "",
     currentBranch: () => git.branch,
     run(args) {
       if (args[0] === "var") return Promise.resolve(git.ident);
       if (args[0] === "check-ignore") {
         const code = git.ignored.has(args.at(-1) ?? "") ? 0 : 1;
         return Promise.resolve({ code, stdout: "", stderr: "" });
+      }
+      if (args[0] === "diff" && args.includes("--numstat")) {
+        return Promise.resolve({ code: 0, stdout: git.numstat, stderr: "" });
       }
       if (args[0] === "ls-files") {
         const stdout = git.workTree.map((path) => `${path}\0`).join("");

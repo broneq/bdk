@@ -268,10 +268,10 @@ PreToolUse guard: spec directory, subagent git, subagent kernel commands, `bdk.m
 - **Mode:** `guard`; standalone (`kernel-cli`, Invocation): the guards read only the payload, so a tool call outside a git work tree is decided, not blocked with `runtime/not-a-repo`. The one exception is a `Skill` call to a guarded stage skill inside a run, which reads the session's run marker and resolves the Change from the branch (Pre-tool guards, Stage skill)
 - **Arguments:**
   - stdin: PreToolUse payload (`kernel-cli/hooks`, Hook payloads).
-- **Behaviour:** Reached only after the shell prefilter (Guard hooks file and prefilter). Reads a Bash command through the command reader (Pre-tool command reading) and applies the guards of Pre-tool guards in this order: `guard/spec-dir-write`, `guard/hooks-from-bash`, `guard/nested-stage-command`, `guard/subagent-git`, `guard/subagent-kernel-command`, `guard/lead-scope`, `guard/worktree-scope`, `guard/reader-write`, `guard/dispatch-prompt`, `guard/agent-spawn`, `guard/escalation-model`, `guard/agent-message`, `guard/stage-skill`, then for a `Skill` call admitted inside a run the stage's gate (`policy/gate-not-ready`, `guard/gate-manual`); the first match denies. An admitted stage skill writes what a typed stage command writes (Prompt-expansion outcomes), with `source: policy` for its gate and the run's typed prompt as `command`. A `SendMessage` that passes and names an agent the registry holds is recorded as a message for that agent (`kernel-state`, Agent registry), which `agents wait` returns. Denied kernel commands: every `orchestrator` and `hook` verb of `kernel-cli`, Availability classes, matched by exact verb. On deny the kernel prints the host's `permissionDecision: deny` JSON with the reason and exits 2 (stderr carries `<rule>: <reason>`). Main-thread git is never touched. The user's own `!` bash-mode commands do not pass through this hook (HOST-FACTS `bang-pretool`), a known gap. A payload that is not JSON, or lacks `tool_name` or `tool_input`, is blocked with `input/invalid-argument`.
+- **Behaviour:** Reached only after the shell prefilter (Guard hooks file and prefilter). Reads a Bash command through the command reader (Pre-tool command reading) and applies the guards of Pre-tool guards in this order: `guard/spec-dir-write`, `guard/hooks-from-bash`, `guard/nested-stage-command`, `guard/subagent-git`, `guard/subagent-kernel-command`, `guard/lead-scope`, `guard/judge-scope`, `guard/worktree-scope`, `guard/reader-write`, `guard/dispatch-prompt`, `guard/agent-spawn`, `guard/escalation-model`, `guard/agent-message`, `guard/stage-skill`, then for a `Skill` call admitted inside a run the stage's gate (`policy/gate-not-ready`, `guard/gate-manual`); the first match denies. An admitted stage skill writes what a typed stage command writes (Prompt-expansion outcomes), with `source: policy` for its gate and the run's typed prompt as `command`. A `SendMessage` that passes and names an agent the registry holds is recorded as a message for that agent (`kernel-state`, Agent registry), which `agents wait` returns. Denied kernel commands: every `orchestrator` and `hook` verb of `kernel-cli`, Availability classes, matched by exact verb, except a lead's own verbs and a judge's `log triage` (`kernel-cli`, Availability classes). On deny the kernel prints the host's `permissionDecision: deny` JSON with the reason and exits 2 (stderr carries `<rule>: <reason>`). Main-thread git is never touched. The user's own `!` bash-mode commands do not pass through this hook (HOST-FACTS `bang-pretool`), a known gap. A payload that is not JSON, or lacks `tool_name` or `tool_input`, is blocked with `input/invalid-argument`.
 - **Writes:** `.bdk/.machine/agents.sqlite`, `.bdk/.machine/runs/`, `.bdk/changes/<id>/log/`
 - **Output:** `schema/cli/output/hooks-pre-tool.json` for `--json` on pass (the kernel's own decision record, used by tests); the error object on a block under `--json`; the host's stdout shape otherwise (Hook payloads below).
-- **Exit codes and rules:** `0` (pass) or `2` (block); guard mode never exits 3, 4 or 5. Rules: `guard/spec-dir-write`, `guard/subagent-git`, `guard/subagent-kernel-command`, `guard/lead-scope`, `guard/worktree-scope`, `guard/hooks-from-bash`, `guard/nested-stage-command`, `guard/dispatch-prompt`, `guard/reader-write`, `guard/agent-spawn`, `guard/escalation-model`, `guard/agent-message`, `guard/stage-skill`, `guard/gate-manual`, `policy/gate-not-ready`; plus the common rules of every command (`kernel-cli`, Exit codes and the error object), all reported as exit 2.
+- **Exit codes and rules:** `0` (pass) or `2` (block); guard mode never exits 3, 4 or 5. Rules: `guard/spec-dir-write`, `guard/subagent-git`, `guard/subagent-kernel-command`, `guard/lead-scope`, `guard/judge-scope`, `guard/worktree-scope`, `guard/hooks-from-bash`, `guard/nested-stage-command`, `guard/dispatch-prompt`, `guard/reader-write`, `guard/agent-spawn`, `guard/escalation-model`, `guard/agent-message`, `guard/stage-skill`, `guard/gate-manual`, `policy/gate-not-ready`; plus the common rules of every command (`kernel-cli`, Exit codes and the error object), all reported as exit 2.
 - **Example:**
 
   ```bash
@@ -338,6 +338,11 @@ PreToolUse guard: spec directory, subagent git, subagent kernel commands, `bdk.m
 
 - **WHEN** a `bdk:lead` payload whose package targets part `02` runs `bdk.mjs attempt open task-redispatch 03-1`
 - **THEN** the exit code is 2 and the reason on stderr starts with `guard/lead-scope`
+
+#### Scenario: guard/judge-scope
+
+- **WHEN** a `bdk:judge` payload whose package lists `L-a1` and not `L-z9` runs `bdk log triage L-z9 not-a-problem --reason "x"`
+- **THEN** the exit code is 2 and the reason on stderr starts with `guard/judge-scope`
 
 #### Scenario: guard/agent-spawn
 
@@ -586,7 +591,7 @@ The agent form runs the kernel directly, because these events fire once per agen
 
 Both guard scripts are POSIX `sh`, read the payload from stdin once, check before starting the kernel (in `pre-tool.sh` after the prefilter) that `node` is on `PATH` and `dist/bdk.mjs` exists (otherwise `guard/kernel-unavailable: ...` on stderr and exit 2), and end with one kernel line that matches the `guard-wrapper` regex of `kernel-cli`, Output modes, feeding the payload on stdin. **Heartbeat.** Before its prefilter, when the payload has `"agent_id"` and `${CLAUDE_PROJECT_DIR}/.bdk/.machine/` exists, `pre-tool.sh` writes `open` to `.bdk/.machine/agents/<agent_id>` and `post-tool.sh` writes `idle` to it, creating the directory when absent and taking the id from the payload only when it matches `^[A-Za-z0-9_-]+$`; a failed write never blocks the tool. Neither starts Node for it.
 
-`pre-tool.sh` calls the kernel only when the raw payload contains one of: `.bdk/specs`; `bdk.mjs` or `bdk ` (the word followed by a space), and `hooks`; `/bdk:`; `"agent_id"` and either `git`, `bdk.mjs` or `bdk `; `bdk:reader`, `bdk:reviewer`, `bdk:scout` or `bdk:lead`; `"subagent_type"` and either `bdk:worker`, `bdk:runner` or `bdk:lead`; `SendMessage` or `Skill` as `tool_name`. Otherwise it exits 0 without starting Node. `post-tool.sh` serves both `PostToolUse` and `PostToolUseFailure`. It calls the kernel only when `.bdk/` exists and either `tool_name` is `Agent`, `TaskStop` or `AskUserQuestion`, or the verbose marker `.bdk/.machine/verbose` exists (`kernel-state`, Verbose log); with the marker, every payload reaches the kernel. The prefilter only over-approximates: whatever it lets through, the kernel decides from the parsed payload. `bdk ` is matched anywhere in the payload, not at the positions a shell command word can take, so no shell construct (`&&`, `;`, `|`, `$(...)`, a subshell) can hide a `bdk <command>` call from the guards. The hook commands themselves run `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs"`, never `bdk`, because a plugin's `bin/` is not on a hook's `PATH` (HOST-FACTS `plugin-bin-hook`).
+`pre-tool.sh` calls the kernel only when the raw payload contains one of: `.bdk/specs`; `bdk.mjs` or `bdk ` (the word followed by a space), and `hooks`; `/bdk:`; `"agent_id"` and either `git`, `bdk.mjs` or `bdk `; `bdk:reader`, `bdk:integrator`, `bdk:judge`, `bdk:reviewer`, `bdk:scout` or `bdk:lead`; `"subagent_type"` and either `bdk:worker`, `bdk:runner` or `bdk:lead`; `SendMessage` or `Skill` as `tool_name`. Otherwise it exits 0 without starting Node. `post-tool.sh` serves both `PostToolUse` and `PostToolUseFailure`. It calls the kernel only when `.bdk/` exists and either `tool_name` is `Agent`, `TaskStop` or `AskUserQuestion`, or the verbose marker `.bdk/.machine/verbose` exists (`kernel-state`, Verbose log); with the marker, every payload reaches the kernel. The prefilter only over-approximates: whatever it lets through, the kernel decides from the parsed payload. `bdk ` is matched anywhere in the payload, not at the positions a shell command word can take, so no shell construct (`&&`, `;`, `|`, `$(...)`, a subshell) can hide a `bdk <command>` call from the guards. The hook commands themselves run `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs"`, never `bdk`, because a plugin's `bin/` is not on a hook's `PATH` (HOST-FACTS `plugin-bin-hook`).
 
 #### Scenario: hooks file entries
 
@@ -658,6 +663,11 @@ Both guard scripts are POSIX `sh`, read the payload from stdin once, check befor
 - **WHEN** `hooks/hooks.json` and `hooks/guard/*.sh` are inspected
 - **THEN** every kernel call in them runs `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs"`, and none runs `bdk` as a command word
 
+#### Scenario: integrator payload reaches the kernel
+
+- **WHEN** a payload with `"agent_type": "bdk:integrator"` runs `cat > /tmp/r.md` through Bash
+- **THEN** `pre-tool.sh` starts the kernel instead of exiting 0 at the prefilter
+
 ### Requirement: Pre-tool command reading
 
 `hooks pre-tool` SHALL read a Bash command as a list of simple commands, each with its words and output redirections, and apply the Bash guards to command words, never to the raw text.
@@ -703,9 +713,9 @@ The reader is best effort for a careless model (design NFR "Security"): an inter
 - **Hooks from Bash** (T1, every thread): a kernel command whose verb is a `hook` class command is denied with `guard/hooks-from-bash`.
 - **Nested stage command** (T1, every thread): a simple command with the command word `claude` and a word starting with `/bdk:plan`, `/bdk:execute`, `/bdk:close` or `/bdk:run` is denied with `guard/nested-stage-command`.
 - **Subagent git** (T3): a git command whose verb is `stash`, `reset`, `clean`, `restore`, `commit`, `add`, `merge`, `rebase`, `cherry-pick` or `push`; `checkout` with `--`, a `.` argument, `-f` or `--force`; `switch` with `--discard-changes`, `-f` or `--force`. Denied with `guard/subagent-git`. `git checkout <branch>`, `git status`, `git diff` and `git log` pass.
-- **Subagent kernel command** (T3): a kernel command whose verb is an `orchestrator` class command is denied with `guard/subagent-kernel-command`; `agent` and `read` verbs, `--help` and unknown verbs pass. A `bdk:lead` payload may run `attempt open`, `attempt close`, `dispatch build` and `commit` on a target inside the part of its own package, and is denied with `guard/lead-scope` on any other target (`kernel-cli`, Availability classes, Lead exception); a lead with no package in the registry is denied all four with `guard/lead-scope`.
-- **Read-only adapters** (T23-D14, D20, T41-D11): a Bash write from a payload whose `agent_type` is `bdk:reader`, `bdk:reviewer`, `bdk:scout` or `bdk:lead` is denied with `guard/reader-write`.
-- **Dispatch prompt** (T23-D0): an `Agent` call whose `subagent_type` is `bdk:worker`, `bdk:reader`, `bdk:reviewer`, `bdk:runner`, `bdk:scout` or `bdk:lead` is denied with `guard/dispatch-prompt` unless its prompt holds exactly one path matching `(^|/)\.bdk/changes/[^/\s]+/dispatch/[^/\s]+\.md` and, without that path, at most one sentence: no blank line, at most one sentence end, at most 200 characters. Other `subagent_type` values pass. A `bdk:scout` started by a `bdk:worker` is exempt: it has no package and its prompt is the worker's question (`role-contracts`, Role contract content).
+- **Subagent kernel command** (T3): a kernel command whose verb is an `orchestrator` class command is denied with `guard/subagent-kernel-command`; `agent` and `read` verbs, `--help` and unknown verbs pass. A `bdk:lead` payload may run `attempt open`, `attempt close`, `dispatch build` and `commit` on a target inside the part of its own package, and is denied with `guard/lead-scope` on any other target (`kernel-cli`, Availability classes, Lead exception); a lead with no package in the registry is denied all four with `guard/lead-scope`. A `bdk:judge` payload may run `log triage` on an entry its package's `entries` lists, and is denied with `guard/judge-scope` on any other entry (`kernel-cli`, Availability classes, Judge exception); a judge with no package in the registry is denied `log triage` with `guard/judge-scope`.
+- **Read-only adapters** (T23-D14, D20, T41-D11): a Bash write from a payload whose `agent_type` is `bdk:reader`, `bdk:integrator`, `bdk:judge`, `bdk:reviewer`, `bdk:scout` or `bdk:lead` is denied with `guard/reader-write`. A heredoc on the stdin of a command is not a write.
+- **Dispatch prompt** (T23-D0): an `Agent` call whose `subagent_type` is `bdk:worker`, `bdk:reader`, `bdk:integrator`, `bdk:judge`, `bdk:reviewer`, `bdk:runner`, `bdk:scout` or `bdk:lead` is denied with `guard/dispatch-prompt` unless its prompt holds exactly one path matching `(^|/)\.bdk/changes/[^/\s]+/dispatch/[^/\s]+\.md` and, without that path, at most one sentence: no blank line, at most one sentence end, at most 200 characters. Other `subagent_type` values pass. A `bdk:scout` started by a `bdk:worker` is exempt: it has no package and its prompt is the worker's question (`role-contracts`, Role contract content).
 - **Agent spawn** (T41-D4): an `Agent` call from a subagent is denied with `guard/agent-spawn` unless the caller is `bdk:lead` and `subagent_type` is `bdk:worker`, `bdk:runner`, `bdk:reviewer` or `bdk:scout`, or the caller is `bdk:worker`, `subagent_type` is `bdk:scout` and the scouts started by agents holding the caller's ticket number fewer than `agents.scout.max-per-ticket`. Calls from the main thread and from non-BDK agents are not checked by this guard.
 - **Escalation model** (T41-D14, every thread): an `Agent` call whose prompt names one dispatch package with a `model` in its frontmatter is denied with `guard/escalation-model` unless `tool_input.model` equals it; the host starts the agent on that model instead of its adapter's (HOST-FACTS `model-override`). A package that is missing or does not parse has no model for this guard.
 - **Worktree scope** (T45): an `Edit`, `Write` or `NotebookEdit` from a subagent whose package in the registry carries `workdir` (`kernel-state`, Dispatch package) is denied with `guard/worktree-scope` when its `file_path` or `notebook_path`, resolved against the payload's `cwd`, lies outside `workdir`; the reason names the path and `workdir`. A subagent without a package or with a package without `workdir`, and the main thread, are not checked by this guard. A Bash command is not checked: the guard cannot see where a command writes, and the package's `Work root` section carries that rule for the shell (`role-contracts`, Role contract content).
@@ -809,6 +819,26 @@ Main-thread git and main-thread orchestrator commands are never denied.
 
 - **WHEN** the main thread calls `Skill` with `skill: bdk:design` in a session without a run marker
 - **THEN** it exits 0 and nothing is written
+
+#### Scenario: integrator cannot write a file
+
+- **WHEN** a `bdk:integrator` payload runs `git diff H0..H1 > /tmp/range.diff`
+- **THEN** it exits 2 with `guard/reader-write`
+
+#### Scenario: report through a stdin heredoc passes
+
+- **WHEN** a `bdk:reviewer` or `bdk:integrator` payload runs `bdk log ingest --ticket A-7f3k9m2q@m1 <<'REPORT'` followed by the report lines and `REPORT`
+- **THEN** it exits 0
+
+#### Scenario: integrator dispatch needs a package path
+
+- **WHEN** the main thread calls `Agent` with `subagent_type: bdk:integrator` and a prompt of two paragraphs without a package path
+- **THEN** it exits 2 with `guard/dispatch-prompt`
+
+#### Scenario: judge cannot write a file
+
+- **WHEN** a `bdk:judge` payload runs `bdk log show L-a1 > /tmp/a.md`
+- **THEN** it exits 2 with `guard/reader-write`
 
 ### Requirement: Gate acceptance through recorded payloads
 

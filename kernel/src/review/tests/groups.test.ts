@@ -6,8 +6,8 @@ import { moduleOf } from "../../measure/index.ts";
 import { reviewGroups } from "../domain/groups.ts";
 import type { PartFiles } from "../domain/groups.ts";
 
-const groups = (changed: string[], parts: PartFiles[] = [], maxFiles = 30) =>
-  reviewGroups({ changed, parts, maxFiles, moduleOf });
+const groups = (changed: string[], parts: PartFiles[] = [], maxFiles = 30, binary: string[] = []) =>
+  reviewGroups({ changed, binary, parts, maxFiles, moduleOf });
 
 const files = (dir: string, count: number) =>
   Array.from({ length: count }, (_, at) => `${dir}/f${String(at).padStart(2, "0")}.ts`);
@@ -15,6 +15,25 @@ const files = (dir: string, count: number) =>
 describe("reviewGroups", () => {
   it("has no groups for an empty range", () => {
     expect(groups([], [{ id: "01", files: ["src/a.ts"] }])).toStrictEqual([]);
+  });
+
+  it("puts binary files into no group, the integration group included", () => {
+    const changed = ["snapshots/a.png", "snapshots/b.png", "src/ui/button.ts"];
+    const binary = ["snapshots/a.png", "snapshots/b.png"];
+    expect(groups(changed, [], 30, binary)).toStrictEqual([
+      { id: "m1", kind: "module", files: ["src/ui/button.ts"] },
+      { id: "integration", kind: "integration", files: ["src/ui/button.ts"] },
+    ]);
+    expect(
+      groups(changed, [{ id: "01", files: ["snapshots/a.png", "src/ui/button.ts"] }], 30, binary),
+    ).toStrictEqual([
+      { id: "p01", kind: "part", part: "01", files: ["src/ui/button.ts"] },
+      { id: "integration", kind: "integration", files: ["src/ui/button.ts"] },
+    ]);
+  });
+
+  it("has no groups when only binary files changed", () => {
+    expect(groups(["snapshots/a.png"], [], 30, ["snapshots/a.png"])).toStrictEqual([]);
   });
 
   it("follows the plan parts, then unplanned, then integration", () => {

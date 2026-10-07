@@ -1,6 +1,6 @@
 ---
 name: cr
-description: Reviews the active BDK Change, or the branch as a review Change, in rounds of parallel reviewers and a full gate; triages every entry and fixes blockers. Use when a Change waits on /bdk:cr or the user asks for a code review.
+description: Reviews the active BDK Change, or the branch as a review Change, in rounds of parallel group reviewers and a full gate, then an integration reviewer and a judge; fixes blockers. Use when a Change waits on /bdk:cr or the user asks for a code review.
 argument-hint: "[--full] [--base <ref>] [--inline] [--report] [focus]"
 allowed-tools: Bash(bdk *) Bash(echo *) Agent SendMessage Skill Read Bash(git diff *) Bash(git log *) AskUserQuestion Bash(lavish-axi *) Bash(gh issue create *)
 disallowed-tools: Edit Write NotebookEdit
@@ -39,21 +39,24 @@ The intent is one sentence from the branch name and the subjects of `git log --f
 
 One round is one ticket of the `review-fix` loop. A round starts with a fix when the Change holds blocking entries (see "After the round" for which entries block; `bdk log list --json` shows them, with their `level`). Work each round in this order until "After the round" ends the run:
 
-1. **Plan.** Without blocking entries, run `bdk review plan [--full | --base <ref>] --json` first: it gives the anchor, the range, the `dirty` files and the groups. When it has no group, nothing changed since the last review: open no ticket, and go to "Finish" naming the head of the last review.
+1. **Plan.** Without blocking entries, run `bdk review plan [--full | --base <ref>] --json` first: it gives the anchor, the range, the `dirty` files and the groups. When it has no group, open no ticket and go to "Finish": with an empty `binary` list, saying that nothing changed since the last review and naming its head; otherwise saying that the range holds no text file to review and naming its `binary` files.
 2. **Open.** `bdk attempt open review-fix <change-id> --json` gives the ticket. When it refuses with `policy/not-ready`, the Change has not reached the review stage: dispatch nothing, and report the refusal's `why` and the stage command `bdk next --json` names, such as `/bdk:execute`.
 3. **Fix first.** With blocking entries, fix them under this ticket (see "Fix"), then run `bdk review plan` as in step 1.
-4. **Packages.** Build one package per group with `bdk dispatch build <change-id> <role> <ticket> --group <id> --json`:
-   - a group of kind `part`, `unplanned` or `module`: role `reviewer`, with `--range <range>`, one `--file <path>` per file of the group and, for a part, `--part <nn>`;
-   - the group `integration`: role `integration-reviewer`, with `--range <range>`;
-   - always one more: role `runner` with `--group gate`, which runs the full gate and the coverage of its `Checks` section on the whole Change.
-5. **Dispatch.** Load the `bdk:swarm` skill with the Skill tool before the first dispatch and follow it. Start every package's agent in the background in one dispatch round, with `subagent_type` set to `bdk:` plus the package's `adapter` and the package path as the whole prompt, at most `execution.concurrency` at once. Each reviewer writes its entries and stores its report under its `<ticket>@<group>` reference itself.
-6. **Triage.** When every agent of the round has returned, triage the round (see "Triage").
-7. **Merge.** Store the merged review with `bdk log ingest --ticket <ticket>@merge --json` before any close: the kernel refuses an `ok` or `fail` close of the ticket without it (`policy/missing-report`). Its envelope holds `status`, `files`, `entries`, `evidence` and `reason` only, its `entries` naming every entry written under the ticket (an item of `bdk log list --since-ticket-start <ticket> --json` whose `ticket` is it; the kernel refuses any other), its body listing per level each entry's id and summary, the entries of earlier rounds it fixed by id, then the gate's verdicts and the diff coverage. Then run `bdk log add report "<counts per level>" --ticket <ticket>@merge --json`.
-8. **Close.** See "After the round".
+4. **Reviewers and gate.** Load the `bdk:swarm` skill with the Skill tool before the first dispatch and follow it. Build each package with `bdk dispatch build <change-id> <role> <ticket> --group <id> --json` at the step that starts its agent, and start every agent in the background, with `subagent_type` set to `bdk:` plus the package's `adapter` and the package path as the whole prompt, at most `execution.concurrency` at once. Here build and start:
+   - for each group of kind `part`, `unplanned` or `module`: role `reviewer`, with `--range <range>`, one `--file <path>` per file of the group and, for a part, `--part <nn>`;
+   - one more: role `runner` with `--group gate`, which runs the full gate and the coverage of its `Checks` section on the whole Change.
+
+   Each reviewer writes its entries and stores its report under its `<ticket>@<group>` reference itself.
+
+5. **Integration.** Once every `reviewer` agent of the round has returned, after its one resume when it needed one, build the `integration` group's package: role `integration-reviewer`, with `--range <range>` and no `--file` or `--part`, and start its agent while the gate agent may still run. Built only now, it names the reports the reviewers stored and the groups without one.
+6. **Judge.** Once the integration reviewer has returned, build role `judge` with `--group judge --range <range>` and start its agent in the background. It sets the level of every entry its package lists.
+7. **Triage.** When every agent of the round has returned, the gate's included, triage what the judge left (see "Triage").
+8. **Merge.** Store the merged review with `bdk log ingest --ticket <ticket>@merge --json` before any close: the kernel refuses an `ok` or `fail` close of the ticket without it (`policy/missing-report`). Its envelope holds `status`, `files`, `entries`, `evidence` and `reason` only, its `entries` naming every entry written under the ticket (an item of `bdk log list --since-ticket-start <ticket> --json` whose `ticket` is it; the kernel refuses any other), its body listing per level each entry's id and summary, the entries of earlier rounds it fixed by id, then the gate's verdicts and the diff coverage. Then run `bdk log add report "<counts per level>" --ticket <ticket>@merge --json`.
+9. **Close.** See "After the round".
 
 ## Triage
 
-Read the entries only from the kernel: `bdk log list --since-ticket-start <ticket> --json`, `bdk log list --json` and `bdk log show <id>`, never from an agent's reply. Give one level with `bdk log triage <id> <level>` to every live `finding`, `blocker` and `observation` of the round, and to every other live one of the Change without a level, whichever stage wrote it, such as the verifier's or an implementer's entries from execute. The human then decides only entries you have judged:
+The judge sets the levels of the entries its package lists. Read the entries and their levels only from the kernel: `bdk log list --since-ticket-start <ticket> --json`, `bdk log list --json` and `bdk log show <id>`, never from an agent's reply. Give one level with `bdk log triage <id> <level> --reason "<one sentence>"` only to each live `finding`, `blocker` and `observation` still without a level: of the round, such as when the judge returned `blocked`, and every other live one of the Change without a level, whichever stage wrote it, such as the verifier's or an implementer's entries from execute. Never change a level the judge set; the human changes it at the report. The human then decides only triaged entries:
 
 | Level           | When                                                                                                        |
 | --------------- | ----------------------------------------------------------------------------------------------------------- |
@@ -62,7 +65,7 @@ Read the entries only from the kernel: `bdk log list --since-ticket-start <ticke
 | `nice-to-have`  | It would make the code better; nothing is wrong without it.                                                 |
 | `not-a-problem` | It is wrong about the code, on the "Not a fail" list above, or repeats another entry; `--reason` names why. |
 
-Judge each entry against the intent, the accepted decisions, the risks the integration package names and the category the reviewer gave. An entry that repeats another of the round is `not-a-problem` with `--reason "repeats <id>"`, the other one kept. You change no entry's text, type or refs.
+Judge each entry against the failure scenario it states, checked at its refs, the intent, the spec deltas, the accepted decisions, the risks and the category the reviewer gave. An entry that repeats another of the round is `not-a-problem` with `--reason "repeats <id>"`, the other one kept. You change no entry's text, type or refs.
 
 ## After the round
 
@@ -90,7 +93,7 @@ Then continue with the round's plan (step 3 of "A round"). A round after a fix r
 
 ## Inline
 
-With `--inline` you make no `Agent` call. Build the same packages under the same ticket, then work each one yourself, one after another: read it with `bdk dispatch show <path>`, follow the role section it embeds, write its entries and store its report under its `<ticket>@<group>` reference. Run the gate package's checks through its commands and record them as it says. Then triage and merge as above. Inline fixes nothing: with blocking entries, close the ticket `fail` and stop, naming the blockers and `/bdk:cr` without `--inline` as the way to fix them.
+With `--inline` you make no `Agent` call. Build the same packages under the same ticket, in the same order and each at the same step, and work each one yourself, one after another: the `reviewer` packages and the gate first, then the `integration-reviewer` package, built only after every reviewer report is stored, then the `judge` package. Read each with `bdk dispatch show <path>`, follow the role section it embeds, write its entries and store its report under its `<ticket>@<group>` reference; for the `judge` package set each level with `bdk log triage` yourself. Run the gate package's checks through its commands and record them as it says. Then triage what is left and merge as above. Inline fixes nothing: with blocking entries, close the ticket `fail` and stop, naming the blockers and `/bdk:cr` without `--inline` as the way to fix them.
 
 ## Report
 

@@ -93,20 +93,22 @@ their names and do the v3 job; see [Skills](../reference/skills.md).
 
 ## Agents
 
-The thirteen v2 agents became six adapters that each run a role, plus
+The thirteen v2 agents became eight adapters that each run a role, plus
 `bdk:web-researcher`. You no longer pick them: the stage skills dispatch them.
 The table names the adapter that now does the closest job.
 
-| BDK 2                                                                   | BDK 3                                                          |
-| ----------------------------------------------------------------------- | -------------------------------------------------------------- |
-| `bdk:implementer`, `bdk:fixer`                                          | `bdk:worker` (implementer and simplifier roles)                |
-| `bdk:plan-verifier`, `bdk:design-verifier`, `bdk:architecture-reviewer` | `bdk:reader` (verifier, design-verifier, integration reviewer) |
-| `bdk:code-reviewer`, `bdk:dead-code-detector`, `bdk:duplicate-detector` | `bdk:reviewer` (reviewer and PR reviewer roles)                |
-| `bdk:test-runner`, `bdk:static-analyse`                                 | `bdk:runner`                                                   |
-| `bdk:explorer`, `bdk:log-analyzer`                                      | `bdk:scout`                                                    |
-| `bdk:web-researcher`                                                    | `bdk:web-researcher`                                           |
+| BDK 2                                                                   | BDK 3                                             |
+| ----------------------------------------------------------------------- | ------------------------------------------------- |
+| `bdk:implementer`, `bdk:fixer`                                          | `bdk:worker` (implementer and simplifier roles)   |
+| `bdk:plan-verifier`, `bdk:design-verifier`                              | `bdk:reader` (verifier and design-verifier roles) |
+| `bdk:architecture-reviewer`                                             | `bdk:integrator` (integration reviewer role)      |
+| `bdk:code-reviewer`, `bdk:dead-code-detector`, `bdk:duplicate-detector` | `bdk:reviewer` (reviewer and PR reviewer roles)   |
+| `bdk:test-runner`, `bdk:static-analyse`                                 | `bdk:runner`                                      |
+| `bdk:explorer`, `bdk:log-analyzer`                                      | `bdk:scout`                                       |
+| `bdk:web-researcher`                                                    | `bdk:web-researcher`                              |
 
-`bdk:lead` is new: it runs one plan part of a `large` Change. See
+`bdk:lead` is new: it runs one plan part of a `large` Change. `bdk:judge` is new
+too: it triages the findings of a `/bdk:cr` round. See
 [Agents](../reference/agents.md).
 
 ## Artifacts

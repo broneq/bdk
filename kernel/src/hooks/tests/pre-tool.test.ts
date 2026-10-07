@@ -13,6 +13,7 @@ import { loadIndex } from "../../shared/registry/index.ts";
 import { preToolBlock } from "../commands/pre-tool.ts";
 import { hooksRegistrations } from "../index.ts";
 import { preToolOutput } from "../schema/pre-tool.ts";
+import type { AgentFacts } from "../domain/guards.ts";
 import { decidePreTool } from "../use-cases/pre-tool.ts";
 import {
   agentCall,
@@ -150,6 +151,64 @@ describe("hooks pre-tool: kernel commands", () => {
   });
 });
 
+describe("hooks pre-tool: the judge (#158)", () => {
+  const A1 = "L-a1a1a1a1";
+  const Z9 = "L-z9z9z9z9";
+  /** A judge whose registry row holds a package listing `entries`; none without them. */
+  function judgeFacts(entries?: readonly string[]): AgentFacts {
+    return {
+      ticketTarget: () => undefined,
+      scouts: 0,
+      scoutLimit: 3,
+      messageLimit: 300,
+      stateOf: () => undefined,
+      entryExists: () => true,
+      ...(entries === undefined
+        ? {}
+        : { caller: { ticket: "A-r1v2w3x4", target: "2026-09-25-login" }, entries }),
+    };
+  }
+  const judge = (argv: string, facts: AgentFacts) =>
+    decidePreTool(index, JSON.stringify(subagentBash(kernel(argv), "bdk:judge")), facts);
+
+  it("passes a triage of an entry its package lists", () => {
+    const outcome = judge(
+      `log triage ${A1} should-fix --reason "the null body reaches parse"`,
+      judgeFacts([A1]),
+    );
+    expect(isRefusal(outcome)).toBe(false);
+  });
+
+  it("denies a triage of an entry outside its package with guard/judge-scope, naming it", () => {
+    const outcome = judge(`log triage ${Z9} not-a-problem --reason "x"`, judgeFacts([A1]));
+    expect(outcome).toMatchObject({ rule: "guard/judge-scope" });
+    expect(isRefusal(outcome) ? outcome.why : "").toContain(Z9);
+  });
+
+  it("denies every other orchestrator verb with guard/subagent-kernel-command", () => {
+    const outcome = judge(`log resolve ${A1} resolved --reason "x"`, judgeFacts([A1]));
+    expect(outcome).toMatchObject({ rule: "guard/subagent-kernel-command" });
+    expect(isRefusal(outcome) ? outcome.why : "").toContain("bdk log resolve");
+  });
+
+  it("denies a judge without a package in the registry, and says so", () => {
+    const outcome = judge(`log triage ${A1} should-fix --reason "x"`, judgeFacts());
+    expect(outcome).toMatchObject({ rule: "guard/judge-scope" });
+    expect(isRefusal(outcome) ? outcome.why : "").toContain(
+      "this judge has no package in the agent registry",
+    );
+    expect(denied(subagentBash(kernel(`log triage ${A1} should-fix`), "bdk:judge")).rule).toBe(
+      "guard/judge-scope",
+    );
+  });
+
+  it("keeps log triage an orchestrator verb for every other subagent", () => {
+    expect(denied(subagentBash(kernel(`log triage ${A1} should-fix`), "bdk:reviewer")).rule).toBe(
+      "guard/subagent-kernel-command",
+    );
+  });
+});
+
 describe("hooks pre-tool: nested stage commands", () => {
   it.each(NESTED_DENIED)("denies `%s` in the main thread", (command, typed) => {
     expect(denied(mainBash(command))).toStrictEqual({
@@ -204,9 +263,30 @@ describe("hooks pre-tool: read-only adapters", () => {
     expect(why).toMatch(/^the reader adapter may not write files \(.+\); report through/);
   });
 
-  it.each(["bdk:reviewer", "bdk:scout"])("denies writes from %s", (adapter) => {
-    expect(denied(subagentBash("echo x > notes.md", adapter)).rule).toBe("guard/reader-write");
+  it.each(["bdk:reviewer", "bdk:scout", "bdk:integrator", "bdk:judge"])(
+    "denies writes from %s",
+    (adapter) => {
+      expect(denied(subagentBash("echo x > notes.md", adapter)).rule).toBe("guard/reader-write");
+    },
+  );
+
+  it("denies the integrator a range diff on disk and the judge an entry on disk (#158)", () => {
+    expect(denied(subagentBash("git diff H0..H1 > /tmp/range.diff", "bdk:integrator")).rule).toBe(
+      "guard/reader-write",
+    );
+    expect(denied(subagentBash("bdk log show L-a1 > /tmp/a.md", "bdk:judge")).rule).toBe(
+      "guard/reader-write",
+    );
   });
+
+  it.each(["bdk:reviewer", "bdk:integrator"])(
+    "passes a report through a stdin heredoc from %s (#158)",
+    (adapter) => {
+      const command =
+        "bdk log ingest --ticket A-7f3k9m2q@m1 <<'REPORT'\n---\nstatus: done\n---\n# Review\n\nA > B is the seam.\nREPORT";
+      expect(passes(subagentBash(command, adapter))).toBe(true);
+    },
+  );
 
   it.each([
     "pnpm test 2>&1 | tail -5",
@@ -235,6 +315,12 @@ describe("hooks pre-tool: dispatch prompts", () => {
     `Package: ./${PACKAGE}`,
   ])("passes `%s`", (prompt) => {
     expect(passes(agentCall("bdk:worker", prompt))).toBe(true);
+  });
+
+  it("holds an integrator dispatch to a package path (#158)", () => {
+    const prompt = "Review the integration of the Change.\n\nRead every group report first.";
+    expect(denied(agentCall("bdk:integrator", prompt)).rule).toBe("guard/dispatch-prompt");
+    expect(passes(agentCall("bdk:integrator", PACKAGE))).toBe(true);
   });
 
   it.each(BAD_PROMPTS)("denies %s", (_, prompt) => {

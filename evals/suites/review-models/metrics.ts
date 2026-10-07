@@ -63,29 +63,66 @@ function matchedIds(matches: Matches, defect: string): ReadonlySet<string> {
   return new Set(matches.defects.find((item) => item.id === defect)?.entries ?? []);
 }
 
-/** Recall per defect class, found per defect, false alarms and the alarm count of one run. */
+/** The defects some entry finds: matched by the judge and located at the defect's lines. */
+function foundBy(key: AnswerKey, entries: readonly ReviewEntry[], matches: Matches): Set<string> {
+  const found = new Set<string>();
+  for (const defect of key.defects) {
+    const judged = matchedIds(matches, defect.id);
+    if (entries.some((entry) => judged.has(entry.id) && locates(entry, defect))) {
+      found.add(defect.id);
+    }
+  }
+  return found;
+}
+
+function recall(
+  key: AnswerKey,
+  found: ReadonlySet<string>,
+  prefix: string,
+): Record<string, number> {
+  const metrics: Record<string, number> = {};
+  for (const kind of DEFECT_CLASSES) {
+    const defects = key.defects.filter((defect) => defect.class === kind);
+    if (defects.length === 0) continue;
+    const hits = defects.filter((defect) => found.has(defect.id)).length;
+    metrics[`${prefix}${kind}`] = hits / defects.length;
+  }
+  return metrics;
+}
+
+/**
+ * Recall per defect class, found per defect, false alarms and the alarm count
+ * of one run, before and after triage (#158): a defect counts after triage
+ * only through an entry not triaged `not-a-problem`, a defect found only by
+ * dismissed entries counts in `dismissed_by_triage`, and `false_alarms_raw`
+ * counts every finding and blocker the judge matches to no defect, whatever
+ * its level, so the triage's filtering shows as the difference.
+ */
 export function reviewMetrics(
   key: AnswerKey,
   entries: readonly ReviewEntry[],
   matches: Matches,
 ): Record<string, number> {
   const metrics: Record<string, number> = {};
-  const found = new Set<string>();
-  for (const defect of key.defects) {
-    const judged = matchedIds(matches, defect.id);
-    const hit = entries.some((entry) => judged.has(entry.id) && locates(entry, defect));
-    if (hit) found.add(defect.id);
-    metrics[`found_${defect.id}`] = hit ? 1 : 0;
-  }
-  for (const kind of DEFECT_CLASSES) {
-    const defects = key.defects.filter((defect) => defect.class === kind);
-    if (defects.length === 0) continue;
-    const hits = defects.filter((defect) => found.has(defect.id)).length;
-    metrics[`recall_${kind}`] = hits / defects.length;
-  }
+  const found = foundBy(key, entries, matches);
+  const kept = foundBy(
+    key,
+    entries.filter((entry) => entry.level !== "not-a-problem"),
+    matches,
+  );
+  for (const defect of key.defects) metrics[`found_${defect.id}`] = found.has(defect.id) ? 1 : 0;
+  Object.assign(metrics, recall(key, found, "recall_"));
   const matched = new Set(matches.defects.flatMap((item) => item.entries));
   const alarms = entries.filter(isAlarm);
   metrics.alarms = alarms.length;
   metrics.false_alarms = alarms.filter((entry) => !matched.has(entry.id)).length;
+  metrics.false_alarms_raw = entries.filter(
+    (entry) => (entry.type === "finding" || entry.type === "blocker") && !matched.has(entry.id),
+  ).length;
+  for (const defect of key.defects) {
+    metrics[`found_after_triage_${defect.id}`] = kept.has(defect.id) ? 1 : 0;
+  }
+  Object.assign(metrics, recall(key, kept, "recall_after_triage_"));
+  metrics.dismissed_by_triage = [...found].filter((id) => !kept.has(id)).length;
   return metrics;
 }

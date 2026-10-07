@@ -6,17 +6,18 @@ goal: A load error of an API request shows the problem's title when it has one.
 success-measure: The asyncState tests pass, with the title cases.
 do-not-touch: ["src/api/**"]
 depends-on: ["01"]
-spec-impact: none
+spec-impact: [api-errors]
 ---
 
 ## 02-1 Show the problem title as the load error message
 
-createLoadError in src/ui/asyncState.ts takes the error's message. For an ApiRequestError whose problem details carry a title that is not blank, use the trimmed title as the message instead, whatever the response status; in every other case keep the current message. Part 01 decides which bodies are problem details.
+createLoadError in src/ui/asyncState.ts takes the error's message. For an ApiRequestError whose problem details carry a title that is not blank, use the trimmed title as the message instead, whatever the response status; in every other case keep the current message. Add the snapshot of the load error as `src/ui/__snapshots__/load-error.png`. Part 01 decides which bodies are problem details.
 
 **Files:**
 
 - `src/ui/asyncState.ts`
 - `src/ui/asyncState.test.ts`
+- `src/ui/__snapshots__/load-error.png`
 
 **Test cases:**
 

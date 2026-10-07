@@ -60,12 +60,32 @@ function largeRange(): string[] {
   ).flat();
 }
 
+const TRIAGE_SENTENCE = "Only an entry in one of these categories can be triaged `blocker`.";
+
+describe("the P8 lists of the reviewing roles (#158)", () => {
+  it.each(["reviewer", "integration-reviewer", "judge"])(
+    "gives a %s package the blocking categories and not-a-fail with the triage sentence",
+    async (role) => {
+      const h = round();
+      const group = role === "reviewer" ? "m1" : role === "judge" ? "judge" : "integration";
+      const files = role === "reviewer" ? ["--file", "src/a.ts"] : [];
+      const { text } = await groupBuilt(h, role, group, "--range", RANGE, ...files);
+      const categories = section(text, "Blocking categories (P8)");
+      expect(categories).toContain(TRIAGE_SENTENCE);
+      expect(categories).not.toContain("is stored as an observation");
+      expect(categories).toContain("- `security`:");
+      expect(section(text, "Not a fail")).toContain("- `verification-defect`:");
+    },
+  );
+});
+
 describe("dispatch build --group", () => {
   it("builds the package of every group `bdk review plan` makes at the default review.group.max-files", async () => {
     const h = round();
     const changed = largeRange();
     const groups = reviewGroups({
       changed,
+      binary: [],
       parts: [],
       maxFiles: 30,
       moduleOf: (path) => path.split("/").slice(0, 2).join("/"),
@@ -73,7 +93,8 @@ describe("dispatch build --group", () => {
     expect(groups.length).toBeGreaterThan(2);
     for (const group of groups) {
       const role = group.kind === "integration" ? "integration-reviewer" : "reviewer";
-      const files = group.files.flatMap((file) => ["--file", file]);
+      // The integration reviewer takes no file list (#158).
+      const files = role === "reviewer" ? group.files.flatMap((file) => ["--file", file]) : [];
       const result = await grouped(h, role, group.id, "--range", RANGE, ...files);
       expect(result.code, `${group.id}: ${result.stdout}`).toBe(0);
     }
@@ -227,7 +248,7 @@ describe("dispatch build --group", () => {
     expect(data.rules).not.toContain("UI-1");
   });
 
-  it("keeps a 30-file group under 12 288 bytes", async () => {
+  it("keeps a 30-file group well under the package limit", async () => {
     const files = Array.from({ length: 30 }, (_, i) => [
       "--file",
       `src/module-${String(i)}/handler-file.ts`,
@@ -242,7 +263,7 @@ describe("dispatch build --group", () => {
       "02",
       ...files,
     );
-    expect(report.bytes).toBeLessThan(12_288);
+    expect(report.bytes).toBeLessThan(163_840 / 4);
   });
 
   it("names range, files, the diff command, the part, the intent paths and the focus in its Review section", async () => {
@@ -288,12 +309,8 @@ describe("dispatch build --group", () => {
 });
 
 describe("the integration reviewer's package", () => {
-  it("runs on reader with the diff listing, the intent paths and the enabled risks", async () => {
+  it("runs on integrator with the diff stat, the intent paths and the six default risks", async () => {
     const h = round();
-    h.store.write(
-      `${ROOT}/.bdk/settings.yaml`,
-      "review:\n  risks:\n    - id: dependencies\n      enabled: false\n    - id: billing\n      instruction: Call out any change to how invoices are totalled.\n",
-    );
     const { report, text } = await groupBuilt(
       h,
       "integration-reviewer",
@@ -301,17 +318,123 @@ describe("the integration reviewer's package", () => {
       "--range",
       RANGE,
     );
-    expect(report).toMatchObject({ role: "integration-reviewer", adapter: "reader", files: [] });
+    expect(report).toMatchObject({
+      role: "integration-reviewer",
+      adapter: "integrator",
+      files: [],
+    });
     const review = section(text, "Review");
-    expect(review).toContain(`\`git diff --name-only ${RANGE}\``);
+    expect(review).toContain(`\`git diff --stat ${RANGE}\``);
+    // No command that prints the whole diff of the range (#158).
+    expect(text).not.toContain(`\`git diff ${RANGE}\``);
+    expect(text).not.toContain(`git diff --name-only ${RANGE}`);
     expect(review).toContain(`\`.bdk/changes/${CHANGE}/change.md\``);
     const risks = section(text, "Risks");
-    for (const id of ["auth", "migration", "secrets", "public-api", "billing"]) {
-      expect(risks).toContain(`\`${id}\``);
+    for (const id of [
+      "auth",
+      "migration",
+      "secrets",
+      "public-api",
+      "dependencies",
+      "configuration",
+    ]) {
+      expect(risks).toContain(`- \`${id}\`: `);
     }
+  });
+
+  it("lists the enabled risks only, a project risk included", async () => {
+    const h = round();
+    h.store.write(
+      `${ROOT}/.bdk/settings.yaml`,
+      "review:\n  risks:\n    - id: dependencies\n      enabled: false\n    - id: billing\n      instruction: Call out any change to how invoices are totalled.\n",
+    );
+    const { text } = await groupBuilt(h, "integration-reviewer", "integration", "--range", RANGE);
+    const risks = section(text, "Risks");
     expect(risks).not.toContain("`dependencies`");
     expect(risks).toContain("Call out any change to how invoices are totalled.");
     expect(text).toContain("## Role: integration-reviewer");
+  });
+
+  it("names the reviewer groups with their files and reports, an unstored report as not reviewed, and no gate", async () => {
+    const h = round();
+    await groupBuilt(h, "reviewer", "m1", "--range", RANGE, "--file", "src/a.ts");
+    await groupBuilt(
+      h,
+      "reviewer",
+      "m2",
+      "--range",
+      RANGE,
+      "--file",
+      "src/b.ts",
+      "--file",
+      "src/c.ts",
+    );
+    await groupBuilt(h, "runner", "gate");
+    h.store.write(`${DIR}/reports/${CHANGE}-reviewer-${ROUND}-m1.md`, "---\nstatus: done\n---\n");
+    const { text } = await groupBuilt(h, "integration-reviewer", "integration", "--range", RANGE);
+    const review = section(text, "Review");
+    expect(review).toContain(
+      `- \`m1\`: \`src/a.ts\`; report \`.bdk/changes/${CHANGE}/reports/${CHANGE}-reviewer-${ROUND}-m1.md\``,
+    );
+    expect(review).toContain("- `m2` (not reviewed: no report stored): `src/b.ts`, `src/c.ts`");
+    expect(review).not.toContain("`gate`");
+  });
+
+  it("names the spec deltas with the Intent table format, or says there are none", async () => {
+    const h = round();
+    const without = section(
+      (await groupBuilt(h, "integration-reviewer", "integration", "--range", RANGE)).text,
+      "Review",
+    );
+    expect(without).toContain(
+      "The Change holds no spec delta, so your report has no `## Intent` section.",
+    );
+    expect(without).not.toContain("| Capability |");
+    h.store.write(`${DIR}/spec-delta/auth/login.md`, "# Delta\n");
+    const withDelta = section(
+      (await groupBuilt(h, "integration-reviewer", "integration", "--range", RANGE)).text,
+      "Review",
+    );
+    expect(withDelta).toContain(`- \`.bdk/changes/${CHANGE}/spec-delta/auth/login.md\``);
+    expect(withDelta).toContain("| Capability | Requirement | Scenario | Code | Test | State |");
+  });
+
+  it("names the binary files of the range as not reviewed as text, with no content of them", async () => {
+    const h = round();
+    h.git.numstat = "-\t-\tsnapshots/a.png\u00003\t1\tsrc/ui/button.ts\u0000";
+    const { text } = await groupBuilt(h, "integration-reviewer", "integration", "--range", RANGE);
+    const review = section(text, "Review");
+    expect(review).toContain("Not reviewed as text (binary): `snapshots/a.png`.");
+    expect(text).not.toContain("src/ui/button.ts");
+  });
+
+  it("stays under the package limit after nine reviewer groups of 30 long paths", async () => {
+    const h = round();
+    const paths = largeRange();
+    for (let at = 0; at < 9; at++) {
+      const files = paths.slice(at * 30, at * 30 + 30).flatMap((file) => ["--file", file]);
+      await groupBuilt(h, "reviewer", `m${String(at + 1)}`, "--range", RANGE, ...files);
+    }
+    const { report } = await groupBuilt(h, "integration-reviewer", "integration", "--range", RANGE);
+    expect(report.bytes).toBeLessThan(163_840);
+  });
+
+  it.each([
+    ["--file", "src/a.ts"],
+    ["--part", "02"],
+  ])("refuses %s for the integration reviewer", async (flag, value) => {
+    const h = round();
+    const result = await grouped(
+      h,
+      "integration-reviewer",
+      "integration",
+      "--range",
+      RANGE,
+      flag,
+      value,
+    );
+    expect(result.code, result.stdout).toBe(3);
+    expect(rule(result)).toBe("input/invalid-argument");
   });
 
   it("reads the review stage over the work tree files, as the reviewer does", async () => {
@@ -327,6 +450,132 @@ describe("the integration reviewer's package", () => {
   it("has no Risks section in another role's package", async () => {
     const { text } = await groupBuilt(round(), "reviewer", "p01", "--range", RANGE);
     expect(text).not.toContain("\n## Risks\n");
+  });
+});
+
+describe("the judge's package (#158)", () => {
+  /** The round's entries and the Change's others, as `judge package lists the round's entries` sets them. */
+  function seeded(h: DispatchHarness) {
+    const at = (minute: number) => `2026-09-25T10:${String(minute).padStart(2, "0")}:00.000Z`;
+    const live = { status: "proposed", source: "agent:reviewer" };
+    const a1 = writeEntry(h.store, {
+      ...live,
+      type: "finding",
+      at: at(1),
+      ticket: ROUND,
+      group: "m1",
+      summary: "parse takes a null body",
+      refs: ["src/a.ts#parse"],
+    });
+    const b2 = writeEntry(h.store, {
+      ...live,
+      type: "finding",
+      at: at(2),
+      ticket: ROUND,
+      group: "integration",
+      source: "agent:integration-reviewer",
+      summary: "no test for link expired",
+      refs: ["src/b.ts", "auth"],
+    });
+    const c3 = writeEntry(h.store, {
+      ...live,
+      type: "observation",
+      at: at(3),
+      source: "agent:verifier",
+      summary: "dates built by hand",
+      refs: ["src/c.ts"],
+    });
+    const d4 = writeEntry(h.store, {
+      type: "finding",
+      at: at(4),
+      ticket: ROUND,
+      status: "resolved",
+      summary: "resolved one",
+    });
+    const e5 = writeEntry(h.store, {
+      ...live,
+      type: "observation",
+      at: at(5),
+      level: "nice-to-have",
+      summary: "triaged before",
+    });
+    const f6 = writeEntry(h.store, { type: "decision", at: at(6), ticket: ROUND });
+    return { a1, b2, c3, others: [d4, e5, f6] };
+  }
+
+  it("lists the round's entries, then the Change's untriaged ones, and stamps them as entries", async () => {
+    const h = round();
+    const { a1, b2, c3, others } = seeded(h);
+    h.store.write(`${DIR}/reports/${CHANGE}-reviewer-${ROUND}-m1.md`, "---\nstatus: done\n---\n");
+    h.store.write(
+      `${DIR}/reports/${CHANGE}-integration-reviewer-${ROUND}-integration.md`,
+      "---\nstatus: done\n---\n",
+    );
+    h.store.write(`${DIR}/spec-delta/auth/login.md`, "# Delta\n");
+    const { report, text, data } = await groupBuilt(h, "judge", "judge", "--range", RANGE);
+    expect(report).toMatchObject({ role: "judge", adapter: "judge", files: [] });
+    expect(data.entries).toStrictEqual([a1, b2, c3]);
+    const review = section(text, "Review");
+    expect(review).toContain(
+      "The reviewers and the integration reviewer of this round have finished.",
+    );
+    expect(review).toContain(
+      `- \`${a1}\` finding: parse takes a null body. Refs: \`src/a.ts#parse\`. Written by agent:reviewer in group \`m1\`.`,
+    );
+    expect(review).toContain(
+      `- \`${b2}\` finding: no test for link expired. Refs: \`src/b.ts\`, \`auth\`. Written by agent:integration-reviewer in group \`integration\`.`,
+    );
+    expect(review).toContain(
+      `- \`${c3}\` observation: dates built by hand. Refs: \`src/c.ts\`. Written by agent:verifier.`,
+    );
+    expect(review.indexOf(a1)).toBeLessThan(review.indexOf(c3));
+    for (const id of others) expect(text).not.toContain(id);
+    expect(review).toContain(`Range: \`${RANGE}\`.`);
+    expect(review).toContain("`bdk log show <id>`");
+    expect(review).toContain(
+      `- \`.bdk/changes/${CHANGE}/reports/${CHANGE}-reviewer-${ROUND}-m1.md\``,
+    );
+    expect(review).toContain(
+      `- \`.bdk/changes/${CHANGE}/reports/${CHANGE}-integration-reviewer-${ROUND}-integration.md\``,
+    );
+    expect(review).toContain(`- \`.bdk/changes/${CHANGE}/spec-delta/auth/login.md\``);
+    expect(review).toContain(`\`.bdk/changes/${CHANGE}/change.md\``);
+    expect(section(text, "Blocking categories (P8)")).toContain(TRIAGE_SENTENCE);
+    expect(section(text, "Not a fail")).toContain("- `verification-defect`:");
+    // No entry body and no diff: the judge reads each body with `bdk log show`.
+    expect(text).not.toContain("\n## Ledger entries\n");
+    expect(text).not.toContain("git diff");
+  });
+
+  it("says so when the round has no entry to judge", async () => {
+    const { text, data } = await groupBuilt(round(), "judge", "judge", "--range", RANGE);
+    expect(data.entries).toStrictEqual([]);
+    expect(section(text, "Review")).toContain("No entry is left to judge.");
+  });
+
+  it("gives no other role's package entries", async () => {
+    const h = round();
+    seeded(h);
+    const { data } = await groupBuilt(h, "integration-reviewer", "integration", "--range", RANGE);
+    expect(data).not.toHaveProperty("entries");
+  });
+
+  it.each([
+    ["--file", ["--range", RANGE, "--file", "src/a.ts"]],
+    ["--part", ["--range", RANGE, "--part", "02"]],
+    ["no --range", []],
+  ])("refuses %s with input/invalid-argument", async (_, flags) => {
+    const h = round();
+    const result = await grouped(h, "judge", "judge", ...flags);
+    expect(result.code, result.stdout).toBe(3);
+    expect(rule(result)).toBe("input/invalid-argument");
+    expect(h.store.list(`${DIR}/dispatch`)).toStrictEqual([]);
+  });
+
+  it("refuses a judge package without --group: the judge judges a review round", async () => {
+    const result = await build(round(), CHANGE, "judge", ROUND);
+    expect(result.code, result.stdout).toBe(3);
+    expect(rule(result)).toBe("input/invalid-argument");
   });
 });
 

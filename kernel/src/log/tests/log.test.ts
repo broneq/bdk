@@ -61,6 +61,47 @@ function addAttempt(store: Store, ticket: string, role: string | undefined, clos
   if (role !== undefined) writePackage(store, ticket, role);
 }
 
+describe("log add --severity (#158)", () => {
+  const add = (type: string, ...extra: string[]) => [
+    "log",
+    "add",
+    type,
+    "null body crashes parse",
+    "--ref",
+    "src/api/http.ts",
+    "--ticket",
+    "A-7f3k9m2q",
+    ...extra,
+    "--json",
+  ];
+
+  it.each(["finding", "observation"])("stores the severity of a %s", async (type) => {
+    const { run, store } = harness();
+    addAttempt(store, "A-7f3k9m2q", "reviewer");
+    const result = await run(add(type, "--severity", "high"));
+    expect(result.code).toBe(0);
+    const output = logAddOutput.parse(result.json);
+    const shown = await run(["log", "show", output.entry.id, "--json"]);
+    expect(logShowOutput.parse(shown.json).entry).toMatchObject({ severity: "high" });
+  });
+
+  it("refuses a severity on a blocker, the type without the field", async () => {
+    const { run, store } = harness();
+    addAttempt(store, "A-7f3k9m2q", "reviewer");
+    const result = await run(add("blocker", "--severity", "high"));
+    expect(result.code).toBe(3);
+    expect(result.json).toMatchObject({ rule: "input/invalid-argument" });
+  });
+
+  it("refuses a value outside the four severities", async () => {
+    const { run, store } = harness();
+    addAttempt(store, "A-7f3k9m2q", "reviewer");
+    const result = await run(add("finding", "--severity", "urgent"));
+    expect(result.code).toBe(3);
+    expect(result.json).toMatchObject({ rule: "input/invalid-argument" });
+  });
+});
+
 describe("log add --category (P8)", () => {
   const blocker = (ticket: string, ...extra: string[]) => [
     "log",

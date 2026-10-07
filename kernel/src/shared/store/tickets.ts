@@ -274,9 +274,48 @@ export function packageRoles(store: Store, changeDir: string, ticket: string): s
     if (!name.endsWith(`-${ticket}.md`)) continue;
     const document = readDocument(store, join(dir, name));
     if (document?.kind !== "dispatch" || !("data" in document)) continue;
-    roles.push((document.data as unknown as DispatchPackage).role);
+    const data = document.data as unknown as DispatchPackage;
+    if (data.group === undefined) roles.push(data.role);
   }
   return roles;
+}
+
+/** A `reviewer` group package of a round and whether its report is stored. */
+export interface ReviewerGroup {
+  readonly group: string;
+  readonly files: readonly string[];
+  /** The report path, relative to the project root. */
+  readonly report: string;
+  readonly stored: boolean;
+}
+
+/**
+ * The `reviewer` group packages of a `review-fix` ticket, by group: what the
+ * integration reviewer reads after the groups (`kernel-cli/dispatch`, #158).
+ * The gate runner, scouts, `integration` and `judge` are left out.
+ */
+export function reviewerGroups(
+  store: Store,
+  projectRoot: string,
+  changeDir: string,
+  ticket: string,
+): ReviewerGroup[] {
+  const dir = join(changeDir, "dispatch");
+  const groups: ReviewerGroup[] = [];
+  for (const name of store.list(dir)) {
+    if (!name.includes(`-${ticket}-`) || !name.endsWith(".md")) continue;
+    const document = readDocument(store, join(dir, name));
+    if (document?.kind !== "dispatch" || !("data" in document)) continue;
+    const data = document.data as unknown as DispatchPackage;
+    if (data.role !== "reviewer" || data.group === undefined || data.ticket !== ticket) continue;
+    groups.push({
+      group: data.group,
+      files: data.files ?? [],
+      report: data.report,
+      stored: store.exists(join(projectRoot, data.report)),
+    });
+  }
+  return groups.sort((a, b) => compare(a.group, b.group));
 }
 
 export interface ManifestFile {
