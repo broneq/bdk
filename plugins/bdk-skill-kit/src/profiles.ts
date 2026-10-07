@@ -3,6 +3,8 @@
 // - Agent Skills specification: https://agentskills.io/specification
 // - Claude Code skills: https://code.claude.com/docs/en/skills
 // - Claude Code subagents: https://code.claude.com/docs/en/sub-agents
+// Re-read on 2026-10-07 for the plugin-ignored agent fields (sub-agents and
+// plugins/components) and `permissionMode`.
 import type { Profile, TargetKind } from "./index.ts";
 
 export const PORTABLE_FIELDS = [
@@ -46,15 +48,38 @@ const CLAUDE_CODE_AGENT_FIELDS = [
   "effort",
   "isolation",
   "color",
-  "initialPrompt",
   "experimental",
 ] as const;
 
 /** Known agent fields that Claude Code ignores when the agent ships in a plugin. */
-export const PLUGIN_IGNORED_AGENT_FIELDS = ["hooks", "mcpServers", "permissionMode"] as const;
+export const PLUGIN_IGNORED_AGENT_FIELDS = [
+  "hooks",
+  "mcpServers",
+  "permissionMode",
+  "initialPrompt",
+] as const;
 
-export function allowedFields(kind: TargetKind, profile: Profile): readonly string[] {
-  if (kind === "agents") return CLAUDE_CODE_AGENT_FIELDS;
+export const PERMISSION_MODES = [
+  "default",
+  "manual",
+  "acceptEdits",
+  "auto",
+  "dontAsk",
+  "bypassPermissions",
+  "plan",
+] as const;
+
+/** The fields a target admits: `plugin` only matters for agents. Skills read it in `name-format`. */
+export function allowedFields(
+  kind: TargetKind,
+  profile: Profile,
+  plugin = true,
+): readonly string[] {
+  if (kind === "agents") {
+    return plugin
+      ? CLAUDE_CODE_AGENT_FIELDS
+      : [...CLAUDE_CODE_AGENT_FIELDS, ...PLUGIN_IGNORED_AGENT_FIELDS];
+  }
   return profile === "portable" ? PORTABLE_FIELDS : CLAUDE_CODE_SKILL_FIELDS;
 }
 

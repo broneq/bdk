@@ -3,7 +3,7 @@
 Deterministic checks and authoring guidance for [Agent Skills](https://agentskills.io/specification) and Claude Code subagent files.
 
 - **`skill-check`**, a CLI that validates skill directories and agent files: frontmatter per host profile, size, references, layout, duplicate names and thin CLI-fronting skills. It has no runtime dependencies beyond Node.
-- **Two skills** for the agent: `skill-authoring` (how to write a skill, with every guideline tied to the rule that checks it) and `skill-check` (when and how to run the checker).
+- **One skill** for the agent, `skill-check`: when to run the checker and how to read a finding. Writing a skill is Anthropic's process (the Agent Skills best practices and the `skill-creator` skill); the kit checks the result and explains each rule with `skill-check --explain <rule>`.
 
 ## Install
 
@@ -40,6 +40,8 @@ export default defineConfig({
   targets: [
     { kind: "skills", dirs: ["skills"] },
     { kind: "agents", dirs: ["agents"] },
+    { kind: "skills", dirs: [".claude/skills"], plugin: false },
+    { kind: "agents", dirs: [".claude/agents"], plugin: false },
     { kind: "skills", dirs: ["craft"], profile: "portable", name: "craft" },
   ],
   rules: {
@@ -52,6 +54,8 @@ export default defineConfig({
 ```
 
 A skills dir may sit inside another one, for example `dirs: ["skills", "skills/roles"]`: the outer scan then treats `skills/roles` as a container of skills, not as a skill directory without `SKILL.md`.
+
+A target is a plugin's by default. On agents that means `hooks`, `mcpServers`, `permissionMode` and `initialPrompt`, which plugin agents ignore, are reported; `plugin: false` admits them for agents under `.claude/agents/`. On skills, `plugin: false` makes `name-format` report the names Claude Code reserves outside a plugin, `synced` and `anthropic-skills`.
 
 A rule setting is `"off"`, `"warning"`, `"error"` or `[severity, options]`. A target can override settings with its own `rules`.
 
@@ -132,7 +136,7 @@ pnpm exec skill-check --baseline-prune
 
 ## Rules
 
-The rule catalogue, the profiles and the exit codes are specified in the [`skill-kit` spec](openspec/specs/skill-kit/spec.md). `skill-check --help` is the usage reference, and `skill-check --list-rules` prints the rules a config enables. The `skill-authoring` skill explains what each rule asks for and why.
+The rule catalogue, the profiles and the exit codes are specified in the [`skill-kit` spec](openspec/specs/skill-kit/spec.md). `skill-check --help` is the usage reference, `skill-check --list-rules` prints the rules a config enables, and `skill-check --explain <rule>` prints what a rule checks, why, how to fix a finding and its options. A plugin rule can carry the same text in its `explain` field.
 
 ## Develop
 

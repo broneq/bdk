@@ -75,6 +75,11 @@ export const referencesRule = defineRule({
   id: "references",
   kinds: ["skills"],
   defaultSeverity: "error",
+  explain: [
+    "Checks that every relative link, backticked relative path or `${CLAUDE_SKILL_DIR}/` path from `SKILL.md` resolves inside the skill directory (error), and a referenced file does not link on to a further file that `SKILL.md` never mentions (warning).",
+    "Why: a broken link sends the model to a file that is not there, and a file two links deep is usually never opened because the model reads one level down.",
+    "Fix: fix the path, or link the deeper file from `SKILL.md` as well.",
+  ].join("\n\n"),
   check(doc, ctx) {
     const top = topLevelOf(doc);
     const direct = references(doc.lines, doc.inFence, top);
@@ -110,6 +115,11 @@ export const unusedFiles = defineRule({
   id: "unused-files",
   kinds: ["skills"],
   defaultSeverity: "error",
+  explain: [
+    "Checks that every file in the skill directory is referenced from `SKILL.md` or from a file that `SKILL.md` references.",
+    "Why: a file nothing points at is never read, so it is either dead weight or a sign of a missing link.",
+    "Fix: link the file from `SKILL.md`, or delete it.",
+  ].join("\n\n"),
   check(doc, ctx) {
     const mentioned = (text: string) => doc.files.filter((f) => text.includes(f));
     const first = mentioned(doc.text);
@@ -131,6 +141,12 @@ export const layout = defineRule<{ allowed?: string[] }>({
   id: "layout",
   kinds: ["skills"],
   defaultSeverity: "error",
+  explain: [
+    "Checks that the top-level entries of a skill directory are among the allowed ones.",
+    "Why: a fixed layout (`references/`, `scripts/`, `assets/`, `examples/`) keeps skills predictable for readers and for tools that scan them.",
+    "Fix: move the file into an allowed directory, or extend the allowed list.",
+    "Options: `allowed` lists the top-level entries a skill directory may hold besides `SKILL.md`; by default any entry is allowed.",
+  ].join("\n\n"),
   defaultOptions: {},
   check(doc, ctx) {
     const { allowed } = ctx.options;
@@ -155,6 +171,11 @@ export const uniqueNames = defineRule({
   id: "unique-names",
   kinds: ["skills"],
   defaultSeverity: "error",
+  explain: [
+    "Checks that skill names are unique across every skills target.",
+    "Why: with two skills of one name the host picks one silently.",
+    "Fix: rename one of them.",
+  ].join("\n\n"),
   checkProject(docs, ctx) {
     const byName = new Map<string, Document[]>();
     for (const doc of docs) {

@@ -71,7 +71,9 @@ export async function loadConfig(cwd: string, explicit?: string): Promise<Loaded
 }
 
 /** A target as written in the config file: its values are not trusted yet. */
-type RawTarget = Partial<Record<"kind" | "dirs" | "profile" | "name" | "rules", unknown>>;
+type RawTarget = Partial<
+  Record<"kind" | "dirs" | "profile" | "name" | "plugin" | "rules", unknown>
+>;
 
 export function loadTarget(
   value: unknown,
@@ -101,6 +103,10 @@ export function loadTarget(
       "the portable profile has no agents (the Agent Skills standard defines only skills)",
     );
   }
+  if (target.plugin !== undefined && typeof target.plugin !== "boolean") {
+    throw fail("`plugin` must be true or false");
+  }
+  const plugin = target.plugin ?? true;
   if (dirs.length === 0 || !dirs.every((d) => typeof d === "string")) {
     throw fail("dirs must list at least one directory");
   }
@@ -112,7 +118,7 @@ export function loadTarget(
   }
   const own = (target.rules ?? {}) as Settings;
   checkSettings(own, rules, `target \`${name}\``);
-  return { kind, dirs, profile, name, settings: { ...settings, ...own } };
+  return { kind, dirs, profile, name, plugin, settings: { ...settings, ...own } };
 }
 
 /**

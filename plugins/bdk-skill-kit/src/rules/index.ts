@@ -7,6 +7,7 @@ import {
   lineLimit,
   modelNames,
   portableSyntax,
+  reasoningPrompts,
 } from "./content.ts";
 import {
   description,
@@ -46,6 +47,7 @@ export const genericRules: Rule<object>[] = [
   lineLimit,
   absolutePaths,
   modelNames,
+  reasoningPrompts,
   argumentsTypo,
   portableSyntax,
   referencesRule,

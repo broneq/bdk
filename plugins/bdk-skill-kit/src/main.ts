@@ -39,6 +39,8 @@ Options:
                       when the file exists
   --baseline-prune    Remove baseline entries that no longer match; never adds
   --list-rules        Print the rule IDs the config enables
+  --explain <rule>    Print what a rule checks, why, how to fix a finding and
+                      its options
   --version           Print the version
   --help              Print this text
 
@@ -73,6 +75,7 @@ async function run(argv: string[], io: Io): Promise<number> {
       "baseline-init": { type: "boolean", default: false },
       "baseline-prune": { type: "boolean", default: false },
       "list-rules": { type: "boolean", default: false },
+      explain: { type: "string" },
       version: { type: "boolean", default: false },
       help: { type: "boolean", default: false },
     },
@@ -97,6 +100,14 @@ async function run(argv: string[], io: Io): Promise<number> {
   }
 
   const config = await loadConfig(io.cwd, values.config);
+  if (values.explain !== undefined) {
+    const rule = config.rules.get(values.explain);
+    if (!rule) throw new ConfigError(`unknown rule \`${values.explain}\``);
+    const explained = rule.explain?.trim() ?? "";
+    const text = explained === "" ? "This rule has no explanation." : explained;
+    io.stdout(`${rule.id}  ${rule.kinds.join(", ")}  default ${rule.defaultSeverity}\n\n${text}\n`);
+    return 0;
+  }
   if (values.portable) {
     for (const target of config.targets) if (target.kind === "skills") target.profile = "portable";
   }

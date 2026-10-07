@@ -12,6 +12,12 @@ export const cliFront = defineRule<{ maxLines: number; maxFlags: number; maxUsag
   id: "cli-front",
   kinds: ["skills"],
   defaultSeverity: "error",
+  explain: [
+    "Checks that a skill that declares `metadata.fronts-cli: <command>` stays model-invocable, is within the line limit, names `<command> --help` as the usage reference, and does not copy usage: at most the allowed number of distinct flags and of table or list rows that start with a flag or subcommand.",
+    "Why: when a CLI does the work, the skill only has to say when to reach for it; copied flags and tables go stale the moment the tool changes, while `--help` is always current.",
+    "Fix: cut the usage detail, point at `<command> --help`, and keep the skill short.",
+    "Options: `maxLines` (default 30), `maxFlags` (default 3; `--help` and `--json` do not count) and `maxUsageRows` (default 2).",
+  ].join("\n\n"),
   defaultOptions: { maxLines: 30, maxFlags: 3, maxUsageRows: 2 },
   check(doc, ctx) {
     const metadata = doc.frontmatter?.metadata;

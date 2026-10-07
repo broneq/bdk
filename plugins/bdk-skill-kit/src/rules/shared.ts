@@ -62,3 +62,6 @@ export function regexProblem(source: string): string | undefined {
     return `\`${source}\` is not a valid regular expression`;
   }
 }
+
+/** Escapes a literal for use inside a regular expression. */
+export const escapeRegex = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

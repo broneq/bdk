@@ -15,6 +15,8 @@ export interface RuleTest<O extends object = Record<string, unknown>> {
   kind?: TargetKind;
   /** Defaults to `claude-code`. */
   profile?: Profile;
+  /** Whether the skills or agents ship in a plugin. Defaults to true. */
+  plugin?: boolean;
   /** Merged over the rule's default options, as a config setting is. */
   options?: Partial<O>;
 }
@@ -47,7 +49,7 @@ export async function checkRule<O extends object>(
       await mkdir(dirname(full), { recursive: true });
       await writeFile(full, content);
     }
-    const target = { kind, dirs: ["."], profile: test.profile, name: kind };
+    const target = { kind, dirs: ["."], profile: test.profile, plugin: test.plugin, name: kind };
     const targets = [loadTarget(target, 0, root, rules, settings)];
     validateOptions(rules, settings, targets);
     return runChecks({ root, targets, rules, settings }, { cwd: root, paths: [] }).findings;

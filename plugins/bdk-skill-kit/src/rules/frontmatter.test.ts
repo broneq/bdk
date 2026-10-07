@@ -75,6 +75,28 @@ describe("name-format", () => {
     ]);
   });
 
+  it("rejects the Skills API reserved words in a portable name", () => {
+    for (const name of ["claude-helper", "my-anthropic-tool"]) {
+      expect(messages(run(nameFormat, doc(skill(name), { profile: "portable" })))).toEqual([
+        `\`name\` contains a word the Skills API reserves (anthropic, claude): \`${name}\``,
+      ]);
+    }
+    expect(run(nameFormat, doc(skill("claude-md-sync")))).toEqual([]);
+  });
+
+  it("rejects the names Claude Code does not load outside a plugin", () => {
+    for (const name of ["synced", "anthropic-skills"]) {
+      expect(messages(run(nameFormat, doc(skill(name), { plugin: false })))).toEqual([
+        `\`name\` is reserved by Claude Code, which does not load a skill outside a plugin at that name: \`${name}\``,
+      ]);
+    }
+    expect(run(nameFormat, doc(skill("synced")))).toEqual([]);
+    expect(run(nameFormat, doc(skill("synced"), { profile: "portable", plugin: false }))).toEqual(
+      [],
+    );
+    expect(run(nameFormat, doc(skill("synced"), { kind: "agents", plugin: false }))).toEqual([]);
+  });
+
   it("enforces the prefix option", () => {
     expect(messages(run(nameFormat, doc(skill("demo")), { prefix: "bmad-" }))).toEqual([
       "`name` must start with `bmad-`: `demo`",
@@ -156,6 +178,25 @@ describe("description", () => {
     expect(messages(run(description, doc(text)))).toEqual([message]);
   });
 
+  it("rejects an XML tag outside backticks", () => {
+    const tagged = doc(
+      "---\nname: demo\ndescription: Reviews <file> for defects. Use when a review starts.\n---\nBody\n",
+    );
+    expect(run(description, tagged)).toEqual([
+      {
+        line: 3,
+        message: "`description` holds the XML tag `<file>`; hosts reject tags in a description",
+        match: "<file>",
+      },
+    ]);
+    const coded = doc(
+      "---\nname: demo\ndescription: Reviews a `<file>` tag and a </b> in `</b>`. Use when a review starts.\n---\nBody\n",
+    );
+    expect(messages(run(description, coded))).toEqual([
+      "`description` holds the XML tag `</b>`; hosts reject tags in a description",
+    ]);
+  });
+
   it("checks agents too", () => {
     expect(run(description, doc(agent("rev"), { kind: "agents" }))).toEqual([]);
   });
@@ -172,6 +213,19 @@ describe("description-front-loaded", () => {
     );
     expect(messages(run(descriptionFrontLoaded, d))).toEqual([
       "`description` opens with filler (`This skill`); lead with what the skill does",
+    ]);
+  });
+
+  it.each([
+    "I review design documents.",
+    "I'll check things.",
+    "You can use this to check.",
+    "We check.",
+  ])("asks for the third person on %j", (opener) => {
+    const d = doc(`---\nname: demo\ndescription: ${opener} Use when needed.\n---\nBody\n`);
+    const first = opener.split(" ")[0];
+    expect(messages(run(descriptionFrontLoaded, d))).toEqual([
+      `\`description\` opens with \`${first}\`; write it in the third person, leading with what the skill does`,
     ]);
   });
 
@@ -216,10 +270,20 @@ describe("fields", () => {
   });
 
   it("accepts agent fields and names the plugin restriction", () => {
-    const extra = "tools: Read\nmodel: inherit\nmaxTurns: 3\ncolor: red\npermissionMode: plan\n";
+    const extra =
+      "tools: Read\nmodel: inherit\nmaxTurns: 3\ncolor: red\npermissionMode: plan\ninitialPrompt: Start.\n";
     expect(messages(run(fields, doc(agent("rev", extra), { kind: "agents" })))).toEqual([
-      "`permissionMode` is ignored for plugin agents (hooks, mcpServers, permissionMode); move the agent to .claude/agents/ or drop the field",
+      "`permissionMode` is ignored for plugin agents (hooks, mcpServers, permissionMode, initialPrompt); set `plugin: false` on the target when the agent lives in .claude/agents/, or drop the field",
+      "`initialPrompt` is ignored for plugin agents (hooks, mcpServers, permissionMode, initialPrompt); set `plugin: false` on the target when the agent lives in .claude/agents/, or drop the field",
     ]);
+  });
+
+  it("admits the plugin-ignored fields on a target with plugin: false", () => {
+    const extra =
+      "permissionMode: plan\nhooks:\n  Stop: []\nmcpServers:\n  - slack\ninitialPrompt: Start.\n";
+    const d = doc(agent("rev", extra), { kind: "agents", plugin: false });
+    expect(run(fields, d)).toEqual([]);
+    expect(run(fieldValues, d)).toEqual([]);
   });
 });
 
@@ -242,6 +306,22 @@ describe("field-values", () => {
     ["license: 3\n", "`license` must be a string"],
   ])("rejects %j", (extra, message) => {
     expect(messages(run(fieldValues, doc(skill("demo", extra))))).toEqual([message]);
+  });
+
+  it("validates the non-plugin agent fields", () => {
+    const bad = "permissionMode: yolo\nhooks: []\nmcpServers: slack\ninitialPrompt: [a]\n";
+    const d = doc(agent("rev", bad), { kind: "agents", plugin: false });
+    expect(messages(run(fieldValues, d))).toEqual([
+      "`initialPrompt` must be a string",
+      "`permissionMode` must be one of default, manual, acceptEdits, auto, dontAsk, bypassPermissions, plan",
+      "`hooks` must be a map of hook events",
+      "`mcpServers` must be a list of server names or single-key server definitions",
+    ]);
+    const mixed = "mcpServers:\n  - slack\n  - local:\n      command: x\n  - [a]\n";
+    expect(
+      messages(run(fieldValues, doc(agent("rev", mixed), { kind: "agents", plugin: false }))),
+    ).toEqual(["`mcpServers` must be a list of server names or single-key server definitions"]);
+    expect(run(fieldValues, doc(agent("rev", bad), { kind: "agents" }))).toEqual([]);
   });
 
   it("checks agent tool lists and enums", () => {
