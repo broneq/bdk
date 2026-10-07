@@ -18,6 +18,7 @@ The first attempt (`draft/v3-1`, milestone `v3.0-draft1`) built a TypeScript ker
 The v3 architecture is in `docs/design/2026-10-07-v3-architecture.md`.
 
 - Logic lives in skills. The `bdk` CLI only helps: it computes or saves a model turn, and it never decides the order of the work or blocks a skill.
+- Always build a skill with `/skill-creator`, new or rewritten. v2 skills (`main`) and draft skills (`draft/v3-1`) are input to read, not text to copy.
 - A new skill starts as a plain skill with an eval case. Add a CLI helper, hook or workflow only when an eval or a measurement shows a concrete problem, and record that problem.
 - One block, one job: an author block writes, a verifier block checks, an orchestrator only composes blocks. Each block runs alone and has its own eval cases.
 
