@@ -236,6 +236,15 @@ describe("eval suite layout", () => {
     },
   );
 
+  it.each(names.filter((name) => tags(join(EVALS, name)).includes("orchestrator")))(
+    "%s grades the order of its blocks and the files it writes",
+    (name) => {
+      const types = graderTypes(join(EVALS, name));
+      expect(types).toContain("tool_order");
+      expect(types).toContain("file_exists");
+    },
+  );
+
   it("keeps run results out of git", () => {
     const { status } = spawnSync(
       "git",

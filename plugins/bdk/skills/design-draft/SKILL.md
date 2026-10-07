@@ -21,7 +21,7 @@ You write the Change's spec deltas and `design.md`, and nothing else: no code, n
 
 The argument names the Change. Without one, list `openspec/changes/` and take the only directory other than `archive/`. With none or several, name what you found, ask which one, and stop.
 
-List `.bdk/runs/<change>/design/verify-*.md`. When the latest one starts with `Verdict: FAIL`, this is a **fix**: go to "Fix after a failed verification". Otherwise this is a **draft**.
+List `.bdk/runs/<change>/design/verify-*.md`. When the latest one starts with `Verdict: FAIL`, this is a **fix**: go to "Fix after a failed verification". Otherwise, when `design.md` exists and the arguments hold text after the Change name, this is a **revision**: go to "Revise on a request". Otherwise this is a **draft**.
 
 Note `policy.questions` from the configuration above (`stop` when absent).
 
@@ -83,3 +83,9 @@ Reply briefly: the files written, each decision taken without the user, and the 
 Read the latest `verify-N.md`. For each `Must address` item, change the spec delta or `design.md` so the defect is gone: read the code the evidence names before you change a claim about it. For each `Should consider` item, fix it or keep a one-line reason to leave it. Ask the user (step 4) only when a fix changes a decision the user took; under `decide-and-record`, record the new answer instead.
 
 Change only what the items need. Run `openspec validate <change> --strict` when a CLI runs. Reply with the IDs fixed and the IDs left, each left one with its reason.
+
+## Revise on a request
+
+The text after the Change name is a change the user asked for, often at the design gate of `/bdk:design`. Read `proposal.md`, the spec deltas and `design.md`, and the code the request touches. Change the spec deltas and `design.md` only as far as the request needs; keep every other decision as it is. When the request leaves a decision open, ask it as step 4 says (under `decide-and-record`, take the recommended answer and record it).
+
+Run `openspec validate <change> --strict` when a CLI runs. Reply with what you changed, in a few lines.

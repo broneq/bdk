@@ -66,6 +66,7 @@ The configuration SHALL accept exactly these keys; any other key at any level SH
 | `policy.gates.design`, `policy.gates.review`         | `manual` or `auto`                                                                                           | `manual`     |
 | `policy.questions`                                   | `decide-and-record` or `stop`                                                                                | `stop`       |
 | `policy.budgets.part-attempts`, `policy.budgets.review-rounds` | integer, at least 1                                                                                 | `3`, `3`     |
+| `policy.budgets.verifier`                           | integer, at least 1: the most verifier passes one design or plan orchestrator run spends                     | `3`          |
 | `policy.escalation.model`                            | model a blocked part is retried with                                                                         | `opus`       |
 | `plan.part.max-tasks`, `plan.part.max-files`, `plan.part.max-bytes` | integer, at least 1                                                                           | `5`, `10`, `8192` |
 | `steps.<orchestrator>`                               | items by `id`: `enabled` (boolean, optional), `use` (project skill or agent replacing the block, optional)    | none set     |
@@ -93,6 +94,11 @@ A missing required field, a value of the wrong type or outside its allowed value
 
 - **WHEN** `.bdk/settings.yaml` gives the `tools.e2e` item `web` the field `browser: chrome-devtools-mcp`, and the item `admin` the field `browser: playwright`
 - **THEN** `bdk config check` accepts `tools.e2e.web.browser`, reports `tools.e2e.admin.browser` with the allowed values, and exits 1
+
+#### Scenario: Verifier budget
+
+- **WHEN** no layer sets `policy.budgets.verifier` and the project layer sets nothing under `policy`
+- **THEN** `bdk config show policy.budgets.verifier` prints 3 with origin `default`, and `policy.budgets.verifier: 0` in a layer makes `bdk config check` report `policy.budgets.verifier` and exit 1
 
 ### Requirement: Configured project
 

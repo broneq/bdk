@@ -55,7 +55,11 @@ export const SettingsSchema = z
         gates: z.strictObject({ design: gate, review: gate }).prefault({}),
         questions: z.enum(["decide-and-record", "stop"]).default("stop"),
         budgets: z
-          .strictObject({ "part-attempts": count(3), "review-rounds": count(3) })
+          .strictObject({
+            "part-attempts": count(3),
+            "review-rounds": count(3),
+            verifier: count(3),
+          })
           .prefault({}),
         escalation: z.strictObject({ model: text.default("opus") }).prefault({}),
       })
