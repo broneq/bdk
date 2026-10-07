@@ -44,6 +44,14 @@ const demo: Group = {
         return { data: { items: ["a", "b"].slice(0, limit) }, text: "a\nb" };
       },
     },
+    {
+      verb: "tag",
+      summary: "Tag the items",
+      flags: { name: { type: "string", multiple: true, description: "One tag" } },
+      run({ flags }) {
+        return { data: { names: flags.name ?? [] }, text: "tagged" };
+      },
+    },
   ],
 };
 
@@ -118,6 +126,11 @@ describe("help", () => {
     expect(stdout).toMatch(/^ {2}2 +usage error$/m);
   });
 
+  it("marks a repeatable flag in the command help", async () => {
+    const { stdout } = await bdk(["demo", "tag", "--help"]);
+    expect(stdout).toMatch(/^ {2}--name <value> +One tag \(repeatable\)$/m);
+  });
+
   it("prints the help of a one-command group as command help", async () => {
     const { exit, stdout } = await bdk(["solo", "--help"]);
     expect(exit).toBe(0);
@@ -143,6 +156,12 @@ describe("results", () => {
   it("accepts flags before and after the arguments", async () => {
     expect((await bdk(["demo", "show", "--upper", "x"])).stdout).toBe("item X\n");
     expect((await bdk(["demo", "show", "x", "--upper"])).stdout).toBe("item X\n");
+  });
+
+  it("collects every value of a repeatable flag in order", async () => {
+    const { exit, stdout } = await bdk(["demo", "tag", "--name", "a", "--json", "--name", "b"]);
+    expect(exit).toBe(0);
+    expect(json(stdout)).toEqual({ names: ["a", "b"] });
   });
 
   it("prints the result as one compact JSON document under --json", async () => {

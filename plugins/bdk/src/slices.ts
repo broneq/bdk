@@ -18,6 +18,10 @@ export const SLICES: Readonly<
     imports: ["config"],
     why: "bdk plan check reads the part limits plan.part.* through loadConfig, a config use case",
   },
+  rules: {
+    imports: ["config"],
+    why: "bdk rules for reads languages and rules.disabled through loadConfig, a config use case",
+  },
   run: {
     imports: ["findings"],
     why: "bdk run status folds the last review round through listFindings, a findings use case",

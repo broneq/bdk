@@ -2,11 +2,13 @@
 // the command groups into the frame with their OS boundaries and sets the exit code.
 
 import { homedir } from "node:os";
+import { fileURLToPath } from "node:url";
 
 import { configGroup } from "./config/index.ts";
 import { findingsGroup } from "./findings/index.ts";
 import { gitGroup } from "./git/index.ts";
 import { planGroup } from "./plan/index.ts";
+import { rulesGroup } from "./rules/index.ts";
 import { runGroup } from "./run/index.ts";
 import { run } from "./shared/cli/index.ts";
 import type { Group } from "./shared/cli/index.ts";
@@ -23,6 +25,8 @@ const GROUPS: readonly Group[] = [
   configGroup(deps),
   findingsGroup({ files }),
   runGroup(deps),
+  // The bundle is `dist/bdk.mjs`, so the rule pack is `rules/` next to `dist/`.
+  rulesGroup({ ...deps, pack: fileURLToPath(new URL("../rules", import.meta.url)) }),
   gitGroup({ ...deps, git: (cwd, args) => git(cwd, args) }),
   planGroup(deps),
 ];

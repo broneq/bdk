@@ -10,7 +10,7 @@ import { BASE, ROUNDS } from "./scope.ts";
 
 export const DEFAULT_MAX_FILES = 30;
 
-function maxFiles(value: string | boolean | undefined): number {
+function maxFiles(value: string | boolean | readonly string[] | undefined): number {
   if (value === undefined) return DEFAULT_MAX_FILES;
   if (typeof value === "string" && /^[1-9]\d*$/.test(value)) return Number(value);
   throw new CliError(

@@ -8,12 +8,14 @@ export interface Argument {
 
 export interface Flag {
   readonly type: "boolean" | "string";
+  /** A repeatable string flag: each occurrence adds one value, in the order given. */
+  readonly multiple?: true;
   readonly description: string;
 }
 
 export interface Input {
   readonly args: Readonly<Record<string, string | undefined>>;
-  readonly flags: Readonly<Record<string, string | boolean | undefined>>;
+  readonly flags: Readonly<Record<string, string | boolean | readonly string[] | undefined>>;
 }
 
 /** What a command returns: `data` for `--json`, `text` otherwise; exit 1 when the answer is no. */
