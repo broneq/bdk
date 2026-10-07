@@ -1,0 +1,25 @@
+name: pr
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+
+jobs:
+  # The SDLC gate of CLAUDE.md: every main spec under openspec/specs/ passes
+  # strict validation. The version matches the one CLAUDE.md pins.
+  openspec:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Install OpenSpec
+        run: npm install --global @fission-ai/openspec@1.13.2
+
+      - name: Validate main specs
+        run: openspec validate --specs --strict

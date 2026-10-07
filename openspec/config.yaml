@@ -1,0 +1,65 @@
+schema: spec-driven
+
+context: |
+  BDK (Broneq Dev Kit) is a set of Claude Code plugins that ship reusable dev
+  workflows (skills, agents, hooks, rules) into user projects. v3 is built
+  anew on `staging/v3`: logic lives in skills, and the `bdk` CLI only computes
+  or saves a model turn; it never decides the order of the work or blocks a
+  skill.
+
+  Sources of truth for v3 work:
+  - Repository conventions and the SDLC: CLAUDE.md.
+  - Architecture: docs/design/2026-10-07-v3-architecture.md and
+    docs/adr/0003-v3-architecture-skills-first.md (decision IDs D1, D2-2,
+    D3-0 and the named design sections).
+  - Repository layout, CI and releases:
+    docs/design/2026-10-07-v3-repo-structure-cicd.md and
+    docs/adr/0002-v3-repo-structure-and-release.md.
+  - What the first attempt taught: docs/v3-draft1/ (start with
+    run-b1/2026-10-07-bdk-v3-findings.md). It is an archive: read it, never
+    edit it, and do not repeat its root causes.
+  - Task scope: one GitHub issue per task in the v3.0 milestone with Goal,
+    Scope, Input, Acceptance signal, "To resolve in the spec" and Dependencies
+    sections, and "blocked by" links, shown on
+    https://github.com/users/broneq/projects/1.
+
+  This repository runs on the stock spec-driven schema. The BDK OpenSpec
+  schema that BDK installs into user projects is product work (#180), not the
+  workflow of this repository.
+
+  Where documents live: every living specification of BDK v3 is an OpenSpec
+  main spec under openspec/specs/, grown through delta specs and archive.
+  docs/ holds the VitePress site, ADRs, design documents and archives; never a
+  living spec.
+
+  Everything written into the repository is in English, whatever the
+  conversation language. Keep OpenSpec structural headings and SHALL/MUST
+  keywords as they are. Never use the em dash; use "-".
+
+rules:
+  proposal:
+    - A change is named `v3-<N>-<slug>`, where N is the tracking issue number (e.g. v3-177-init-openspec; OpenSpec rejects capitals).
+    - 'The first line under "Why" names the tracking issue, which holds the task scope, e.g. "Tracks #177."'
+    - Carry the task's Input over by citation - design section headings, ADR numbers and decision IDs (e.g. ADR-0003, D2-2). Do not restate a decision; do not reopen a decided one.
+    - Every item under the task's "To resolve in the spec" is either resolved in proposal.md / design.md or listed as an open question for the user with a recommendation.
+    - Stay inside the task's Scope. Work that another issue owns is named as out of scope with that issue number.
+  specs:
+    - Every item in the task's Acceptance signal becomes a Requirement with at least one "#### Scenario:" in WHEN / THEN form.
+    - "A task whose output is only documents or research (no behaviour change) sets `skip_specs: true` instead of inventing requirements."
+    - A change to an existing capability writes its delta against that main spec under openspec/specs/. Never restate an existing behaviour in a new capability.
+    - A living spec is never written under docs/.
+  design:
+    - Each decision records the alternatives considered and why they lost; cite the ADR or decision ID when a choice follows from an existing decision.
+  tasks:
+    - Code tasks are test-first - the failing test is its own step before the implementation step.
+    - A skill is built or rewritten with /skill-creator, and its eval case is its own step before the skill text. A CLI helper, hook or workflow is added only for a problem an eval or a measurement showed; the task names that problem.
+    - A skill is tried in a separate test project started with `claude --plugin-dir`, never inside this repository.
+    - The last task group checks the Acceptance signal end to end, then runs every check CI runs (.github/workflows/), `openspec validate <change> --strict` and `openspec validate --specs --strict`.
+
+operations:
+  apply:
+    guidance:
+      - When starting, make sure the tracking issue is assigned and its card on the project board is "In Progress" (CLAUDE.md, SDLC "Start").
+  archive:
+    guidance:
+      - Archive only after /opsx:verify passes and the main specs are synced. The archived change lands through one Conventional Commit and a PR into staging/v3; after the merge, close the tracking issue with gh issue close.
