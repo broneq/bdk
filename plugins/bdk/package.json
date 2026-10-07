@@ -9,6 +9,7 @@
     "typecheck": "tsc -p ."
   },
   "devDependencies": {
+    "@fission-ai/openspec": "1.13.2",
     "esbuild": "0.28.2"
   }
 }
