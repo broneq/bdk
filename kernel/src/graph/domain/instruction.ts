@@ -1,10 +1,10 @@
 // The instruction `next` hands to a stage skill (`kernel-pipeline`,
-// Instruction; design D-9): a fixed skeleton, the kind's template with four
+// Instruction; design D-9): a fixed skeleton, the kind's template with its
 // literal placeholders, the rules of the node's stage and a capped ledger
 // summary.
 // Pure, so the same inputs give the same bytes.
 import type { GraphNode } from "./engine.ts";
-import type { GraphEntry, Kind } from "./kinds/index.ts";
+import type { GraphEntry, Kind, PartLimits } from "./kinds/index.ts";
 
 const LEDGER_CAP = 20;
 
@@ -13,6 +13,7 @@ export interface InstructionParts {
   readonly kind: Kind;
   readonly change: string;
   readonly profile: string;
+  readonly partLimits: PartLimits;
   readonly template: string;
   /** Paths relative to the project root. */
   readonly paths: readonly string[];
@@ -29,6 +30,7 @@ export function composeInstruction(parts: InstructionParts): string {
     node: node.id,
     profile: parts.profile,
     paths: parts.paths,
+    partLimits: parts.partLimits,
   });
   const shown = parts.ledger.slice(0, LEDGER_CAP);
   const omitted = parts.ledger.length - shown.length;
@@ -53,7 +55,7 @@ export function composeInstruction(parts: InstructionParts): string {
   return `${sections.join("\n\n")}\n`;
 }
 
-/** The four placeholders, replaced literally; no template language (design D-9). */
+/** The placeholders, replaced literally; no template language (design D-9). */
 export function fillTemplate(
   template: string,
   values: {
@@ -61,13 +63,16 @@ export function fillTemplate(
     readonly node: string;
     readonly profile: string;
     readonly paths: readonly string[];
+    readonly partLimits: PartLimits;
   },
 ): string {
   return template
     .replaceAll("{change}", values.change)
     .replaceAll("{node}", values.node)
     .replaceAll("{profile}", values.profile)
-    .replaceAll("{paths}", values.paths.join(", "));
+    .replaceAll("{paths}", values.paths.join(", "))
+    .replaceAll("{max-tasks}", String(values.partLimits.maxTasks))
+    .replaceAll("{max-files}", String(values.partLimits.maxFiles));
 }
 
 /** The command that completes the node, as the "When finished" line. */

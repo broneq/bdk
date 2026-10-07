@@ -1,16 +1,15 @@
 // The execute wave in `bdk next` (`kernel-cli/graph`, bdk next; T41-D3): the
-// ready parts, whether each is started, its open tickets and its mode.
+// ready parts, whether each is started, its open part tickets.
 import { describe, expect, it } from "vitest";
 
 import { settingsRegistry } from "../../registrations.ts";
 import { mergeLayers, moduleValue, validateLayers } from "../../shared/config/index.ts";
 import type { Layer } from "../../shared/config/index.ts";
 import { writeDocument } from "../../shared/store/index.ts";
-import { executionTreeModule, executionWorktreeModule } from "../config.ts";
+import { executionWorktreeModule } from "../config.ts";
 import { nextOutput } from "../schema/outputs.ts";
 import {
   DIR,
-  ROOT,
   harness,
   passGate,
   setChange,
@@ -112,37 +111,6 @@ async function next(h: Harness) {
   return nextOutput.parse((await h.run(["next", "--json"], T3)).json);
 }
 
-describe("execution.tree settings", () => {
-  const registry = settingsRegistry();
-  const check = (values: Record<string, unknown>) => {
-    const layers: Layer[] = [{ name: "project", path: "/p.yaml", text: "", values }];
-    return validateLayers(registry, layers, mergeLayers(layers, registry.appendOnly));
-  };
-
-  it("defaults to enabled with two parts", () => {
-    expect(moduleValue(executionTreeModule, check({}).value ?? {})).toStrictEqual({
-      enabled: true,
-      "min-parts": 2,
-    });
-  });
-
-  it("refuses a threshold below two", () => {
-    const problem = check({ execution: { tree: { "min-parts": 1 } } }).problems[0];
-    expect(problem).toMatchObject({ rule: "policy/config-invalid" });
-  });
-
-  it("keeps execution.concurrency beside it", () => {
-    expect(
-      check({ execution: { concurrency: 3, tree: { enabled: false } } }).problems,
-    ).toStrictEqual([]);
-  });
-
-  it("has no workflow switch", () => {
-    const problem = check({ features: { workflow: true } }).problems[0];
-    expect(problem).toMatchObject({ rule: "policy/unknown-config-key" });
-  });
-});
-
 describe("execution.worktree settings", () => {
   const registry = settingsRegistry();
   const check = (values: Record<string, unknown>) => {
@@ -182,7 +150,7 @@ describe("execution.worktree settings", () => {
 });
 
 describe("the execute wave of bdk next", () => {
-  it("marks two independent parts of a large Change tree", async () => {
+  it("lists two independent parts, each one part ticket", async () => {
     const h = await planned("large");
     const report = await next(h);
     expect(report.artifact?.id).toBe("execute-part:01");
@@ -190,52 +158,19 @@ describe("the execute wave of bdk next", () => {
     expect(report.stage).toBe("plan");
     expect(report.command).toBe("/bdk:execute");
     expect(report.wave).toStrictEqual([
-      { part: "01", started: false, tickets: [], mode: "tree", isolation: "shared" },
-      { part: "02", started: false, tickets: [], mode: "tree", isolation: "shared" },
+      { part: "01", started: false, tickets: [], isolation: "shared" },
+      { part: "02", started: false, tickets: [], isolation: "shared" },
     ]);
   });
 
-  it("keeps a small Change flat", async () => {
-    const h = await planned("small");
-    expect((await next(h)).wave?.map((item) => item.mode)).toStrictEqual(["flat", "flat"]);
-  });
-
-  it("keeps a tiny Change flat", async () => {
-    const h = await planned("tiny");
-    expect((await next(h)).wave?.map((item) => item.mode)).toStrictEqual(["flat", "flat"]);
-  });
-
-  it("runs flat when the tree is disabled", async () => {
-    const h = await planned("large");
-    h.store.write(`${ROOT}/.bdk/settings.yaml`, "execution:\n  tree:\n    enabled: false\n");
-    expect((await next(h)).wave?.map((item) => item.mode)).toStrictEqual(["flat", "flat"]);
-  });
-
-  it("needs min-parts parts not started", async () => {
-    const h = await planned("large");
-    h.store.write(`${ROOT}/.bdk/settings.yaml`, "execution:\n  tree:\n    min-parts: 3\n");
-    expect((await next(h)).wave?.map((item) => item.mode)).toStrictEqual(["flat", "flat"]);
-  });
-
-  it("keeps a running lead's part tree and a single part not started flat", async () => {
-    const h = await planned("large");
-    start(h, "01");
-    openTicket(h, "A-1l1l1l1l", "part-lead", "01");
-    expect((await next(h)).wave).toStrictEqual([
-      { part: "01", started: true, tickets: ["A-1l1l1l1l"], mode: "tree", isolation: "shared" },
-      { part: "02", started: false, tickets: [], mode: "flat", isolation: "shared" },
-    ]);
-  });
-
-  it("lists a started flat part with its task tickets", async () => {
+  it("lists a started part with its open part ticket", async () => {
     const h = await planned("tiny");
     start(h, "01");
-    openTicket(h, "A-2t2t2t2t", "task-redispatch", "01-1");
+    openTicket(h, "A-2t2t2t2t", "part", "01");
     expect((await next(h)).wave?.[0]).toStrictEqual({
       part: "01",
       started: true,
       tickets: ["A-2t2t2t2t"],
-      mode: "flat",
       isolation: "shared",
     });
   });
@@ -243,7 +178,7 @@ describe("the execute wave of bdk next", () => {
   it("leaves a dependent part out until its dependency is done", async () => {
     const h = await planned("large", { "02": ["01"] });
     expect((await next(h)).wave).toStrictEqual([
-      { part: "01", started: false, tickets: [], mode: "flat", isolation: "shared" },
+      { part: "01", started: false, tickets: [], isolation: "shared" },
     ]);
   });
 
@@ -252,7 +187,7 @@ describe("the execute wave of bdk next", () => {
       `## ${nn}-1 Edit the client\n\n**Files:**\n\n- \`src/client.ts\`\n- \`src/part-${nn}.ts\`\n\n**Test cases:**\n\n- works\n`;
     const h = await planned("large", {}, true, { "01": shared("01"), "02": shared("02") });
     expect((await next(h)).wave).toStrictEqual([
-      { part: "01", started: false, tickets: [], mode: "flat", isolation: "shared" },
+      { part: "01", started: false, tickets: [], isolation: "shared" },
     ]);
     start(h, "01");
     expect((await next(h)).wave?.map((item) => item.part)).toStrictEqual(["01"]);
@@ -271,7 +206,7 @@ describe("the execute wave of bdk next", () => {
     expect(report.instruction).not.toContain("## Rules");
     expect(report.instruction).not.toContain("[BDK-");
     expect(report.instruction).toContain("`bdk next`");
-    expect(report.instruction).toContain("`wave`");
+    expect(report.instruction).toContain("`/bdk:execute`");
     expect(report.instruction).not.toContain("the result is a ledger entry");
   });
 });

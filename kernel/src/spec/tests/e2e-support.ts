@@ -5,7 +5,7 @@
 import { join } from "node:path";
 import { expect } from "vitest";
 
-import { answered, bdk, git, repository } from "../../../tests/support/repo.ts";
+import { answered, bdk, git, repository, ingestArgs } from "../../../tests/support/repo.ts";
 import {
   closed,
   dispatched,
@@ -104,8 +104,8 @@ export function planned({ deltas = {}, settings = "", living = {} }: Options = {
 /** Part 01 executed and done: the task committed with its trailers, its steps recorded. */
 export function executed(options: Options = {}): Reviewed {
   const change = planned(options);
-  const ticket = opened(change, "task-redispatch", "01-1");
-  dispatched(change, ticket, "01-1");
+  const ticket = opened(change, "part", "01");
+  dispatched(change, ticket, "01");
   answered(
     bdk(["rules", "show", "--ticket", ticket, "--json"], change.root),
     "output/rules-show.json",
@@ -154,9 +154,17 @@ function reviewVerdict(change: Reviewed): void {
   recorded(change, `${round}@gate`, "tests-full");
   recorded(change, `${round}@gate`, "lint-full");
   answered(
-    bdk(["log", "ingest", "--ticket", `${round}@merge`, "--json"], change.root, {
-      stdin: "---\nstatus: done\nfiles: []\nentries: []\nevidence: []\n---\n# Review\n\nPASS\n",
-    }),
+    bdk(
+      [
+        ...ingestArgs(
+          change.root,
+          `${round}@merge`,
+          "---\nstatus: done\nfiles: []\nentries: []\nevidence: []\n---\n# Review\n\nPASS\n",
+        ),
+        "--json",
+      ],
+      change.root,
+    ),
     "output/log-ingest.json",
   );
   answered(

@@ -1,7 +1,7 @@
 // `bdk dispatch build` and `dispatch show` (`kernel-cli/dispatch`; T23-D31 to
 // D33, D37) through the registry on a memory store: the template's sections,
-// the target bodies, entry selection, the verifier lists, the template hash
-// and the refusals.
+// the target bodies, entry selection, the verifier lists, the template hash,
+// the part agents' Tasks and Checks sections (#166) and the refusals.
 import { describe, expect, it } from "vitest";
 
 import { kindRegistry, PostTaskStepKind } from "../../graph/domain/kinds/index.ts";
@@ -55,14 +55,14 @@ describe("dispatch build", () => {
     const h = dispatchHarness();
     const { report, text, body } = await built(h);
     expect(report).toMatchObject({
-      path: `.bdk/changes/2026-09-25-login/dispatch/02-3-implementer-${TICKET}.md`,
+      path: `.bdk/changes/2026-09-25-login/dispatch/02-implementer-${TICKET}.md`,
       ticket: TICKET,
-      target: "02-3",
+      target: "02",
       role: "implementer",
       adapter: "worker",
       scope: "full",
       kernelVersion: "3.0.0",
-      report: `.bdk/changes/2026-09-25-login/reports/02-3-implementer-${TICKET}.md`,
+      report: `.bdk/changes/2026-09-25-login/reports/02-implementer-${TICKET}.md`,
     });
     expect(report.bytes).toBe(new TextEncoder().encode(text).length);
     expect(readDocument(h.store, `${ROOT}/${report.path}`)).toMatchObject({
@@ -72,6 +72,7 @@ describe("dispatch build", () => {
         of: 3,
         at: "2026-09-25T10:05:00.000Z",
         "template-hash": report.templateHash,
+        draft: `.bdk/.machine/drafts/02-implementer-${TICKET}.md`,
       },
     });
     const own = headings(body).filter((line) =>
@@ -79,35 +80,51 @@ describe("dispatch build", () => {
         "# BDK",
         "## Change",
         "## Target",
+        "## Tasks",
         "## Ledger",
         "## Role: implementer",
         "## Rules",
+        "## Checks",
         "## Return",
       ].some((prefix) => line.startsWith(prefix)),
     );
     expect(own).toStrictEqual([
       `# BDK dispatch package ${TICKET}`,
       "## Change",
-      "## Target 02-3",
+      "## Target 02",
+      "## Tasks",
       "## Ledger entries",
       "## Role: implementer",
       "## Rules",
+      "## Checks",
       "## Return",
     ]);
     expect(body).toContain("Users log in with a one-time link.");
     expect(body).toContain(`bdk rules show --ticket ${TICKET}`);
-    expect(body).toContain(`bdk log ingest --ticket ${TICKET}`);
+    expect(body).toContain(
+      `bdk log ingest --ticket ${TICKET} --file .bdk/.machine/drafts/02-implementer-${TICKET}.md`,
+    );
     expect(body).not.toContain("## Blocking categories");
   });
 
-  it("embeds the task's full text with its Files, stop rule and do-not-touch", async () => {
+  it("embeds the whole part with every task's Files, stop rule and do-not-touch", async () => {
     const { body } = await built(dispatchHarness());
     expect(body).toContain("From `.bdk/changes/2026-09-25-login/plan/parts/02-part.md`:");
+    expect(body).toContain("\n### 02-1 Store the token\n");
     expect(body).toContain("\n### 02-3 Verify the link\n");
     expect(body).toContain("- Create: `src/auth/verify.ts`");
     expect(body).toContain("**Stop rule:** stop when the token format is unclear");
     expect(body).toContain("`do-not-touch`: `src/billing/**`.");
-    expect(body).not.toContain("## 02-1 Store the token");
+  });
+
+  it("embeds the part's preamble before its tasks (#166)", async () => {
+    const h = dispatchHarness();
+    const path = `${DIR}/plan/parts/02-part.md`;
+    const preamble = "Copy the shape of `src/auth/session.ts` for every store.";
+    h.store.write(path, (h.store.read(path) ?? "").replace("## 02-1", `${preamble}\n\n## 02-1`));
+    const { body } = await built(h);
+    expect(body).toContain(preamble);
+    expect(body.indexOf(preamble)).toBeLessThan(body.indexOf("### 02-1 Store the token"));
   });
 
   it("embeds the role body from the plugin without its frontmatter, headings one level down", async () => {
@@ -122,12 +139,14 @@ describe("dispatch build", () => {
     expect(body).not.toContain("user-invocable:");
   });
 
-  it("names the plan part for a part target", async () => {
+  it("checks the whole part on a verify-fix ticket", async () => {
     const h = dispatchHarness();
     ticket(h.store, { target: "02", loop: "verify-fix", id: "A-p4r7t2w9" });
     const { body } = await built(h, "02", "implementer", "A-p4r7t2w9");
-    expect(body).toContain("- `.bdk/changes/2026-09-25-login/plan/parts/02-part.md`");
-    expect(body).not.toContain("\n### 02-3 Verify the link\n");
+    expect(body).toContain("\n### 02-3 Verify the link\n");
+    expect(body).toContain("## Tasks");
+    expect(body).toContain("- `bdk check run 02 --ticket A-p4r7t2w9`");
+    expect(body).not.toContain("bdk check run 02-3");
   });
 
   it("names the plan parts and the design documents an artifact target requires, from the graph", async () => {
@@ -196,7 +215,7 @@ describe("dispatch build", () => {
     expect(report.entries.counted).toStrictEqual({ decision: 1, blocker: 1, finding: 2 });
     expect(body).toContain(`### ${accepted} decision, accepted\n\ntokens are single use`);
     expect(body).toContain("Other entries of this target: 1 decision, 1 blocker, 2 finding");
-    expect(body).toContain("`bdk log list --for 02-3`");
+    expect(body).toContain("`bdk log list --for 02`");
     expect(body).not.toContain("another part");
   });
 
@@ -220,6 +239,7 @@ describe("dispatch build", () => {
       "integration-failure",
       "unresolved-decision",
       "false-code-claim",
+      "costly-command",
       "accessibility",
     ]);
     expect(body.indexOf("## Not a fail")).toBeLessThan(body.indexOf("## Return"));
@@ -228,16 +248,6 @@ describe("dispatch build", () => {
       "A blocker names one of these with `bdk log add blocker <summary> --ref <ref> --ticket A-v3r1f7y2 --category <id>`; any other blocker is stored as an observation for review.",
     );
     expect(categories).not.toContain("can be triaged");
-  });
-
-  it("shows the report going to log ingest from a quoted heredoc, never from a file (#158)", async () => {
-    const h = dispatchHarness();
-    ticket(h.store);
-    const { body } = await built(h, "02-3", "implementer", TICKET);
-    const ret = body.slice(body.indexOf("## Return"));
-    expect(ret).toContain(`bdk log ingest --ticket ${TICKET} <<'REPORT'\n---\nstatus: done\n`);
-    expect(ret).toContain("\nREPORT\n");
-    expect(ret).not.toMatch(/< <|report-file/);
   });
 
   it("keeps the template hash for the same inputs and changes it with the role body or a rule", async () => {
@@ -265,7 +275,7 @@ describe("dispatch build", () => {
     h.store.write(`${ROOT}/.bdk/rules/UI-1.md`, ruleFile("UI-1", { paths: ["web/**"] }));
     h.store.write(`${ROOT}/.bdk/rules/PLAN-1.md`, ruleFile("PLAN-1", { stages: ["plan"] }));
     h.store.write(`${ROOT}/.bdk/rules/NAMING-1.md`, ruleFile("NAMING-1"));
-    const { report } = await built(h, "02-3", "reviewer", TICKET);
+    const { report } = await built(h, "02", "reviewer", TICKET);
     const rules = stampedRules(h.store, report.path);
     expect(rules.filter((id) => !id.startsWith("BDK-"))).toStrictEqual(["NAMING-1", "AUTH-1"]);
     // The pack's global reviewer rules come too, all of them: there is no cap.
@@ -277,13 +287,11 @@ describe("dispatch build", () => {
   it("records the same rules for every role of a stage", async () => {
     const h = dispatchHarness();
     h.store.write(`${ROOT}/.bdk/rules/AUTH-1.md`, ruleFile("AUTH-1", { paths: ["src/auth/**"] }));
-    const reviewer = await built(h, "02-3", "reviewer", TICKET);
-    const integration = await built(h, "02-3", "integration-reviewer", TICKET);
+    const reviewer = await built(h, "02", "reviewer", TICKET);
+    const integration = await built(h, "02", "integration-reviewer", TICKET);
     expect(stampedRules(h.store, integration.report.path)).toStrictEqual(
       stampedRules(h.store, reviewer.report.path),
     );
-    const runner = await built(h, "02-3", "runner", TICKET);
-    expect(stampedRules(h.store, runner.report.path)).toStrictEqual([]);
   });
 
   it("stages and paths select a project rule", async () => {
@@ -295,10 +303,10 @@ describe("dispatch build", () => {
     writePlanPart(h.store, "03", {
       body: "## 03-1 Login journey\n\n**Files:**\n\n- Create: `tests/e2e/login.spec.ts`\n\n**Test cases:**\n\n- logs in\n",
     });
-    ticket(h.store, { target: "03-1", id: "A-e2e0test" });
-    const e2e = await built(h, "03-1", "implementer", "A-e2e0test");
+    ticket(h.store, { target: "03", id: "A-e2e0test" });
+    const e2e = await built(h, "03", "implementer", "A-e2e0test");
     expect(stampedRules(h.store, e2e.report.path)).toContain("E2E-1");
-    const app = await built(h, "02-3", "implementer", TICKET);
+    const app = await built(h, "02", "implementer", TICKET);
     expect(stampedRules(h.store, app.report.path)).not.toContain("E2E-1");
     h.git.workTree.push("tests/e2e/login.spec.ts");
     writeDesign(h.store, "design");
@@ -361,33 +369,45 @@ describe("dispatch build", () => {
   it("keeps one package per role of a ticket and stamps the newest as the active package", async () => {
     const h = dispatchHarness();
     await built(h);
-    const simplifier = await built(h, "02-3", "simplifier", TICKET);
-    expect(simplifier.report.adapter).toBe("worker");
-    const runner = await built(h, "02-3", "runner", TICKET);
+    const conformer = await built(h, "02", "conformer", TICKET);
+    expect(conformer.report.adapter).toBe("worker");
     expect(h.store.list(`${DIR}/dispatch`).sort()).toStrictEqual([
-      `02-3-implementer-${TICKET}.md`,
-      `02-3-runner-${TICKET}.md`,
-      `02-3-simplifier-${TICKET}.md`,
+      `02-conformer-${TICKET}.md`,
+      `02-implementer-${TICKET}.md`,
     ]);
-    expect(activePackage(h.store, ROOT, DIR, TICKET)?.path).toBe(runner.report.path);
+    expect(activePackage(h.store, ROOT, DIR, TICKET)?.path).toBe(conformer.report.path);
     const shown = await h.run(["dispatch", "show", TICKET, "--json"]);
     expect(dispatchShowOutput.parse(shown.json)).toMatchObject({
-      path: runner.report.path,
-      frontmatter: { role: "runner" },
+      path: conformer.report.path,
+      frontmatter: { role: "conformer" },
     });
   });
 
   it("replaces a rebuilt role package of the ticket", async () => {
     const h = dispatchHarness();
-    await built(h, "02-3", "runner", TICKET);
-    await built(h, "02-3", "runner", TICKET);
-    expect(h.store.list(`${DIR}/dispatch`)).toStrictEqual([`02-3-runner-${TICKET}.md`]);
+    await built(h, "02", "conformer", TICKET);
+    await built(h, "02", "conformer", TICKET);
+    expect(h.store.list(`${DIR}/dispatch`)).toStrictEqual([`02-conformer-${TICKET}.md`]);
   });
 
-  it("embeds the simplifier's role body for a simplifier package", async () => {
-    const { body, report } = await built(dispatchHarness(), "02-3", "simplifier", TICKET);
-    expect(report).toMatchObject({ role: "simplifier", adapter: "worker" });
-    expect(body).toContain("## Role: simplifier");
+  it("gives the conformer its range, the project instructions and the part's check run (#166)", async () => {
+    const h = dispatchHarness();
+    h.store.remove(`${DIR}/attempts/part-02-${TICKET}.md`);
+    ticket(h.store, { base: "4c1d2e3f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d" });
+    h.store.write(`${ROOT}/CLAUDE.md`, "# Project\n");
+    h.store.write(`${ROOT}/.claude/rules/api.md`, "# API\n");
+    h.store.write(`${ROOT}/.claude/rules/notes.txt`, "not a rule\n");
+    const { body, report } = await built(h, "02", "conformer", TICKET);
+    expect(report).toMatchObject({ role: "conformer", adapter: "worker" });
+    expect(body).toContain("## Role: conformer");
+    expect(body).toContain(
+      "`git diff 4c1d2e3..HEAD -- src/auth/store.ts src/auth/verify.ts src/auth/verify.test.ts`",
+    );
+    const instructions = body.slice(body.indexOf("## Project instructions"));
+    expect(instructions).toContain("- `CLAUDE.md`\n- `.claude/rules/api.md`");
+    expect(instructions).not.toContain("AGENTS.md");
+    expect(instructions).not.toContain("notes.txt");
+    expect(body).toContain(`- \`bdk check run 02 --ticket ${TICKET}\``);
   });
 
   it("refuses a Files item holding a placeholder with policy/placeholder", async () => {
@@ -429,18 +449,23 @@ describe("dispatch build", () => {
   });
 
   it.each([
-    ["closed", { closed: true }, ["02-3", "implementer", TICKET]],
-    ["missing", {}, ["02-3", "implementer", "A-00000000"]],
-    ["on another target", {}, ["02-1", "implementer", TICKET]],
+    ["closed", { closed: true }, ["02", "implementer", TICKET]],
+    ["missing", {}, ["02", "implementer", "A-00000000"]],
+    [
+      "on another target",
+      { target: "plan-verify", loop: "verifier" },
+      ["02", "implementer", TICKET],
+    ],
   ] as const)("refuses a ticket %s with policy/no-open-ticket", async (_, fields, argv) => {
     const h = dispatchHarness();
+    h.store.remove(`${DIR}/attempts/part-02-${TICKET}.md`);
     ticket(h.store, fields);
     const result = await build(h, ...argv);
     expect(result.code).toBe(2);
     expect(refusal(result)).toMatchObject({ rule: "policy/no-open-ticket" });
   });
 
-  it.each([["09-1"], ["09"], ["no-such-artifact"]])(
+  it.each([["09"], ["no-such-artifact"]])(
     "refuses the target %s the Change does not hold with input/not-found",
     async (target) => {
       const result = await build(dispatchHarness(), target, "implementer", TICKET);
@@ -449,10 +474,29 @@ describe("dispatch build", () => {
     },
   );
 
-  it("refuses a role outside the eight with input/invalid-argument", async () => {
-    const result = await build(dispatchHarness(), "02-3", "planner", TICKET);
+  it.each(["planner", "lead", "simplifier"])(
+    "refuses the role %s outside the nine with input/invalid-argument",
+    async (role) => {
+      const result = await build(dispatchHarness(), "02", role, TICKET);
+      expect(result.code).toBe(3);
+      expect(refusal(result)).toMatchObject({ rule: "input/invalid-argument" });
+    },
+  );
+
+  it("refuses a task target naming its part, since no ticket targets a task (#166)", async () => {
+    const h = dispatchHarness();
+    const result = await build(h, "02-3", "implementer", TICKET);
     expect(result.code).toBe(3);
-    expect(refusal(result)).toMatchObject({ rule: "input/invalid-argument" });
+    expect(refusal(result).rule).toBe("input/invalid-argument");
+    expect(refusal(result).why).toContain("02");
+    expect(h.store.list(`${DIR}/dispatch`)).toStrictEqual([]);
+  });
+
+  it("refuses an ungrouped runner naming bdk check run (#166)", async () => {
+    const result = await build(dispatchHarness(), "02", "runner", TICKET);
+    expect(result.code).toBe(3);
+    expect(refusal(result).rule).toBe("input/invalid-argument");
+    expect(JSON.stringify(result.json)).toContain("bdk check run");
   });
 });
 
@@ -465,7 +509,7 @@ const TOOLS =
   "    - id: eslint\n      tier: lint\n      command: eslint .\n      scoped: eslint {files}\n" +
   "    - id: tsc\n      tier: typecheck\n      command: tsc --noEmit\n";
 
-/** The `## Checks` section of a runner package, up to the next section. */
+/** The `## Checks` section of a package, up to the next section. */
 function checks(body: string): string {
   const start = body.indexOf("## Checks");
   expect(start).toBeGreaterThan(-1);
@@ -484,36 +528,55 @@ function withDocs(h: ReturnType<typeof dispatchHarness>): void {
   );
 }
 
-describe("the runner's Checks section (T23-D44)", () => {
-  it("names each step's commands with the target's executable files and its record line", async () => {
+/** A trailer commit of task 02-1, as `git log` prints it for `trailerCommits`. */
+function committed(h: DispatchHarness): void {
+  const run = h.git.run.bind(h.git);
+  h.git.run = (args, cwd) =>
+    args[0] === "log"
+      ? Promise.resolve({
+          code: 0,
+          stdout: "c0ffee1\x1fp0\x1fstore the token\x1f2026-09-25-login\x1f02\x1f02-1\x1e",
+          stderr: "",
+        })
+      : run(args, cwd);
+}
+
+describe("the part's Checks section (#166)", () => {
+  it("names a check run per open task and the commands each kernel-run kind runs", async () => {
     const h = dispatchHarness();
     h.store.write(`${ROOT}/.bdk/settings.yaml`, TOOLS);
     withDocs(h);
-    const section = checks((await built(h, "02-3", "runner", TICKET)).body);
-    const files = "src/auth/verify.test.ts src/auth/verify.ts";
-    expect(section).toContain(`### tests-scoped`);
-    expect(section).toContain(`\`vitest related ${files}\``);
-    expect(section).toContain("after every source change");
+    const section = checks((await built(h)).body);
+    expect(section).toContain(`- \`bdk check run 02-1 --ticket ${TICKET}\``);
+    expect(section).toContain(`- \`bdk check run 02-3 --ticket ${TICKET}\``);
+    expect(section).toContain("Never compose, run or record a check yourself");
+    expect(section).toContain(`under \`.bdk/.machine/checks/${TICKET}/\``);
+    expect(section).toContain(
+      "- `unit`: `vitest related {files}`, skippable with `--skip unit` when it does not apply: after every source change",
+    );
     expect(section).not.toContain("vitest run --project e2e");
-    expect(section).toContain(`\`eslint ${files}\``);
-    expect(section).toContain("`tsc --noEmit`");
+    expect(section).toContain("- `eslint`: `eslint {files}`");
+    expect(section).toContain("- `tsc`: `tsc --noEmit`");
     expect(section).not.toContain("docs/login.md");
-    expect(section).not.toContain("### simplify");
-    for (const kind of ["tests-scoped", "lint"]) {
-      expect(section).toContain(
-        `\`bdk evidence record ${kind} <file> --ticket ${TICKET} --verdict pass|fail|not-run --cite <citation>\``,
-      );
-    }
+    expect(section).not.toContain("### conform");
+    expect(section).not.toContain("bdk evidence record");
+    expect(section).toContain("run the `git` command it printed, exactly as printed");
     expect(section.indexOf("### tests-scoped")).toBeLessThan(section.indexOf("### lint"));
   });
 
-  it("tells the runner to end each output file with the exit code and cite only what the check wrote", async () => {
+  it("leaves a committed task out of the calls and marks it in the Tasks section", async () => {
     const h = dispatchHarness();
-    h.store.write(`${ROOT}/.bdk/settings.yaml`, TOOLS);
-    const section = checks((await built(h, "02-3", "runner", TICKET)).body);
-    expect(section).toContain("end the file with the line `exit <code>`");
-    expect(section).toContain("under `.bdk/.machine/checks/`");
-    expect(section).toMatch(/never write or edit the output yourself/);
+    committed(h);
+    const { body } = await built(h);
+    expect(body).toContain(
+      "- `02-1` Store the token (committed). Files: `src/auth/store.ts`. Depends on: none.",
+    );
+    expect(body).toContain(
+      "- `02-3` Verify the link (open). Files: `src/auth/verify.ts`, `src/auth/verify.test.ts`. Depends on: none.",
+    );
+    const section = checks(body);
+    expect(section).not.toContain("bdk check run 02-1");
+    expect(section).toContain(`- \`bdk check run 02-3 --ticket ${TICKET}\``);
   });
 
   it("uses the scoped form, else the command, of a fast test entry", async () => {
@@ -522,14 +585,16 @@ describe("the runner's Checks section (T23-D44)", () => {
       `${ROOT}/.bdk/settings.yaml`,
       "tools:\n  test:\n    - id: unit\n      tier: fast\n      command: pytest\n      scoped: pytest {files}\n    - id: doc\n      tier: fast\n      command: pytest --doctest-modules\n",
     );
-    const section = checks((await built(h, "02-3", "runner", TICKET)).body);
-    expect(section).toContain("`pytest src/auth/verify.test.ts src/auth/verify.ts`");
-    expect(section).toContain("`pytest --doctest-modules`");
+    const section = checks((await built(h)).body);
+    expect(section).toContain("- `unit`: `pytest {files}`");
+    expect(section).toContain("- `doc`: `pytest --doctest-modules`");
   });
 
-  it("tells the runner to record a kind without a command as not-run with the reason", async () => {
-    const section = checks((await built(dispatchHarness(), "02-3", "runner", TICKET)).body);
-    expect(section).toMatch(/### lint\n\nNo command is configured[^\n]*`--verdict not-run`/);
+  it("says check run records a kind without a command as not-run", async () => {
+    const section = checks((await built(dispatchHarness())).body);
+    expect(section).toMatch(
+      /### lint\n\nNo command is configured for `lint`: `bdk check run` records it `not-run`/,
+    );
   });
 
   it("leaves out the step of a group declared none (T49)", async () => {
@@ -538,25 +603,10 @@ describe("the runner's Checks section (T23-D44)", () => {
       `${ROOT}/.bdk/settings.yaml`,
       TOOLS.replace(/ {2}lint:\n[\s\S]*$/, "  lint: none\n"),
     );
-    const section = checks((await built(h, "02-3", "runner", TICKET)).body);
+    const section = checks((await built(h)).body);
     expect(section).toContain("### tests-scoped");
     expect(section).not.toContain("### lint");
     expect(section).not.toContain("eslint");
-  });
-
-  it("tells the runner to record every check not-run when the target has no executable file", async () => {
-    const h = dispatchHarness();
-    h.store.write(`${ROOT}/.bdk/settings.yaml`, TOOLS);
-    const path = `${DIR}/plan/parts/02-part.md`;
-    h.store.write(
-      path,
-      (h.store.read(path) ?? "")
-        .replace("`src/auth/verify.ts`", "`docs/verify.md`")
-        .replace("`src/auth/verify.test.ts`", "`docs/verify-notes.md`"),
-    );
-    const section = checks((await built(h, "02-3", "runner", TICKET)).body);
-    expect(section).not.toContain("vitest");
-    expect(section.match(/The target has no executable file/g)).toHaveLength(2);
   });
 
   it("follows the order of the step nodes in the pipeline, a project kind included", async () => {
@@ -566,7 +616,7 @@ describe("the runner's Checks section (T23-D44)", () => {
       .replace(/\n {2}- id: tests-scoped\n( {4}.*\n)+/, "\n")
       .replace(
         /(\n {2}- id: lint\n( {4}.*\n)+)/,
-        "$1  - id: contract-snapshot\n    kind: contract-snapshot\n    stage: execute\n    requires: [simplify]\n  - id: tests-scoped\n    kind: tests-scoped\n    stage: execute\n    requires: [simplify]\n",
+        "$1  - id: contract-snapshot\n    kind: contract-snapshot\n    stage: execute\n    requires: [conform]\n  - id: tests-scoped\n    kind: tests-scoped\n    stage: execute\n    requires: [conform]\n",
       );
     store.write(path, pipeline);
     const snapshot = new PostTaskStepKind(
@@ -575,81 +625,18 @@ describe("the runner's Checks section (T23-D44)", () => {
       "runner",
     );
     const h = dispatchHarness(store, kindRegistry([snapshot]));
-    const section = checks((await built(h, "02-3", "runner", TICKET)).body);
+    const section = checks((await built(h)).body);
     const at = (kind: string) => section.indexOf(`### ${kind}\n`);
     expect(at("lint")).toBeGreaterThan(-1);
-    expect(at("lint")).toBeLessThan(at("contract-snapshot"));
-    expect(at("contract-snapshot")).toBeLessThan(at("tests-scoped"));
-    expect(section).toMatch(/### contract-snapshot\n\nNo command is configured/);
+    expect(at("lint")).toBeLessThan(at("tests-scoped"));
   });
 
-  it("is absent from every other role's package", async () => {
-    const { body } = await built(dispatchHarness(), "02-3", "implementer", TICKET);
+  it("is absent from a verifier's package, and so is the Tasks section", async () => {
+    const h = dispatchHarness();
+    ticket(h.store, { target: "plan-verify", loop: "verifier", id: "A-v3r1f7y2" });
+    const { body } = await built(h, "plan-verify", "verifier", "A-v3r1f7y2");
     expect(body).not.toContain("## Checks");
-  });
-});
-
-describe("the lead package (T41-D11)", () => {
-  const LEAD = "A-3h5j7k9m";
-
-  /** A trailer commit of task 02-1, as `git log` prints it for `trailerCommits`. */
-  function committed(h: DispatchHarness): void {
-    const run = h.git.run.bind(h.git);
-    h.git.run = (args, cwd) =>
-      args[0] === "log"
-        ? Promise.resolve({
-            code: 0,
-            stdout: "c0ffee1\x1fp0\x1fstore the token\x1f2026-09-25-login\x1f02\x1f02-1\x1e",
-            stderr: "",
-          })
-        : run(args, cwd);
-  }
-
-  it("names the part and lists its tasks with files, dependencies and the committed ones", async () => {
-    const h = dispatchHarness();
-    ticket(h.store, { target: "02", loop: "part-lead", id: LEAD });
-    committed(h);
-    const { report, body } = await built(h, "02", "lead", LEAD);
-    expect(report).toMatchObject({ role: "lead", adapter: "lead", target: "02" });
-    expect(stamped(h.store, report.path)).toMatchObject({ role: "lead", adapter: "lead" });
-    expect(stampedRules(h.store, report.path)).toEqual([]);
-    expect(body).toContain("`.bdk/changes/2026-09-25-login/plan/parts/02-part.md`");
-    expect(body).toContain(
-      "- `02-1` Store the token (committed). Files: `src/auth/store.ts`. Depends on: none.",
-    );
-    expect(body).toContain(
-      "- `02-3` Verify the link (open). Files: `src/auth/verify.ts`, `src/auth/verify.test.ts`. Depends on: none.",
-    );
-    expect(body).toContain("# Role: lead");
-  });
-
-  it("stays within the package limit for a part of eight tasks", async () => {
-    const h = dispatchHarness();
-    const task = (n: number) =>
-      `## 03-${String(n)} Build the login step ${String(n)} of the flow\n\n**Files:**\n\n- Create: \`src/auth/login/step-${String(n)}.ts\`\n- Test: \`src/auth/login/step-${String(n)}.test.ts\`\n- Modify: \`src/auth/login/index.ts\`\n\n**Depends on:** ${n === 1 ? "none" : `03-${String(n - 1)}`}\n\n**Test cases:**\n\n- handles step ${String(n)}\n`;
-    writePlanPart(h.store, "03", {
-      body: [1, 2, 3, 4, 5, 6, 7, 8].map(task).join("\n"),
-      doNotTouch: ["src/billing/**"],
-    });
-    ticket(h.store, { target: "03", loop: "part-lead", id: LEAD });
-    const { report, body } = await built(h, "03", "lead", LEAD);
-    expect(body).toContain("- `03-8` Build the login step 8 of the flow (open).");
-    expect(body).toContain("Depends on: `03-7`.");
-    expect(report.bytes).toBeLessThanOrEqual(163_840);
-  });
-
-  it("gives no Tasks section to other roles", async () => {
-    const { body } = await built(dispatchHarness());
     expect(body).not.toContain("## Tasks");
-  });
-
-  it("refuses lead on a task ticket and another role on a part-lead ticket", async () => {
-    const h = dispatchHarness();
-    expect(refusal(await build(h, "02-3", "lead", TICKET)).rule).toBe("input/invalid-argument");
-    ticket(h.store, { target: "02", loop: "part-lead", id: LEAD });
-    const other = await build(h, "02", "implementer", LEAD);
-    expect(other.code).toBe(3);
-    expect(refusal(other).why).toContain("lead");
   });
 });
 
@@ -727,10 +714,10 @@ describe("the craft section (T42, R-8)", () => {
     expect(body).not.toContain("## Craft");
   });
 
-  it.each(["simplifier", "runner"])("gives a %s package no craft section", async (role) => {
+  it.each(["conformer", "reviewer"])("gives a %s package no craft section", async (role) => {
     const h = dispatchHarness();
     craft(h.store, "tdd", "debugging");
-    const { body } = await built(h, "02-3", role, TICKET);
+    const { body } = await built(h, "02", role, TICKET);
     expect(body).not.toContain("## Craft");
   });
 });

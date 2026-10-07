@@ -4,7 +4,6 @@ import * as z from "zod";
 
 import type { PostToolReport, StopReport, SubagentStartReport } from "../domain/report.ts";
 
-const LEAD = "a9f8e7d6c5b4a3f2e";
 const WORKER = "a1b2c3d4e5f6a7b8c";
 const agentId = z.string().min(1);
 
@@ -33,7 +32,7 @@ export const postToolOutput = z
     examples: [
       {
         tool: "Agent",
-        linked: { agent: WORKER, parent: LEAD, ticket: "A-9k2m4n6p" },
+        linked: { agent: WORKER, parent: "main", ticket: "A-9k2m4n6p" },
         ended: null,
       },
     ],
@@ -56,9 +55,9 @@ export const subagentStartOutput = z
     examples: [
       {
         agent: WORKER,
-        parent: LEAD,
-        package: ".bdk/changes/2026-09-30-login/dispatch/02-3-implementer-A-9k2m4n6p.md",
-        context: `BDK-AGENT-ID: ${WORKER}\nBDK-PARENT: ${LEAD}\nBDK-PACKAGE: .bdk/changes/2026-09-30-login/dispatch/02-3-implementer-A-9k2m4n6p.md\nBDK-TICKET: A-9k2m4n6p`,
+        parent: "main",
+        package: ".bdk/changes/2026-09-30-login/dispatch/02-implementer-A-9k2m4n6p.md",
+        context: `BDK-AGENT-ID: ${WORKER}\nBDK-PARENT: main\nBDK-PACKAGE: .bdk/changes/2026-09-30-login/dispatch/02-implementer-A-9k2m4n6p.md\nBDK-TICKET: A-9k2m4n6p`,
       },
     ],
   }) satisfies z.ZodType<SubagentStartReport>;
@@ -101,7 +100,7 @@ export const subagentStopOutput = z
         agent: WORKER,
         decision: "block",
         reason:
-          "BDK: your report for A-9k2m4n6p is not stored. Pipe it to bdk log ingest --ticket A-9k2m4n6p, then return your envelope.",
+          "BDK: your report for A-9k2m4n6p is not stored. Write it to its draft and run bdk log ingest --ticket A-9k2m4n6p --file <draft>, then return your envelope.",
         continuations: 1,
       },
     ],

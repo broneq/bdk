@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 import { REPO_ROOT } from "../../../tests/support/run.ts";
 import { answered, bdk, read, refused, repository } from "../../../tests/support/repo.ts";
 
-const ADAPTERS = ["lead", "worker", "reader", "integrator", "judge", "reviewer", "runner", "scout"];
+const ADAPTERS = ["worker", "reader", "integrator", "judge", "reviewer", "runner", "scout"];
 
 /** A repository with freshly generated adapters under `gen/`. */
 function generatedIn(): string {

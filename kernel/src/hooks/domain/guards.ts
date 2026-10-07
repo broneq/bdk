@@ -14,10 +14,10 @@ type GuardRule =
   | "guard/nested-stage-command"
   | "guard/subagent-git"
   | "guard/subagent-kernel-command"
-  | "guard/lead-scope"
   | "guard/judge-scope"
   | "guard/worktree-scope"
   | "guard/reader-write"
+  | "guard/draft-only"
   | "guard/dispatch-prompt"
   | "guard/agent-spawn"
   | "guard/agent-message"
@@ -43,14 +43,10 @@ interface KernelVerb {
 
 /** What the agent guards know about the caller, from the registry and the active Change. */
 export interface AgentFacts {
-  /** The caller's active package: its ticket and target; absent without one. */
-  readonly caller?: { readonly ticket: string | null; readonly target: string | null };
   /** The `workdir` of the caller's package: the part worktree it works in (T45). */
   readonly workdir?: string;
   /** The `entries` of the caller's package: what a judge may triage (#158). */
   readonly entries?: readonly string[];
-  /** The target of a ticket of the active Change. */
-  readonly ticketTarget: (ticket: string) => string | undefined;
   /** Scouts started by agents holding the caller's ticket. */
   readonly scouts: number;
   readonly scoutLimit: number;
@@ -63,19 +59,27 @@ export interface AgentFacts {
 
 export type Classify = (argv: readonly string[]) => KernelVerb | undefined;
 
-const EDIT_TOOLS = new Set(["Edit", "Write", "NotebookEdit", "MultiEdit"]);
+export const EDIT_TOOLS = new Set(["Edit", "Write", "NotebookEdit", "MultiEdit"]);
 
-/** The adapters whose Bash is for kernel commands and test runs only (T23-D20, T41-D11). */
+/** The adapters whose Bash is for kernel commands and test runs only (T23-D20). */
 const READ_ONLY_ADAPTERS = new Set([
   "bdk:reader",
   "bdk:integrator",
   "bdk:judge",
   "bdk:reviewer",
   "bdk:scout",
-  "bdk:lead",
 ]);
 
-/** The adapters a BDK dispatch goes to (T23-D19, T41-D2). */
+/** The adapters whose file tool writes only their report draft (#166). */
+const DRAFT_ADAPTERS = new Set([...READ_ONLY_ADAPTERS, "bdk:runner"]);
+
+/** Where a report draft lies, under any work root (`kernel-cli/dispatch`, the package's `draft`). */
+const DRAFTS_DIR = "/.bdk/.machine/drafts/";
+
+/** The orchestrator verb a judge runs on the entries of its package (#158). */
+const JUDGE_VERB = "bdk log triage";
+
+/** The adapters a BDK dispatch goes to (T23-D19). */
 const ADAPTERS = new Set([
   "bdk:worker",
   "bdk:reader",
@@ -84,23 +88,10 @@ const ADAPTERS = new Set([
   "bdk:reviewer",
   "bdk:runner",
   "bdk:scout",
-  "bdk:lead",
 ]);
 
-/** The orchestrator verbs a lead runs inside its own part (T41-D11). */
-const LEAD_VERBS = new Set([
-  "bdk attempt open",
-  "bdk attempt close",
-  "bdk dispatch build",
-  "bdk commit",
-]);
-
-/** The orchestrator verb a judge runs on the entries of its package (#158). */
-const JUDGE_VERB = "bdk log triage";
-
-/** Who starts whom (T41-D4); the `Agent(...)` lists of the lead and worker adapters say the same. */
+/** Who starts whom (T41-D4); the `Agent(...)` list of the worker adapter says the same. */
 export const SPAWNS: Readonly<Record<string, ReadonlySet<string>>> = {
-  "bdk:lead": new Set(["bdk:worker", "bdk:runner", "bdk:reviewer", "bdk:scout"]),
   "bdk:worker": new Set(["bdk:scout"]),
 };
 
@@ -178,10 +169,7 @@ export function needsAgentFacts(payload: PreToolPayload): boolean {
   if (payload.agentId === undefined) return false;
   if (payload.tool === "Agent" || payload.tool === "SendMessage") return true;
   if (EDIT_TOOLS.has(payload.tool)) return true;
-  return (
-    payload.tool === "Bash" &&
-    (payload.agentType === "bdk:lead" || payload.agentType === "bdk:judge")
-  );
+  return payload.tool === "Bash" && payload.agentType === "bdk:judge";
 }
 
 /**
@@ -193,6 +181,7 @@ export function preToolDecision(
   classify: Classify,
   facts?: AgentFacts,
   packageModel?: string,
+  reviewRound?: string,
 ): Deny | undefined {
   const cwd = payload.cwd ?? "/";
   if (EDIT_TOOLS.has(payload.tool)) {
@@ -200,7 +189,8 @@ export function preToolDecision(
       stringField(payload.input, "file_path") ?? stringField(payload.input, "notebook_path");
     if (path === undefined) return undefined;
     if (underSpecs(cwd, path)) return specDeny(path);
-    return payload.agentId === undefined ? undefined : worktreeScope(cwd, path, facts?.workdir);
+    if (payload.agentId === undefined) return roundDraftOnly(cwd, path, reviewRound);
+    return draftOnly(cwd, path, payload.agentType) ?? worktreeScope(cwd, path, facts?.workdir);
   }
   if (payload.tool === "Agent") {
     return (
@@ -215,7 +205,7 @@ export function preToolDecision(
   if (text === undefined) return undefined;
   const commands = readCommands(text);
   const subagent = payload.agentId !== undefined;
-  const lead = subagent && payload.agentType === "bdk:lead";
+  const worker = subagent && payload.agentType === "bdk:worker";
   const judge = subagent && payload.agentType === "bdk:judge";
   const readOnly = subagent && READ_ONLY_ADAPTERS.has(payload.agentType ?? "");
 
@@ -225,11 +215,10 @@ export function preToolDecision(
     nestedStage,
     ...(subagent
       ? [
-          subagentGit,
-          (command: SimpleCommand) => subagentKernel(command, classify, { lead, judge }),
+          (command: SimpleCommand) => subagentGit(command, worker),
+          (command: SimpleCommand) => subagentKernel(command, classify, judge),
         ]
       : []),
-    ...(lead ? [(command: SimpleCommand) => leadScope(command, classify, facts)] : []),
     ...(judge ? [(command: SimpleCommand) => judgeScope(command, classify, facts)] : []),
     ...(readOnly
       ? [(command: SimpleCommand) => readerWrite(command, payload.agentType ?? "")]
@@ -261,6 +250,33 @@ function resolvePath(cwd: string, path: string): string {
     else if (segment !== "" && segment !== ".") segments.push(segment);
   }
   return `/${segments.join("/")}`;
+}
+
+/** A read-only adapter or the runner writes only its report draft (#166). */
+function draftOnly(cwd: string, path: string, adapter: string | undefined): Deny | undefined {
+  if (!DRAFT_ADAPTERS.has(adapter ?? "")) return undefined;
+  const absolute = resolvePath(cwd, path.split("\\").join("/"));
+  if (absolute.includes(DRAFTS_DIR)) return undefined;
+  return {
+    rule: "guard/draft-only",
+    verb: path,
+    reason: `the ${(adapter ?? "").replace(/^bdk:/, "")} adapter writes only its report draft under .bdk/.machine/drafts/, not ${absolute}; write the report to the draft path of your package (BDK #166)`,
+  };
+}
+
+/**
+ * While a review round's ticket is open, the main thread, which runs `/bdk:cr`,
+ * writes only the merged report's draft (#166): the fix is the implementer's.
+ */
+function roundDraftOnly(cwd: string, path: string, round: string | undefined): Deny | undefined {
+  if (round === undefined) return undefined;
+  const absolute = resolvePath(cwd, path.split("\\").join("/"));
+  if (absolute.includes(DRAFTS_DIR)) return undefined;
+  return {
+    rule: "guard/draft-only",
+    verb: path,
+    reason: `review round ${round} is open, so the main thread writes only report drafts under .bdk/.machine/drafts/, not ${absolute}; the round's implementer writes the fix (BDK #166)`,
+  };
 }
 
 /**
@@ -327,12 +343,11 @@ function kernelHook(command: SimpleCommand, classify: Classify): Deny | undefine
 function subagentKernel(
   command: SimpleCommand,
   classify: Classify,
-  caller: { readonly lead: boolean; readonly judge: boolean },
+  judge: boolean,
 ): Deny | undefined {
   const verb = kernelVerb(command, classify);
   if (verb?.availability !== "orchestrator") return undefined;
-  if (caller.lead && LEAD_VERBS.has(verb.command)) return undefined;
-  if (caller.judge && verb.command === JUDGE_VERB) return undefined;
+  if (judge && verb.command === JUDGE_VERB) return undefined;
   return {
     rule: "guard/subagent-kernel-command",
     verb: verb.command,
@@ -353,8 +368,46 @@ function nestedStage(command: SimpleCommand): Deny | undefined {
   };
 }
 
+/** `git add` flags and pathspecs that would stage more than the printed paths (#166). */
+const ADD_DENIED = new Set([
+  "-A",
+  "--all",
+  "-u",
+  "--update",
+  "-f",
+  "--force",
+  ".",
+  "./",
+  ":/",
+  "*",
+]);
+
+/** `git commit` flags that rewrite history, skip hooks or commit more than the paths (#166). */
+const COMMIT_DENIED = new Set(["--amend", "--no-verify", "-n", "-a", "--all", "--allow-empty"]);
+
+/**
+ * The word of a worker's `git add` or `git commit` the guard denies, else
+ * undefined: the part agent runs the command `bdk check run` prints.
+ */
+function workerCommitWord(verb: "add" | "commit", rest: readonly string[]): string | undefined {
+  const end = rest.indexOf("--");
+  const options = end === -1 ? rest : rest.slice(0, end);
+  if (verb === "add") {
+    return rest.find(
+      (word, at) =>
+        ADD_DENIED.has(word) || (at < options.length && /^-[a-zA-Z]*[Auf][a-zA-Z]*$/.test(word)),
+    );
+  }
+  return options.find(
+    (word) =>
+      COMMIT_DENIED.has(word) ||
+      /^--(fixup|squash)(=|$)/.test(word) ||
+      /^-[a-zA-Z]*[an][a-zA-Z]*$/.test(word),
+  );
+}
+
 /** The git verb as the deny names it, or undefined when the command is allowed. */
-function deniedGitVerb(words: readonly string[]): string | undefined {
+function deniedGitVerb(words: readonly string[], worker: boolean): string | undefined {
   let at = 1;
   while (at < words.length) {
     const word = words[at] ?? "";
@@ -365,6 +418,10 @@ function deniedGitVerb(words: readonly string[]): string | undefined {
   const verb = words[at];
   if (verb === undefined) return undefined;
   const rest = words.slice(at + 1);
+  if (worker && (verb === "add" || verb === "commit")) {
+    const word = workerCommitWord(verb, rest);
+    return word === undefined ? undefined : `git ${verb} ${word}`;
+  }
   if (GIT_ALWAYS.has(verb)) return `git ${verb}`;
   const force = rest.some((word) => word === "-f" || word === "--force");
   if (verb === "checkout") {
@@ -379,15 +436,18 @@ function deniedGitVerb(words: readonly string[]): string | undefined {
   return undefined;
 }
 
-function subagentGit(command: SimpleCommand): Deny | undefined {
+function subagentGit(command: SimpleCommand, worker: boolean): Deny | undefined {
   const words = commandWords(command);
   if (basename(words[0] ?? "") !== "git") return undefined;
-  const verb = deniedGitVerb(words);
+  const verb = deniedGitVerb(words, worker);
   if (verb === undefined) return undefined;
+  const commit = worker && /^git (add|commit) /.test(verb);
   return {
     rule: "guard/subagent-git",
     verb,
-    reason: `subagents may not run ${verb}; return blocked with the cause instead of changing the shared working tree or history (BDK T3)`,
+    reason: commit
+      ? `a part agent may not run ${verb}; run the git add and git commit command bdk check run printed, unchanged (BDK #166)`
+      : `subagents may not run ${verb}; return blocked with the cause instead of changing the shared working tree or history (BDK T3)`,
   };
 }
 
@@ -443,43 +503,6 @@ function writesOf(command: SimpleCommand): string[] {
     default:
       return targets;
   }
-}
-
-/** The target a lead's kernel command acts on; undefined when it names none. */
-function leadTarget(verb: KernelVerb, facts: AgentFacts | undefined): string | undefined {
-  const [first, second] = verb.positionals;
-  switch (verb.command) {
-    case "bdk attempt open":
-      return second;
-    case "bdk attempt close":
-      return first === undefined ? undefined : facts?.ticketTarget(first);
-    default:
-      return first;
-  }
-}
-
-function leadScope(
-  command: SimpleCommand,
-  classify: Classify,
-  facts: AgentFacts | undefined,
-): Deny | undefined {
-  const verb = kernelVerb(command, classify);
-  if (verb === undefined || !LEAD_VERBS.has(verb.command)) return undefined;
-  const part = facts?.caller?.target ?? null;
-  if (part === null) {
-    return {
-      rule: "guard/lead-scope",
-      verb: verb.command,
-      reason: `this lead has no package in the agent registry, so it may not run ${verb.command}: a lead started in the foreground is linked to its package only when it ends; return blocked with the cause, and the orchestrator starts the lead again with run_in_background: true (BDK T41-D11)`,
-    };
-  }
-  const target = leadTarget(verb, facts);
-  if (target !== undefined && (target === part || target.startsWith(`${part}-`))) return undefined;
-  return {
-    rule: "guard/lead-scope",
-    verb: verb.command,
-    reason: `a lead runs ${verb.command} only on targets of its own part ${part}, not ${target ?? "an unknown target"}; return blocked with the cause (BDK T41-D11)`,
-  };
 }
 
 /**

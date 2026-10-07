@@ -172,53 +172,51 @@ describe("envelopeBytes", () => {
 });
 
 function fullV3(): V3State {
-  const tasks = PARTS.flatMap((part) => part.tasks);
+  const parts = PARTS.map((part) => part.id);
   return {
-    attempts: tasks.map((task) => ({
-      ticket: `A-${task}`,
-      loop: "task-redispatch",
-      target: task,
+    attempts: parts.map((part) => ({
+      ticket: `A-${part}`,
+      loop: "part",
+      target: part,
       outcome: "ok",
     })),
-    packages: tasks.flatMap((task) =>
-      ["implementer", "simplifier", "runner"].map((role) => ({
-        task,
+    packages: parts.flatMap((part) =>
+      ["implementer", "conformer"].map((role) => ({
+        target: part,
         role,
-        ticket: `A-${task}`,
+        ticket: `A-${part}`,
         templateHash: `sha256:${role}`,
       })),
     ),
-    reports: tasks.flatMap((task) =>
-      ["implementer", "simplifier"].map((role) => ({ task, role, ticket: `A-${task}` })),
+    reports: parts.flatMap((part) =>
+      ["implementer", "conformer"].map((role) => ({ target: part, role, ticket: `A-${part}` })),
     ),
-    evidence: tasks.flatMap((task) =>
-      ["simplify", "tests-scoped", "lint"].map((kind) => ({
+    evidence: parts.flatMap((part) =>
+      ["conform", "tests-scoped", "lint"].map((kind) => ({
         kind,
-        target: task,
-        ticket: `A-${task}`,
+        target: part,
+        ticket: `A-${part}`,
         verdict: "pass",
       })),
     ),
-    trailerTasks: tasks,
-    partsDone: ["01", "02"],
+    trailerTasks: PARTS.flatMap((part) => part.tasks),
+    partsDone: parts,
   };
 }
 
 describe("v3Completeness", () => {
-  it("is 1 when every step of every task and part is present", () => {
+  it("is 1 when every step of every part and task is present", () => {
     expect(v3Completeness(PARTS, fullV3())).toBe(1);
   });
 
-  it("counts seven steps per task and one per part", () => {
+  it("counts eight steps per part and one per task (#166)", () => {
     const state = fullV3();
     const partial: V3State = {
       ...state,
-      evidence: state.evidence.filter(
-        (entry) => !(entry.target === "01-2" && entry.kind === "lint"),
-      ),
+      evidence: state.evidence.filter((entry) => !(entry.target === "01" && entry.kind === "lint")),
       partsDone: ["01"],
     };
-    expect(v3Completeness(PARTS, partial)).toBeCloseTo(21 / 23);
+    expect(v3Completeness(PARTS, partial)).toBeCloseTo(17 / 19);
   });
 
   it("counts evidence only from a ticket that closed ok", () => {
@@ -226,11 +224,11 @@ describe("v3Completeness", () => {
     const failed: V3State = {
       ...state,
       attempts: state.attempts.map((entry) =>
-        entry.target === "02-1" ? { ...entry, outcome: "fail" } : entry,
+        entry.target === "02" ? { ...entry, outcome: "fail" } : entry,
       ),
     };
-    // 02-1 keeps its ticket, package, report and commit; its three evidence steps do not count.
-    expect(v3Completeness(PARTS, failed)).toBeCloseTo(20 / 23);
+    // 02 keeps its ticket, packages, reports, commit and part done; its three evidence steps do not count.
+    expect(v3Completeness(PARTS, failed)).toBeCloseTo(16 / 19);
   });
 });
 
@@ -241,30 +239,30 @@ describe("readV3State", () => {
     const change = ".bdk/changes/2026-09-28-x";
     write(
       work,
-      `${change}/attempts/task-redispatch-01-1-A-a.md`,
-      "---\nschema: 1\nticket: A-a\nloop: task-redispatch\ntarget: 01-1\nattempt: 1\noutcome: ok\n---\n",
+      `${change}/attempts/part-01-A-a.md`,
+      '---\nschema: 1\nticket: A-a\nloop: part\ntarget: "01"\nattempt: 1\noutcome: ok\n---\n',
     );
     write(
       work,
-      `${change}/attempts/task-redispatch-01-2-A-b.md`,
-      "---\nticket: A-b\nloop: task-redispatch\ntarget: 01-2\n---\n",
+      `${change}/attempts/part-02-A-b.md`,
+      '---\nticket: A-b\nloop: part\ntarget: "02"\n---\n',
     );
     write(
       work,
-      `${change}/dispatch/01-1-implementer-A-a.md`,
-      "---\nticket: A-a\ntarget: 01-1\nrole: implementer\ntemplate-hash: sha256:abc\n---\nbody\n",
+      `${change}/dispatch/01-implementer-A-a.md`,
+      '---\nticket: A-a\ntarget: "01"\nrole: implementer\ntemplate-hash: sha256:abc\n---\nbody\n',
     );
     write(
       work,
-      `${change}/reports/01-1-implementer-A-a.md`,
-      "---\nticket: A-a\nrole: implementer\nstatus: done\n---\n",
+      `${change}/reports/01-conformer-A-a.md`,
+      "---\nticket: A-a\nrole: conformer\nstatus: done\n---\n",
     );
     write(
       work,
-      `${change}/evidence/01-1-E-x.md`,
-      "---\nid: E-x\nkind: lint\nticket: A-a\ntarget: 01-1\ntree:\n  - path: a\n    hash: absent\nverdict: pass\n---\n",
+      `${change}/evidence/01-E-x.md`,
+      '---\nid: E-x\nkind: lint\nticket: A-a\ntarget: "01"\ntree:\n  - path: a\n    hash: absent\nverdict: pass\n---\n',
     );
-    write(work, `${change}/evidence/01-1-E-x-lint.txt`, "ok\n");
+    write(work, `${change}/evidence/01-E-x-lint.txt`, "ok\n");
     write(
       work,
       `${change}/log/20260928T1Z-transition-L-a.md`,
@@ -291,12 +289,12 @@ describe("readV3State", () => {
 
     expect(readV3State(work)).toEqual({
       attempts: [
-        { ticket: "A-a", loop: "task-redispatch", target: "01-1", outcome: "ok" },
-        { ticket: "A-b", loop: "task-redispatch", target: "01-2", outcome: null },
+        { ticket: "A-a", loop: "part", target: "01", outcome: "ok" },
+        { ticket: "A-b", loop: "part", target: "02", outcome: null },
       ],
-      packages: [{ task: "01-1", role: "implementer", ticket: "A-a", templateHash: "sha256:abc" }],
-      reports: [{ task: "01-1", role: "implementer", ticket: "A-a" }],
-      evidence: [{ kind: "lint", target: "01-1", ticket: "A-a", verdict: "pass" }],
+      packages: [{ target: "01", role: "implementer", ticket: "A-a", templateHash: "sha256:abc" }],
+      reports: [{ target: "01", role: "conformer", ticket: "A-a" }],
+      evidence: [{ kind: "lint", target: "01", ticket: "A-a", verdict: "pass" }],
       trailerTasks: ["01-1"],
       partsDone: ["01"],
     });

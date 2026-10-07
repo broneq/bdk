@@ -74,8 +74,8 @@ describe("evidence record", () => {
     const out = await recordedPass(h, ticket);
 
     expect(out.evidence).toMatch(/^E-[0-9a-z]{8}$/);
-    expect(out.path).toBe(`${REL}/evidence/01-1-${out.evidence}.md`);
-    const stored = `${REL}/evidence/01-1-${out.evidence}-01-1-tests.json`;
+    expect(out.path).toBe(`${REL}/evidence/01-${out.evidence}.md`);
+    const stored = `${REL}/evidence/01-${out.evidence}-01-1-tests.json`;
     expect(out.files).toEqual([
       { path: stored, hash: sha256(new TextEncoder().encode(SUMMARY)), stored: "committed" },
     ]);
@@ -95,7 +95,7 @@ describe("evidence record", () => {
       id: out.evidence,
       kind: "tests-scoped",
       ticket,
-      target: "01-1",
+      target: "01",
       at: "2026-09-25T11:02:00.000Z",
       source: "kernel",
       "tree-hash": expected.treeHash,
@@ -119,8 +119,40 @@ describe("evidence record", () => {
     const h = await started();
     const ticket = await ticketOf(h);
     withPackage(h, ticket, "runner");
-    const out = await recordedPass(h, ticket);
-    expect(manifest(h, out.path).source).toBe("agent:runner");
+    const file = `.bdk/.machine/checks/${ticket}/tests-full.txt`;
+    h.put(file, RUN);
+    const result = await record(
+      h,
+      "tests-full",
+      file,
+      "--ticket",
+      ticket,
+      "--verdict",
+      "pass",
+      "--cite",
+      `${file}:3=0 failed`,
+    );
+    expect(result.code, result.stdout).toBe(0);
+    expect(manifest(h, (result.json as Recorded).path).source).toBe("agent:runner");
+  });
+
+  it("refuses an agent's file outside its ticket's directory with policy/evidence-outside-ticket (#166)", async () => {
+    const h = await started();
+    const ticket = await ticketOf(h);
+    withPackage(h, ticket, "runner");
+    for (const file of [
+      ".bdk/.machine/checks/tests-full.txt",
+      ".bdk/.machine/checks/A-00000000/tests-full.txt",
+    ]) {
+      h.put(file, RUN);
+      const result = await record(h, "tests-full", file, "--ticket", ticket, "--verdict", "fail");
+      expect(result.code).toBe(2);
+      expect(refusal(result)).toMatchObject({
+        rule: "policy/evidence-outside-ticket",
+        why: `${file} lies outside .bdk/.machine/checks/${ticket}/, the output directory of ticket ${ticket}`,
+      });
+    }
+    expect(manifests(h)).toEqual([]);
   });
 
   it("refuses a file that does not exist with input/not-found", async () => {
@@ -341,14 +373,14 @@ describe("evidence record", () => {
     const out = result.json as Recorded;
     const id = out.evidence;
     expect(out.files.map((file) => [file.path, file.stored])).toEqual([
-      [`${REL}/evidence/01-1-${id}-junit.txt`, "committed"],
-      [`.bdk/.machine/evidence/01-1-${id}-coverage.json`, "machine"],
-      [`.bdk/.machine/evidence/01-1-${id}-capture.png`, "machine"],
+      [`${REL}/evidence/01-${id}-junit.txt`, "committed"],
+      [`.bdk/.machine/evidence/01-${id}-coverage.json`, "machine"],
+      [`.bdk/.machine/evidence/01-${id}-capture.png`, "machine"],
       [".bdk/.machine/evidence/trace.bin", "machine"],
     ]);
-    expect(h.store.readBytes(`${ROOT}/.bdk/.machine/evidence/01-1-${id}-capture.png`)).toEqual(PNG);
+    expect(h.store.readBytes(`${ROOT}/.bdk/.machine/evidence/01-${id}-capture.png`)).toEqual(PNG);
     expect(h.store.list(`${DIR}/evidence`).sort()).toEqual(
-      [`01-1-${id}-junit.txt`, `01-1-${id}.md`].sort(),
+      [`01-${id}-junit.txt`, `01-${id}.md`].sort(),
     );
   });
 
@@ -389,7 +421,7 @@ describe("evidence record", () => {
     const first = await recordedPass(h, ticket);
     const second = await recordedPass(h, ticket);
     expect(second).toEqual({ ...first, deduplicated: true });
-    expect(manifests(h)).toEqual([`01-1-${first.evidence}.md`]);
+    expect(manifests(h)).toEqual([`01-${first.evidence}.md`]);
 
     h.put("src/01-2.ts", "// changed\n");
     const third = await recordedPass(h, ticket);

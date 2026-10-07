@@ -19,7 +19,7 @@ describe("normalise", () => {
 });
 
 describe("the return section (T46)", () => {
-  const values: Record<string, string> = { ref: "A-1", report: "r.md" };
+  const values: Record<string, string> = { ref: "A-1", report: "r.md", draft: "d.md" };
   const filled = new Proxy(values, { get: (target, key: string) => target[key] ?? "x" });
   const text = renderSections(filled, []).find((section) => section.name === "return")?.text ?? "";
 
@@ -31,9 +31,11 @@ describe("the return section (T46)", () => {
     expect(text).toContain("the ids `log add` printed");
   });
 
-  it("shows the heredoc form of log ingest and says there is no frontmatter flag", () => {
-    expect(text).toContain("bdk log ingest --ticket A-1 <<'REPORT'");
-    expect(text).toContain("no frontmatter flag");
+  it("names the draft, the --file form of log ingest and never a pipe (#166)", () => {
+    expect(text).toContain("with your file tool to `d.md`");
+    expect(text).toContain("`bdk log ingest --ticket A-1 --file d.md`");
+    expect(text).toContain("never pipe it");
+    expect(text).not.toContain(" < ");
     expect(text).toContain("Leave `reason` out");
   });
 });

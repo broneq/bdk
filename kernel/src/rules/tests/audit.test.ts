@@ -114,12 +114,12 @@ describe("rules stats: recurrence counts distinct Changes", () => {
     for (const id of ["2026-09-20-one", "2026-09-21-two", "2026-09-22-six"]) {
       const dir = `${ROOT}/.bdk/changes/${id}`;
       writeChangeDoc(store, id, dir);
-      writeDocument(store, `${dir}/attempts/task-redispatch-01-1-A-0000000${id.slice(9, 10)}.md`, {
+      writeDocument(store, `${dir}/attempts/part-01-A-0000000${id.slice(9, 10)}.md`, {
         data: {
           schema: 1,
           ticket: `A-0000000${id.slice(9, 10)}`,
-          loop: "task-redispatch",
-          target: "01-1",
+          loop: "part",
+          target: "01",
           attempt: 1,
           of: 3,
           scope: "full",

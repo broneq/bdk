@@ -40,6 +40,7 @@ export async function instructionOf(
     kind,
     change: change.id,
     profile: read.view.profile,
+    partLimits: read.view.partLimits,
     template: promptContent(deps.store, value),
     paths: writes.map((path) => posix.join(dir, path)),
     rules: await rulesOf(deps, change, read.resolved, node.node.stage),

@@ -30,8 +30,6 @@ function wave(overrides: Partial<WaveInput> & { parts?: readonly string[] } = {}
   const { parts = ["01", "02", "03"], ...rest } = overrides;
   return executeWave({
     graph: graph(parts),
-    profile: "small",
-    tree: { enabled: false, "min-parts": 2 },
     files: new Map(parts.map((nn) => [nn, [`src/${nn}.ts`]])),
     overlap: (own, other) => own.find((path) => other.includes(path)),
     started: new Set(),

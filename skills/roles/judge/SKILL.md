@@ -30,7 +30,7 @@ Then set its level with `bdk log triage <id> <level> --reason "<one sentence>"`:
 - A `blocker`-type entry, which a verifier or an implementer wrote, gets `blocker`, or `not-a-problem` when you refute it, never a level between.
 - A `finding` or `observation` gets `blocker` only in a blocking category of the package whose failure scenario holds; `should-fix` when its failure scenario holds; `nice-to-have` for an improvement without a failure, which is every entry without a `Failure scenario:` paragraph; `not-a-problem` when the scenario does not hold, the entry is on the `not-a-fail` list, or it repeats another, whose id you name.
 
-Never change an entry's text, type or refs. You run no test, linter or build: the gate runner runs the checks once per round. You write no file: read code with the Read tool. Your verdicts are levels and reasons; what happens to the Change is decided by the person at the gate, never by you.
+Never change an entry's text, type or refs. You run no test, linter or build: the gate runner runs the checks once per round. You edit no project file: read code with the Read tool. Your verdicts are levels and reasons; what happens to the Change is decided by the person at the gate, never by you.
 
 ## Ledger
 
@@ -42,10 +42,9 @@ A `SendMessage` carries a ledger id and one sentence, never the content; write t
 
 ## Output
 
-Hand the full report to `bdk log ingest` on stdin from a quoted heredoc, never from a file, each list `[]` when empty:
+Write the full report with your file tool to the `draft` path your package names, with this envelope as its frontmatter, each list `[]` when empty:
 
-```sh
-bdk log ingest --ticket <ticket> <<'REPORT'
+```
 ---
 status: done | done-with-concerns | needs-context | blocked
 files: []
@@ -53,10 +52,8 @@ entries: [<ledger ids you wrote>]
 evidence: []
 # reason: blocked and needs-context only
 ---
-<the report>
-REPORT
 ```
 
-The report ends with a section `## Verdicts`: one line `- <id>: <level>: <reason>` per entry, in package order. The kernel stamps your ticket and role and stores the report at the package's `report` path. When `log ingest` exits non-zero, fix the field it names and call it again; never write the report file yourself.
+The report ends with a section `## Verdicts`: one line `- <id>: <level>: <reason>` per entry, in package order. Store it with `bdk log ingest --ticket <ticket> --file <draft>`, never through a pipe or a heredoc: the kernel stamps your ticket and role and stores it at the package's `report` path. When `log ingest` exits non-zero, fix the field it names and call it again.
 
 Then return only the envelope, at most 15 lines, and the report path as the package names it.

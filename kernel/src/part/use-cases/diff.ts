@@ -1,8 +1,14 @@
 // The diff check (`kernel-loops`, Diff check; T22 design D-9): the working
-// tree against `HEAD`, never the envelope's file list (P6). `attempt close`
+// tree against `HEAD`, and for a part ticket the part's commits since the
+// ticket opened (#166), never the envelope's file list (P6). `attempt close`
 // and `commit` run it through `part/index.ts`.
 import type { Git } from "../../shared/git/index.ts";
-import { differFrom, untrackedFiles, workTreePaths } from "../../shared/git/index.ts";
+import {
+  differFrom,
+  partCommitPaths,
+  untrackedFiles,
+  workTreePaths,
+} from "../../shared/git/index.ts";
 import { refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
@@ -26,7 +32,7 @@ import { startedParts } from "./parts.ts";
  */
 export type DiffTarget =
   | { readonly task: string }
-  | { readonly part: string; readonly merge?: MergeTarget }
+  | { readonly part: string; readonly base?: string; readonly merge?: MergeTarget }
   | { readonly change: true }
   | { readonly verifier: true };
 
@@ -54,6 +60,8 @@ export interface DiffFacts {
   /** Task ids with a trailer commit. */
   readonly committed: ReadonlySet<string>;
   readonly touched: readonly string[];
+  /** Path -> the newest commit of the part since the ticket's `base` that changed it. */
+  readonly commits?: ReadonlyMap<string, string>;
 }
 
 interface DiffDeps {
@@ -84,7 +92,15 @@ export async function diffCheck(
       ? changed.filter((path) => path !== ".gitignore")
       : changed;
   const merge = "part" in target ? target.merge : undefined;
-  const touched = merge === undefined ? kept : await notMergedIn(deps.git, root, merge.ref, kept);
+  const working = merge === undefined ? kept : await notMergedIn(deps.git, root, merge.ref, kept);
+  // What the part's agents committed under the ticket counts as its work too.
+  const committed =
+    "part" in target && target.base !== undefined
+      ? await partCommitPaths(deps.git, root, target.base, change.id, target.part)
+      : new Map<string, string>();
+  const touched = [...new Set([...working, ...committed.keys()])]
+    .filter((path) => !path.startsWith(".bdk/"))
+    .sort();
   const started = startedParts(listEntries(index, change.id, { type: "transition" }));
   return classifyDiff(target, {
     parts,
@@ -92,6 +108,7 @@ export async function diffCheck(
     started: root === change.projectRoot ? started : ownPart(parts, target),
     committed: new Set(progress.committed.keys()),
     touched,
+    commits: committed,
   });
 }
 
@@ -141,10 +158,13 @@ export function classifyDiff(target: DiffTarget, facts: DiffFacts): DiffCheck | 
         ? undefined
         : own.forbidden.find((rule) => matchesGlob(rule.glob, path));
     if (forbidding !== undefined) {
+      const commit = facts.commits?.get(path);
       return refuse(
         "policy/do-not-touch",
         `${path} matches do-not-touch ${forbidding.glob} of part ${forbidding.part}`,
-        [`git restore --staged --worktree -- ${path}`, `bdk part list`],
+        commit === undefined
+          ? [`git restore --staged --worktree -- ${path}`, `bdk part list`]
+          : [`git revert ${commit.slice(0, 7)}, which committed ${path}`, `bdk part list`],
       );
     }
     if (firstMatch(own.declared, path) !== undefined) declared.push(path);

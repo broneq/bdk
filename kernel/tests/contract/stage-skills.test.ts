@@ -195,16 +195,17 @@ describe("execute", () => {
     expect(meta["disallowed-tools"]).toBe("Edit Write NotebookEdit");
   });
 
-  it("loops on the kernel through every ready part in the mode the wave gives", () => {
+  it("loops on the kernel through every ready part, one ticket and two agents per part (#166)", () => {
     const { body } = readSkill("execute");
     for (const needle of [
       "bdk next --json",
       "`wave`",
       "bdk part start <part>",
-      "bdk attempt open part-lead <part>",
-      "bdk dispatch build <part> lead <ticket>",
-      "bdk:lead",
-      "bdk attempt open task-redispatch <task>",
+      "bdk attempt open part <part>",
+      "bdk dispatch build <part> implementer <ticket>",
+      "bdk dispatch build <part> conformer <ticket>",
+      "bdk:worker",
+      "policy/tasks-uncommitted",
       "bdk:swarm",
       "--escalate",
       "bdk part done <part>",
@@ -215,6 +216,7 @@ describe("execute", () => {
     ]) {
       expect(body, needle).toContain(needle);
     }
+    expect(body).not.toMatch(/part-lead|task-redispatch|bdk:lead|bdk commit|`tree`|`flat`|`mode`/);
   });
 });
 

@@ -26,8 +26,9 @@ export function showAttempt(
       ]);
     }
     const entries = listEntries(index, change.id).filter((entry) => entry.ticket === ticket);
-    const shown = item(record, entries);
-    if (record.loop === "verifier" || record.loop === "part-lead") return shown;
+    const { base } = record.file.data;
+    const shown = { ...item(record, entries), ...(base === undefined ? {} : { base }) };
+    if (record.loop === "verifier") return shown;
     const resolved = resolveOrRefuse(
       {
         store: deps.store,

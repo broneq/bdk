@@ -28,6 +28,7 @@ import { withChangeIndex } from "./deps.ts";
 import { verifierPolicy } from "./verifier.ts";
 
 const SUMMARY_MAX = 120;
+const PART_ID = /^\d{2}$/;
 
 /** The verdict node a merged review decides (`kernel-pipeline`, Artifact kinds). */
 const REVIEW_NODE = "review";
@@ -275,9 +276,16 @@ function defaultApplies(
   const target = readAttempts(deps.store, change.dir).find(
     (record) => record.data.ticket === input.ticket,
   )?.data.target;
-  if (target === undefined || !TASK_ID.test(target)) return undefined;
-  const files = targetFiles(readPlanParts(deps.store, change.dir), target);
-  return files === undefined || files.length === 0 ? undefined : files;
+  if (target === undefined || !PART_ID.test(target)) return undefined;
+  // A part agent's lesson is about the tasks it names, else about the whole part (#166).
+  const parts = readPlanParts(deps.store, change.dir);
+  const tasks = input.refs.filter((ref) => TASK_ID.test(ref) && ref.startsWith(`${target}-`));
+  const files = [
+    ...new Set(
+      (tasks.length === 0 ? [target] : tasks).flatMap((one) => targetFiles(parts, one) ?? []),
+    ),
+  ];
+  return files.length === 0 ? undefined : files;
 }
 
 /** Why `value` cannot be superseded, or undefined when it names an existing entry. */

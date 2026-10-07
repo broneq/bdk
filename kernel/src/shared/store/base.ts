@@ -2,13 +2,15 @@
 // plan; `kernel-cli/evidence`, bdk evidence coverage): committed state both
 // commands read without a slice import (`kernel-architecture`, Dependency
 // matrix).
-import { join, relative, sep } from "node:path";
+import { basename, join, relative, sep } from "node:path";
 
 import {
   addingCommit,
   headCommit,
+  isAncestor,
   parentCommit,
   trackedAddedLines,
+  trailerCommits,
   untrackedFiles,
 } from "../git/index.ts";
 import type { Git } from "../git/index.ts";
@@ -20,8 +22,10 @@ export const EMPTY_TREE = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
 
 /**
  * The `base` a review Change stamps in its `change.md`; else the parent of the
- * first commit that added `change.md`, `HEAD` while it is not committed, and
- * the empty tree when that commit is the root or the repository has none.
+ * Change's first commit: the one that added `change.md` or the first carrying
+ * its `BDK-Change` trailer, whichever comes first, since a part agent commits
+ * its tasks without the Change directory (#166). `HEAD` while neither exists,
+ * and the empty tree when that commit is the root or the repository has none.
  */
 export async function changeBase(
   store: Store,
@@ -34,8 +38,15 @@ export async function changeBase(
   if (typeof stamped === "string") return stamped;
   const path = relative(projectRoot, join(changeDir, "change.md")).split(sep).join("/");
   const added = await addingCommit(git, projectRoot, path);
-  if (added === undefined) return (await headCommit(git, projectRoot)) ?? EMPTY_TREE;
-  return (await parentCommit(git, projectRoot, added)) ?? EMPTY_TREE;
+  const trailered = (await trailerCommits(git, projectRoot, basename(changeDir))).at(-1)?.commit;
+  const first =
+    added === undefined || trailered === undefined
+      ? (added ?? trailered)
+      : (await isAncestor(git, projectRoot, trailered, added))
+        ? trailered
+        : added;
+  if (first === undefined) return (await headCommit(git, projectRoot)) ?? EMPTY_TREE;
+  return (await parentCommit(git, projectRoot, first)) ?? EMPTY_TREE;
 }
 
 /**

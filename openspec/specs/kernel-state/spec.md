@@ -191,7 +191,7 @@ Types and their own fields:
 
 #### Scenario: ladder question parks
 
-- **WHEN** `attempt close` ends the ladder of `task-redispatch 02-3`
+- **WHEN** `attempt close` ends the ladder of `part 02`
 - **THEN** the written `question` carries `park: true`, `source: kernel` and `options`, and it validates
 
 #### Scenario: routed is no longer a status
@@ -234,29 +234,30 @@ The kernel SHALL compute fingerprints, never accept them as input, with one norm
 
 An attempt record SHALL be one file per ticket, created by `attempt open`, stamped with `package` by every `dispatch build` without `--group` and with `rules-read` by the first `rules show --ticket` call under the implementer package, and completed by `attempt close`, with these fields.
 
-| Field           | Type                                                                   | Req. | Stamped | Meaning                                                                                                                                                                     |
-| --------------- | ---------------------------------------------------------------------- | ---- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `schema`        | integer                                                                | yes  | kernel  |                                                                                                                                                                             |
-| `ticket`        | `A-` id                                                                | yes  | kernel  |                                                                                                                                                                             |
-| `loop`          | `task-redispatch \| verify-fix \| review-fix \| verifier \| part-lead` | yes  |         | The loop the ticket counts against (`kernel-loops`, Loops, targets and rounds).                                                                                             |
-| `target`        | string                                                                 | yes  |         | Task, part, artifact or Change id.                                                                                                                                          |
-| `attempt`       | integer >= 1                                                           | yes  | kernel  | Derived from the records of the same loop, target and round (`kernel-loops`).                                                                                               |
-| `of`            | integer >= 1                                                           | yes  | kernel  | Budget from policy.                                                                                                                                                         |
-| `scope`         | `full \| high+ \| blockers`                                            | yes  |         |                                                                                                                                                                             |
-| `narrowed-from` | `full \| high+ \| blockers`                                            | no   |         |                                                                                                                                                                             |
-| `after`         | `A-` id                                                                | no   | kernel  | The `ok` record whose close ended the previous round of the same loop and target; every record of a round carries the same value, none in the first round (`kernel-loops`). |
-| `escalation`    | boolean                                                                | no   |         | The round's one-shot escalation ticket (`attempt open --escalate`); not counted against `of`.                                                                               |
-| `model`         | string                                                                 | no   | kernel  | On the escalation ticket: `policy.escalation.model` when it opened. `dispatch build` copies it into the ticket's packages (T41-D14).                                        |
-| `opened-at`     | timestamp                                                              | yes  | kernel  |                                                                                                                                                                             |
-| `author`        | string                                                                 | yes  | kernel  |                                                                                                                                                                             |
-| `closed-at`     | timestamp                                                              | no   | kernel  | Present exactly when `outcome` is.                                                                                                                                          |
-| `outcome`       | `ok \| fail \| not-run`                                                | no   |         |                                                                                                                                                                             |
-| `findings`      | array of `{fingerprint, type, file, symbol?}`                          | no   | kernel  | Fingerprints of the `finding` and `blocker` entries of a `fail` (oscillation check).                                                                                        |
-| `dropped`       | array of `L-` ids                                                      | no   |         | Findings that fell out of scope N+1.                                                                                                                                        |
-| `rules-read`    | timestamp                                                              | no   | kernel  | First `rules show --ticket` call under the ticket's implementer package (risk R2); read by `attempt close`.                                                                 |
-| `package`       | relative path                                                          | no   | kernel  | The ticket's active package: the latest `dispatch build` (T23-D42); a working agent's package wins (`kernel-cli`, Ticket references).                                       |
-| `merge`         | boolean                                                                | no   | kernel  | A `verify-fix` merge ticket of a worktree part (T45; `kernel-cli/attempt`, bdk attempt open).                                                                               |
-| `conflicts`     | array of paths                                                         | no   | kernel  | The unmerged paths when the merge ticket opened; present exactly when `merge` is.                                                                                           |
+| Field           | Type                                           | Req. | Stamped | Meaning                                                                                                                                                                                                                           |
+| --------------- | ---------------------------------------------- | ---- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `schema`        | integer                                        | yes  | kernel  |                                                                                                                                                                                                                                   |
+| `ticket`        | `A-` id                                        | yes  | kernel  |                                                                                                                                                                                                                                   |
+| `loop`          | `part \| verify-fix \| review-fix \| verifier` | yes  |         | The loop the ticket counts against (`kernel-loops`, Loops, targets and rounds).                                                                                                                                                   |
+| `target`        | string                                         | yes  |         | Part, artifact or Change id; never a task id (#166).                                                                                                                                                                              |
+| `attempt`       | integer >= 1                                   | yes  | kernel  | Derived from the records of the same loop, target and round (`kernel-loops`).                                                                                                                                                     |
+| `of`            | integer >= 1                                   | yes  | kernel  | Budget from policy.                                                                                                                                                                                                               |
+| `scope`         | `full \| high+ \| blockers`                    | yes  |         |                                                                                                                                                                                                                                   |
+| `narrowed-from` | `full \| high+ \| blockers`                    | no   |         |                                                                                                                                                                                                                                   |
+| `after`         | `A-` id                                        | no   | kernel  | The `ok` record whose close ended the previous round of the same loop and target; every record of a round carries the same value, none in the first round (`kernel-loops`).                                                       |
+| `escalation`    | boolean                                        | no   |         | The round's one-shot escalation ticket (`attempt open --escalate`); not counted against `of`.                                                                                                                                     |
+| `model`         | string                                         | no   | kernel  | On the escalation ticket: `policy.escalation.model` when it opened. `dispatch build` copies it into the ticket's packages (T41-D14).                                                                                              |
+| `opened-at`     | timestamp                                      | yes  | kernel  |                                                                                                                                                                                                                                   |
+| `author`        | string                                         | yes  | kernel  |                                                                                                                                                                                                                                   |
+| `closed-at`     | timestamp                                      | no   | kernel  | Present exactly when `outcome` is.                                                                                                                                                                                                |
+| `outcome`       | `ok \| fail \| not-run`                        | no   |         |                                                                                                                                                                                                                                   |
+| `findings`      | array of `{fingerprint, type, file, symbol?}`  | no   | kernel  | Fingerprints of the `finding` and `blocker` entries of a `fail` (oscillation check).                                                                                                                                              |
+| `dropped`       | array of `L-` ids                              | no   |         | Findings that fell out of scope N+1.                                                                                                                                                                                              |
+| `rules-read`    | timestamp                                      | no   | kernel  | First `rules show --ticket` call under the ticket's implementer package (risk R2); read by `attempt close`.                                                                                                                       |
+| `package`       | relative path                                  | no   | kernel  | The ticket's active package: the latest `dispatch build` (T23-D42); a working agent's package wins (`kernel-cli`, Ticket references).                                                                                             |
+| `merge`         | boolean                                        | no   | kernel  | A `verify-fix` merge ticket of a worktree part (T45; `kernel-cli/attempt`, bdk attempt open).                                                                                                                                     |
+| `conflicts`     | array of paths                                 | no   | kernel  | The unmerged paths when the merge ticket opened; present exactly when `merge` is.                                                                                                                                                 |
+| `base`          | commit id                                      | no   | kernel  | On a `part` or `verify-fix` record: the full id of the commit `HEAD` of the part's work root pointed at when the ticket opened; the diff check of its close reads the part's commits after it (`kernel-loops`, Diff check; #166). |
 
 The body is the close reason (`--reason` of `attempt close`, `taken over` from `change takeover`). `not-run` counters and budgets are derived from the records of a loop, target and round (`kernel-loops`, Loops, targets and rounds), never stored.
 
@@ -277,13 +278,18 @@ The body is the close reason (`--reason` of `attempt close`, `taken over` from `
 
 #### Scenario: active package follows the last build
 
-- **WHEN** `dispatch build 02-3 implementer A-7f3k9m2q` and then `dispatch build 02-3 runner A-7f3k9m2q` run
-- **THEN** the record's `package` is `dispatch/02-3-runner-A-7f3k9m2q.md`
+- **WHEN** `dispatch build 02 implementer A-7f3k9m2q` and then `dispatch build 02 conformer A-7f3k9m2q` run
+- **THEN** the record's `package` is `dispatch/02-conformer-A-7f3k9m2q.md`
 
-#### Scenario: part-lead ticket
+#### Scenario: part ticket
 
-- **WHEN** an attempt record carries `loop: part-lead` and `target: 02`
+- **WHEN** an attempt record carries `loop: part`, `target: 02` and `base`
 - **THEN** it validates, and `bdk attempt list --for 02 --json` lists it
+
+#### Scenario: removed loop names
+
+- **WHEN** an attempt record carries `loop: task-redispatch` or `loop: part-lead`
+- **THEN** reading the Change reports `state/ledger-invalid` naming `loop`
 
 #### Scenario: group builds leave the active package
 
@@ -295,29 +301,34 @@ The body is the close reason (`--reason` of `attempt close`, `taken over` from `
 - **WHEN** a `review-fix` ticket closed `ok` and `bdk attempt open review-fix <change-id>` runs twice, the first new ticket closing `fail`
 - **THEN** both new records carry `after` naming the `ok` ticket
 
+#### Scenario: part-lead ticket
+
+- **WHEN** an attempt record carries `loop: part-lead` and `target: 02`
+- **THEN** reading the Change reports `state/ledger-invalid` naming `loop`
+
 ### Requirement: Evidence manifest
 
 An evidence manifest SHALL record one verification artifact with the working-tree hash of its target at capture (T4, P5), and a manifest SHALL be fresh exactly when that hash equals the current tree hash of its target.
 
-| Field       | Type                                                        | Req. | Stamped | Meaning                                                                                                                 |
-| ----------- | ----------------------------------------------------------- | ---- | ------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `schema`    | integer                                                     | yes  | kernel  |                                                                                                                         |
-| `id`        | `E-` id                                                     | yes  | kernel  |                                                                                                                         |
-| `kind`      | string                                                      | yes  |         | `tests-scoped`, `lint`, `tests-full`, `lint-full`, `coverage`, `typecheck`, `ui-capture` or a project kind.             |
-| `ticket`    | `A-` id                                                     | yes  |         |                                                                                                                         |
-| `group`     | kebab-case string                                           | no   | kernel  | The review group of a `<ticket>@<group>` record.                                                                        |
-| `tool`      | string                                                      | no   | kernel  | Only on `coverage`: the `tools.test` id measured.                                                                       |
-| `target`    | string                                                      | yes  | kernel  | From the ticket.                                                                                                        |
-| `at`        | timestamp                                                   | yes  | kernel  |                                                                                                                         |
-| `author`    | string                                                      | yes  | kernel  |                                                                                                                         |
-| `source`    | `agent:<role> \| kernel`                                    | yes  | kernel  | The role of the ticket's active package; `kernel` without one, and for the `simplify` manifest `attempt close` records. |
-| `tree-hash` | hash                                                        | yes  | kernel  |                                                                                                                         |
-| `tree`      | array of `{path, hash}`                                     | yes  | kernel  | The files the tree hash covers, each with its `sha256:` hash or `absent`; `evidence check` names the paths that differ. |
-| `files`     | array of `{path, hash, stored: committed \| machine}`, >= 1 | yes  | kernel  |                                                                                                                         |
-| `verdict`   | `pass \| fail \| not-run`                                   | no   |         |                                                                                                                         |
-| `citations` | array of strings                                            | no   |         | JSON pointers or snapshot lines (citation validator).                                                                   |
+| Field       | Type                                                        | Req. | Stamped | Meaning                                                                                                                                                                                        |
+| ----------- | ----------------------------------------------------------- | ---- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `schema`    | integer                                                     | yes  | kernel  |                                                                                                                                                                                                |
+| `id`        | `E-` id                                                     | yes  | kernel  |                                                                                                                                                                                                |
+| `kind`      | string                                                      | yes  |         | `conform`, `tests-scoped`, `lint`, `tests-full`, `lint-full`, `coverage`, `typecheck`, `ui-capture` or a project kind.                                                                         |
+| `ticket`    | `A-` id                                                     | yes  |         |                                                                                                                                                                                                |
+| `group`     | kebab-case string                                           | no   | kernel  | The review group of a `<ticket>@<group>` record.                                                                                                                                               |
+| `tool`      | string                                                      | no   | kernel  | Only on `coverage`: the `tools.test` id measured.                                                                                                                                              |
+| `target`    | string                                                      | yes  | kernel  | From the ticket.                                                                                                                                                                               |
+| `at`        | timestamp                                                   | yes  | kernel  |                                                                                                                                                                                                |
+| `author`    | string                                                      | yes  | kernel  |                                                                                                                                                                                                |
+| `source`    | `agent:<role> \| kernel`                                    | yes  | kernel  | The role of the ticket's active package; `kernel` without one, for the `conform` manifest `attempt close` records, and for the `tests-scoped` and `lint` manifests `check run` records (#166). |
+| `tree-hash` | hash                                                        | yes  | kernel  |                                                                                                                                                                                                |
+| `tree`      | array of `{path, hash}`                                     | yes  | kernel  | The files the tree hash covers, each with its `sha256:` hash or `absent`; `evidence check` names the paths that differ.                                                                        |
+| `files`     | array of `{path, hash, stored: committed \| machine}`, >= 1 | yes  | kernel  |                                                                                                                                                                                                |
+| `verdict`   | `pass \| fail \| not-run`                                   | no   |         |                                                                                                                                                                                                |
+| `citations` | array of strings                                            | no   |         | JSON pointers or snapshot lines (citation validator).                                                                                                                                          |
 
-Tree hash (T23-D7, D16, D45): the scope of a target is its part for a task, the part itself, and every part for the Change. The covered files are the `Files:` paths of every task in the scope that do not match `policy.evidence.non-executable`, plus every file of the working tree (tracked or untracked and not ignored) matching `policy.evidence.build-config`; a path matching `build-config` is always covered. The tree hash is `sha256:` over the covered paths in byte order, each contributing its path, a NUL byte, its file hash (`sha256:` of its bytes) or the marker `absent` when the file does not exist, and a NUL byte, so a rename, a deletion and a new build-config file change it. `tree` lists the same paths with each file's hash. The same function serves `evidence record`, `evidence check`, `attempt close` and the post-task step nodes (`kernel-pipeline`, Artifact kinds).
+Tree hash (T23-D7, D16, D45): the scope of a target is its part for a task, the part itself, and every part for the Change. The covered files are the `Files:` paths of every task in the scope that do not match `policy.evidence.non-executable`, plus every file of the working tree (tracked or untracked and not ignored) matching `policy.evidence.build-config`; a path matching `build-config` is always covered. The tree hash is `sha256:` over the covered paths in byte order, each contributing its path, a NUL byte, its file hash (`sha256:` of its bytes) or the marker `absent` when the file does not exist, and a NUL byte, so a rename, a deletion and a new build-config file change it. `tree` lists the same paths with each file's hash. The same function serves `evidence record`, `evidence check`, `attempt close` and the post-task step nodes (`kernel-pipeline`, Artifact kinds), and `check run`, which hashes the scope of its own target, a task or a part.
 
 #### Scenario: manifest without files
 
@@ -346,7 +357,7 @@ Tree hash (T23-D7, D16, D45): the scope of a target is its part for a task, the 
 
 ### Requirement: Dispatch package
 
-A dispatch package SHALL be written only by `dispatch build`, with the frontmatter fields below (K3, K4, P10) and the body sections that `kernel-cli/dispatch`, `bdk dispatch build`, lists in order; the whole file is at most 163 840 bytes (`kernel-cli/dispatch`, bdk dispatch build).
+A dispatch package SHALL be written only by `dispatch build`, with the frontmatter fields below (K3, K4, P10) and the body sections that `kernel-cli/dispatch`, `bdk dispatch build`, lists in order; the whole file is at most 163 840 bytes (`policy/package-too-large`).
 
 | Field            | Type                        | Req. | Stamped | Meaning                                                                                                                                                      |
 | ---------------- | --------------------------- | ---- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -363,6 +374,7 @@ A dispatch package SHALL be written only by `dispatch build`, with the frontmatt
 | `kernel-version` | string                      | yes  | kernel  | P10.                                                                                                                                                         |
 | `template-hash`  | hash                        | yes  | kernel  | P10.                                                                                                                                                         |
 | `report`         | path                        | yes  | kernel  | Where the role's report is written (`reports/...`).                                                                                                          |
+| `draft`          | path                        | yes  | kernel  | Where the agent writes its report before `log ingest --file`: `.bdk/.machine/drafts/<package file name>` (#166).                                             |
 | `rules`          | array of rule ids           | yes  | kernel  | The rules selected for the ticket, in order (T31); may be empty.                                                                                             |
 | `group`          | kebab-case string           | no   | kernel  | Review group of a `dispatch build --group` package (T42-A1).                                                                                                 |
 | `files`          | array of paths              | no   | kernel  | The group's file set; present exactly when `group` is.                                                                                                       |
@@ -381,12 +393,12 @@ A dispatch package SHALL be written only by `dispatch build`, with the frontmatt
 
 #### Scenario: escalation package names its model
 
-- **WHEN** `dispatch build` builds the `implementer` and the `runner` package of an escalation ticket opened with `policy.escalation.model: opus`
-- **THEN** the implementer package holds `model: opus` and the runner package holds no `model`
+- **WHEN** `dispatch build` builds the `implementer` and the `conformer` package of an escalation ticket of `part 02` opened with `policy.escalation.model: opus`
+- **THEN** both packages hold `model: opus`
 
 #### Scenario: package records its rules
 
-- **WHEN** a package is built for a `runner` ticket
+- **WHEN** a gate `runner` package is built for a review round
 - **THEN** its frontmatter holds `rules: []`, and a package without `rules` fails validation naming `rules`
 
 #### Scenario: group without files
@@ -403,6 +415,11 @@ A dispatch package SHALL be written only by `dispatch build`, with the frontmatt
 
 - **WHEN** `dispatch build <change> judge A-r1v2w3x4 --group judge --range H0..H1` lists `L-a1` and `L-c3` in its `Review` section
 - **THEN** its frontmatter holds `entries: [L-a1, L-c3]`, and a package of any other role holds no `entries`
+
+#### Scenario: package names its draft
+
+- **WHEN** `dispatch build 02 implementer A-7f3k9m2q` runs
+- **THEN** the frontmatter holds `draft: .bdk/.machine/drafts/02-implementer-A-7f3k9m2q.md`, and a package without `draft` fails validation naming `draft`
 
 ### Requirement: Report envelope
 
@@ -635,9 +652,9 @@ Files:
 | `plan/index.md`                   | `done`, `part split`, `rebuild`, `change takeover`                                                                                                                                                        | kernel                  |
 | `spec-delta/`                     | `design` and `plan` skills                                                                                                                                                                                | host file tools         |
 | `attempts/`                       | `attempt open`, `attempt close`, `change takeover`; `rules show --ticket` (the `rules-read` stamp); `dispatch build` (the `package` stamp)                                                                | kernel                  |
-| `evidence/`                       | `evidence record`, `evidence coverage`; `attempt close` (the `simplify` manifest)                                                                                                                         | kernel                  |
+| `evidence/`                       | `evidence record`, `evidence coverage`, `check run` (the `tests-scoped` and `lint` manifests); `attempt close` (the `conform` manifest)                                                                   | kernel                  |
 | `dispatch/`                       | `dispatch build`                                                                                                                                                                                          | kernel                  |
-| `reports/`                        | `log ingest` (the report of every role, on stdin, at the active or group package's `report` path, and the merged review of the `merge` group)                                                             | kernel                  |
+| `reports/`                        | `log ingest` (the report of every role, read from `--file`, at the active or group package's `report` path, and the merged review of the `merge` group)                                                   | kernel                  |
 | any file (migration)              | `rebuild`, `change takeover`                                                                                                                                                                              | kernel                  |
 | the Change directory (archive)    | `change close`, which writes `dispatch/pruned.md` and `reports/pruned.md` through the prune function unless `archive.keep-evidence`, then moves the directory to `.bdk/changes/archive/<changeId>/` (T30) | kernel                  |
 | `.bdk/specs/<capability>/spec.md` | `spec merge`, `change close` (through the merge); never a host file tool (V1-7; T24 guards it)                                                                                                            | kernel                  |
@@ -999,6 +1016,15 @@ State, derived at every read with `last` = the later of the heartbeat time and `
 
 - **WHEN** a session starts and the registry holds a `running` row of another session whose heartbeat is an hour old, and a row of another session whose heartbeat is ten seconds old
 - **THEN** the first is `ended` with `ended-by: stale` and the second keeps its state
+
+### Requirement: Review round marker
+
+The kernel SHALL keep `.bdk/.machine/review-round` in the home checkout, never committed, while a `review-fix` ticket of the active Change is open (#166): `bdk attempt open review-fix` writes it holding the ticket id, and `bdk attempt close` of a `review-fix` ticket removes it, whatever the outcome. It only tells the `PreToolUse` prefilter to start the kernel for a main-thread file edit (`kernel-cli/hooks`, Guard hooks file and prefilter); the guard decides from the attempt records, so a marker left behind by a ticket another command closed costs a kernel start and never a deny.
+
+#### Scenario: marker follows the round
+
+- **WHEN** `bdk attempt open review-fix <change>` returns ticket `A-0review1`, and later `bdk attempt close A-0review1 not-run --reason "x"` runs
+- **THEN** `.bdk/.machine/review-round` holds `A-0review1` between the two commands, is gone after the close, and `git status --porcelain` never lists it
 
 ### Requirement: Run marker
 

@@ -69,9 +69,9 @@ export async function started(body01 = tasks("01", 2)): Promise<Harness> {
   return h;
 }
 
-/** Opens a `task-redispatch` ticket of `task`; answers the ticket. */
-export async function ticketOf(h: Harness, task = "01-1"): Promise<string> {
-  const opened = await h.step(["attempt", "open", "task-redispatch", task, "--json"]);
+/** Opens a `part` ticket of `part`; answers the ticket. */
+export async function ticketOf(h: Harness, part = "01"): Promise<string> {
+  const opened = await h.step(["attempt", "open", "part", part, "--json"]);
   expect(opened.code, opened.stdout).toBe(0);
   return (opened.json as { ticket: string }).ticket;
 }
@@ -89,7 +89,7 @@ export function refusal(result: RunResult) {
 }
 
 /** A dispatch package of `role` for `ticket`, stamped on its attempt record as `dispatch build` does. */
-export function withPackage(h: Harness, ticket: string, role: string, target = "01-1"): void {
+export function withPackage(h: Harness, ticket: string, role: string, target = "01"): void {
   const path = `${REL}/dispatch/${target}-${role}-${ticket}.md`;
   writeDocument(h.store, `${ROOT}/${path}`, {
     data: {
@@ -105,6 +105,7 @@ export function withPackage(h: Harness, ticket: string, role: string, target = "
       "kernel-version": "3.0.0-dev",
       "template-hash": `sha256:${"a".repeat(64)}`,
       report: `${REL}/reports/${target}-${role}-${ticket}.md`,
+      draft: `.bdk/.machine/drafts/${target}-${role}-${ticket}.md`,
       rules: [],
     },
     body: "",

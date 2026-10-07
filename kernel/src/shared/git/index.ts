@@ -9,6 +9,7 @@ import { dirname, join, resolve } from "node:path";
 import { KernelRefusal, refuse } from "../refusal/index.ts";
 import type { Refusal } from "../refusal/index.ts";
 
+export * from "./run.ts";
 export * from "./worktree.ts";
 
 export interface GitResult {
@@ -354,6 +355,16 @@ export async function resolveCommit(
   return result.code === 0 && /^[0-9a-f]{40}$/.test(sha) ? sha : undefined;
 }
 
+/** Whether `ancestor` is `commit` or reachable from it (`git merge-base --is-ancestor`). */
+export async function isAncestor(
+  git: Git,
+  workTree: string,
+  ancestor: string,
+  commit: string,
+): Promise<boolean> {
+  return (await git.run(["merge-base", "--is-ancestor", ancestor, commit], workTree)).code === 0;
+}
+
 /** `git merge-base HEAD <commit>`; undefined when the histories share no commit. */
 export async function mergeBase(
   git: Git,
@@ -423,6 +434,50 @@ export async function rangeCommits(
         files: paths.map((path) => path.replace(/^\n/, "")).filter((path) => path !== ""),
       };
     });
+}
+
+/**
+ * The paths the non-merge commits of `<base>..HEAD` changed that carry
+ * `BDK-Change: <change>` and `BDK-Part: <part>`, each with the newest such
+ * commit (`kernel-loops`, Diff check; #166). Empty when `base` is unknown.
+ */
+export async function partCommitPaths(
+  git: Git,
+  workTree: string,
+  base: string,
+  change: string,
+  part: string,
+): Promise<Map<string, string>> {
+  const result = await git.run(
+    [
+      "log",
+      "--no-merges",
+      "--find-renames",
+      "--name-only",
+      "-z",
+      `--format=%x1e%H%x1f${TRAILER_FORMAT}`,
+      `${base}..HEAD`,
+      "--",
+    ],
+    workTree,
+  );
+  const paths = new Map<string, string>();
+  if (result.code !== 0) return paths;
+  for (const record of result.stdout.split("\x1e")) {
+    const [header = "", ...files] = record.split("\0");
+    const fields = header.split("\x1f");
+    const commit = fields[0] ?? "";
+    const changes = fields[4] ?? "";
+    const parts = fields[5] ?? "";
+    if (commit === "") continue;
+    if (!changes.split(",").some((value) => value.trim() === change)) continue;
+    if (!parts.split(",").some((value) => value.trim() === part)) continue;
+    for (const file of files) {
+      const path = file.replace(/^\n/, "");
+      if (path !== "" && !paths.has(path)) paths.set(path, commit);
+    }
+  }
+  return paths;
 }
 
 /** A commit reachable from `HEAD` or a live part branch that carries `BDK-Change` of one Change. */

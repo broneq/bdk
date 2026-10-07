@@ -6,7 +6,16 @@ import { existsSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSyn
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { answered, bdk, git, read, refused, repository } from "../../../tests/support/repo.ts";
+import {
+  answered,
+  bdk,
+  git,
+  read,
+  refused,
+  repository,
+  shell,
+} from "../../../tests/support/repo.ts";
+import { checkedIn, conformed } from "../../attempt/tests/e2e-support.ts";
 import { fileStore } from "../../shared/store/index.ts";
 
 export interface Opened {
@@ -229,7 +238,7 @@ describe("bdk part start of a worktree part", () => {
   });
 });
 
-/** A commit in `cwd` with the three trailers, the way `bdk commit` writes it. */
+/** A commit in `cwd` with the three trailers, the way the command `bdk check run` prints writes it. */
 function commitTask(
   cwd: string,
   change: Opened,
@@ -395,6 +404,12 @@ function openMerge(change: Opened): Record<string, unknown> {
   );
 }
 
+/** The conform and the part checks of a merge ticket, on the resolved state. */
+function resolved(change: Opened, ticket: string): void {
+  conformed(change, ticket);
+  checkedIn(change, ticket, "01");
+}
+
 function close(change: Opened, ticket: string, outcome: string) {
   return bdk(["attempt", "close", ticket, outcome, "--json"], change.root);
 }
@@ -413,6 +428,7 @@ describe("bdk attempt open and close of a merge ticket", () => {
 
     refused(close(change, opened.ticket as string, "ok"), 2, "policy/merge-unresolved");
     write(workdir, "lock.txt", "merged\n");
+    resolved(change, opened.ticket as string);
     const homeHead = git(change.root, "rev-parse", "HEAD").trim();
     const report = answered(
       close(change, opened.ticket as string, "ok"),
@@ -461,8 +477,8 @@ describe("bdk attempt open and close of a merge ticket", () => {
     expect(text).toContain("Regenerate `lock.txt` with `make lock`.");
     expect(text.indexOf("## Work root")).toBeLessThan(text.indexOf("## Ledger entries"));
 
-    // The steps of the ticket run on the merged state; only the implementer resolves.
-    for (const role of ["simplifier", "runner"]) {
+    // The conform of the ticket runs on the merged state; only the implementer resolves.
+    for (const role of ["conformer"]) {
       const step = answered(
         bdk(["dispatch", "build", "01", role, opened.ticket as string, "--json"], change.root),
         "output/dispatch-build.json",
@@ -481,12 +497,12 @@ describe("bdk attempt open and close of a merge ticket", () => {
     const change = planned({ tasks: 1 });
     answered(bdk(["part", "start", "01", "--json"], change.root), "output/part-start.json");
     const opened = answered(
-      bdk(["attempt", "open", "task-redispatch", "01-1", "--json"], change.root),
+      bdk(["attempt", "open", "part", "01", "--json"], change.root),
       "output/attempt-open.json",
     );
     const built = answered(
       bdk(
-        ["dispatch", "build", "01-1", "implementer", opened.ticket as string, "--json"],
+        ["dispatch", "build", "01", "implementer", opened.ticket as string, "--json"],
         change.root,
       ),
       "output/dispatch-build.json",
@@ -513,6 +529,7 @@ describe("bdk attempt open and close of a merge ticket", () => {
     );
     const opened = openMerge(change);
     write(workdir, "lock.txt", "merged\n");
+    resolved(change, opened.ticket as string);
     const report = answered(
       close(change, opened.ticket as string, "ok"),
       "output/attempt-close.json",
@@ -559,32 +576,37 @@ describe("bdk attempt open and close of a merge ticket", () => {
 });
 
 describe("the work root of a worktree part's tasks", () => {
-  it("exit 0: bdk commit commits on the part branch, no .bdk/ path, home unchanged", () => {
+  it("exit 0: the printed commit commits on the part branch, no .bdk/ path, home unchanged", () => {
     const change = planned({ isolation: "worktree" });
     answered(bdk(["part", "start", "01", "--json"], change.root), "output/part-start.json");
+    const ticket = answered(
+      bdk(["attempt", "open", "part", "01", "--json"], change.root),
+      "output/attempt-open.json",
+    ).ticket as string;
     const workdir = workdirOf(change);
     write(workdir, "src/01-1.ts", "one\n");
     write(workdir, "pnpm-lock.yaml", "lock\n");
     write(change.root, "src/keep.ts", "home edit in flight\n");
     const head = git(change.root, "rev-parse", "HEAD");
-    const report = answered(bdk(["commit", "01-1", "--json"], change.root), "output/commit.json");
-    expect(report).toMatchObject({ task: "01-1", undeclared: ["pnpm-lock.yaml"] });
-    expect(report.files).toStrictEqual(["src/01-1.ts", "pnpm-lock.yaml"]);
-    expect(
-      git(workdir, "show", "--name-only", "--format=", "HEAD").trim().split("\n"),
-    ).toStrictEqual(["pnpm-lock.yaml", "src/01-1.ts"]);
+    const run = () =>
+      answered(
+        bdk(["check", "run", "01-1", "--ticket", ticket, "--json"], change.root),
+        "output/check-run.json",
+      ) as { diff: { undeclared: string[] }; commit?: { paths: string[]; command: string } };
+    const report = run();
+    expect(report.diff.undeclared).toStrictEqual(["pnpm-lock.yaml"]);
+    expect(report.commit?.paths).toStrictEqual(["src/01-1.ts"]);
+    expect(report.commit?.command.startsWith(`cd ${workdir} && `)).toBe(true);
+    shell(change.root, report.commit?.command ?? "");
+    expect(git(workdir, "show", "--name-only", "--format=", "HEAD").trim()).toBe("src/01-1.ts");
     expect(git(workdir, "log", "-1", "--format=%(trailers:key=BDK-Task,valueonly)").trim()).toBe(
       "01-1",
     );
     expect(git(change.root, "rev-parse", "HEAD")).toBe(head);
     expect(readFileSync(join(change.root, "src/keep.ts"), "utf8")).toBe("home edit in flight\n");
-    const finding = readdirNames(join(change.dir, "log"))
-      .map((name) => readFileSync(join(change.dir, "log", name), "utf8"))
-      .filter((text) => text.includes("type: finding") && text.includes("pnpm-lock.yaml"));
-    expect(finding).toHaveLength(1);
     const list = answered(bdk(["part", "list", "--json"], change.root), "output/part-list.json");
     expect(list.items).toMatchObject([{ part: "01", done: 1 }]);
-    refused(bdk(["commit", "01-1", "--json"], change.root), 2, "policy/nothing-to-commit");
+    expect(run().commit).toBeUndefined();
   });
 
   it("exit 0: evidence hashes the worktree, stays fresh across the merge, goes stale on build config", () => {
@@ -594,23 +616,24 @@ describe("the work root of a worktree part's tasks", () => {
     write(workdir, "src/01-1.ts", "one\n");
     write(workdir, "src/01-2.ts", "two\n");
     const ticket = answered(
-      bdk(["attempt", "open", "task-redispatch", "01-1", "--json"], change.root),
+      bdk(["attempt", "open", "part", "01", "--json"], change.root),
       "output/attempt-open.json",
     ).ticket as string;
-    write(change.root, ".bdk/.machine/lint.txt", "clean\n");
+    const lint = `.bdk/.machine/checks/${ticket}/lint.txt`;
+    write(change.root, lint, "clean\n");
     answered(
       bdk(
         [
           "evidence",
           "record",
           "lint",
-          ".bdk/.machine/lint.txt",
+          lint,
           "--ticket",
           ticket,
           "--verdict",
           "pass",
           "--cite",
-          ".bdk/.machine/lint.txt:1",
+          `${lint}:1`,
           "--json",
         ],
         change.root,
@@ -619,7 +642,7 @@ describe("the work root of a worktree part's tasks", () => {
     );
     const check = () =>
       answered(
-        bdk(["evidence", "check", "01-1", "--json"], change.root),
+        bdk(["evidence", "check", "01", "--json"], change.root),
         "output/evidence-check.json",
       );
     expect(check().fresh).toBe(true);
@@ -627,16 +650,20 @@ describe("the work root of a worktree part's tasks", () => {
     expect(check().fresh).toBe(true);
     fileStore().remove(join(change.root, "src/01-2.ts"));
 
+    commitTask(workdir, change, "01-1", { "src/01-1.ts": "one\n" });
+    commitTask(workdir, change, "01-2", { "src/01-2.ts": "two\n" });
+    conformed(change, ticket);
     answered(
       bdk(["attempt", "close", ticket, "ok", "--json"], change.root),
       "output/attempt-close.json",
     );
-    answered(bdk(["commit", "01-1", "--json"], change.root), "output/commit.json");
-    answered(bdk(["commit", "01-2", "--json"], change.root), "output/commit.json");
     answered(bdk(["part", "done", "01", "--json"], change.root), "output/part-done.json");
     expect(check().fresh).toBe(true);
     write(change.root, "package.json", "{}\n");
-    expect(check()).toMatchObject({ fresh: false, evidence: [{ changedSince: ["package.json"] }] });
+    expect(check().fresh).toBe(false);
+    expect(check().evidence).toContainEqual(
+      expect.objectContaining({ kind: "lint", changedSince: ["package.json"] }),
+    );
   });
 });
 
@@ -665,15 +692,13 @@ describe("bdk rebuild settles the kernel worktrees", () => {
     });
     answered(bdk(["part", "start", "01", "--json"], change.root), "output/part-start.json");
     const workdir = workdirOf(change);
-    write(workdir, "src/01-1.ts", "one\n");
-    answered(bdk(["commit", "01-1", "--json"], change.root), "output/commit.json");
+    commitTask(workdir, change, "01-1", { "src/01-1.ts": "one\n" });
     return { change, workdir };
   }
 
   function finished(): Opened {
     const { change, workdir } = startedWithTask();
-    write(workdir, "src/01-2.ts", "two\n");
-    answered(bdk(["commit", "01-2", "--json"], change.root), "output/commit.json");
+    commitTask(workdir, change, "01-2", { "src/01-2.ts": "two\n" });
     answered(bdk(["part", "done", "01", "--json"], change.root), "output/part-done.json");
     return change;
   }

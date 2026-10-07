@@ -52,7 +52,7 @@ describe("hooks session-end", () => {
 
   it("reports open tickets as skipped, with exit 0 and no STOP block", async () => {
     const h = harness();
-    openTicket(h.store, "A-00000001", "01-1");
+    openTicket(h.store, "A-00000001", "01");
     const { code, report } = await sessionEnd(h);
     expect(code).toBe(0);
     expect(report?.checkpoint).toStrictEqual({

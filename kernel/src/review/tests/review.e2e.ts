@@ -5,7 +5,7 @@ import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { answered, bdk, git, refused } from "../../../tests/support/repo.ts";
+import { answered, bdk, git, ingestArgs, refused } from "../../../tests/support/repo.ts";
 import { executed, opened, started } from "../../attempt/tests/e2e-support.ts";
 import type { Started } from "../../attempt/tests/e2e-support.ts";
 
@@ -32,9 +32,17 @@ const rev = (change: Started, ref: string) => git(change.root, "rev-parse", ref)
 function merged(change: Started): string {
   const round = opened(change, "review-fix", change.id);
   answered(
-    bdk(["log", "ingest", "--ticket", `${round}@merge`, "--json"], change.root, {
-      stdin: "---\nstatus: done\nfiles: []\nentries: []\nevidence: []\n---\n# Review\n",
-    }),
+    bdk(
+      [
+        ...ingestArgs(
+          change.root,
+          `${round}@merge`,
+          "---\nstatus: done\nfiles: []\nentries: []\nevidence: []\n---\n# Review\n",
+        ),
+        "--json",
+      ],
+      change.root,
+    ),
     "output/log-ingest.json",
   );
   const entry = answered(

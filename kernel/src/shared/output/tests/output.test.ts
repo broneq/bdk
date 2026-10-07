@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { refuse } from "../../refusal/index.ts";
 import { capLines, json, listPage, refusalText, stopBlock, TEXT_LINE_CAP } from "../index.ts";
 
-const refusal = refuse("policy/budget-exhausted", "loop task-redispatch for 02-3 used 3 of 3", [
+const refusal = refuse("policy/budget-exhausted", "loop part for 02 used 3 of 3", [
   "bdk attempt open task-escalation 02-3",
   'bdk change park --reason "02-3 exhausted"',
 ]);
@@ -21,7 +21,7 @@ describe("refusalText", () => {
     expect(refusalText(refusal)).toBe(
       [
         "refused: policy/budget-exhausted",
-        "why: loop task-redispatch for 02-3 used 3 of 3",
+        "why: loop part for 02 used 3 of 3",
         "instead: bdk attempt open task-escalation 02-3",
         'instead: bdk change park --reason "02-3 exhausted"',
         "",
@@ -33,7 +33,7 @@ describe("refusalText", () => {
 describe("stopBlock", () => {
   it("is exactly two lines and nothing after them", () => {
     expect(stopBlock(refusal)).toBe(
-      "BDK STOP: loop task-redispatch for 02-3 used 3 of 3\n" +
+      "BDK STOP: loop part for 02 used 3 of 3\n" +
         'Instead: bdk attempt open task-escalation 02-3; bdk change park --reason "02-3 exhausted"\n',
     );
   });

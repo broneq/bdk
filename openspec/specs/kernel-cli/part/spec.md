@@ -101,7 +101,7 @@ Validate a part and record the start transition; required before its first ticke
 
 - **Writes:** `.bdk/changes/<id>/log/`, `git:worktree`
 - **Output:** `schema/cli/output/part-start.json`
-- **Exit codes and rules:** `0, 2, 3, 4, 5`. Specific rules: `input/not-found`, `policy/not-ready`, `policy/invalid-transition`, `policy/part-too-large`, `policy/part-too-many-tasks`, `policy/do-not-touch-overlap`, `policy/placeholder`, `policy/validation-failed`, `policy/config-invalid`, `policy/tools-unset`, `runtime/worktree-setup-failed`, `runtime/git-too-old`, `runtime/git-missing`; plus the common rules of every command and of Change-scoped commands (`kernel-cli`, Exit codes and the error object).
+- **Exit codes and rules:** `0, 2, 3, 4, 5`. Specific rules: `input/not-found`, `policy/not-ready`, `policy/invalid-transition`, `policy/part-too-large`, `policy/part-too-many-tasks`, `policy/part-too-many-files`, `policy/do-not-touch-overlap`, `policy/placeholder`, `policy/validation-failed`, `policy/config-invalid`, `policy/tools-unset`, `runtime/worktree-setup-failed`, `runtime/git-too-old`, `runtime/git-missing`; plus the common rules of every command and of Change-scoped commands (`kernel-cli`, Exit codes and the error object).
 - **Example:**
 
   ```bash
@@ -165,8 +165,13 @@ Validate a part and record the start transition; required before its first ticke
 
 #### Scenario: policy/part-too-many-tasks
 
-- **WHEN** a plan part has more than 8 tasks (S1)
+- **WHEN** a plan part has more tasks than `plan.part.max-tasks` (S1, #166)
 - **THEN** the exit code is 2 and the error object carries `rule: policy/part-too-many-tasks`
+
+#### Scenario: policy/part-too-many-files
+
+- **WHEN** the tasks of a plan part declare more distinct `Files:` paths than `plan.part.max-files` (#166)
+- **THEN** the exit code is 2 and the error object carries `rule: policy/part-too-many-files`, and `instead` names `bdk part split`
 
 #### Scenario: policy/do-not-touch-overlap
 
@@ -232,7 +237,7 @@ Close a part: every task has a trailer commit and no ticket is open. The kernel 
 - **Mode:** `command`; Change-scoped
 - **Arguments:**
   - `<part>` (required).
-- **Behaviour:** Runs the `execute-part` kind's checks (`kernel-pipeline`, Artifact kinds): the part is started, each of its tasks has a commit reachable from `HEAD` carrying `BDK-Change`, `BDK-Part: <part>` and `BDK-Task: <task>` (the read-back after write that TSH confirmed), and no ticket of the part or its tasks is open. A part that is not started, or already done with an unchanged file, is `policy/invalid-transition`; an open ticket is `policy/ticket-open`; a task without a trailer commit is `policy/validation-failed` naming the task; trailers that disagree with the plan are `state/trailer-mismatch` (`kernel-loops`, Progress from git). On success writes a `transition` entry with `to: execute-part:<nn>`, `source: kernel` and the `input-hash` of the part file. Open `finding` entries referencing the part or its tasks do not block; they are listed in `openFindings`. For a `tiny` Change the tiny guard runs (`kernel-loops`, Tiny guard). `next` is the id of the node `bdk next` returns afterwards, absent when none.
+- **Behaviour:** Runs the `execute-part` kind's checks (`kernel-pipeline`, Artifact kinds): the part is started, each of its tasks has a commit reachable from `HEAD` carrying `BDK-Change`, `BDK-Part: <part>` and `BDK-Task: <task>` (the read-back after write that TSH confirmed), and no ticket of the part or its tasks is open. A part that is not started, or already done with an unchanged file, is `policy/invalid-transition`; an open ticket is `policy/ticket-open`; a task without a trailer commit is `policy/validation-failed` naming the task; trailers that disagree with the plan are `state/trailer-mismatch` (`kernel-loops`, Progress from git). On success writes a `transition` entry with `to: execute-part:<nn>`, `source: kernel` and the `input-hash` of the part file, then runs a checkpoint of the Change directory (`kernel-loops`, Checkpoint), which reports a skip without failing and returns its commit as `checkpoint`: the part's agents commit their code with plain git (#166), so the attempt records, reports, evidence and entries of the part reach git here, once per part; while a ticket of another part is open the checkpoint skips and the last `part done` of the wave catches up. Open `finding` entries referencing the part or its tasks do not block; they are listed in `openFindings`. For a `tiny` Change the tiny guard runs (`kernel-loops`, Tiny guard). `next` is the id of the node `bdk next` returns afterwards, absent when none.
 
   For a live worktree part, the trailer commits are read from the part branch, and the checks above are followed by the merge back (user decision 2026-10-04: a merge commit, never a rebase), all under the commit lock (`kernel-cli/commit`, Serialised commits):
 
@@ -240,7 +245,7 @@ Close a part: every task has a trailer commit and no ticket is open. The kernel 
   2. `git merge-tree --write-tree <home HEAD> bdk-part/<change id>/<part>` computes the merge without touching any working tree. A conflict refuses with `policy/merge-conflict`, whose `why` names the conflicting paths and whose `instead` is `bdk attempt open verify-fix <part>`, the merge ticket that resolves it inside the worktree under the project's merge instruction (`kernel-cli/attempt`, bdk attempt open; user decision 2026-10-04); nothing is written. An agent resolves it only inside that ticket, with its budget, its post-task steps and the ladder, which parks the Change for the user when the round is used up.
   3. `git commit-tree` writes the merge commit of that tree with the parents home `HEAD` and the part branch tip, the subject `chore(bdk): merge part <part> of <change id>` and the trailers `BDK-Change` and `BDK-Part`; the part's commits keep their SHAs and trailers.
   4. `git merge --ff-only <merge commit>` in the home checkout moves the Change branch. A home path the merge would overwrite that is changed in the home working tree refuses with `policy/merge-blocked` naming the paths, with `instead` to run `part done` again once the task that changes them is committed; the merge commit is left unreferenced and nothing is written.
-  5. The kernel removes the worktree (`git worktree remove --force`, after step 1 recorded the leftovers) and deletes the part branch, then writes the done marker and runs a checkpoint, which reports a skip without failing (`kernel-loops`, Checkpoint).
+  5. The kernel removes the worktree (`git worktree remove --force`, after step 1 recorded the leftovers) and deletes the part branch, then writes the done marker and the entry and runs the checkpoint above.
 
   The output then carries `merge`, the merge commit's short SHA, and `discarded`. A `shared` part, and a part started while worktrees were disabled, is done exactly as before, with no merge.
 
@@ -269,6 +274,7 @@ Close a part: every task has a trailer commit and no ticket is open. The kernel 
     ],
     "openFindings": [],
     "entry": "L-y5u3e7wq",
+    "checkpoint": "e1f2a3b",
     "next": "execute-part:03"
   }
   ```
@@ -345,6 +351,16 @@ Close a part: every task has a trailer commit and no ticket is open. The kernel 
 
 - **WHEN** `bdk part done 02` succeeded
 - **THEN** `execute-part:02` is `done`, and after an edit of `plan/parts/02-login.md` it is `stale`
+
+#### Scenario: part done checkpoints the Change
+
+- **WHEN** every task of shared part `02` is committed by its agent with plain git, the `part 02` ticket is closed, no other ticket is open, and `bdk part done 02 --json` runs
+- **THEN** the exit code is 0, `HEAD` is a commit `chore(bdk): checkpoint <change id>` holding the part's attempt records and reports, and the output's `checkpoint` names it
+
+#### Scenario: checkpoint skipped while another part runs
+
+- **WHEN** a ticket of part `03` is open and `bdk part done 02` runs
+- **THEN** the exit code is 0, no checkpoint commit is created and the output has no `checkpoint`
 
 ### Requirement: bdk part split
 

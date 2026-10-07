@@ -5,10 +5,10 @@
 # shows a session without it. The seeds (seeds.ts) build the Change through
 # the kernel the run uses, as the user's earlier sessions would have left it.
 #
-# flat: the T40 audit CSV task on a tiny Change, part 02 depending on part 01.
-# One /bdk:execute runs both parts; main dispatches the tasks itself, so no
-# part-lead ticket exists.
-- id: flat
+# parts: the T40 audit CSV task on a tiny Change, part 02 depending on part 01.
+# One /bdk:execute runs both parts, each as one part ticket with an implementer
+# and a conformer (#166).
+- id: parts
   command: /bdk:execute
   seed: audit-csv
   prepare:
@@ -27,12 +27,16 @@
         state: done
     - run: attempt list --for 01
       json:
-        budgets.part-lead: null
+        budgets.part.of: 3
+    - run: attempt list --for 02
+      json:
+        budgets.part.of: 3
     - reply: /bdk:cr
 
-# tree: a large Change with two independent parts, src/ui/format.ts and
-# src/api/http.ts; the kernel marks both tree, so one lead runs each part.
-- id: tree
+# parallel-parts: a large Change with two independent parts, src/ui/format.ts
+# and src/api/http.ts, in one wave; each runs as one part ticket, exactly as
+# on a small Change (#166).
+- id: parallel-parts
   command: /bdk:execute
   seed: two-independent-parts
   prepare:
@@ -55,10 +59,10 @@
         state: done
     - run: attempt list --for 01
       json:
-        budgets.part-lead.of: 2
+        budgets.part.of: 3
     - run: attempt list --for 02
       json:
-        budgets.part-lead.of: 2
+        budgets.part.of: 3
     - reply: /bdk:cr
 
 # worktree: a large Change whose two disjoint parts both add a dependency with

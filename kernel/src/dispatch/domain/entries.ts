@@ -70,15 +70,3 @@ function inFull(entry: EntryFacts): boolean {
   if (entry.type === "decision") return entry.status === "accepted";
   return entry.type === "blocker" && !CLOSED_BLOCKER.includes(entry.status);
 }
-
-/** The section of a plan part body from `## <task>` to the next `## ` heading. */
-export function taskText(body: string, task: string): string | undefined {
-  const lines = body.split(/\r?\n/);
-  const start = lines.findIndex((line) => line === `## ${task}` || line.startsWith(`## ${task} `));
-  if (start === -1) return undefined;
-  const end = lines.findIndex((line, at) => at > start && line.startsWith("## "));
-  return lines
-    .slice(start, end === -1 ? undefined : end)
-    .join("\n")
-    .trim();
-}

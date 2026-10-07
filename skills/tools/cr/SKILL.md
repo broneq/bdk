@@ -2,8 +2,8 @@
 name: cr
 description: Reviews the active BDK Change, or the branch as a review Change, in rounds of parallel group reviewers and a full gate, then an integration reviewer and a judge; fixes blockers. Use when a Change waits on /bdk:cr or the user asks for a code review.
 argument-hint: "[--full] [--base <ref>] [--inline] [--report] [focus]"
-allowed-tools: Bash(bdk *) Bash(echo *) Agent SendMessage Skill Read Bash(git diff *) Bash(git log *) AskUserQuestion Bash(lavish-axi *) Bash(gh issue create *)
-disallowed-tools: Edit Write NotebookEdit
+allowed-tools: Bash(bdk *) Bash(echo *) Agent SendMessage Skill Read Write Bash(git diff *) Bash(git log *) AskUserQuestion Bash(lavish-axi *) Bash(gh issue create *)
+disallowed-tools: Edit NotebookEdit
 ---
 
 !`bdk ctx skill cr 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
@@ -51,7 +51,7 @@ One round is one ticket of the `review-fix` loop. A round starts with a fix when
 5. **Integration.** Once every `reviewer` agent of the round has returned, after its one resume when it needed one, build the `integration` group's package: role `integration-reviewer`, with `--range <range>` and no `--file` or `--part`, and start its agent while the gate agent may still run. Built only now, it names the reports the reviewers stored and the groups without one.
 6. **Judge.** Once the integration reviewer has returned, build role `judge` with `--group judge --range <range>` and start its agent in the background. It sets the level of every entry its package lists.
 7. **Triage.** When every agent of the round has returned, the gate's included, triage what the judge left (see "Triage").
-8. **Merge.** Store the merged review with `bdk log ingest --ticket <ticket>@merge --json` before any close: the kernel refuses an `ok` or `fail` close of the ticket without it (`policy/missing-report`). Its envelope holds `status`, `files`, `entries`, `evidence` and `reason` only, its `entries` naming every entry written under the ticket (an item of `bdk log list --since-ticket-start <ticket> --json` whose `ticket` is it; the kernel refuses any other), its body listing per level each entry's id and summary, the entries of earlier rounds it fixed by id, then the gate's verdicts and the diff coverage. Then run `bdk log add report "<counts per level>" --ticket <ticket>@merge --json`.
+8. **Merge.** Write the merged review with the `Write` tool to `.bdk/.machine/drafts/<ticket>-merge.md`, the only file you write, and store it with `bdk log ingest --ticket <ticket>@merge --file .bdk/.machine/drafts/<ticket>-merge.md --json` before any close: the kernel refuses an `ok` or `fail` close of the ticket without it (`policy/missing-report`). Its envelope holds `status`, `files`, `entries`, `evidence` and `reason` only, its `entries` naming every entry written under the ticket (an item of `bdk log list --since-ticket-start <ticket> --json` whose `ticket` is it; the kernel refuses any other), its body listing per level each entry's id and summary, the entries of earlier rounds it fixed by id, then the gate's verdicts and the diff coverage. Then run `bdk log add report "<counts per level>" --ticket <ticket>@merge --json`.
 9. **Close.** See "After the round".
 
 ## Triage
@@ -85,8 +85,8 @@ An entry is blocking when it is a live `blocker` naming `review` or a live entry
 A round that starts while the Change holds blocking entries fixes them under its own ticket, before its review:
 
 1. Build an `implementer` package with `bdk dispatch build <change-id> implementer <ticket> --json`; it embeds every blocking entry. Start its agent like any other.
-2. When it has returned with its report stored, dispatch the ticket's `steps` in order under the same ticket, as the swarm skill says.
-3. Commit the fix with `bdk commit <change-id> --json`. The kernel commits every touched path under the ticket's `BDK-Ticket` trailer.
+2. When it has returned with its report stored, build the `conformer` package with `bdk dispatch build <change-id> conformer <ticket> --json` and start its agent the same way: it checks the fix and runs `bdk check run <change-id> --ticket <ticket>`.
+3. When the conformer has returned, commit the fix with `bdk commit <change-id> --json`. The kernel commits every touched path under the ticket's `BDK-Ticket` trailer.
 4. Resolve each blocking entry the fix addresses with `bdk log resolve <id> resolved --reason "<what fixed it> in <commit>" --json`. An entry the implementer's report does not name as fixed stays open, and the round's review will see it again.
 
 Then continue with the round's plan (step 3 of "A round"). A round after a fix reviews the delta, and the gate runner runs the full gate on the whole Change again.

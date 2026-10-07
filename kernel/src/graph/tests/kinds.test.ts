@@ -36,7 +36,7 @@ describe("the kind registry", () => {
         "intent",
         "plan-part",
         "plan-verify",
-        "simplify",
+        "conform",
         "tests-scoped",
         "lint",
         "tests-full",
@@ -244,6 +244,7 @@ describe("plan part checks", () => {
         "schema",
         "size",
         "tasks",
+        "files",
         "do-not-touch",
         "placeholder",
         "grammar",
@@ -267,7 +268,7 @@ describe("plan part checks", () => {
     });
   });
 
-  it("tasks fails with no task and with nine [S1]", () => {
+  it("tasks fails with no task and over plan.part.max-tasks [S1, #166]", () => {
     const none = check(
       { files: { [PART]: { data } }, planParts: { [PART]: { tasks: [] } } },
       "tasks",
@@ -280,9 +281,28 @@ describe("plan part checks", () => {
       "tasks",
     );
     expect(many).toMatchObject({ ok: false, rule: "policy/part-too-many-tasks" });
-    expect(many?.why).toBe(`${PART} holds 9 tasks, over the limit of 8`);
-    const eight = { [PART]: { tasks: nine.slice(0, 8) } };
-    expect(check({ files: { [PART]: { data } }, planParts: eight }, "tasks")?.ok).toBe(true);
+    expect(many?.why).toBe(`${PART} holds 9 tasks, over plan.part.max-tasks 5`);
+    const five = { [PART]: { tasks: nine.slice(0, 5) } };
+    expect(check({ files: { [PART]: { data } }, planParts: five }, "tasks")?.ok).toBe(true);
+  });
+
+  it("files fails over plan.part.max-files distinct paths (#166)", () => {
+    const task = (id: string, files: readonly string[]) => ({ id, files });
+    const paths = Array.from({ length: 11 }, (_, at) => `src/f${String(at)}.ts`);
+    const over = {
+      [PART]: { tasks: [task("02-1", paths.slice(0, 6)), task("02-2", paths.slice(5))] },
+    };
+    expect(check({ files: { [PART]: { data } }, planParts: over }, "files")).toStrictEqual({
+      id: "files",
+      ok: false,
+      why: `the tasks of ${PART} declare 11 distinct Files: paths, over plan.part.max-files 10`,
+      rule: "policy/part-too-many-files",
+      instead: "bdk part split 02 <task-ids>",
+    });
+    const shared = {
+      [PART]: { tasks: [task("02-1", paths.slice(0, 6)), task("02-2", paths.slice(0, 10))] },
+    };
+    expect(check({ files: { [PART]: { data } }, planParts: shared }, "files")?.ok).toBe(true);
   });
 
   it("do-not-touch names the task, the path and the glob", () => {
@@ -638,8 +658,8 @@ describe("doneBy", () => {
     ["design", { through: "done" }],
     ["gate", { through: "gate" }],
     ["execute-part", { through: "command", command: "bdk part done {nn}" }],
-    ["simplify", { through: "evidence", command: "bdk attempt close <ticket> ok" }],
-    ["lint", { through: "evidence", command: "bdk evidence record lint <file> --ticket <ticket>" }],
+    ["conform", { through: "evidence", command: "bdk attempt close <ticket> ok" }],
+    ["lint", { through: "evidence", command: "bdk check run <part> --ticket <ticket>" }],
     ["close", { through: "command", command: "bdk change close" }],
   ])("%s", (name, doneBy) => {
     expect(kind(name).doneBy).toStrictEqual(doneBy);

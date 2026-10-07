@@ -4,15 +4,15 @@
 
 BDK keeps its state under `.bdk/`, written only by the kernel (`bdk ...`) and the stage skills that call it:
 
-| Path                       | Written by                                                          | Tracked | Contents                                                                                                                                            |
-| -------------------------- | ------------------------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.bdk/settings.yaml`       | `/bdk:setup` through `bdk config set`                               | yes     | The project's languages, tool commands and feature flags, shared by the team                                                                        |
-| `.bdk/settings.local.yaml` | `bdk config set --local`                                            | no      | Your personal overrides                                                                                                                             |
-| `.bdk/rules/`              | `bdk rules accept`                                                  | yes     | The project's rules, one file per rule id                                                                                                           |
-| `.bdk/.prettierrc`         | `bdk change new`, `bdk config set`, `bdk rules accept`, when absent | yes     | The formatter guard: keeps Prettier off every file under `.bdk/`; never overwritten                                                                 |
-| `.bdk/changes/<changeId>/` | `/bdk:change` through `bdk change new`, later stages                | yes     | One Change: its intent, design, plan, ledger and progress                                                                                           |
-| `.bdk/.machine/`           | the kernel                                                          | no      | Caches, the schema copy, the branch bindings of the Changes and, under `worktrees/`, the worktrees of the parts in flight; rebuilt by `bdk rebuild` |
-| `.bdk/.machine/review/`    | `bdk review render`                                                 | no      | The human review report of a Change, `<changeId>.html` or `.md`                                                                                     |
+| Path                       | Written by                                                          | Tracked | Contents                                                                                                                                                                                                                                   |
+| -------------------------- | ------------------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `.bdk/settings.yaml`       | `/bdk:setup` through `bdk config set`                               | yes     | The project's languages, tool commands and feature flags, shared by the team                                                                                                                                                               |
+| `.bdk/settings.local.yaml` | `bdk config set --local`                                            | no      | Your personal overrides                                                                                                                                                                                                                    |
+| `.bdk/rules/`              | `bdk rules accept`                                                  | yes     | The project's rules, one file per rule id                                                                                                                                                                                                  |
+| `.bdk/.prettierrc`         | `bdk change new`, `bdk config set`, `bdk rules accept`, when absent | yes     | The formatter guard: keeps Prettier off every file under `.bdk/`; never overwritten                                                                                                                                                        |
+| `.bdk/changes/<changeId>/` | `/bdk:change` through `bdk change new`, later stages                | yes     | One Change: its intent, design, plan, ledger and progress                                                                                                                                                                                  |
+| `.bdk/.machine/`           | the kernel                                                          | no      | Caches, the schema copy, the branch bindings of the Changes, under `worktrees/` the worktrees of the parts in flight, under `drafts/` the agents' report drafts, and `review-round` while a review round is open; rebuilt by `bdk rebuild` |
+| `.bdk/.machine/review/`    | `bdk review render`                                                 | no      | The human review report of a Change, `<changeId>.html` or `.md`                                                                                                                                                                            |
 
 The design stage writes into the Change directory:
 
@@ -36,13 +36,13 @@ The plan stage writes into the same directory:
 
 The execute stage writes into the same directory, and commits each task to the project:
 
-| Path under `.bdk/changes/<changeId>/` | Written by                                 | Contents                                                                                     |
-| ------------------------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------- |
-| `attempts/`                           | `/bdk:execute` through `bdk attempt open`  | One ticket per dispatch round of a task, a part or its lead, with its outcome                |
-| `dispatch/`                           | `bdk dispatch build`                       | The package each role agent reads as its whole prompt                                        |
-| `reports/`                            | the role agents, through `log ingest`      | Each agent's report with its envelope                                                        |
-| `evidence/`                           | `bdk evidence record`, `bdk attempt close` | The simplify, scoped test and lint results of each task, which the post-task step nodes read |
-| `log/`                                | `/bdk:execute` and the role agents         | `finding`, `blocker`, `learning` and `decision` entries, and the stage's transitions         |
+| Path under `.bdk/changes/<changeId>/` | Written by                                   | Contents                                                                                    |
+| ------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `attempts/`                           | `/bdk:execute` through `bdk attempt open`    | One ticket per dispatch round of a part, with its outcome                                   |
+| `dispatch/`                           | `bdk dispatch build`                         | The package each role agent reads as its whole prompt                                       |
+| `reports/`                            | the role agents, through `log ingest --file` | Each agent's report with its envelope                                                       |
+| `evidence/`                           | `bdk evidence record`, `bdk attempt close`   | The conform, scoped test and lint results of each part, which the post-task step nodes read |
+| `log/`                                | `/bdk:execute` and the role agents           | `finding`, `blocker`, `learning` and `decision` entries, and the stage's transitions        |
 
 The review stage runs as rounds of one `review-fix` ticket each, and writes into the same directory:
 
@@ -50,7 +50,7 @@ The review stage runs as rounds of one `review-fix` ticket each, and writes into
 | ------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | `dispatch/<target>-<role>-<ticket>-<group>.md`    | `bdk dispatch build --group`                                            | One package per reviewer group of the round, with the group's files, range and rules             |
 | `reports/<target>-<role>-<ticket>-<group>.md`     | each reviewer, through `log ingest --ticket <ticket>@<group>`           | One report per group                                                                             |
-| `reports/<target>-orchestrator-<ticket>-merge.md` | the orchestrator, through `log ingest --ticket <ticket>@merge`          | The merged review of the round, whose verdict the `review` node reads                            |
+| `reports/<target>-orchestrator-<ticket>-merge.md` | `/bdk:cr`, through `log ingest --ticket <ticket>@merge --file <draft>`  | The merged review of the round, whose verdict the `review` node reads                            |
 | `evidence/`                                       | the gate runner, through `bdk evidence record`, `bdk evidence coverage` | The `tests-full`, `lint-full` and `coverage` results of the whole Change                         |
 | `log/`                                            | the reviewers and the orchestrator                                      | The round's `finding`, `blocker` and `observation` entries, each with its group and triage level |
 

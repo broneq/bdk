@@ -4,7 +4,7 @@
 // heartbeat files the guard scripts write.
 import { describe, expect, it } from "vitest";
 
-import { answered, bdk, bdkAsync, refused } from "../../../tests/support/repo.ts";
+import { answered, bdk, bdkAsync, refused, ingestArgs } from "../../../tests/support/repo.ts";
 import { dispatched, opened, started as change } from "../../attempt/tests/e2e-support.ts";
 import type { Started } from "../../attempt/tests/e2e-support.ts";
 import {
@@ -17,7 +17,9 @@ import {
   stopped,
 } from "./e2e-support.ts";
 
-const LEAD = "a9f8e7d6c5b4a3f2e";
+/** A non-BDK agent that starts the part agents itself, as a project's own orchestrator does. */
+const PARENT = "a9f8e7d6c5b4a3f2e";
+const PARENT_TYPE = "general-purpose";
 const WORKER_A = "a1b2c3d4e5f6a7b8c";
 const WORKER_B = "a7c6b5d4e3f2a1b0c";
 
@@ -27,24 +29,24 @@ interface Workers {
   readonly packages: { readonly a: string; readonly b: string };
 }
 
-/** Two workers of the lead on tasks 01-1 and 01-2, linked and started. */
+/** Two part workers of the parent on parts 01 and 02, linked and started. */
 function workers(settings = ""): Workers {
-  const started_ = change(settings);
-  const a = opened(started_, "task-redispatch", "01-1");
-  const b = opened(started_, "task-redispatch", "01-2");
+  const started_ = change(settings, { parallel: true });
+  const a = opened(started_, "part", "01");
+  const b = opened(started_, "part", "02");
   const packages = {
-    a: dispatched(started_, a, "01-1"),
-    b: dispatched(started_, b, "01-2"),
+    a: dispatched(started_, a, "01"),
+    b: dispatched(started_, b, "02"),
   };
   const root = started_.root;
-  spawned(root, { child: LEAD, type: "bdk:lead", prompt: "lead part 01" });
-  started(root, LEAD, "bdk:lead");
+  spawned(root, { child: PARENT, type: PARENT_TYPE, prompt: "run the parts" });
+  started(root, PARENT, PARENT_TYPE);
   for (const [id, path] of [
     [WORKER_A, packages.a],
     [WORKER_B, packages.b],
   ] as const) {
     spawned(root, {
-      parent: { id: LEAD, type: "bdk:lead" },
+      parent: { id: PARENT, type: PARENT_TYPE },
       child: id,
       type: "bdk:worker",
       prompt: promptFor(path),
@@ -69,9 +71,17 @@ function logEntry(root: string, ref: string): string {
 
 function ingest(root: string, ticket: string): void {
   answered(
-    bdk(["log", "ingest", "--ticket", ticket, "--json"], root, {
-      stdin: "---\nstatus: done\nfiles: []\nentries: []\nevidence: []\n---\n# Done\n",
-    }),
+    bdk(
+      [
+        ...ingestArgs(
+          root,
+          ticket,
+          "---\nstatus: done\nfiles: []\nentries: []\nevidence: []\n---\n# Done\n",
+        ),
+        "--json",
+      ],
+      root,
+    ),
     "output/log-ingest.json",
   );
 }
@@ -80,41 +90,25 @@ describe("bdk agents list", () => {
   it("example run: the registry rows validate against agents-list.json", () => {
     const { change: started_, tickets } = workers();
     const agents = list(started_.root);
-    expect(agents.map((agent) => agent.id)).toEqual([LEAD, WORKER_A, WORKER_B]);
-    expect(agents[1]).toMatchObject({ state: "running", parent: LEAD, ticket: tickets.a });
+    expect(agents.map((agent) => agent.id)).toEqual([PARENT, WORKER_A, WORKER_B]);
+    expect(agents[1]).toMatchObject({ state: "running", parent: PARENT, ticket: tickets.a });
   });
 
   it("affected by a file ref: only the worker whose Files: the entry names", () => {
     const { change: started_ } = workers();
-    const entry = logEntry(started_.root, "src/01-2.ts");
+    const entry = logEntry(started_.root, "src/02-1.ts");
     expect(list(started_.root, "--affected-by", entry).map((agent) => agent.id)).toEqual([
       WORKER_B,
     ]);
   });
 
-  it("affected by a part ref: the lead of the part and its workers", () => {
-    const started_ = change();
+  it("affected by a part ref: the worker of the part", () => {
+    const { change: started_, tickets } = workers();
     const root = started_.root;
-    const lead = opened(started_, "part-lead", "01");
-    spawned(root, {
-      child: LEAD,
-      type: "bdk:lead",
-      prompt: promptFor(dispatched(started_, lead, "01", "lead")),
-    });
-    started(root, LEAD, "bdk:lead");
-    const ticket = opened(started_, "task-redispatch", "01-1");
-    spawned(root, {
-      parent: { id: LEAD, type: "bdk:lead" },
-      child: WORKER_A,
-      type: "bdk:worker",
-      prompt: promptFor(dispatched(started_, ticket, "01-1")),
-    });
-    started(root, WORKER_A, "bdk:worker");
     expect(list(root, "--affected-by", logEntry(root, "01")).map((agent) => agent.id)).toEqual([
-      LEAD,
       WORKER_A,
     ]);
-    expect(list(root)[0]).toMatchObject({ id: LEAD, ticket: lead });
+    expect(list(root)[1]).toMatchObject({ id: WORKER_A, ticket: tickets.a });
   });
 
   it("suspect without a hook: an old heartbeat and no open call", () => {
@@ -128,8 +122,10 @@ describe("bdk agents list", () => {
   it("ended agents are hidden by default", () => {
     const { change: started_ } = workers();
     stopped(started_.root, WORKER_A);
-    expect(list(started_.root, "--children-of", LEAD).map((agent) => agent.id)).toEqual([WORKER_B]);
-    expect(list(started_.root, "--children-of", LEAD, "--all")).toHaveLength(2);
+    expect(list(started_.root, "--children-of", PARENT).map((agent) => agent.id)).toEqual([
+      WORKER_B,
+    ]);
+    expect(list(started_.root, "--children-of", PARENT, "--all")).toHaveLength(2);
   });
 
   it("input/not-found: an entry the Change does not hold", () => {
@@ -150,12 +146,12 @@ describe("bdk agents list", () => {
 describe("bdk agents show", () => {
   it("example run and the end by TaskStop", () => {
     const { change: started_ } = workers();
-    const lead = answered(
-      bdk(["agents", "show", LEAD, "--json"], started_.root),
+    const parent = answered(
+      bdk(["agents", "show", PARENT, "--json"], started_.root),
       "output/agents-show.json",
     );
-    expect(lead).toMatchObject({ id: LEAD, parent: "main", session: SESSION });
-    expect((lead.children as unknown[]).length).toBe(2);
+    expect(parent).toMatchObject({ id: PARENT, parent: "main", session: SESSION });
+    expect((parent.children as unknown[]).length).toBe(2);
     stopped(started_.root, WORKER_A);
     expect(
       answered(
@@ -174,7 +170,10 @@ describe("bdk agents show", () => {
 describe("bdk agents wait", () => {
   it("returns on a stored report, and never twice", async () => {
     const { change: started_, tickets } = workers();
-    const waiting = bdkAsync(["agents", "wait", LEAD, "--timeout", "20", "--json"], started_.root);
+    const waiting = bdkAsync(
+      ["agents", "wait", PARENT, "--timeout", "20", "--json"],
+      started_.root,
+    );
     await new Promise((done) => setTimeout(done, 1500));
     const at = Date.now();
     ingest(started_.root, tickets.a);
@@ -186,7 +185,7 @@ describe("bdk agents wait", () => {
     ]);
     expect(report.children).toEqual({ starting: 0, running: 2, suspect: 0, ended: 0 });
     const again = answered(
-      bdk(["agents", "wait", LEAD, "--timeout", "1", "--json"], started_.root),
+      bdk(["agents", "wait", PARENT, "--timeout", "1", "--json"], started_.root),
       "output/agents-wait.json",
     );
     expect(again.events).toEqual([{ kind: "timeout" }]);
@@ -197,7 +196,7 @@ describe("bdk agents wait", () => {
     ingest(started_.root, tickets.b);
     const at = Date.now();
     const report = answered(
-      bdk(["agents", "wait", LEAD, "--json"], started_.root),
+      bdk(["agents", "wait", PARENT, "--json"], started_.root),
       "output/agents-wait.json",
     );
     expect(Date.now() - at).toBeLessThan(2000);
@@ -208,8 +207,11 @@ describe("bdk agents wait", () => {
 
   it("returns on an admitted message", async () => {
     const { change: started_ } = workers();
-    const entry = logEntry(started_.root, "src/01-2.ts");
-    const waiting = bdkAsync(["agents", "wait", LEAD, "--timeout", "20", "--json"], started_.root);
+    const entry = logEntry(started_.root, "src/01-1.ts");
+    const waiting = bdkAsync(
+      ["agents", "wait", PARENT, "--timeout", "20", "--json"],
+      started_.root,
+    );
     await new Promise((done) => setTimeout(done, 1000));
     const admitted = bdk(["hooks", "pre-tool"], started_.root, {
       stdin: JSON.stringify({
@@ -219,7 +221,7 @@ describe("bdk agents wait", () => {
         agent_id: WORKER_A,
         agent_type: "bdk:worker",
         tool_name: "SendMessage",
-        tool_input: { to: LEAD, message: `${entry} changes the token format`, summary: "token" },
+        tool_input: { to: PARENT, message: `${entry} changes the token format`, summary: "token" },
       }),
     });
     expect(admitted.code, admitted.stderr).toBe(0);
@@ -232,7 +234,7 @@ describe("bdk agents wait", () => {
     backdate(started_.root, WORKER_A, 400);
     heartbeat(started_.root, WORKER_A, false, 400);
     const report = answered(
-      bdk(["agents", "wait", LEAD, "--timeout", "2", "--json"], started_.root),
+      bdk(["agents", "wait", PARENT, "--timeout", "2", "--json"], started_.root),
       "output/agents-wait.json",
     );
     expect(report.events).toEqual([{ kind: "suspect", agent: WORKER_A }]);
@@ -242,7 +244,7 @@ describe("bdk agents wait", () => {
     const { change: started_ } = workers();
     stopped(started_.root, WORKER_B);
     const report = answered(
-      bdk(["agents", "wait", LEAD, "--timeout", "2", "--json"], started_.root),
+      bdk(["agents", "wait", PARENT, "--timeout", "2", "--json"], started_.root),
       "output/agents-wait.json",
     );
     expect(report.events).toEqual([{ kind: "ended", agent: WORKER_B, by: "task-stop" }]);
@@ -252,7 +254,7 @@ describe("bdk agents wait", () => {
     const { change: started_ } = workers();
     const at = Date.now();
     const report = answered(
-      bdk(["agents", "wait", LEAD, "--timeout", "2", "--json"], started_.root),
+      bdk(["agents", "wait", PARENT, "--timeout", "2", "--json"], started_.root),
       "output/agents-wait.json",
     );
     expect(Date.now() - at).toBeGreaterThanOrEqual(1900);
@@ -263,7 +265,7 @@ describe("bdk agents wait", () => {
   it("refuses a timeout above 540", () => {
     const { change: started_ } = workers();
     const refusal = refused(
-      bdk(["agents", "wait", LEAD, "--timeout", "600", "--json"], started_.root),
+      bdk(["agents", "wait", PARENT, "--timeout", "600", "--json"], started_.root),
       3,
       "input/invalid-argument",
     );
@@ -278,7 +280,7 @@ describe("bdk agents wait", () => {
   it("prints one line per event and the next step in text mode", () => {
     const { change: started_, tickets } = workers();
     ingest(started_.root, tickets.a);
-    const result = bdk(["agents", "wait", LEAD], started_.root);
+    const result = bdk(["agents", "wait", PARENT], started_.root);
     expect(result.stdout).toContain(`- report of ${WORKER_A} for ${tickets.a}: status done`);
     expect(result.stdout).toContain(
       "Read each message and report, act on it, then dispatch or wait again.",

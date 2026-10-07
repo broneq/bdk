@@ -153,6 +153,7 @@ describe("appendJournal", () => {
     expect(lines(store)).toHaveLength(10);
   });
 
+  // 20 000 appends under coverage take about 5 s on a CI runner, past the 5 s default.
   it("stays below 1 MiB over 20 000 lines of about 250 bytes, the newest line last", async () => {
     const store = projectStore();
     const args = ["01-1", "x".repeat(150), "--json"];
@@ -162,7 +163,7 @@ describe("appendJournal", () => {
     }
     const written = lines(store) as { ms: number }[];
     expect(written.at(-1)?.ms).toBe(19_999);
-  });
+  }, 30_000);
 
   it("writes nothing and creates no .bdk/ in a project without one", async () => {
     const store = memoryStore();

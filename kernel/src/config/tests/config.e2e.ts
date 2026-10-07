@@ -82,7 +82,7 @@ describe("bdk config show", () => {
     });
   });
 
-  it("exit 0: policy.verifier defaults to the six P8 categories and the not-a-fail list", () => {
+  it("exit 0: policy.verifier defaults to the six P8 categories, costly-command and the not-a-fail list", () => {
     const result = bdk(["config", "show", "policy.verifier", "--json"], fixture({}).root);
     expect(result.code).toBe(0);
     const value = (result.json as { value: Record<string, { id: string }[]> }).value;
@@ -94,6 +94,7 @@ describe("bdk config show", () => {
       "integration-failure",
       "unresolved-decision",
       "false-code-claim",
+      "costly-command",
     ]);
     expect(ids("not-a-fail")).toStrictEqual([
       "style",
@@ -113,7 +114,7 @@ describe("bdk config show", () => {
     const result = bdk(["config", "show", "policy.verifier.blocking-categories", "--json"], root);
     expect(result.code).toBe(0);
     const ids = (result.json as { value: { id: string }[] }).value.map((item) => item.id);
-    expect(ids).toHaveLength(7);
+    expect(ids).toHaveLength(8);
     expect(ids.at(-1)).toBe("accessibility");
   });
 
@@ -270,11 +271,10 @@ describe("bdk config check", () => {
     expect(JSON.parse(shown.stdout)).toMatchObject({
       value: {
         budgets: {
-          "task-redispatch": 3,
+          part: 3,
           "verify-fix": 2,
           "review-fix": 2,
           verifier: 2,
-          "part-lead": 2,
           "not-run": 3,
         },
         oscillation: { threshold: 2 },

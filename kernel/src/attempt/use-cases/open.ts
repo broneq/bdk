@@ -16,7 +16,7 @@ import type { AttemptOpenReport, DroppedFinding } from "../domain/reports.ts";
 import { appendEntry, withChangeIndex } from "../../log/index.ts";
 import { openMergeTicket, workTargets } from "../../part/index.ts";
 import type { WorkTargets } from "../../part/index.ts";
-import { authorIdent } from "../../shared/git/index.ts";
+import { authorIdent, headCommit } from "../../shared/git/index.ts";
 import { newId } from "../../shared/ids/index.ts";
 import { refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
@@ -26,8 +26,9 @@ import {
   filesOverlap,
   readPlanParts,
   TASK_ID,
-  taskHolders,
+  workRootOf,
   writeDocument,
+  writeReviewRound,
 } from "../../shared/store/index.ts";
 import type { EntryRow, IndexDb, PlanPartFile } from "../../shared/store/index.ts";
 import { LOOPS } from "../../shared/vocabulary/index.ts";
@@ -54,7 +55,7 @@ export function openAttempt(
   if (!isLoop(input.loop)) {
     return Promise.resolve(
       refuse("input/invalid-argument", `${input.loop} is not a loop; loops: ${LOOPS.join(", ")}`, [
-        "bdk attempt open task-redispatch <task>",
+        "bdk attempt open part <part>",
       ]),
     );
   }
@@ -108,6 +109,12 @@ export function openAttempt(
     }
     const merge =
       loop === "verify-fix" ? await openMergeTicket(deps, change, input.target) : undefined;
+    const base = CODE_LOOPS.includes(loop)
+      ? await headCommit(
+          deps.git,
+          await workRootOf(deps.git, deps.store, change, parts, input.target),
+        )
+      : undefined;
     const conflicts =
       merge === undefined || merge.conflicts.length === 0 ? undefined : merge.conflicts;
     const ticket = newId("A-", deps.random);
@@ -130,6 +137,7 @@ export function openAttempt(
         author: await authorIdent(deps.git, change.projectRoot),
         ...(dropped.length === 0 ? {} : { dropped: dropped.map((entry) => entry.id) }),
         ...(conflicts === undefined ? {} : { merge: true, conflicts }),
+        ...(base === undefined ? {} : { base }),
       },
       body: "",
     });
@@ -157,6 +165,7 @@ export function openAttempt(
       deps.store.remove(path);
       return crossed;
     }
+    if (loop === "review-fix") writeReviewRound(deps.store, change.projectRoot, ticket);
 
     const entry =
       dropped.length === 0
@@ -171,33 +180,28 @@ export function openAttempt(
       of: Math.max(state.of, 1),
       scope,
       openedAt,
+      ...(base === undefined ? {} : { base }),
       ...(narrowedFrom === undefined ? {} : { narrowedFrom }),
       ...(dropped.length === 0 ? {} : { dropped }),
       ...(entry === undefined ? {} : { entry: entry.id }),
       ...(input.escalate ? { escalation: { model: policy.escalation.model } } : {}),
-      ...(loop === "verifier" || loop === "part-lead" ? {} : { steps: targets.steps }),
+      ...(loop === "verifier" ? {} : { steps: targets.steps }),
       ...(conflicts === undefined ? {} : { merge: true as const, conflicts }),
     };
   });
 }
 
-/** The loops whose tickets change the files of their target. */
-const CODE_LOOPS: readonly string[] = ["task-redispatch", "verify-fix"];
+/** The loops whose tickets change the files of their part (#166). */
+const CODE_LOOPS: readonly string[] = ["part", "verify-fix"];
 
-/** The `Files:` of a task target, or of every task of a part target. */
-function filesOf(parts: readonly PlanPartFile[], loop: string, target: string): string[] {
-  if (loop === "task-redispatch") {
-    const task = taskHolders(parts)
-      .get(target)
-      ?.tasks.find((found) => found.id === target);
-    return task?.files.map((file) => file.path) ?? [];
-  }
+/** The `Files:` of every task of a part target. */
+function filesOf(parts: readonly PlanPartFile[], target: string): string[] {
   const part = parts.find((found) => found.id === target);
   return part?.tasks.flatMap((task) => task.files.map((file) => file.path)) ?? [];
 }
 
 /**
- * Parts and tasks share one working tree, so two open tickets never hold one
+ * Parts share one working tree, so two open tickets never hold one
  * file (`policy/files-busy`): the later target waits for the earlier ticket.
  */
 function filesBusy(
@@ -207,16 +211,16 @@ function filesBusy(
   target: string,
 ): Refusal | undefined {
   if (!CODE_LOOPS.includes(loop)) return undefined;
-  const own = filesOf(parts, loop, target);
+  const own = filesOf(parts, target);
   for (const record of records) {
     if (record.outcome !== undefined || !CODE_LOOPS.includes(record.loop)) continue;
     if (record.loop === loop && record.target === target) continue;
-    const path = filesOverlap(own, filesOf(parts, record.loop, record.target));
+    const path = filesOverlap(own, filesOf(parts, record.target));
     if (path !== undefined) {
       return refuse(
         "policy/files-busy",
         `${path} of ${target} is in the Files: of ticket ${record.ticket} (${record.loop} ${record.target})`,
-        [`bdk attempt list`, `bdk agents wait`],
+        [`bdk attempt list`],
       );
     }
   }
@@ -239,15 +243,11 @@ function checkTarget(
     refuse("input/invalid-argument", `${loop} takes ${expected}; ${target} is not one`, [
       `bdk attempt open ${loop} <${expected}>`,
     ]);
-  if (loop === "task-redispatch" || loop === "verify-fix" || loop === "part-lead") {
-    const task = loop === "task-redispatch";
-    if (!(task ? TASK_ID : PART_ID).test(target)) return wrongType(task ? "task id" : "part id");
-    const parts = readPlanParts(deps.store, change.dir);
-    const part = task ? taskHolders(parts).get(target) : parts.find((found) => found.id === target);
+  if (loop === "part" || loop === "verify-fix") {
+    if (!PART_ID.test(target)) return wrongType("part id");
+    const part = readPlanParts(deps.store, change.dir).find((found) => found.id === target);
     if (part === undefined) {
-      return refuse("input/not-found", `no plan part holds ${task ? "task" : "part"} ${target}`, [
-        "bdk part list",
-      ]);
+      return refuse("input/not-found", `no plan part is ${target}`, ["bdk part list"]);
     }
     if (!targets.started.has(part.id)) {
       return refuse("policy/not-ready", `part ${part.id} is not started`, [

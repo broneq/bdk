@@ -4,8 +4,14 @@
 // validated against its schema.
 import { describe, expect, it } from "vitest";
 
-import { answered, bdk, read } from "../../../tests/support/repo.ts";
-import { closed, opened, started, stepsDone } from "../../attempt/tests/e2e-support.ts";
+import { answered, bdk, ingestArgs, read } from "../../../tests/support/repo.ts";
+import {
+  closed,
+  opened,
+  started,
+  stepsDone,
+  tasksCommitted,
+} from "../../attempt/tests/e2e-support.ts";
 import type { Started } from "../../attempt/tests/e2e-support.ts";
 
 function run(change: Started, schema: string, argv: string[], stdin?: string) {
@@ -33,15 +39,15 @@ function dispatchedAndRead(change: Started, target: string, role: string, ticket
 
 function ingested(change: Started, ticket: string, entries: string[]) {
   const report = `---\nstatus: done\nfiles: []\nentries: [${entries.join(", ")}]\nevidence: []\n---\n# Report\n`;
-  return run(change, "output/log-ingest.json", ["log", "ingest", "--ticket", ticket], report);
+  return run(change, "output/log-ingest.json", ingestArgs(change.root, ticket, report));
 }
 
 describe("T23 part B acceptance", () => {
-  it("an implementer and a verifier ticket each go from open to a closed ticket with a stored report", () => {
+  it("a part and a verifier ticket each go from open to a closed ticket with a stored report", () => {
     const change = started();
 
-    const task = opened(change, "task-redispatch", "01-1");
-    dispatchedAndRead(change, "01-1", "implementer", task);
+    const task = opened(change, "part", "01");
+    dispatchedAndRead(change, "01", "implementer", task);
     const finding = run(change, "output/log-add.json", [
       "log",
       "add",
@@ -55,6 +61,7 @@ describe("T23 part B acceptance", () => {
     const findingId = (finding.entry as { id: string }).id;
     const report = ingested(change, task, [findingId]);
     expect(report).toMatchObject({ ticket: task, role: "implementer", replaced: false });
+    tasksCommitted(change, task, "01");
     stepsDone(change, task);
     const closedTask = closed(change, task, "ok", "--envelope", report.path as string);
     expect(closedTask).not.toHaveProperty("rulesFinding");
@@ -80,6 +87,7 @@ describe("T23 part B acceptance", () => {
     });
     const verdict = ingested(change, part, [(blocker.entry as { id: string }).id]);
     expect(verdict).toMatchObject({ ticket: part, role: "verifier", status: "done" });
+    stepsDone(change, part);
     closed(change, part, "ok", "--envelope", verdict.path as string);
   });
 });

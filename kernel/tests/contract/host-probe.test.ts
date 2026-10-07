@@ -175,6 +175,7 @@ describe("host probe collector", () => {
 const BDK_NAMES = new Set([
   "implementer",
   "simplifier",
+  "conformer",
   "verifier",
   "reviewer",
   "runner",

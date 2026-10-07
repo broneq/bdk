@@ -36,11 +36,11 @@ Record what others need when you know it, each entry with a ref: `bdk log add <t
 
 ## Messages
 
-A `SendMessage` carries a ledger id and one sentence, never the content; write the entry first. An entry that affects the rest of the part goes to your parent, the `BDK-PARENT` line of your start context; one that must stop other work goes to `main`; one that affects particular running agents goes to the ids `bdk agents list --affected-by <entry>` returns, your own id left out. On a message to you, read the named entry with `bdk log show <id>`, then continue, adapt your work within your package, or return `blocked` with the entry id.
+A `SendMessage` carries a ledger id and one sentence, never the content; write the entry first. Send an entry that affects other work to your parent (`BDK-PARENT` of your start context), one that must stop other work to `main`, and one that affects particular running agents to the ids `bdk agents list --affected-by <entry>` returns but your own (`BDK-AGENT-ID`). On a message, read the entry with `bdk log show <id>`, then continue, adapt within your package, or return `blocked` with the entry id.
 
 ## Output
 
-Pipe the full report to `bdk log ingest --ticket <ticket>` with this envelope as its frontmatter, each list `[]` when empty:
+Write the full report with your file tool to the `draft` path your package names, with this envelope as its frontmatter, each list `[]` when empty:
 
 ```
 ---
@@ -52,6 +52,6 @@ evidence: [<evidence ids>]
 ---
 ```
 
-The kernel stamps your ticket and role and stores the report at the package's `report` path. When `log ingest` exits non-zero, fix the field it names and call it again; never write the report file yourself.
+Store it with `bdk log ingest --ticket <ticket> --file <draft>`, never through a pipe or a heredoc: the kernel stamps your ticket and role and stores it at the package's `report` path. When `log ingest` exits non-zero, fix the field it names and call it again.
 
 Then return only the envelope, at most 15 lines, and the report path as the package names it.

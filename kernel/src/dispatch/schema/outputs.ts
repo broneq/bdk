@@ -23,16 +23,7 @@ export const dispatchBuildOutput = z
       description: "The ticket's target: a task id, a part id, the Change id or an artifact id.",
     }),
     role: z.enum(ROLES),
-    adapter: z.enum([
-      "worker",
-      "reader",
-      "integrator",
-      "judge",
-      "reviewer",
-      "runner",
-      "scout",
-      "lead",
-    ]),
+    adapter: z.enum(["worker", "reader", "integrator", "judge", "reviewer", "runner", "scout"]),
     scope: z.enum(["full", "high+", "blockers"]),
     model: z.string().min(1).optional().meta({
       description:
@@ -65,16 +56,16 @@ export const dispatchBuildOutput = z
     description: "Build the dispatch package file for a target, role and ticket.",
     examples: [
       {
-        path: `${CHANGE_DIR}/dispatch/02-3-implementer-A-7f3k9m2q.md`,
+        path: `${CHANGE_DIR}/dispatch/02-implementer-A-7f3k9m2q.md`,
         bytes: 9814,
         ticket: "A-7f3k9m2q",
-        target: "02-3",
+        target: "02",
         role: "implementer",
         adapter: "worker",
         scope: "high+",
         kernelVersion: "3.0.0",
         templateHash: `sha256:${"2".repeat(64)}`,
-        report: `${CHANGE_DIR}/reports/02-3-implementer-A-7f3k9m2q.md`,
+        report: `${CHANGE_DIR}/reports/02-implementer-A-7f3k9m2q.md`,
         entries: { full: ["L-a2s5d7k1"], counted: { finding: 2, observation: 1 } },
       },
     ],
@@ -93,11 +84,11 @@ export const dispatchShowOutput = z
     description: "Print a dispatch package by path or ticket.",
     examples: [
       {
-        path: `${CHANGE_DIR}/dispatch/02-3-implementer-A-7f3k9m2q.md`,
+        path: `${CHANGE_DIR}/dispatch/02-implementer-A-7f3k9m2q.md`,
         content: "---\nschema: 1\nticket: A-7f3k9m2q\n...",
         frontmatter: {
           ticket: "A-7f3k9m2q",
-          target: "02-3",
+          target: "02",
           role: "implementer",
           adapter: "worker",
         },

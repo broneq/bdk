@@ -34,6 +34,7 @@ import { sha256 } from "./tree.ts";
 const KIND = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const VERDICTS: readonly string[] = ["pass", "fail", "not-run"];
 const MACHINE_EVIDENCE = ".bdk/.machine/evidence/";
+const CHECKS_DIR = ".bdk/.machine/checks/";
 const COVERAGE = "coverage";
 
 type Verdict = "pass" | "fail" | "not-run";
@@ -45,10 +46,12 @@ export interface RecordInput {
   readonly ticket: string | undefined;
   readonly verdict: string | undefined;
   readonly citations: readonly string[];
-  /** Kernel evidence (`attempt close` records `simplify`, T23-D43): `source: kernel`, no citation needed. */
+  /** Kernel evidence (`attempt close` records `conform`, `check run` the checks; T23-D43, #166): `source: kernel`, no citation needed. */
   readonly kernel?: boolean;
   /** Only from `bdk evidence coverage`: the `tools.test` id a `coverage` manifest measured. */
   readonly tool?: string;
+  /** Only from `bdk check run`: a task or the part of the ticket's part, whose tree the manifest covers (#166). */
+  readonly target?: string;
 }
 
 export interface RecordWhere {
@@ -112,6 +115,22 @@ export async function recordEvidence(
 
   const sources = readSources(deps, change.projectRoot, where.cwd, input.files);
   if ("refused" in sources) return sources;
+  const active = ref.package;
+  const agent = active !== undefined && input.kernel !== true;
+  // Each ticket's outputs in their own directory, so two tickets never cite one file (#166);
+  // a coverage report sits where its tool writes it, and the kernel reads it itself.
+  const own = `${CHECKS_DIR}${ticket}/`;
+  const outside =
+    agent && input.tool === undefined
+      ? sources.find((source) => !source.path.startsWith(own))
+      : undefined;
+  if (outside !== undefined) {
+    return refuse(
+      "policy/evidence-outside-ticket",
+      `${outside.given} lies outside ${own}, the output directory of ticket ${ticket}`,
+      [`save the output under ${own} and record that file`],
+    );
+  }
   const citations = checkCitations(
     change.projectRoot,
     sources,
@@ -123,7 +142,7 @@ export async function recordEvidence(
 
   const resolved = evidenceSettings(deps, change.projectRoot, where.globalDir);
   if ("refused" in resolved) return resolved;
-  const target = record.data.target;
+  const target = input.target ?? record.data.target;
   const parts = readPlanParts(deps.store, change.dir);
   // An artifact target (a verifier ticket) covers the whole Change.
   const scope = scopeOf(parts, change.id, target) ?? parts;
@@ -166,7 +185,6 @@ export async function recordEvidence(
     deps.store.writeBytes(join(change.projectRoot, path), source.bytes);
     return { path, hash, stored: "machine" };
   });
-  const active = ref.package;
   const path = join(change.dir, "evidence", `${target}-${id}.md`);
   const data: EvidenceManifest = {
     schema: 1,
@@ -178,7 +196,7 @@ export async function recordEvidence(
     target,
     at: deps.clock.now(),
     author: await authorIdent(deps.git, change.projectRoot),
-    source: active === undefined || input.kernel === true ? "kernel" : `agent:${active.role}`,
+    source: agent ? `agent:${active.role}` : "kernel",
     "tree-hash": treeHash,
     tree: [...tree],
     files,

@@ -59,9 +59,9 @@ describe("/bdk:cr", () => {
     expect(skill().body.trimStart()).toMatch(/^!`bdk ctx skill cr /);
   });
 
-  it("edits nothing and writes only through the kernel", () => {
+  it("edits nothing and writes only its merge draft and through the kernel (#166)", () => {
     const { meta, body } = skill();
-    expect(meta["disallowed-tools"]).toBe("Edit Write NotebookEdit");
+    expect(meta["disallowed-tools"]).toBe("Edit NotebookEdit");
     const allowed = String(meta["allowed-tools"]);
     expect(allowed.startsWith(KERNEL_PAIR)).toBe(true);
     for (const tool of [
@@ -71,10 +71,13 @@ describe("/bdk:cr", () => {
       "Read",
       "Bash(git diff *)",
       "Bash(git log *)",
+      "Write",
     ]) {
       expect(` ${allowed} `).toContain(` ${tool} `);
     }
     expect(allowed).not.toContain("Write(");
+    expect(body).toContain("`.bdk/.machine/drafts/");
+    expect(body).toContain("bdk log ingest --ticket <ticket>@merge --file");
     expect(body).not.toContain(".bdk/cr/");
     expect(body).not.toContain("bdk_run_state.py");
   });

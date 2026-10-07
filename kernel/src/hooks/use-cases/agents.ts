@@ -13,7 +13,6 @@ import type { ActiveChange } from "../../shared/registry/index.ts";
 import {
   agentsRegistryPath,
   findProjectRoot,
-  readAttempts,
   readDocument,
   resolveActiveChange,
   withRegistry,
@@ -95,11 +94,6 @@ export async function agentFacts(
   const facts = {
     messageLimit: moduleValue(messageModule, settings)["max-chars"],
     scoutLimit: moduleValue(scoutModule, settings)["max-per-ticket"],
-    ticketTarget: (ticket: string) =>
-      change === undefined
-        ? undefined
-        : readAttempts(deps.store, change.dir).find((record) => record.data.ticket === ticket)?.data
-            .target,
     entryExists: (id: string) =>
       change !== undefined &&
       deps.store.list(join(change.dir, "log")).some((name) => name.endsWith(`-${id}.md`)),
@@ -128,7 +122,6 @@ export async function agentFacts(
       caller?.package == null ? {} : packageFacts(deps, join(projectRoot, caller.package));
     return {
       ...facts,
-      ...(caller === undefined ? {} : { caller: { ticket: caller.ticket, target: caller.target } }),
       ...own,
       scouts: rows.filter((row) => row.type === "bdk:scout" && holders.has(row.parent ?? ""))
         .length,

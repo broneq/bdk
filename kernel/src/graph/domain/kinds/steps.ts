@@ -1,5 +1,5 @@
 // The kinds with no file of their own: `gate` (T1: provenance and timing
-// only), the post-task steps `simplify`, `tests-scoped` and `lint` (T23-D40),
+// only), the post-task steps `conform`, `tests-scoped` and `lint` (T23-D40),
 // the change-level checks `tests-full` and `lint-full` (T42-D4) and `close`
 // (T30). A step or check is done through evidence: the latest manifest of its
 // kind covering the part or the Change, fresh against its own target and
@@ -46,12 +46,14 @@ export class PostTaskStepKind extends BaseKind {
 
   /**
    * `command` records the kind's evidence; `bdk done` refused names it; `role`
-   * runs the step; `toolGroup` is the tool group whose commands it runs.
+   * runs the step as an agent, and a step without one is recorded by the
+   * kernel through `bdk check run` (#166); `toolGroup` is the tool group whose
+   * commands it runs.
    */
   constructor(
     readonly name: string,
     readonly command: string,
-    readonly role: Role,
+    readonly role: Role | undefined,
     readonly toolGroup?: ToolGroupName,
   ) {
     super();
@@ -278,24 +280,21 @@ export function changeChecks(): ChangeCheckKind[] {
   ];
 }
 
-/** The shipped steps, in pipeline order; `simplify`'s manifest is recorded by `attempt close ok` (T23-D43). */
+/**
+ * The shipped steps, in pipeline order; `conform`'s manifest is recorded by
+ * `attempt close ok` from the conformer's report (T23-D43), the checks' by
+ * `bdk check run` (#166).
+ */
 export function postTaskSteps(): PostTaskStepKind[] {
   return [
-    new PostTaskStepKind("simplify", "bdk attempt close <ticket> ok", "simplifier"),
-    new PostTaskStepKind(
-      "tests-scoped",
-      "bdk evidence record tests-scoped <file> --ticket <ticket>",
-      "runner",
-      "test",
-    ),
-    new PostTaskStepKind(
-      "lint",
-      "bdk evidence record lint <file> --ticket <ticket>",
-      "runner",
-      "lint",
-    ),
+    new PostTaskStepKind("conform", "bdk attempt close <ticket> ok", "conformer"),
+    new PostTaskStepKind("tests-scoped", CHECK_RUN, undefined, "test"),
+    new PostTaskStepKind("lint", CHECK_RUN, undefined, "lint"),
   ];
 }
+
+/** The command that records the kernel-run step kinds. */
+const CHECK_RUN = "bdk check run <part> --ticket <ticket>";
 
 export class CloseKind extends FilelessKind {
   readonly name = "close";

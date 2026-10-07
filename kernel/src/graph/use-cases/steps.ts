@@ -1,6 +1,6 @@
 // The post-task steps of a target (`kernel-pipeline`, Artifact kinds;
 // T23-D40, D44): the step kinds in the order of their nodes in the pipeline,
-// each with the role that runs it, and the target's executable files, which a
+// each with the role that runs it or the kernel command that records it, and the target's executable files, which a
 // runner package puts in place of `{files}`. Also what keeps a review round
 // from opening: the change-level checks run inside the round (T42-D4).
 import { ChangeCheckKind, PostTaskStepKind } from "../domain/kinds/index.ts";
@@ -14,10 +14,10 @@ import type { GraphDeps } from "./deps.ts";
 import { readGraph } from "./graph.ts";
 import type { ChangeGraph } from "./graph.ts";
 
-export interface PostTaskStep {
-  readonly kind: string;
-  readonly role: Role;
-}
+/** A step an agent of `role` runs, or one the kernel records through `command` (#166). */
+export type PostTaskStep =
+  | { readonly kind: string; readonly role: Role }
+  | { readonly kind: string; readonly command: string };
 
 export interface TargetSteps {
   /** In pipeline order; a step node the Change skips is left out. */
@@ -59,7 +59,12 @@ export function postTaskSteps(read: ChangeGraph): PostTaskStep[] {
   for (const node of read.graph.nodes) {
     const kind = read.kinds.get(node.kind);
     if (!(kind instanceof PostTaskStepKind) || node.state === "skipped") continue;
-    steps.set(kind.name, { kind: kind.name, role: kind.role });
+    steps.set(
+      kind.name,
+      kind.role === undefined
+        ? { kind: kind.name, command: "bdk check run" }
+        : { kind: kind.name, role: kind.role },
+    );
   }
   return [...steps.values()];
 }

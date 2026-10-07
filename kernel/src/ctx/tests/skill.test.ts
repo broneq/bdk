@@ -428,7 +428,7 @@ describe("setup-coverage part (T56)", () => {
       "- tracker: unset (default)",
     ]);
     const rest = lines(body, "Not set by setup");
-    expect(rest).toContain("- policy.budgets.task-redispatch: 3 (default)");
+    expect(rest).toContain("- policy.budgets.part: 3 (default)");
     expect(rest).toContain("- prompts.files.<key>: 0 (default)");
     expect(rest).toContain("- prompts.dir: unset (default)");
     const all = [...lines(body, "Derived"), ...lines(body, "Asked"), ...rest];

@@ -1,5 +1,5 @@
 export { checkpointModule } from "./config.ts";
-export { fileStore, findProjectRoot, memoryStore, readStdin } from "./store.ts";
+export { fileStore, findProjectRoot, memoryStore, readStdin, readStdinBody } from "./store.ts";
 export { addedLines, changeBase, EMPTY_TREE } from "./base.ts";
 export type { FileStat, Store } from "./store.ts";
 export { splitFrontmatter } from "./frontmatter.ts";
@@ -159,3 +159,4 @@ export {
   writeRunMarker,
 } from "./runs.ts";
 export type { RunMarker } from "./runs.ts";
+export { removeReviewRound, reviewRoundPath, writeReviewRound } from "./round.ts";

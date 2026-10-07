@@ -36,7 +36,7 @@ function logFiles(root: string, id: string): string[] {
 }
 
 /** An open ticket of `loop` and `target`; task `02-3` is in no plan part of a fresh Change. */
-function openAttempt(root: string, id: string, loop = "task-redispatch", target = "02-3"): void {
+function openAttempt(root: string, id: string, loop = "part", target = "02"): void {
   writeDocument(
     fileStore(),
     join(root, ".bdk/changes", id, `attempts/${loop}-${target}-A-open0001.md`),
@@ -538,7 +538,7 @@ describe("bdk change takeover", () => {
     expect(result.why).toContain("A-open0001");
   });
 
-  it("exit 4 state/trailer-mismatch: the ticket's task is in no plan part", () => {
+  it("exit 4 state/trailer-mismatch: the ticket's part is in no plan", () => {
     const { root, id } = opened();
     openAttempt(root, id);
     const result = refused(
@@ -546,7 +546,7 @@ describe("bdk change takeover", () => {
       4,
       "state/trailer-mismatch",
     );
-    expect(result.why).toContain("02-3");
+    expect(result.why).toContain("targets part 02");
   });
 
   it("exit 2 policy/no-active-change", () => {

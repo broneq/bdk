@@ -90,15 +90,14 @@ export function donePart(
     if (merged !== undefined && "refused" in merged) return merged;
     const written = await writeDoneMarker(deps, change, index, read, node);
     if ("refused" in written) return written;
-    if (merged !== undefined) {
-      await checkpointChange({
-        store: deps.store,
-        git: deps.git,
-        projectRoot: change.projectRoot,
-        change,
-        settings: read.resolved.value,
-      });
-    }
+    // The part's agents commit code only: the part's records reach git here (#166).
+    const checkpoint = await checkpointChange({
+      store: deps.store,
+      git: deps.git,
+      projectRoot: change.projectRoot,
+      change,
+      settings: read.resolved.value,
+    });
     if (read.view.profile === "tiny") await tinyGuard(deps, change, index);
     refreshChange(index, { id: change.id, dir: change.dir, archived: false });
     const after = await readGraph(deps, change, index, globalDir);
@@ -115,6 +114,7 @@ export function donePart(
       entry: written.entry.id,
       ...(next === undefined ? {} : { next }),
       ...(merged === undefined ? {} : { merge: merged.merge, discarded: merged.discarded }),
+      ...(checkpoint.done ? { checkpoint: checkpoint.commit.slice(0, 7) } : {}),
     };
   });
 }

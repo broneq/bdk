@@ -33,7 +33,7 @@ function refusal(result: { json: unknown }) {
 describe("rebuild", () => {
   it("rebuilds the active Change: counts, the regenerated plan index", async () => {
     const h = await started();
-    openTicket(h.store, "A-00000001", "01-1");
+    openTicket(h.store, "A-00000001", "01");
     h.git.commits = [["c1".repeat(20), "01", "01-1"]];
     const index = h.store.read(`${DIR}/plan/index.md`);
     h.store.write(`${DIR}/plan/index.md`, "stale\n");

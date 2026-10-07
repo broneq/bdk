@@ -18,6 +18,7 @@ import {
   ROOT,
   runBdk,
   writePackage,
+  ingestArgv,
 } from "./support.ts";
 
 const TICKET = "A-9c2d4f6h";
@@ -55,7 +56,7 @@ function harness(options: { role?: string; dispatch?: boolean; closed?: boolean 
     store,
     role,
     run,
-    ingest: (stdin: string) => run(["log", "ingest", "--ticket", TICKET, "--json"], stdin),
+    ingest: (text: string) => run(ingestArgv(store, TICKET, text, "--json")),
     /** An entry written under `ticket` through `log add`; answers its id. */
     entry: async (summary: string, ticket = TICKET) => {
       const added = await run(
@@ -260,7 +261,7 @@ describe("log ingest", () => {
 
   it("prints the stored path in text mode", async () => {
     const h = harness();
-    const result = await h.run(["log", "ingest", "--ticket", TICKET], report(ENVELOPE));
+    const result = await h.run(ingestArgv(h.store, TICKET, report(ENVELOPE)));
     expect(result.code).toBe(0);
     expect(result.stdout).toBe(
       `report stored for ${TICKET} (verifier, done)\n${reportPath("verifier")}\n`,

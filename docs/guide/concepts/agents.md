@@ -4,14 +4,13 @@ BDK runs its work through subagents because of context: a subagent gets its own 
 
 ## Roles and adapters
 
-The work an agent does is a **role**: implementer, simplifier, verifier, design-verifier, reviewer, integration-reviewer, judge, pr-reviewer, runner, scout or lead. A role is a skill under `skills/roles/`: the contract of what the agent reads, does, writes and returns. What the agent works on comes in a **dispatch package** that `bdk dispatch build` writes for one ticket: the task or review group, the decisions and blockers that bind it, the rules it reads and the report path.
+The work an agent does is a **role**: implementer, conformer, verifier, design-verifier, reviewer, integration-reviewer, judge, pr-reviewer, runner or scout. A role is a skill under `skills/roles/`: the contract of what the agent reads, does, writes and returns. What the agent works on comes in a **dispatch package** that `bdk dispatch build` writes for one ticket: the plan part or review group, the decisions and blockers that bind it, the rules it reads and the report path.
 
-An **adapter** is the agent file that runs a role: a tool set and a model, and nothing else. Eight adapters cover the eleven roles:
+An **adapter** is the agent file that runs a role: a tool set and a model, and nothing else. Seven adapters cover the ten roles:
 
 | Adapter          | Model  | Runs                                                  |
 | ---------------- | ------ | ----------------------------------------------------- |
-| `bdk:lead`       | sonnet | a lead of one plan part                               |
-| `bdk:worker`     | sonnet | implementer and simplifier, the only roles that edit  |
+| `bdk:worker`     | sonnet | implementer and conformer, the only roles that edit   |
 | `bdk:reader`     | opus   | verifier and design-verifier                          |
 | `bdk:integrator` | opus   | integration-reviewer, after the round's group reviews |
 | `bdk:judge`      | sonnet | judge, which triages the round's findings             |
@@ -29,11 +28,11 @@ The model is fixed per adapter, not chosen per call:
 - **sonnet** for writing and reviewing code, where judgement about the change is the deliverable.
 - **opus** for the roles that exist to disagree with a draft or a whole range: plan and design verification, and the integration review.
 
-When a task uses up its attempts, its escalation ticket runs on a stronger model (`policy.escalation.model`) instead of the adapter's: the escalation is a better model, not only one more try.
+When a part uses up its attempts, its escalation ticket runs on a stronger model (`policy.escalation.model`) instead of the adapter's: the escalation is a better model, not only one more try.
 
 ## Read-only means read-only
 
-Agents that must not write are constrained by their tool list, not by an instruction in prose: only `bdk:worker` carries `Edit` and `Write`. The orchestrating skills apply the same technique to their own turn: `/bdk:execute`, `/bdk:close`, `/bdk:cr` and `/bdk:pr-review` declare `disallowed-tools: Edit Write NotebookEdit`, so "the coordinator changes no file" is a property of the turn rather than a promise in the prompt.
+Agents that must not write are constrained by their tool list, not by an instruction in prose: only `bdk:worker` carries `Edit` and `Write`. The orchestrating skills apply the same technique to their own turn: `/bdk:execute`, `/bdk:close` and `/bdk:pr-review` declare `disallowed-tools: Edit Write NotebookEdit`, so "the coordinator changes no file" is a property of the turn rather than a promise in the prompt. `/bdk:cr` keeps `Write` for its merged report's draft, and while its review round is open `hooks pre-tool` denies a main-thread edit outside `.bdk/.machine/drafts/` (`guard/draft-only`).
 
 ## Each agent reads its own context
 
@@ -43,7 +42,7 @@ Subagents do not inherit the session's shared foundation, and an agent file cann
 
 An agent that answers in free prose forces the orchestrator to parse English, and the failure mode is silent: a reply that reads fine but omits the one field the caller needed.
 
-So every role writes its findings and decisions to the ledger with `bdk log add`, and stores its report through `bdk log ingest --ticket <ticket>`, which checks the envelope (`status`, `files`, `entries`, `evidence`, `reason`) and refuses a malformed one. The agent then returns only the envelope. The orchestrator reads the ledger and the stored report, never the agent's reply.
+So every role writes its findings and decisions to the ledger with `bdk log add`, and stores its report through `bdk log ingest --ticket <ticket> --file <draft>`, which checks the envelope (`status`, `files`, `entries`, `evidence`, `reason`) and refuses a malformed one. The agent then returns only the envelope. The orchestrator reads the ledger and the stored report, never the agent's reply.
 
 ## Continuing an agent instead of spawning one
 
@@ -57,7 +56,7 @@ The five-minute window is a cost boundary, not a correctness one. A `SendMessage
 
 ## The tree
 
-The tree is deliberate and bounded: a `lead` runs one plan part and starts its part's role agents, and a `worker` may start a `scout`; no other adapter carries the `Agent` tool. The [Agents reference](../reference/agents.md#the-tree-the-registry-and-messages) describes the tree, the agent registry and messages.
+The tree is deliberate and bounded: only the main session starts role agents, one implementer and one conformer per plan part, and a `worker` may start a `scout`; no other adapter carries the `Agent` tool. The [Agents reference](../reference/agents.md#the-tree-the-registry-and-messages) describes the tree, the agent registry and messages.
 
 ## Related
 

@@ -24,8 +24,35 @@ export interface Runtime {
   workTree(cwd: string): string | undefined;
   /** The executable `name` resolves to on `PATH`, or undefined when not installed. */
   which(name: string): string | undefined;
-  /** All of stdin; only a handler that reads a body calls it, so no other command blocks. */
+  /** All of stdin, read at once; only the hook handlers, whose payload the host writes first. */
   readStdin(): string;
+  /**
+   * A body from stdin that never waits (#166): `terminal` when stdin is a
+   * terminal, `silent` when no byte arrived within the wait, else the text.
+   */
+  readBody(): Promise<StdinBody>;
+}
+
+export type StdinBody = { readonly text: string } | { readonly unavailable: "terminal" | "silent" };
+
+/** The seconds a body reader waits for the first byte of stdin (`kernel-cli`, Invocation). */
+export const STDIN_WAIT_SECONDS = 3;
+
+/**
+ * The body a command reads from stdin, or `input/stdin-unavailable` naming
+ * `instead`, the command's file form or how to pipe the body.
+ */
+export async function stdinBody(
+  runtime: Runtime,
+  instead: readonly [string, ...string[]],
+): Promise<string | Refusal> {
+  const body = await runtime.readBody();
+  if ("text" in body) return body.text;
+  const why =
+    body.unavailable === "terminal"
+      ? "stdin is a terminal; this command reads its input from a pipe or a file"
+      : `no input arrived on stdin within ${STDIN_WAIT_SECONDS} s`;
+  return refuse("input/stdin-unavailable", why, instead);
 }
 
 /** The Change bound to the current branch (`kernel-state`, Branch binding). */

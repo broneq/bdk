@@ -37,10 +37,10 @@ describe("the layout maps each path to its kind", () => {
     ],
     ["plan-part", at("plan/parts/02-login.md"), example.planPart],
     ["plan-index", at("plan/index.md"), { schema: 1, generated: true, parts: [] }],
-    ["attempt", at("attempts/task-redispatch-02-3-A-7f3kx2p9.md"), example.attempt],
+    ["attempt", at("attempts/part-02-A-7f3kx2p9.md"), example.attempt],
     ["evidence", at("evidence/02-3-E-5hq0m2vd.md"), example.evidence],
-    ["dispatch", at("dispatch/02-3-implementer-A-7f3kx2p9.md"), example.dispatch],
-    ["report", at("reports/02-3-implementer-A-7f3kx2p9.md"), example.report],
+    ["dispatch", at("dispatch/02-implementer-A-7f3kx2p9.md"), example.dispatch],
+    ["report", at("reports/02-implementer-A-7f3kx2p9.md"), example.report],
     ["pruned", at("dispatch/pruned.md"), example.pruned],
     ["pruned", at("reports/pruned.md"), { ...example.pruned, dir: "reports" }],
     ["rule", "/repo/.bdk/rules/TQ-7.md", example.rule],
@@ -59,7 +59,7 @@ describe("the layout maps each path to its kind", () => {
 
   it("writes the report envelope's lists in flow style", () => {
     const store = memoryStore();
-    const path = at("reports/02-3-implementer-A-7f3kx2p9.md");
+    const path = at("reports/02-implementer-A-7f3kx2p9.md");
     writeDocument(store, path, { data: example.report, body: "" });
     expect(store.read(path)).toContain(
       "files: [src/auth/magic-link.ts, src/auth/magic-link.test.ts]\n",
@@ -186,11 +186,11 @@ describe("validation", () => {
     ["change.md", example.change, "id", "2026-09-24-other"],
     ["plan/parts/03-login.md", example.planPart, "id", undefined],
     ["design/parts/02-auth.md", example.designPart, "id", undefined],
-    ["attempts/verify-fix-02-3-A-7f3kx2p9.md", example.attempt, "loop", undefined],
-    ["attempts/task-redispatch-02-3-A-0000abcd.md", example.attempt, "ticket", undefined],
+    ["attempts/verify-fix-02-A-7f3kx2p9.md", example.attempt, "loop", undefined],
+    ["attempts/part-02-A-0000abcd.md", example.attempt, "ticket", undefined],
     ["evidence/02-4-E-5hq0m2vd.md", example.evidence, "target", undefined],
-    ["dispatch/02-3-reviewer-A-7f3kx2p9.md", example.dispatch, "role", undefined],
-    ["reports/02-3-reviewer-A-7f3kx2p9.md", example.report, "role", undefined],
+    ["dispatch/02-reviewer-A-7f3kx2p9.md", example.dispatch, "role", undefined],
+    ["reports/02-reviewer-A-7f3kx2p9.md", example.report, "role", undefined],
     ["reports/pruned.md", example.pruned, "dir", undefined],
   ])("checks %s against the document, naming %s", (path, data, field, value) => {
     const document = value === undefined ? data : { ...data, [field]: value };
@@ -222,7 +222,7 @@ describe("validation", () => {
 });
 
 describe("versions", () => {
-  const path = at("attempts/task-redispatch-02-3-A-7f3kx2p9.md");
+  const path = at("attempts/part-02-A-7f3kx2p9.md");
   const version2 = {
     ...attemptKind,
     version: 2,

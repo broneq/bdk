@@ -87,7 +87,7 @@
       "BDK-TS-11",
       "BDK-TS-12"
     ],
-    "simplifier": [
+    "conformer": [
       "BDK-ARCH-1",
       "BDK-ARCH-2",
       "BDK-ARCH-3",
@@ -415,8 +415,7 @@
       "BDK-TS-12"
     ],
     "runner": [],
-    "scout": [],
-    "lead": []
+    "scout": []
   },
   "skills": {
     "design": [

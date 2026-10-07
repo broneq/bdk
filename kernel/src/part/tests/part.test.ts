@@ -295,14 +295,14 @@ describe("part done", () => {
     });
   });
 
-  it("refuses policy/ticket-open while a ticket of a task is open", async () => {
+  it("refuses policy/ticket-open while a ticket of the part is open", async () => {
     const h = await started();
     h.git.commits = [[HASH("a"), "01", "01-1"]];
-    openTicket(h.store, "A-7h3k9m2p", "01-2");
+    openTicket(h.store, "A-7h3k9m2p", "01");
     const result = await h.run(["part", "done", "01", "--json"], T2);
     expect(result.json).toMatchObject({
       rule: "policy/ticket-open",
-      why: "ticket A-7h3k9m2p is open on 01-2",
+      why: "ticket A-7h3k9m2p is open on 01",
     });
   });
 

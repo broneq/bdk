@@ -35,7 +35,6 @@ describe("plugin layout", () => {
     expect(agents).toStrictEqual([
       "integrator.md",
       "judge.md",
-      "lead.md",
       "reader.md",
       "reviewer.md",
       "runner.md",

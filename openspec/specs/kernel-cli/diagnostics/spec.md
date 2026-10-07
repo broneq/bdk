@@ -199,10 +199,10 @@ Stores the analysis of one session, after checking its BDK issue section for pro
 - **Slice:** `diagnostics`
 - **Arguments:**
   - `--session <session-id>`. As for `bdk diagnostics report`; it names the file.
-- **Behaviour:** Reads the Markdown from stdin. It requires the headings `## Summary`, `## What went well`, `## What went wrong`, `## Where the fix belongs` and `## For a BDK issue`; a missing heading is `input/invalid-argument` naming it. It checks the `## For a BDK issue` section only: no fenced code block; every code span is a `bdk` command, a rule id of the catalogue, a ticket or ledger id, a role or adapter name, a settings key, a BDK skill name or a path under `.bdk/` or `${CLAUDE_PLUGIN_ROOT}`; and no line of 20 or more characters, trimmed, equals a line of a file git tracks. A failed check refuses with `policy/project-code` naming the section line and the check, and writes nothing. On success it writes `.bdk/.machine/diagnostics/<change>-<session>.md` (`<session>.md` without a Change), replacing an earlier analysis of the session, and prints the path.
+- **Behaviour:** Reads the Markdown from stdin, which must deliver its first byte within 3 seconds (`kernel-cli`, Invocation; #166). It requires the headings `## Summary`, `## What went well`, `## What went wrong`, `## Where the fix belongs` and `## For a BDK issue`; a missing heading is `input/invalid-argument` naming it. It checks the `## For a BDK issue` section only: no fenced code block; every code span is a `bdk` command, a rule id of the catalogue, a ticket or ledger id, a role or adapter name, a settings key, a BDK skill name or a path under `.bdk/` or `${CLAUDE_PLUGIN_ROOT}`; and no line of 20 or more characters, trimmed, equals a line of a file git tracks. A failed check refuses with `policy/project-code` naming the section line and the check, and writes nothing. On success it writes `.bdk/.machine/diagnostics/<change>-<session>.md` (`<session>.md` without a Change), replacing an earlier analysis of the session, and prints the path.
 - **Writes:** `.bdk/.machine/diagnostics/`
 - **Output:** `schema/cli/output/diagnostics-write.json`
-- **Exit codes and rules:** `0, 2, 3, 5`. Specific rules: `policy/project-code`; plus the common rules of every command.
+- **Exit codes and rules:** `0, 2, 3, 5`. Specific rules: `input/stdin-unavailable`, `policy/project-code`; plus the common rules of every command.
 - **Example:**
 
   ```bash
@@ -232,3 +232,8 @@ Stores the analysis of one session, after checking its BDK issue section for pro
 
 - **WHEN** the Markdown has no `## For a BDK issue` heading
 - **THEN** the exit code is 3 with `rule: input/invalid-argument` naming the heading
+
+#### Scenario: input/stdin-unavailable
+
+- **WHEN** `bdk diagnostics write` runs from a shell whose stdin is a pipe that never closes and no byte arrives
+- **THEN** the exit code is 3 within 4 seconds, the error object carries `rule: input/stdin-unavailable`, and nothing is written

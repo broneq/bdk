@@ -228,7 +228,9 @@ async function mergeLocked(
     return refuse(
       "policy/worktree-dirty",
       `the worktree of part ${part.id} still changes ${dirty.join(", ")}, which its tasks declare`,
-      [`commit the work with bdk commit <task>, or restore ${dirty.join(" ")} in ${workdir}`],
+      [
+        `commit the task with the command bdk check run <task> prints, or restore ${dirty.join(" ")} in ${workdir}`,
+      ],
     );
   }
   const discarded = changed.filter((path) => !dirty.includes(path));

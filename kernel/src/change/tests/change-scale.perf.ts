@@ -6,15 +6,15 @@
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { bdk, git, repository } from "../../../tests/support/repo.ts";
+import { bdk, git, repository, ingestArgs, shell } from "../../../tests/support/repo.ts";
 import { fileStore } from "../../shared/store/index.ts";
 
 const PARTS = 8;
 
 const SETTINGS =
   "tools:\n" +
-  "  test:\n    - { id: unit, tier: fast, command: vitest run }\n" +
-  "  lint:\n    - { id: eslint, tier: lint, command: eslint . }\n";
+  '  test:\n    - { id: unit, tier: fast, command: "true" }\n' +
+  '  lint:\n    - { id: eslint, tier: lint, command: "true" }\n';
 
 const ENVELOPE = "---\nstatus: done\nfiles: []\nentries: []\nevidence: []\n---\n";
 
@@ -39,7 +39,7 @@ describe("a whole Change within the per-call budget", () => {
       return result.json as Record<string, unknown>;
     };
     const evidence = (ticket: string, kind: string) => {
-      const file = `.bdk/.machine/${kind}-${ticket.replace("@", "-")}.json`;
+      const file = `.bdk/.machine/checks/${ticket.replace(/@.*$/, "")}/${kind}.json`;
       fileStore().write(join(root, file), '{"failed":0}\n');
       call([
         "evidence",
@@ -74,8 +74,9 @@ describe("a whole Change within the per-call budget", () => {
       const task = `${nn}-1`;
       call(["next"]);
       call(["part", "start", nn]);
-      const ticket = call(["attempt", "open", "task-redispatch", task]).ticket as string;
-      call(["dispatch", "build", task, "implementer", ticket]);
+      // One part ticket (#166): the implementer commits the task, the conformer checks the part.
+      const ticket = call(["attempt", "open", "part", nn]).ticket as string;
+      call(["dispatch", "build", nn, "implementer", ticket]);
       call(["rules", "show", "--ticket", ticket]);
       call([
         "log",
@@ -89,13 +90,14 @@ describe("a whole Change within the per-call budget", () => {
       ]);
       call(["log", "list", "--since-ticket-start", ticket]);
       fileStore().write(join(root, `src/${task}.ts`), `export const value = "${task}";\n`);
-      call(["dispatch", "build", task, "simplifier", ticket]);
-      call(["log", "ingest", "--ticket", ticket], `${ENVELOPE}# Simplify\n`);
-      call(["dispatch", "build", task, "runner", ticket]);
-      evidence(ticket, "tests-scoped");
-      evidence(ticket, "lint");
+      const checked = call(["check", "run", task, "--ticket", ticket]) as {
+        commit?: { command: string };
+      };
+      if (checked.commit !== undefined) shell(root, checked.commit.command);
+      call(["dispatch", "build", nn, "conformer", ticket]);
+      call(ingestArgs(root, ticket, `${ENVELOPE}## Conformance\n\n- none apply\n`));
+      call(["check", "run", nn, "--ticket", ticket]);
       call(["attempt", "close", ticket, "ok"]);
-      call(["commit", task]);
       call(["part", "done", nn]);
       call(["change", "status"]);
       call(["explain", `execute-part:${nn}`]);
@@ -111,12 +113,13 @@ describe("a whole Change within the per-call budget", () => {
     call(["dispatch", "build", id, "runner", round, "--group", "gate"]);
     evidence(`${round}@gate`, "tests-full");
     evidence(`${round}@gate`, "lint-full");
-    call(["log", "ingest", "--ticket", `${round}@merge`], `${ENVELOPE}# Review\n\nPASS\n`);
+    call(ingestArgs(root, `${round}@merge`, `${ENVELOPE}# Review\n\nPASS\n`));
     call(["log", "add", "report", "review passed", "--ref", id, "--ticket", `${round}@merge`]);
     call(["attempt", "close", round, "ok"]);
     call(["done", "review"]);
     call(["change", "status"]);
-    expect(git(root, "log", "--format=%s").trim().split("\n")).toHaveLength(PARTS + 1);
+    // Per part: the task's commit, then the checkpoint of its ticket's close.
+    expect(git(root, "log", "--format=%s").trim().split("\n")).toHaveLength(2 * PARTS + 1);
 
     const total = times.reduce((sum, time) => sum + time, 0);
     const sorted = [...times].sort((a, b) => a - b);

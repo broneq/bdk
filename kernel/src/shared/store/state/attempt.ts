@@ -25,7 +25,7 @@ export const attemptKind = {
       }),
       target: z.string().min(1).meta({
         description:
-          "Task id (task-redispatch), part id (verify-fix), Change id (review-fix) or artifact id (verifier).",
+          "Part id (part, verify-fix), Change id (review-fix) or artifact id (verifier); never a task id (#166).",
       }),
       attempt: counter,
       of: counter,
@@ -75,6 +75,14 @@ export const attemptKind = {
         description:
           "The unmerged paths when the merge ticket opened; present exactly when `merge` is.",
       }),
+      base: z
+        .string()
+        .regex(/^[0-9a-f]{40,64}$/)
+        .optional()
+        .meta({
+          description:
+            "On a `part` or `verify-fix` record: the commit `HEAD` of the part's work root pointed at when the ticket opened; the diff check of its close reads the part's commits after it (`kernel-loops`, Diff check; #166).",
+        }),
     })
     .superRefine((data, context) => {
       if ((data.merge === true) !== (data.conflicts !== undefined)) {

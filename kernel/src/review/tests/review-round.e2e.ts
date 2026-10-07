@@ -11,12 +11,20 @@ import { appendFileSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { answered, bdk, git, read, refused, repository } from "../../../tests/support/repo.ts";
+import {
+  answered,
+  bdk,
+  ingestArgs,
+  git,
+  read,
+  refused,
+  repository,
+} from "../../../tests/support/repo.ts";
 import { passGate } from "../../graph/tests/e2e-support.ts";
 
 const SETTINGS =
-  "tools:\n  test:\n    - id: unit\n      tier: fast\n      command: vitest run\n" +
-  "  lint:\n    - id: lint\n      tier: lint\n      command: eslint .\n";
+  'tools:\n  test:\n    - id: unit\n      tier: fast\n      command: "true"\n' +
+  '  lint:\n    - id: lint\n      tier: lint\n      command: "true"\n';
 
 interface Plan {
   anchor: { kind: string };
@@ -169,7 +177,7 @@ function cleanRound(review: Review, ticket: string, plan: Plan): string[] {
 /** The gate runner's records of the full gate under `<ticket>@gate`. */
 function gate(review: Review, ticket: string): void {
   for (const kind of ["tests-full", "lint-full"]) {
-    const file = `.bdk/.machine/${kind}-${ticket}.json`;
+    const file = `.bdk/.machine/checks/${ticket}/${kind}.json`;
     put(review.root, file, '{"failed":0}\n');
     answered(
       run(review, [
@@ -202,7 +210,7 @@ function kernelFindings(review: Review): string[] {
 
 function ingest(review: Review, reference: string, entries: string[]): void {
   answered(
-    run(review, ["log", "ingest", "--ticket", reference], report(entries)),
+    run(review, ingestArgs(review.root, reference, report(entries))),
     "output/log-ingest.json",
   );
 }

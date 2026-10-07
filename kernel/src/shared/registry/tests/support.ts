@@ -127,6 +127,7 @@ export function runtime(overrides: Partial<Runtime> = {}): Runtime {
     workTree: () => "/repo",
     which: () => undefined,
     readStdin: () => "",
+    readBody: () => Promise.resolve({ text: "" }),
     ...overrides,
   };
 }

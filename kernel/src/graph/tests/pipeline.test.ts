@@ -58,7 +58,7 @@ describe("the shipped pipeline", () => {
       "plan",
       "plan-verify",
       "execute",
-      "simplify",
+      "conform",
       "tests-scoped",
       "lint",
       "spec-delta",

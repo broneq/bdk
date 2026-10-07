@@ -8,17 +8,16 @@ BDK ships these subagents. Invoke one through the Agent tool with its `subagent_
 
 <!-- bdk:agents-table -->
 
-| `subagent_type`      | Model  | When to pick                                                                                                                                                                    |
-| -------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `bdk:integrator`     | opus   | BDK read-only adapter for the integration review of a Change after its group reviews (integration-reviewer). Started by /bdk:cr; not for general tasks.                         |
-| `bdk:judge`          | sonnet | BDK read-only adapter that triages the findings of a review round (judge). Started by /bdk:cr; not for general tasks.                                                           |
-| `bdk:lead`           | sonnet | BDK adapter for the lead of one plan part, which dispatches its tasks to background agents, waits for them and commits them. Started by the swarm skill; not for general tasks. |
-| `bdk:reader`         | opus   | BDK read-only adapter for deep verification (verifier, design-verifier). Started by BDK role skills; not for general tasks.                                                     |
-| `bdk:reviewer`       | sonnet | BDK read-only adapter for code review (reviewer, pr-reviewer). Started by BDK role skills and the swarm skill; not for general tasks.                                           |
-| `bdk:runner`         | haiku  | BDK adapter that runs the project's tests and checks for a dispatch package (runner). Started by BDK role skills and the swarm skill; not for general tasks.                    |
-| `bdk:scout`          | haiku  | BDK read-only adapter for fast searches and log triage (scout). Started by BDK role skills and the swarm skill; not for general tasks.                                          |
-| `bdk:web-researcher` | haiku  | Internet research for debugging, finding solutions, and gathering technical information. Searches GitHub issues, Stack Overflow, Reddit, forums, and documentation.             |
-| `bdk:worker`         | sonnet | BDK adapter for dispatched work that edits files (implementer and simplify packages). Started by BDK role skills and the swarm skill; not for general tasks.                    |
+| `subagent_type`      | Model  | When to pick                                                                                                                                                        |
+| -------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bdk:integrator`     | opus   | BDK read-only adapter for the integration review of a Change after its group reviews (integration-reviewer). Started by /bdk:cr; not for general tasks.             |
+| `bdk:judge`          | sonnet | BDK read-only adapter that triages the findings of a review round (judge). Started by /bdk:cr; not for general tasks.                                               |
+| `bdk:reader`         | opus   | BDK read-only adapter for deep verification (verifier, design-verifier). Started by BDK role skills; not for general tasks.                                         |
+| `bdk:reviewer`       | sonnet | BDK read-only adapter for code review (reviewer, pr-reviewer). Started by BDK role skills and the swarm skill; not for general tasks.                               |
+| `bdk:runner`         | haiku  | BDK adapter that runs the project's full tests and lint at the review gate (runner). Started by BDK role skills and the swarm skill; not for general tasks.         |
+| `bdk:scout`          | haiku  | BDK read-only adapter for fast searches and log triage (scout). Started by BDK role skills and the swarm skill; not for general tasks.                              |
+| `bdk:web-researcher` | haiku  | Internet research for debugging, finding solutions, and gathering technical information. Searches GitHub issues, Stack Overflow, Reddit, forums, and documentation. |
+| `bdk:worker`         | sonnet | BDK adapter for dispatched work that edits files (implementer and conformer packages). Started by BDK role skills and the swarm skill; not for general tasks.       |
 
 <!-- /bdk:agents-table -->
 

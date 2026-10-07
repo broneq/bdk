@@ -1,6 +1,6 @@
 ---
 name: execute-thin
-description: Executes the plan parts of the active BDK Change through role agents, one ticket per task, until the kernel points past the execute stage. Use when the user types /bdk:execute.
+description: Executes the plan parts of the active BDK Change through role agents, one ticket per part, until the kernel points past the execute stage. Use when the user types /bdk:execute.
 disable-model-invocation: true
 allowed-tools: Bash(bdk *) Bash(echo *) Agent SendMessage Read
 disallowed-tools: Edit Write NotebookEdit
@@ -22,9 +22,9 @@ You never edit project files yourself and never run tests or linters yourself: r
 2. Do what its `instruction` says, with the commands the kernel prints and the rules below. A plan part starts with `bdk part start <part>`; its output lists the tasks.
 3. When the instruction's "When finished" command succeeds, go back to 1.
 
-## One task
+## One part
 
-Every task of a started part runs as one ticket, opened with `bdk attempt open task-redispatch <task> --json`. Load the `bdk:swarm` skill once before the first ticket and follow its "One ticket" and "Waves" sections: they give the order of the packages inside a ticket. Close a ticket `ok` when every agent returned `done` and the runner's evidence passed, otherwise `fail`.
+Every started part runs as one ticket, opened with `bdk attempt open part <part> --json`. Load the `bdk:swarm` skill once before the first ticket and follow it. Inside a ticket, dispatch the `implementer` package first; it commits each task of the part itself. When it returns, dispatch the `conformer` package. Close the ticket `ok` when both returned `done`, otherwise `fail`.
 
 ## Dispatch
 
@@ -48,13 +48,13 @@ An agent that returns without its report stored is resumed once with `SendMessag
 
 `attempt close` answers with `next.action`:
 
-| `next.action` | What you do                                                                     |
-| ------------- | ------------------------------------------------------------------------------- |
-| `commit`      | `bdk commit <task> --json`.                                                     |
-| `retry`       | Open a new ticket for the same task and dispatch again.                         |
-| `narrow`      | Open a new ticket; the kernel gives the narrower scope in the package.          |
-| `escalate`    | `bdk attempt open task-redispatch <task> --escalate --json` and dispatch again. |
-| `parked`      | Stop the loop and go to "Finish": the Change waits for the user.                |
+| `next.action` | What you do                                                            |
+| ------------- | ---------------------------------------------------------------------- |
+| `part-done`   | `bdk part done <part> --json`.                                         |
+| `retry`       | Open a new ticket for the same part and dispatch again.                |
+| `narrow`      | Open a new ticket; the kernel gives the narrower scope in the package. |
+| `escalate`    | `bdk attempt open part <part> --escalate --json` and dispatch again.   |
+| `parked`      | Stop the loop and go to "Finish": the Change waits for the user.       |
 
 ## When the kernel refuses
 

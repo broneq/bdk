@@ -38,6 +38,11 @@ const BLOCKING = [
     description: "An execution-critical unresolved decision or omitted requirement.",
   },
   { id: "false-code-claim", description: "A claim about the real code that is false." },
+  {
+    id: "costly-command",
+    description:
+      "A plan acceptance or task that can run a command that spends money, needs credentials or reaches a shared or external system, or names its commands by exclusion.",
+  },
 ];
 
 const NOT_A_FAIL = [

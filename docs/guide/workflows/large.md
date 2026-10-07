@@ -2,8 +2,8 @@
 
 A `large` Change is a feature whose design spans three or more subsystems. It
 runs the same stages as a [`small`](small.md) one, with two differences: the
-design is split into parts, and the plan parts can run as a tree of agents,
-one lead per part.
+design is split into parts, and the plan parts of one wave run in parallel,
+one implementer per part.
 
 ## How a Change becomes large
 
@@ -32,26 +32,24 @@ dependency between them form a wave. A part that would share state outside its
 `Files:` with another part of its wave, such as a lockfile both regenerate, is
 marked `isolation: worktree`; see [Worktree parts](../concepts/worktree-parts.md).
 
-## Execution as a tree
+## Parallel parts
 
-When at least `execution.tree.min-parts` (default 2) independent parts are
-ready, `bdk next` marks them `tree`, and `/bdk:execute` starts one `bdk:lead`
-agent per part instead of dispatching every task itself:
+`bdk next` lists the ready parts of a wave, and `/bdk:execute` runs each of
+them as one part ticket, exactly as on a `small` Change: one `bdk:worker`
+implementer builds and commits every task of the part, then one `bdk:worker`
+conformer checks the part and runs its checks:
 
 ```mermaid
 flowchart TB
-    main["/bdk:execute (main session)"] --> L1["bdk:lead part 01"]
-    main --> L2["bdk:lead part 02"]
-    L1 --> W1["bdk:worker 01-1"] --> R1["bdk:runner"]
-    L1 --> W2["bdk:worker 01-2"]
-    L2 --> W3["bdk:worker 02-1"] --> R3["bdk:runner"]
+    main["/bdk:execute (main session)"] --> I1["bdk:worker implementer, part 01"]
+    main --> I2["bdk:worker implementer, part 02"]
+    I1 --> C1["bdk:worker conformer, part 01"]
+    I2 --> C2["bdk:worker conformer, part 02"]
 ```
 
-A lead dispatches its part's tasks to background agents, waits for them with
-`bdk agents wait`, closes each ticket and commits each task. At most
-`execution.concurrency` (default 5) dispatches of one wave run at once.
-`bdk agents list` shows the tree while it runs. Set `execution.tree.enabled` to
-`false` to run every part flat from the main session.
+Only the main session starts role agents. At most `execution.concurrency`
+(default 5) dispatches of one wave run at once, and `bdk agents list` shows
+them while they run.
 
 ## The review
 

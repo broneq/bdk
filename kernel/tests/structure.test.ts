@@ -8,7 +8,7 @@ import commands from "../../schema/cli/commands.json" with { type: "json" };
 import { registrations, settingsRegistry } from "../src/registrations.ts";
 import { createRegistry, loadIndex } from "../src/shared/registry/index.ts";
 import { systemClock } from "../src/shared/clock/index.ts";
-import { systemGit } from "../src/shared/git/index.ts";
+import { runCommand, systemGit } from "../src/shared/git/index.ts";
 import { memoryIndex, memoryRegistry, memoryStore } from "../src/shared/store/index.ts";
 import { consumerViolations } from "./support/consumers.ts";
 import type { ConsumerWorld, Declared } from "./support/consumers.ts";
@@ -268,6 +268,7 @@ describe("config consumers (S6)", async () => {
       commands: index,
       settings,
       git: systemGit,
+      shell: runCommand,
       openIndex: memoryIndex,
       openRegistry: memoryRegistry(),
       clock: systemClock,

@@ -160,6 +160,14 @@ export const partDoneOutput = z
       description:
         "Worktree paths no task declares, dropped with the worktree and recorded in one finding.",
     }),
+    checkpoint: z
+      .string()
+      .regex(/^[0-9a-f]{7}$/)
+      .optional()
+      .meta({
+        description:
+          "The checkpoint commit of the Change directory, abbreviated; absent when it skipped (#166).",
+      }),
   })
   .meta({
     title: "bdk part done --json",
@@ -175,6 +183,7 @@ export const partDoneOutput = z
         openFindings: [],
         entry: "L-y5u3e7wq",
         next: "execute-part:03",
+        checkpoint: "e1f2a3b",
       },
     ],
   }) satisfies z.ZodType<PartDoneReport>;

@@ -12,6 +12,7 @@ import {
   outsideRepository,
   refused,
   repository,
+  ingestArgs,
 } from "../../../tests/support/repo.ts";
 import { fileStore, readDocument, writeDocument } from "../../shared/store/index.ts";
 import {
@@ -272,9 +273,7 @@ describe("a verifier round through the commands", () => {
       "input/not-found",
     );
     const envelope = "---\nstatus: done\nfiles: []\nentries: []\nevidence: []\n---\nPASS\n";
-    expect(
-      bdk(["log", "ingest", "--ticket", ticket, "--json"], root, { stdin: envelope }).code,
-    ).toBe(0);
+    expect(bdk([...ingestArgs(root, ticket, envelope), "--json"], root).code).toBe(0);
     const added = answered(
       bdk(
         [
@@ -343,9 +342,7 @@ describe("a verifier round through the commands", () => {
     expect(blocker).toMatchObject({ entry: { refs: ["design.md", "design-verify"] } });
     const envelope =
       "---\nstatus: done-with-concerns\nfiles: []\nentries: []\nevidence: []\n---\nFAIL\n";
-    expect(
-      bdk(["log", "ingest", "--ticket", ticket, "--json"], root, { stdin: envelope }).code,
-    ).toBe(0);
+    expect(bdk([...ingestArgs(root, ticket, envelope), "--json"], root).code).toBe(0);
     expect(
       bdk(
         ["log", "add", "report", "one blocker", "--ref", "design-verify", "--ticket", ticket],

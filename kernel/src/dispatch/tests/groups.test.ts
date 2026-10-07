@@ -210,7 +210,7 @@ describe("dispatch build --group", () => {
   it("refuses a group on a ticket of another loop with input/invalid-argument", async () => {
     const result = await build(
       dispatchHarness(),
-      "02-3",
+      "02",
       "reviewer",
       "A-7f3k9m2q",
       "--group",
@@ -626,16 +626,38 @@ describe("the gate runner's Checks section (D9)", () => {
     expect(checks).not.toContain("eslint");
   });
 
-  it("keeps the post-fix steps for an ungrouped runner on the same ticket", async () => {
+  it("refuses an ungrouped runner on the round ticket and names the gate group (#166)", async () => {
+    const result = await build(round(), CHANGE, "runner", ROUND);
+    expect(result.code, result.stdout).toBe(3);
+    expect(rule(result)).toBe("input/invalid-argument");
+    expect(JSON.stringify(result.json)).toContain(
+      `bdk dispatch build ${CHANGE} runner ${ROUND} --group gate`,
+    );
+    expect(JSON.stringify(result.json)).toContain(`bdk check run ${CHANGE} --ticket ${ROUND}`);
+  });
+});
+
+describe("the fix of a round (#166)", () => {
+  async function built(role: string) {
     const h = round();
-    h.store.write(`${ROOT}/.bdk/settings.yaml`, GATE_TOOLS);
-    const result = await build(h, CHANGE, "runner", ROUND);
+    const result = await build(h, CHANGE, role, ROUND);
     expect(result.code, result.stdout).toBe(0);
-    const text = h.store.read(`${ROOT}/${dispatchBuildOutput.parse(result.json).path}`) ?? "";
-    const checks = section(text, "Checks");
-    expect(checks).toContain("### tests-scoped");
-    expect(checks).toContain("### lint");
-    expect(checks).not.toContain("### tests-full");
+    const report = dispatchBuildOutput.parse(result.json);
+    return h.store.read(`${ROOT}/${report.path}`) ?? "";
+  }
+
+  it("has its implementer check the fix over the Change and commit nothing", async () => {
+    const checks = section(await built("implementer"), "Checks");
+    expect(checks).toContain(`bdk check run ${CHANGE} --ticket ${ROUND}`);
+    expect(checks).toContain(`the orchestrator commits the fix with \`bdk commit ${CHANGE}\``);
+    expect(checks).not.toContain("run the `git` command it printed");
+  });
+
+  it("has its conformer check the uncommitted fix, not a range", async () => {
+    const text = await built("conformer");
+    expect(section(text, "Fix")).toContain("`git diff HEAD`");
+    expect(text).not.toContain("\n## Range\n");
+    expect(section(text, "Checks")).toContain(`bdk check run ${CHANGE} --ticket ${ROUND}`);
   });
 });
 

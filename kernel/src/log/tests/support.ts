@@ -163,6 +163,7 @@ export async function runBdk(
       workTree: () => ROOT,
       which: () => undefined,
       readStdin: () => stdin,
+      readBody: () => Promise.resolve({ text: stdin }),
     },
     streams: { stdout: (text) => (stdout += text), stderr: () => undefined },
   });
@@ -180,7 +181,7 @@ export function writePackage(
   store: Store,
   ticket: string,
   role: string,
-  target = "02-3",
+  target = "02",
   extra: Readonly<Record<string, unknown>> = {},
 ): void {
   const path = `.bdk/changes/${CHANGE}/dispatch/${target}-${role}-${ticket}.md`;
@@ -190,7 +191,7 @@ export function writePackage(
       ticket,
       target,
       role,
-      adapter: role === "implementer" || role === "simplifier" ? "worker" : "reader",
+      adapter: role === "implementer" || role === "conformer" ? "worker" : "reader",
       attempt: 1,
       of: 3,
       scope: "full",
@@ -198,10 +199,26 @@ export function writePackage(
       "kernel-version": "3.0.0-dev",
       "template-hash": `sha256:${"a".repeat(64)}`,
       report: `.bdk/changes/${CHANGE}/reports/${target}-${role}-${ticket}.md`,
+      draft: `.bdk/.machine/drafts/${target}-${role}-${ticket}.md`,
       rules: [],
       ...extra,
     },
     body: "",
   });
   stampPackage(store, `${ROOT}/.bdk/changes/${CHANGE}`, ticket, path);
+}
+
+/**
+ * The `log ingest` argv for `text`, written first as the draft a role writes
+ * with its file tool (#166); `rest` follows, `--json` for one.
+ */
+export function ingestArgv(
+  store: Store,
+  ticket: string,
+  text: string,
+  ...rest: string[]
+): string[] {
+  const path = `${ROOT}/.bdk/.machine/drafts/${ticket.replace("@", "-")}.md`;
+  store.write(path, text);
+  return ["log", "ingest", "--ticket", ticket, "--file", path, ...rest];
 }

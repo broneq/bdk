@@ -7,7 +7,7 @@ import { DatabaseSync } from "node:sqlite";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { answered, bdk } from "../../../tests/support/repo.ts";
+import { answered, bdk, ingestArgs } from "../../../tests/support/repo.ts";
 import { dispatched, opened, started as change } from "../../attempt/tests/e2e-support.ts";
 import type { Started } from "../../attempt/tests/e2e-support.ts";
 import {
@@ -19,7 +19,6 @@ import {
   started,
 } from "../../agents/tests/e2e-support.ts";
 
-const LEAD = "a9f8e7d6c5b4a3f2e";
 const WORKER = "a1b2c3d4e5f6a7b8c";
 const SCOUT = "a5e4d3c2b1a0f9e8d";
 
@@ -27,15 +26,12 @@ function show(root: string, id: string) {
   return answered(bdk(["agents", "show", id, "--json"], root), "output/agents-show.json");
 }
 
-/** A worker of the lead on task 01-1 with its package, linked and started. */
+/** The part agent `main` started on part 01 with its package, linked. */
 function worker(settings = ""): { change: Started; ticket: string; path: string } {
   const started_ = change(settings);
-  const ticket = opened(started_, "task-redispatch", "01-1");
-  const path = dispatched(started_, ticket, "01-1");
-  spawned(started_.root, { child: LEAD, type: "bdk:lead", prompt: "lead part 01" });
-  started(started_.root, LEAD, "bdk:lead");
+  const ticket = opened(started_, "part", "01");
+  const path = dispatched(started_, ticket, "01");
   spawned(started_.root, {
-    parent: { id: LEAD, type: "bdk:lead" },
     child: WORKER,
     type: "bdk:worker",
     prompt: promptFor(path),
@@ -74,7 +70,7 @@ function mainStop(root: string, running: readonly string[] = [], json = true) {
         id: task,
         type: "subagent",
         status: "running",
-        description: "lead",
+        description: "part 01",
       })),
     }),
   });
@@ -124,7 +120,7 @@ describe("bdk hooks subagent-start and post-tool", () => {
       .hookSpecificOutput.additionalContext;
     expect(context.split("\n")).toEqual([
       `BDK-AGENT-ID: ${WORKER}`,
-      `BDK-PARENT: ${LEAD}`,
+      "BDK-PARENT: main",
       `BDK-PACKAGE: ${path}`,
       `BDK-TICKET: ${ticket}`,
     ]);
@@ -134,7 +130,7 @@ describe("bdk hooks subagent-start and post-tool", () => {
       }),
       "output/hooks-subagent-start.json",
     );
-    expect(json).toMatchObject({ agent: WORKER, parent: LEAD, package: path });
+    expect(json).toMatchObject({ agent: WORKER, parent: "main", package: path });
   });
 
   it("gives a foreground spawn its id only, and a non-BDK agent nothing", () => {
@@ -152,7 +148,11 @@ describe("bdk hooks subagent-start and post-tool", () => {
 
   it("links at launch, ends a foreground result and a TaskStop", () => {
     const { change: started_, ticket } = worker();
-    expect(show(started_.root, WORKER)).toMatchObject({ state: "starting", ticket, parent: LEAD });
+    expect(show(started_.root, WORKER)).toMatchObject({
+      state: "starting",
+      ticket,
+      parent: "main",
+    });
     spawned(started_.root, {
       child: SCOUT,
       type: "bdk:runner",
@@ -165,18 +165,25 @@ describe("bdk hooks subagent-start and post-tool", () => {
         stdin: JSON.stringify({
           session_id: SESSION,
           tool_name: "TaskStop",
-          tool_input: { task_id: LEAD },
-          tool_response: { task_id: LEAD, task_type: "local_agent" },
+          tool_input: { task_id: WORKER },
+          tool_response: { task_id: WORKER, task_type: "local_agent" },
         }),
       }),
       "output/hooks-post-tool.json",
     );
-    expect(json).toMatchObject({ ended: { agent: LEAD, by: "task-stop" } });
+    expect(json).toMatchObject({ ended: { agent: WORKER, by: "task-stop" } });
   });
 
   it("session-start ends a silent row of a crashed session", () => {
     const { change: started_ } = worker();
     started(started_.root, WORKER, "bdk:worker");
+    spawned(started_.root, {
+      parent: { id: WORKER, type: "bdk:worker" },
+      child: SCOUT,
+      type: "bdk:scout",
+      prompt: "Where is the token parsed?",
+    });
+    started(started_.root, SCOUT, "bdk:scout");
     heartbeat(started_.root, WORKER, false, 3600);
     const database = new DatabaseSync(join(started_.root, ".bdk/.machine/agents.sqlite"));
     const old = new Date(Date.now() - 3_600_000).toISOString();
@@ -189,7 +196,7 @@ describe("bdk hooks subagent-start and post-tool", () => {
     });
     expect(result.code).toBe(0);
     expect(show(started_.root, WORKER)).toMatchObject({ state: "ended", endedBy: "stale" });
-    expect(show(started_.root, LEAD).state).toBe("running");
+    expect(show(started_.root, SCOUT).state).toBe("running");
   });
 });
 
@@ -219,10 +226,10 @@ describe("continuation check", () => {
     expect(result.stdout).toBe("");
   });
 
-  it("lets main wait for background leads", () => {
+  it("lets main wait for background part agents", () => {
     const started_ = change();
     typedExecute(started_.root);
-    expect(answered(mainStop(started_.root, [LEAD]), "output/hooks-stop.json").decision).toBe(
+    expect(answered(mainStop(started_.root, [WORKER]), "output/hooks-stop.json").decision).toBe(
       "pass",
     );
   });
@@ -253,41 +260,22 @@ describe("continuation check", () => {
     expect(report.reason).toContain(`bdk log ingest --ticket ${ticket}`);
     expect(show(started_.root, WORKER).state).toBe("running");
     answered(
-      bdk(["log", "ingest", "--ticket", ticket, "--json"], started_.root, {
-        stdin: "---\nstatus: done\nfiles: []\nentries: []\nevidence: []\n---\n# Done\n",
-      }),
+      bdk(
+        [
+          ...ingestArgs(
+            started_.root,
+            ticket,
+            "---\nstatus: done\nfiles: []\nentries: []\nevidence: []\n---\n# Done\n",
+          ),
+          "--json",
+        ],
+        started_.root,
+      ),
       "output/log-ingest.json",
     );
     const done = agentStop(started_.root, WORKER, "bdk:worker");
     expect(answered(done, "output/hooks-subagent-stop.json").decision).toBe("pass");
     expect(show(started_.root, WORKER)).toMatchObject({ state: "ended", endedBy: "subagent-stop" });
-  });
-
-  it("sends a lead back while a task of its part is left, naming elapsed", () => {
-    const started_ = change();
-    const root = started_.root;
-    const lead = opened(started_, "part-lead", "01");
-    spawned(root, {
-      child: LEAD,
-      type: "bdk:lead",
-      prompt: promptFor(dispatched(started_, lead, "01", "lead")),
-    });
-    started(root, LEAD, "bdk:lead");
-    const ticket = opened(started_, "task-redispatch", "01-1");
-    const open = agentStop(root, LEAD, "bdk:lead");
-    expect(open.code, open.stderr).toBe(0);
-    expect(open.json).toMatchObject({ decision: "block" });
-    expect((open.json as { reason: string }).reason).toMatch(
-      new RegExp(`ticket ${ticket} for 01-1 of part 01 is open.*elapsed \\d+s`),
-    );
-    answered(
-      bdk(["attempt", "close", ticket, "not-run", "--reason", "r", "--json"], root),
-      "output/attempt-close.json",
-    );
-    const left = agentStop(root, LEAD, "bdk:lead");
-    expect((left.json as { reason: string }).reason).toMatch(
-      /task 01-1 of part 01 is not committed.*elapsed \d+s/,
-    );
   });
 
   it("passes at the limit without progress and writes one finding", () => {
@@ -320,15 +308,15 @@ describe("continuation check", () => {
 });
 
 describe("agent guards", () => {
-  it("holds a lead's dispatch to the package prompt", () => {
+  it("holds a part agent's dispatch to the package prompt", () => {
     const started_ = change();
-    const lead = (prompt: string) =>
+    const part = (prompt: string) =>
       preTool(started_.root, {
         tool_name: "Agent",
-        tool_input: { subagent_type: "bdk:lead", prompt, description: "lead" },
+        tool_input: { subagent_type: "bdk:worker", prompt, description: "part 01" },
       });
-    denied(lead("Run part 01.\n\nStart with the token parser."), "guard/dispatch-prompt");
-    expect(lead(promptFor(".bdk/changes/c/dispatch/01-part-lead-A-1.md")).code).toBe(0);
+    denied(part("Run part 01.\n\nStart with the token parser."), "guard/dispatch-prompt");
+    expect(part(promptFor(".bdk/changes/c/dispatch/01-implementer-A-1.md")).code).toBe(0);
   });
 
   it("decides on the default limits when the settings do not parse", () => {
@@ -373,7 +361,7 @@ describe("agent guards", () => {
           ...scout,
           tool_input: {
             subagent_type: "bdk:worker",
-            prompt: promptFor(".bdk/changes/c/dispatch/01-1-implementer-A-1.md"),
+            prompt: promptFor(".bdk/changes/c/dispatch/02-implementer-A-1.md"),
             description: "w",
           },
         }),
@@ -401,45 +389,35 @@ describe("agent guards", () => {
         tool_name: "SendMessage",
         tool_input: { to, message: text, summary: "s" },
       });
-    expect(denied(message(LEAD, "the token format changes"), "guard/agent-message")).toContain(
+    expect(denied(message("main", "the token format changes"), "guard/agent-message")).toContain(
       "the message names no ledger entry of the active Change; a message between agents must name one",
     );
-    expect(denied(message(LEAD, `${entry} ${"x".repeat(400)}`), "guard/agent-message")).toContain(
+    expect(denied(message("main", `${entry} ${"x".repeat(400)}`), "guard/agent-message")).toContain(
       "agents.message.max-chars",
     );
     expect(denied(message(SCOUT, `${entry} matters`), "guard/agent-message")).toContain(
       "bdk agents list --affected-by",
     );
-    expect(message(LEAD, `${entry} changes the token format`).code).toBe(0);
+    expect(message("main", `${entry} changes the token format`).code).toBe(0);
   });
 
-  it("limits a lead's orchestrator verbs to its own part", () => {
-    const started_ = change();
-    const lead = opened(started_, "task-redispatch", "01-1");
-    const path = dispatched(started_, lead, "01-1");
-    spawned(started_.root, { child: LEAD, type: "bdk:lead", prompt: promptFor(path) });
-    started(started_.root, LEAD, "bdk:lead");
-    const bash = (command: string) =>
+  it("lets a part agent run its checks, never an orchestrator verb", () => {
+    const { change: started_, ticket } = worker();
+    started(started_.root, WORKER, "bdk:worker");
+    const bash = (type: string, command: string) =>
       preTool(started_.root, {
-        agent_id: LEAD,
-        agent_type: "bdk:lead",
+        agent_id: WORKER,
+        agent_type: type,
         tool_name: "Bash",
-        tool_input: { command: `node /p/dist/bdk.mjs ${command}` },
+        tool_input: { command },
       });
-    // The lead's target is task 01-1, so its part is 01-1 alone.
-    expect(bash("dispatch build 01-1 implementer A-1").code).toBe(0);
-    expect(denied(bash("dispatch build 02-1 implementer A-1"), "guard/lead-scope")).toContain(
-      "02-1",
+    expect(bash("bdk:worker", `node /p/dist/bdk.mjs check run 01-1 --ticket ${ticket}`).code).toBe(
+      0,
     );
-    denied(bash("part done 01"), "guard/subagent-kernel-command");
     denied(
-      preTool(started_.root, {
-        agent_id: LEAD,
-        agent_type: "bdk:lead",
-        tool_name: "Bash",
-        tool_input: { command: "echo x > notes.md" },
-      }),
-      "guard/reader-write",
+      bash("bdk:worker", "node /p/dist/bdk.mjs part done 01"),
+      "guard/subagent-kernel-command",
     );
+    denied(bash("bdk:reviewer", "echo x > notes.md"), "guard/reader-write");
   });
 });

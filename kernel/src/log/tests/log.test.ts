@@ -43,12 +43,12 @@ function logFiles(store: Store): string[] {
 }
 
 function addAttempt(store: Store, ticket: string, role: string | undefined, closed = false): void {
-  writeDocument(store, `${DIR}/attempts/task-redispatch-02-3-${ticket}.md`, {
+  writeDocument(store, `${DIR}/attempts/part-02-${ticket}.md`, {
     data: {
       schema: 1,
       ticket,
-      loop: "task-redispatch",
-      target: "02-3",
+      loop: "part",
+      target: "02",
       attempt: 1,
       of: 3,
       scope: "full",

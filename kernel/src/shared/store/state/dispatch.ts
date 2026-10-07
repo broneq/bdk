@@ -43,6 +43,10 @@ export const dispatchKind = {
       "kernel-version": z.string().min(1),
       "template-hash": hash,
       report: relativePath.meta({ description: "Where the role's report is written." }),
+      draft: relativePath.meta({
+        description:
+          "Where the agent writes its report before `log ingest --file`: `.bdk/.machine/drafts/<package file name>` (#166).",
+      }),
       rules: z.array(z.string().regex(RULE_ID)).meta({
         description: "The rules selected for the ticket, in order (T31); may be empty.",
       }),

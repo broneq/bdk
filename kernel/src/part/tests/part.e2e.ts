@@ -86,11 +86,11 @@ function start(change: Opened, part: string): Record<string, unknown> {
 }
 
 function openTicket(dir: string, ticket: string, target: string): void {
-  writeDocument(fileStore(), join(dir, `attempts/task-redispatch-${target}-${ticket}.md`), {
+  writeDocument(fileStore(), join(dir, `attempts/part-${target}-${ticket}.md`), {
     data: {
       schema: 1,
       ticket,
-      loop: "task-redispatch",
+      loop: "part",
       target,
       attempt: 1,
       of: 3,
@@ -239,7 +239,7 @@ describe("bdk part done", () => {
     start(change, "01");
     commitTask(change, "01", "01-1");
     commitTask(change, "01", "01-2");
-    openTicket(change.dir, "A-7h3k9m2p", "01-2");
+    openTicket(change.dir, "A-7h3k9m2p", "01");
     refused(bdk(["part", "done", "01", "--json"], change.root), 2, "policy/ticket-open");
   });
 
@@ -316,7 +316,7 @@ describe("bdk part split", () => {
 
   it("exit 2 policy/ticket-open", () => {
     const change = planned();
-    openTicket(change.dir, "A-7h3k9m2p", "01-2");
+    openTicket(change.dir, "A-7h3k9m2p", "01");
     refused(bdk(["part", "split", "01", "01-2", "--json"], change.root), 2, "policy/ticket-open");
   });
 });

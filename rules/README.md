@@ -13,7 +13,7 @@ Every rule states two required fields, and the kernel selects by them only:
 | --------- | ------------------------- | --------------------- | ------------------------------------------------- |
 | `design`  | `/bdk:design`, `/bdk:adr` | nodes `stage: design` | `design-verifier`                                 |
 | `plan`    | `/bdk:plan`               | nodes `stage: plan`   | `verifier`                                        |
-| `execute` | -                         | -                     | `implementer`, `simplifier`                       |
+| `execute` | -                         | -                     | `implementer`, `conformer`                        |
 | `review`  | -                         | -                     | `reviewer`, `integration-reviewer`, `pr-reviewer` |
 
 The `runner`, `scout`, `lead` and `judge` roles read no stage rules; the judge reads only the rules an entry cites, by id.

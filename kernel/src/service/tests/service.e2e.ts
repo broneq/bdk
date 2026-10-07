@@ -242,10 +242,7 @@ function rebuild(root: string, ...flags: string[]) {
 describe("bdk rebuild", () => {
   it("exit 0: repairs a deleted index and a stale plan index; the lists answer as before", () => {
     const { root, dir } = started();
-    answered(
-      bdk(["attempt", "open", "task-redispatch", "01-1", "--json"], root),
-      "output/attempt-open.json",
-    );
+    answered(bdk(["attempt", "open", "part", "01", "--json"], root), "output/attempt-open.json");
     const lists = () =>
       [
         ["log", "list"],

@@ -99,7 +99,7 @@ The table names the adapter that now does the closest job.
 
 | BDK 2                                                                   | BDK 3                                             |
 | ----------------------------------------------------------------------- | ------------------------------------------------- |
-| `bdk:implementer`, `bdk:fixer`                                          | `bdk:worker` (implementer and simplifier roles)   |
+| `bdk:implementer`, `bdk:fixer`                                          | `bdk:worker` (implementer and conformer roles)    |
 | `bdk:plan-verifier`, `bdk:design-verifier`                              | `bdk:reader` (verifier and design-verifier roles) |
 | `bdk:architecture-reviewer`                                             | `bdk:integrator` (integration reviewer role)      |
 | `bdk:code-reviewer`, `bdk:dead-code-detector`, `bdk:duplicate-detector` | `bdk:reviewer` (reviewer and PR reviewer roles)   |
@@ -107,8 +107,8 @@ The table names the adapter that now does the closest job.
 | `bdk:explorer`, `bdk:log-analyzer`                                      | `bdk:scout`                                       |
 | `bdk:web-researcher`                                                    | `bdk:web-researcher`                              |
 
-`bdk:lead` is new: it runs one plan part of a `large` Change. `bdk:judge` is new
-too: it triages the findings of a `/bdk:cr` round. See
+One `bdk:worker` implementer now builds a whole plan part. `bdk:judge` is new:
+it triages the findings of a `/bdk:cr` round. See
 [Agents](../reference/agents.md).
 
 ## Artifacts

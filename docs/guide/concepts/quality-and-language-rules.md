@@ -92,10 +92,10 @@ A rule's `paths` and `stages` are the whole answer: no table in the kernel decid
 | --------- | ------------------------- | --------------------- | ------------------------------------------------- |
 | `design`  | `/bdk:design`, `/bdk:adr` | nodes `stage: design` | `design-verifier`                                 |
 | `plan`    | `/bdk:plan`               | nodes `stage: plan`   | `verifier`                                        |
-| `execute` | -                         | -                     | `implementer`, `simplifier`                       |
+| `execute` | -                         | -                     | `implementer`, `conformer`                        |
 | `review`  | -                         | -                     | `reviewer`, `integration-reviewer`, `pr-reviewer` |
 
-The runner, scout, lead and judge read no stage rules; the judge reads only the rules an entry cites, by id. A reader selects a rule when:
+The runner, scout and judge read no stage rules; the judge reads only the rules an entry cites, by id. A reader selects a rule when:
 
 1. its stage is in the rule's `stages`;
 2. one of the rule's `paths` matches a file of the target: a task's `Files:`, a review group's files, or, for a target without files of its own (a design, a plan, a session skill), the files of the work tree (`git ls-files`, untracked files included, ignored ones left out);

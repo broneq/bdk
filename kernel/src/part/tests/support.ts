@@ -40,6 +40,8 @@ interface ScriptedGit extends FakeGit {
   committed: string[][];
   /** What `git commit` answers; a non-zero code is a rejecting hook. */
   commitResult: { code: number; stdout: string; stderr: string };
+  /** Whether a merge is in progress: `MERGE_HEAD` resolves. */
+  merging: boolean;
 }
 
 function scriptedGit(): ScriptedGit {
@@ -51,6 +53,7 @@ function scriptedGit(): ScriptedGit {
     numstat: "",
     committed: [],
     commitResult: { code: 0, stdout: "", stderr: "" },
+    merging: false,
     currentBranch: () => git.branch,
     run(args, cwd) {
       const ok = (stdout: string) => Promise.resolve({ code: 0, stdout, stderr: "" });
@@ -77,8 +80,11 @@ function scriptedGit(): ScriptedGit {
             .join(""),
         );
       }
+      if (args[0] === "rev-parse" && args.at(-1) === "MERGE_HEAD") {
+        return Promise.resolve({ code: git.merging ? 0 : 1, stdout: "", stderr: "" });
+      }
       if (args[0] === "rev-parse")
-        return ok(args[1] === "HEAD" ? "d8e4f21c0ffee000000000000000000000000000\n" : "");
+        return ok(args.at(-1) === "HEAD" ? "d8e4f21c0ffee000000000000000000000000000\n" : "");
       if (args[0] === "diff") return ok(git.numstat);
       if (args[0] === "commit") {
         git.committed.push([...args]);
@@ -134,12 +140,7 @@ export function harness(extra: (deps: PartDeps) => Registration[] = () => []): H
 }
 
 /** An open attempt record of `target` in `loop`. */
-export function openTicket(
-  store: Store,
-  ticket: string,
-  target: string,
-  loop = "task-redispatch",
-): void {
+export function openTicket(store: Store, ticket: string, target: string, loop = "part"): void {
   writeDocument(store, `${DIR}/attempts/${loop}-${target}-${ticket}.md`, {
     data: {
       schema: 1,

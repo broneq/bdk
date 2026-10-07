@@ -86,12 +86,12 @@ describe("bdk change close", () => {
 
   it("exit 2: policy/ticket-open", () => {
     const change = reviewed();
-    writeDocument(fileStore(), join(change.dir, "attempts/task-redispatch-01-1-A-0000000z.md"), {
+    writeDocument(fileStore(), join(change.dir, "attempts/part-01-A-0000000z.md"), {
       data: {
         schema: 1,
         ticket: "A-0000000z",
-        loop: "task-redispatch",
-        target: "01-1",
+        loop: "part",
+        target: "01",
         attempt: 2,
         of: 3,
         scope: "full",

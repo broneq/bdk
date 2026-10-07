@@ -1,0 +1,1 @@
+Run the conform step {node} of Change {change} inside the part's ticket: dispatch the conformer on the part's diff, then store its report. `bdk attempt close <ticket> ok` records the `conform` evidence from that report.

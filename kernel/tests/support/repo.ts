@@ -35,6 +35,11 @@ export function git(root: string, ...args: string[]): string {
   return execFileSync("git", args, { cwd: root, env: GIT_ENV, encoding: "utf8" });
 }
 
+/** A shell command in `root` with the fixture's git identity, as an agent runs the commit `check run` prints. */
+export function shell(root: string, command: string): string {
+  return execFileSync("/bin/sh", ["-c", command], { cwd: root, env: GIT_ENV, encoding: "utf8" });
+}
+
 /**
  * The global layer of every fixture: both tool groups a Change runs declared
  * none (T49), so `change new` and `part start` do not refuse
@@ -93,6 +98,17 @@ export function bdk(args: readonly string[], root: string, options: BdkOptions =
   });
 }
 
+/**
+ * The `log ingest` argv for `text`: the report written first as the draft a
+ * role writes with its file tool (#166), under `root`.
+ */
+export function ingestArgs(root: string, ticket: string, text: string): string[] {
+  const path = join(".bdk", ".machine", "drafts", `${ticket.replace("@", "-")}.md`);
+  mkdirSync(join(root, ".bdk", ".machine", "drafts"), { recursive: true });
+  writeFileSync(join(root, path), text);
+  return ["log", "ingest", "--ticket", ticket, "--file", path];
+}
+
 /** `bdk <args>` without waiting, so several can run at once. */
 export function bdkAsync(args: readonly string[], root: string): Promise<RunResult> {
   return new Promise((resolve, reject) => {
@@ -115,6 +131,42 @@ export function bdkAsync(args: readonly string[], root: string): Promise<RunResu
       resolve({ code: code ?? -1, stdout, stderr, json });
     });
     child.stdin.end();
+  });
+}
+
+/**
+ * `bdk <args>` with a stdin pipe that never closes, as an agent's shell
+ * inherits one (#166); the run is killed after `limitMs`. `ms` is how long
+ * the bundle ran.
+ */
+export function bdkOpenStdin(
+  args: readonly string[],
+  root: string,
+  limitMs: number,
+): Promise<RunResult & { readonly ms: number }> {
+  return new Promise((resolve, reject) => {
+    const started = Date.now();
+    const child = spawn(process.execPath, [BUNDLE, ...args], {
+      cwd: root,
+      env: { ...envFor(root, true), CLAUDE_PLUGIN_ROOT: REPO_ROOT },
+    });
+    const timer = setTimeout(() => child.kill("SIGKILL"), limitMs);
+    let stdout = "";
+    let stderr = "";
+    child.stdout.setEncoding("utf8").on("data", (chunk: string) => (stdout += chunk));
+    child.stderr.setEncoding("utf8").on("data", (chunk: string) => (stderr += chunk));
+    child.on("error", reject);
+    child.on("close", (code) => {
+      clearTimeout(timer);
+      child.stdin.destroy();
+      let json: unknown;
+      try {
+        json = JSON.parse(stdout);
+      } catch {
+        json = undefined;
+      }
+      resolve({ code: code ?? -1, stdout, stderr, json, ms: Date.now() - started });
+    });
   });
 }
 

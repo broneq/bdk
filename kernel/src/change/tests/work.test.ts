@@ -80,7 +80,7 @@ describe("change checkpoint", () => {
   it("refuses policy/ticket-open while a ticket is open", async () => {
     const h = await started();
     h.git.status = [`${CHANGE_DIR}log/e.md`];
-    openTicket(h.store, "A-00000001", "01-1");
+    openTicket(h.store, "A-00000001", "01");
     const result = await h.run(["change", "checkpoint", "--json"]);
     expect(result.code).toBe(2);
     expect(refusal(result).rule).toBe("policy/ticket-open");
@@ -136,7 +136,7 @@ describe("change takeover", () => {
 
   it("refuses policy/ticket-open listing the tickets without --close-tickets", async () => {
     const h = await started();
-    const { ticket } = await open(h, "task-redispatch", "01-1");
+    const { ticket } = await open(h, "part", "01");
     const result = await h.run(["change", "takeover", "--json"]);
     expect(result.code).toBe(2);
     expect(refusal(result)).toMatchObject({ rule: "policy/ticket-open" });
@@ -145,8 +145,8 @@ describe("change takeover", () => {
 
   it("closes open tickets as not-run, records the transition, rebuilds and keeps budgets", async () => {
     const h = await started();
-    await cycle(h, "task-redispatch", "01-1", "fail");
-    const { ticket } = await open(h, "task-redispatch", "01-1");
+    await cycle(h, "part", "01", "fail");
+    const { ticket } = await open(h, "part", "01");
     const result = await h.step(["change", "takeover", "--close-tickets", "--json"]);
     expect(result.code, result.stdout).toBe(0);
     expect(changeTakeoverOutput.parse(result.json)).toStrictEqual({
@@ -163,11 +163,11 @@ describe("change takeover", () => {
       to: "execute",
       refs: [ticket],
     });
-    const list = await h.step(["attempt", "list", "--for", "01-1", "--json"]);
+    const list = await h.step(["attempt", "list", "--for", "01", "--json"]);
     expect(list.json).toMatchObject({
-      budgets: { "task-redispatch": { used: 1 }, "not-run": { used: 1 } },
+      budgets: { part: { used: 1 }, "not-run": { used: 1 } },
     });
-    expect((await open(h, "task-redispatch", "01-1")).code).toBe(0);
+    expect((await open(h, "part", "01")).code).toBe(0);
     expect((await h.run(["change", "takeover"])).stdout).toMatch(/^refused: /);
   });
 
@@ -178,7 +178,7 @@ describe("change takeover", () => {
     transition("2026-09-25T10:20:00.000Z", "sess-old");
     transition("2026-09-25T10:30:00.000Z", "sess-work");
     writeEntry(h.store, { type: "transition", at: "2026-09-25T10:40:00.000Z", to: "execute" });
-    await open(h, "task-redispatch", "01-1");
+    await open(h, "part", "01");
     transition("2026-09-25T11:30:00.000Z", "sess-later");
     const result = await h.step(["change", "takeover", "--close-tickets", "--json"]);
     expect(changeTakeoverOutput.parse(result.json).previousSession).toBe("sess-work");
@@ -186,7 +186,7 @@ describe("change takeover", () => {
 
   it("text output names the closed tickets", async () => {
     const h = await started();
-    const { ticket } = await open(h, "task-redispatch", "01-1");
+    const { ticket } = await open(h, "part", "01");
     expect((await h.step(["change", "takeover", "--close-tickets"])).stdout).toBe(
       `took over ${CHANGE}: closed ${ticket} as not-run, state rebuilt\n`,
     );

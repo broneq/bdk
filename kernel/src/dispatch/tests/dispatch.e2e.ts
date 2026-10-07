@@ -46,10 +46,10 @@ function packages(change: Started): string[] {
 }
 
 describe("bdk dispatch build", () => {
-  it("exit 0: the implementer's package validates and embeds the task, role body and commands", () => {
+  it("exit 0: the implementer's package validates and embeds the part, role body and commands", () => {
     const change = started();
-    const ticket = opened(change, "task-redispatch", "01-1");
-    const report = built(change, "01-1", "implementer", ticket);
+    const ticket = opened(change, "part", "01");
+    const report = built(change, "01", "implementer", ticket);
     const text = read(change.root, report.path);
     expect(report.bytes).toBe(Buffer.byteLength(text));
     expect(text).toContain("\n### 01-1 Task 1\n");
@@ -60,14 +60,16 @@ describe("bdk dispatch build", () => {
     expect(text).not.toContain("${CLAUDE_PLUGIN_ROOT}");
     expect(text).not.toContain("bdk.mjs");
     expect(text).toContain(`bdk rules show --ticket ${ticket}`);
-    expect(text).toContain(`bdk log ingest --ticket ${ticket}`);
+    expect(text).toContain(`bdk log ingest --ticket ${ticket} --file`);
+    expect(text).toContain(`bdk check run 01-1 --ticket ${ticket}`);
+    expect(text).toContain(`bdk check run 01-2 --ticket ${ticket}`);
     // The package size of the tiny fixture, far below the 163 840-byte limit.
     expect(report.bytes).toBeLessThan(8_192);
   });
 
   it("exit 0: accepted decisions and open blockers in full, the rest counted (acceptance B)", () => {
     const change = started();
-    const ticket = opened(change, "task-redispatch", "01-1");
+    const ticket = opened(change, "part", "01");
     const accepted = add(
       change,
       "decision",
@@ -81,7 +83,7 @@ describe("bdk dispatch build", () => {
     const blocker = add(change, "blocker", "the clock source is unknown", "--ref", "01-1");
     add(change, "finding", "expired link accepted", "--ref", "src/01-1.ts");
     add(change, "finding", "no test for skew", "--ref", "01-1");
-    const report = built(change, "01-1", "implementer", ticket);
+    const report = built(change, "01", "implementer", ticket);
     // Entries of the same second order by id, as `log list` does.
     expect([...report.entries.full].sort()).toStrictEqual([accepted, blocker].sort());
     expect(report.entries.counted).toStrictEqual({ decision: 1, finding: 2 });
@@ -89,7 +91,7 @@ describe("bdk dispatch build", () => {
     expect(text).toContain("tokens are single use");
     expect(text).toContain("the clock source is unknown");
     expect(text).not.toContain("maybe rotate keys");
-    expect(text).toContain("`bdk log list --for 01-1`");
+    expect(text).toContain("`bdk log list --for 01`");
   });
 
   it("exit 0: a verifier package lists the categories with a project one, then not-a-fail", () => {
@@ -106,38 +108,39 @@ describe("bdk dispatch build", () => {
     expect(text).toContain(`plan/parts/01-part.md`);
     // The verify-fix ticket holds the part's files until it closes (policy/files-busy).
     closed(change, ticket, "not-run", "--reason", "r");
-    const implementer = opened(change, "task-redispatch", "01-1");
-    expect(read(change.root, built(change, "01-1", "implementer", implementer).path)).not.toContain(
+    const implementer = opened(change, "part", "01");
+    expect(read(change.root, built(change, "01", "implementer", implementer).path)).not.toContain(
       "## Blocking categories",
     );
   });
 
-  it("exit 0: a runner package lists the checks with the task's files, within the size budget", () => {
+  it("exit 0: the implementer's Checks section names check run per task and the commands it runs", () => {
     const change = started(
       "tools:\n  test:\n    - id: unit\n      tier: fast\n      command: vitest run\n      related: vitest related {files}\n  lint:\n    - id: eslint\n      tier: lint\n      command: eslint .\n      scoped: eslint {files}\n",
     );
-    const ticket = opened(change, "task-redispatch", "01-1");
-    const report = built(change, "01-1", "runner", ticket);
+    const ticket = opened(change, "part", "01");
+    const report = built(change, "01", "implementer", ticket);
     const text = read(change.root, report.path);
     expect(text).toContain("## Checks");
-    expect(text).toContain("- `vitest related src/01-1.ts`");
-    expect(text).toContain("- `eslint src/01-1.ts`");
-    expect(text).toContain(`\`bdk evidence record lint <file> --ticket ${ticket} --verdict`);
-    expect(text.indexOf("### tests-scoped")).toBeLessThan(text.indexOf("### lint"));
+    expect(text).toContain("- `unit`: `vitest related {files}`");
+    expect(text).toContain("- `eslint`: `eslint {files}`");
+    expect(text).not.toContain("bdk evidence record");
     expect(report.bytes).toBeLessThanOrEqual(163_840);
+    const runner = refused(build(change, "01", "runner", ticket), 3, "input/invalid-argument");
+    expect(runner.instead.join(" ")).toContain("bdk check run");
   });
 
   it("exit 0: the same package built twice carries the same template hash", () => {
     const change = started();
-    const ticket = opened(change, "task-redispatch", "01-1");
-    const first = built(change, "01-1", "implementer", ticket);
+    const ticket = opened(change, "part", "01");
+    const first = built(change, "01", "implementer", ticket);
     add(change, "finding", "a new finding", "--ref", "01-1");
-    expect(built(change, "01-1", "implementer", ticket).templateHash).toBe(first.templateHash);
+    expect(built(change, "01", "implementer", ticket).templateHash).toBe(first.templateHash);
   });
 
   it("exit 2 policy/package-too-large: a package above 160 KiB names its size and largest section; nothing written [AC-8]", () => {
     const change = started();
-    const ticket = opened(change, "task-redispatch", "01-1");
+    const ticket = opened(change, "part", "01");
     bdk(
       [
         "log",
@@ -156,7 +159,7 @@ describe("bdk dispatch build", () => {
       { stdin: "A long rationale line.\n".repeat(8000) },
     );
     const result = refused(
-      build(change, "01-1", "implementer", ticket),
+      build(change, "01", "implementer", ticket),
       2,
       "policy/package-too-large",
     );
@@ -168,48 +171,49 @@ describe("bdk dispatch build", () => {
 
   it("exit 2 policy/placeholder: a TODO in the task's Files (acceptance B)", () => {
     const change = started();
-    const ticket = opened(change, "task-redispatch", "01-1");
+    const ticket = opened(change, "part", "01");
     const part = join(change.dir, "plan/parts/01-part.md");
     fileStore().write(part, readFileSync(part, "utf8").replace("`src/01-1.ts`", "`TODO`"));
-    refused(build(change, "01-1", "implementer", ticket), 2, "policy/placeholder");
+    refused(build(change, "01", "implementer", ticket), 2, "policy/placeholder");
     expect(packages(change)).toStrictEqual([]);
   });
 
   it("exit 2 policy/no-open-ticket: no ticket, a closed one, another target (acceptance B)", () => {
     const change = started();
-    refused(build(change, "01-1", "implementer", "A-00000000"), 2, "policy/no-open-ticket");
-    const ticket = opened(change, "task-redispatch", "01-1");
-    refused(build(change, "01-2", "implementer", ticket), 2, "policy/no-open-ticket");
+    refused(build(change, "01", "implementer", "A-00000000"), 2, "policy/no-open-ticket");
+    const ticket = opened(change, "part", "01");
+    refused(build(change, "02", "implementer", ticket), 2, "policy/no-open-ticket");
     closed(change, ticket, "not-run", "--reason", "no runner");
-    refused(build(change, "01-1", "implementer", ticket), 2, "policy/no-open-ticket");
+    refused(build(change, "01", "implementer", ticket), 2, "policy/no-open-ticket");
   });
 
   it("exit 3 input/not-found: a target the Change does not hold", () => {
     const change = started();
-    refused(build(change, "09-1", "implementer", "A-00000000"), 3, "input/not-found");
+    refused(build(change, "09", "implementer", "A-00000000"), 3, "input/not-found");
   });
 
-  it("exit 3 input/invalid-argument: a role outside the eight", () => {
+  it("exit 3 input/invalid-argument: a role outside the nine, a removed role, a task target", () => {
     const change = started();
-    refused(build(change, "01-1", "planner", "A-00000000"), 3, "input/invalid-argument");
+    refused(build(change, "01", "planner", "A-00000000"), 3, "input/invalid-argument");
+    refused(build(change, "01", "lead", "A-00000000"), 3, "input/invalid-argument");
+    refused(build(change, "01", "simplifier", "A-00000000"), 3, "input/invalid-argument");
+    const ticket = opened(change, "part", "01");
+    refused(build(change, "01-1", "implementer", ticket), 3, "input/invalid-argument");
   });
 
   it("exit 4 state/ledger-invalid", () => {
     const change = started();
-    const ticket = opened(change, "task-redispatch", "01-1");
+    const ticket = opened(change, "part", "01");
     fileStore().write(
       join(change.dir, "log/20260101T000000Z-finding-L-broken00.md"),
       "---\nschema: 1\n---\n",
     );
-    refused(build(change, "01-1", "implementer", ticket), 4, "state/ledger-invalid");
+    refused(build(change, "01", "implementer", ticket), 4, "state/ledger-invalid");
   });
 
   it("exit 5 runtime/not-a-repo", () => {
     refused(
-      bdk(
-        ["dispatch", "build", "01-1", "implementer", "A-00000000", "--json"],
-        outsideRepository(),
-      ),
+      bdk(["dispatch", "build", "01", "implementer", "A-00000000", "--json"], outsideRepository()),
       5,
       "runtime/not-a-repo",
     );
@@ -219,8 +223,8 @@ describe("bdk dispatch build", () => {
 describe("bdk dispatch show", () => {
   it("exit 0: by ticket with the frontmatter, and by path byte for byte", () => {
     const change = started();
-    const ticket = opened(change, "task-redispatch", "01-1");
-    const report = built(change, "01-1", "implementer", ticket);
+    const ticket = opened(change, "part", "01");
+    const report = built(change, "01", "implementer", ticket);
     const text = read(change.root, report.path);
     const shown = answered(
       bdk(["dispatch", "show", ticket, "--json"], change.root),
@@ -234,21 +238,22 @@ describe("bdk dispatch show", () => {
 
   it("exit 0: one package per role of a ticket, the ticket showing the last one built", () => {
     const change = started();
-    const ticket = opened(change, "task-redispatch", "01-1");
-    built(change, "01-1", "implementer", ticket);
-    built(change, "01-1", "simplifier", ticket);
-    built(change, "01-1", "runner", ticket);
-    const runner = built(change, "01-1", "runner", ticket);
+    const ticket = opened(change, "part", "01");
+    built(change, "01", "implementer", ticket);
+    built(change, "01", "conformer", ticket);
+    const conformer = built(change, "01", "conformer", ticket);
     expect(packages(change).sort()).toStrictEqual([
-      `01-1-implementer-${ticket}.md`,
-      `01-1-runner-${ticket}.md`,
-      `01-1-simplifier-${ticket}.md`,
+      `01-conformer-${ticket}.md`,
+      `01-implementer-${ticket}.md`,
     ]);
     const shown = answered(
       bdk(["dispatch", "show", ticket, "--json"], change.root),
       "output/dispatch-show.json",
     );
-    expect(shown).toMatchObject({ path: runner.path, frontmatter: { role: "runner" } });
+    expect(shown).toMatchObject({
+      path: conformer.path,
+      frontmatter: { role: "conformer", draft: `.bdk/.machine/drafts/01-conformer-${ticket}.md` },
+    });
   });
 
   it("exit 0: a package over 100 lines prints whole in text mode", () => {

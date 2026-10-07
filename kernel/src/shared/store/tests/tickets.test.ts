@@ -35,12 +35,12 @@ const OTHER = "A-4m8rt2wx";
 function seeded(): Store {
   const store = memoryStore();
   writeDocument(store, `${DIR}/change.md`, { data: { ...change, id: CHANGE }, body: "" });
-  writeDocument(store, `${DIR}/attempts/task-redispatch-02-3-${TICKET}.md`, {
+  writeDocument(store, `${DIR}/attempts/part-02-${TICKET}.md`, {
     data: {
       schema: 1,
       ticket: TICKET,
-      loop: "task-redispatch",
-      target: "02-3",
+      loop: "part",
+      target: "02",
       attempt: 1,
       of: 3,
       scope: "full",
@@ -50,12 +50,12 @@ function seeded(): Store {
     body: "",
   });
   for (const role of ["implementer", "runner"]) {
-    writeDocument(store, `${DIR}/dispatch/02-3-${role}-${TICKET}.md`, {
+    writeDocument(store, `${DIR}/dispatch/02-${role}-${TICKET}.md`, {
       data: {
         ...dispatch,
         ticket: TICKET,
         role,
-        report: `${REL}/reports/02-3-${role}-${TICKET}.md`,
+        report: `${REL}/reports/02-${role}-${TICKET}.md`,
       },
       body: "",
     });
@@ -63,7 +63,7 @@ function seeded(): Store {
   return store;
 }
 
-const pkg = (role: string) => `${REL}/dispatch/02-3-${role}-${TICKET}.md`;
+const pkg = (role: string) => `${REL}/dispatch/02-${role}-${TICKET}.md`;
 
 /** `resolveTicketRef` over `store`, with no agent registry unless `openRegistry` is given. */
 function resolve(store: Store, value: string, openRegistry: RegistryOpener = memoryRegistry()) {
@@ -221,7 +221,7 @@ describe("resolveTicketRef (`kernel-cli`, Ticket references)", () => {
 });
 
 describe("resolveTicketRef and the agent working on the ticket (#133)", () => {
-  const SIMPLIFIER = "a1c3e5a7c9e1a3c5e";
+  const CONFORMER = "a1c3e5a7c9e1a3c5e";
   const RUNNER = "a3b5d7f9b1d3f5b7d";
   const STARTED = "2026-09-25T10:05:00.000Z";
 
@@ -231,8 +231,8 @@ describe("resolveTicketRef and the agent working on the ticket (#133)", () => {
     heartbeats: Readonly<Record<string, Heartbeat>> = {},
   ) {
     const store = seeded();
-    writeDocument(store, `${ROOT}/${pkg("simplifier")}`, {
-      data: { ...dispatch, ticket: TICKET, role: "simplifier", report: `${REL}/reports/s.md` },
+    writeDocument(store, `${ROOT}/${pkg("conformer")}`, {
+      data: { ...dispatch, ticket: TICKET, role: "conformer", report: `${REL}/reports/s.md` },
       body: "",
     });
     stampPackage(store, DIR, TICKET, pkg("runner"));
@@ -251,43 +251,43 @@ describe("resolveTicketRef and the agent working on the ticket (#133)", () => {
   }
 
   it("names the working agent's package over the active stamp", async () => {
-    const resolveRef = await working({ [SIMPLIFIER]: { role: "simplifier" } });
+    const resolveRef = await working({ [CONFORMER]: { role: "conformer" } });
     expect(await resolveRef()).toMatchObject({
-      package: { role: "simplifier", path: pkg("simplifier") },
+      package: { role: "conformer", path: pkg("conformer") },
     });
   });
 
   it("keeps the active stamp once the agent ended", async () => {
     const resolveRef = await working({
-      [SIMPLIFIER]: { role: "simplifier", endedAt: "2026-09-25T10:06:00.000Z" },
+      [CONFORMER]: { role: "conformer", endedAt: "2026-09-25T10:06:00.000Z" },
     });
     expect(await resolveRef()).toMatchObject({ package: { role: "runner" } });
   });
 
   it("counts an ended agent that a heartbeat after its end resumed", async () => {
     const resolveRef = await working(
-      { [SIMPLIFIER]: { role: "simplifier", endedAt: "2026-09-25T10:06:00.000Z" } },
-      { [SIMPLIFIER]: { open: true, atMs: Date.parse("2026-09-25T10:07:00.000Z") } },
+      { [CONFORMER]: { role: "conformer", endedAt: "2026-09-25T10:06:00.000Z" } },
+      { [CONFORMER]: { open: true, atMs: Date.parse("2026-09-25T10:07:00.000Z") } },
     );
-    expect(await resolveRef()).toMatchObject({ package: { role: "simplifier" } });
+    expect(await resolveRef()).toMatchObject({ package: { role: "conformer" } });
   });
 
   it("narrows two working steps to the agent in an open tool call", async () => {
     const resolveRef = await working(
-      { [SIMPLIFIER]: { role: "simplifier" }, [RUNNER]: { role: "runner" } },
+      { [CONFORMER]: { role: "conformer" }, [RUNNER]: { role: "runner" } },
       {
-        [SIMPLIFIER]: { open: true, atMs: Date.parse(STARTED) },
+        [CONFORMER]: { open: true, atMs: Date.parse(STARTED) },
         [RUNNER]: { open: false, atMs: Date.parse(STARTED) },
       },
     );
-    expect(await resolveRef()).toMatchObject({ package: { role: "simplifier" } });
+    expect(await resolveRef()).toMatchObject({ package: { role: "conformer" } });
   });
 
   it("leaves out a working agent whose own report is stored", async () => {
     const store = seeded();
     stampPackage(store, DIR, TICKET, pkg("runner"));
     store.write(agentsRegistryPath(ROOT), "");
-    writeDocument(store, `${ROOT}/${REL}/reports/02-3-implementer-${TICKET}.md`, {
+    writeDocument(store, `${ROOT}/${REL}/reports/02-implementer-${TICKET}.md`, {
       data: {
         schema: 1,
         ticket: TICKET,
@@ -301,7 +301,7 @@ describe("resolveTicketRef and the agent working on the ticket (#133)", () => {
       body: "",
     });
     const openRegistry = memoryRegistry();
-    (await openRegistry(ROOT)).put(SIMPLIFIER, {
+    (await openRegistry(ROOT)).put(CONFORMER, {
       ticket: TICKET,
       package: pkg("implementer"),
       startedAt: STARTED,
@@ -313,7 +313,7 @@ describe("resolveTicketRef and the agent working on the ticket (#133)", () => {
 
   it("keeps the active stamp while two working steps stay ambiguous", async () => {
     const resolveRef = await working({
-      [SIMPLIFIER]: { role: "simplifier" },
+      [CONFORMER]: { role: "conformer" },
       [RUNNER]: { role: "implementer" },
     });
     expect(await resolveRef()).toMatchObject({ package: { role: "runner" } });

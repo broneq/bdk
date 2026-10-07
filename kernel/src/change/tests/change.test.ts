@@ -120,12 +120,12 @@ function writeTransition(
 }
 
 function addAttempt(store: Store, ticket: string): void {
-  writeDocument(store, `${DIR}/attempts/task-redispatch-02-3-${ticket}.md`, {
+  writeDocument(store, `${DIR}/attempts/part-02-${ticket}.md`, {
     data: {
       schema: 1,
       ticket,
-      loop: "task-redispatch",
-      target: "02-3",
+      loop: "part",
+      target: "02",
       attempt: 1,
       of: 3,
       scope: "full",
@@ -632,8 +632,8 @@ describe("change status", () => {
       openTickets: [
         {
           ticket: "A-00000009",
-          loop: "task-redispatch",
-          target: "02-3",
+          loop: "part",
+          target: "02",
           attempt: 1,
           of: 3,
           scope: "full",
@@ -987,7 +987,7 @@ describe("change on the artifact graph", () => {
       ["plan", "blocked"],
       ["plan-verify", "blocked"],
       ["execute", "blocked"],
-      ["simplify", "blocked"],
+      ["conform", "blocked"],
       ["tests-scoped", "blocked"],
       ["lint", "blocked"],
       ["spec-delta", "skipped"],

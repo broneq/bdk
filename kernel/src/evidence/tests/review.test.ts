@@ -86,6 +86,7 @@ async function round(diff = DIFF, untracked: readonly string[] = []): Promise<Ha
       "kernel-version": "3.0.0-dev",
       "template-hash": `sha256:${"a".repeat(64)}`,
       report: `${REL}/reports/${name}`,
+      draft: `.bdk/.machine/drafts/${name}`,
       rules: [],
       group: "gate",
       files: [],
@@ -126,11 +127,11 @@ function manifests(h: Harness): string[] {
 describe("evidence record under a group reference", () => {
   it("stamps the group, the group package's role and the Change tree hash", async () => {
     const h = await round();
-    h.put(".bdk/.machine/evidence/full.json", SUMMARY);
+    h.put(`.bdk/.machine/checks/${ROUND}/full.json`, SUMMARY);
     const result = await record(
       h,
       "tests-full",
-      ".bdk/.machine/evidence/full.json",
+      `.bdk/.machine/checks/${ROUND}/full.json`,
       "--ticket",
       `${ROUND}@gate`,
       "--verdict",

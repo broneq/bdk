@@ -38,8 +38,8 @@ describe("post-task step nodes through the commands", () => {
   it("refuses bdk done on a step, naming the command that records it", async () => {
     const h = await executed();
     for (const [id, command] of [
-      ["tests-scoped:01", "bdk evidence record tests-scoped <file> --ticket <ticket>"],
-      ["simplify:01", "bdk attempt close <ticket> ok"],
+      ["tests-scoped:01", "bdk check run <part> --ticket <ticket>"],
+      ["conform:01", "bdk attempt close <ticket> ok"],
     ] as const) {
       const result = await h.run(["done", id, "--json"]);
       expect(result.code).toBe(2);
@@ -49,19 +49,19 @@ describe("post-task step nodes through the commands", () => {
 
   it("is done from a fresh manifest and stale after a Files: path changes", async () => {
     const h = await executed();
-    expect(await stateOf(h, "simplify:01")).toBe("ready");
-    await writeManifest(h.store, "simplify", "01-1");
-    expect(await stateOf(h, "simplify:01")).toBe("done");
-    const valid = (await h.run(["validate", "simplify:01", "--json"])).json as {
+    expect(await stateOf(h, "conform:01")).toBe("ready");
+    await writeManifest(h.store, "conform", "01-1");
+    expect(await stateOf(h, "conform:01")).toBe("done");
+    const valid = (await h.run(["validate", "conform:01", "--json"])).json as {
       valid: boolean;
     };
     expect(valid.valid).toBe(true);
 
     h.store.write("/work/repo/src/part-01.ts", "export {};\n");
-    expect(await stateOf(h, "simplify:01")).toBe("stale");
+    expect(await stateOf(h, "conform:01")).toBe("stale");
     const next = (await h.run(["next", "--json"])).json as { artifact: { id: string } };
-    expect(next.artifact.id).toBe("simplify:01");
-    const invalid = (await h.run(["validate", "simplify:01", "--json"])).json as {
+    expect(next.artifact.id).toBe("conform:01");
+    const invalid = (await h.run(["validate", "conform:01", "--json"])).json as {
       valid: boolean;
       checks: { id: string; ok: boolean }[];
     };

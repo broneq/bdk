@@ -12,8 +12,8 @@
 #
 # PROBE_MODEL  model for the probe sessions (default haiku; tool shapes do not depend on it)
 #
-# The bdk-tree check also loads BDK itself from this checkout (build it first) and
-# runs in its own fixture repository, ./bdk-tree, with the permission prompts off.
+# The bdk-part check also loads BDK itself from this checkout (build it first) and
+# runs in its own fixture repository, ./bdk-part, with the permission prompts off.
 set -u
 
 here=$(cd "$(dirname "$0")" && pwd)
@@ -114,24 +114,22 @@ tools_list() {
   echo "recorded      tools-list"
 }
 
-# A Change with part 01 (tasks 01-1, 01-2) started and its part-lead ticket open, in
-# a fresh repository at ./bdk-tree; prints the lead package path.
-tree_fixture() {
-  rm -rf bdk-tree && mkdir bdk-tree && cd bdk-tree || return 1
+# A Change with part 01 (tasks 01-1, 01-2) started and its part ticket open, in
+# a fresh repository at ./bdk-part; prints the implementer package path (#166).
+part_fixture() {
+  rm -rf bdk-part && mkdir bdk-part && cd bdk-part || return 1
   git init -q && printf '# app\n' > README.md && setup_files && git add -A && git commit -qm initial
   kernel() { node "$repo/dist/bdk.mjs" "$@"; }
   field() { node -e 'let b="";process.stdin.on("data",d=>b+=d).on("end",()=>console.log(JSON.parse(b)[process.argv[1]]))' "$1"; }
   change=$(kernel change new "Greet the user" --profile tiny --reason probe --json | field change)
   mkdir -p ".bdk/changes/$change/plan/parts"
-  # 01-1 asks for one message, so the lead's wait returns a message as well as the reports.
   for task in 01-1 01-2; do
     printf '## %s Write the %s greeting\n\n**Files:**\n\n- Create: `src/%s.ts`\n\n**Verification:** none\n\n' "$task" "$task" "$task"
-    [ "$task" = 01-1 ] && printf 'Before your report, write a finding that names `src/01-2.ts` and send its id to each agent `bdk agents list --affected-by <entry>` returns.\n\n'
   done | { printf -- '---\nschema: 1\nid: "01"\ntitle: Greetings\ngoal: Two greeting modules\nsuccess-measure: both exist\ndo-not-touch: []\ndepends-on: []\nspec-impact: none\n---\n'; cat; } \
     > ".bdk/changes/$change/plan/parts/01-part.md"
   kernel done plan --json > /dev/null && kernel part start 01 --json > /dev/null || return 1
-  ticket=$(kernel attempt open part-lead 01 --json | field ticket)
-  kernel dispatch build 01 lead "$ticket" --json | field path
+  ticket=$(kernel attempt open part 01 --json | field ticket)
+  kernel dispatch build 01 implementer "$ticket" --json | field path
 }
 
 selected() { [ -z "$only" ] || echo " $only " | grep -q " $1 "; }
@@ -251,16 +249,17 @@ selected post-tool-failure && { run_check post-tool-failure '"hook_event_name":"
 selected transcript-layout && { run_check transcript-layout '"hook_event_name"' "Skill Task Agent AskUserQuestion Bash(echo *) Bash(sleep *) Bash(node *)" \
   "Do these steps in order, one tool call each. 1: use the Bash tool to run exactly: node $repo/dist/bdk.mjs change status --json. 2: use the Bash tool to run exactly: echo probe-repeat. 3: run exactly the same command again: echo probe-repeat. 4: use the subagent tool (named Task or Agent) with subagent_type bdk-probe:probe-worker and prompt go, in the foreground. 5: use the subagent tool with subagent_type bdk-probe:probe-sleeper, run_in_background true, and this prompt: Run with the Bash tool: sleep 3, then reply BG-DONE. Wait until it finishes. 6: use the AskUserQuestion tool once with the question Continue? and the options Yes and No. 7: call the Skill tool with skill bdk-probe:open-stage and args from-model; its reply line is your final answer." || status=1; }
 
-# A real BDK lead running a part through background workers (T41 acceptance 7.2).
-selected bdk-tree && (
-  lead_package=$(tree_fixture) || { echo "not triggered bdk-tree (fixture failed)"; exit 1; }
+# A real BDK implementer running a whole part in the background (#166): it commits
+# each task through `bdk check run` and stores its report.
+selected bdk-part && (
+  part_package=$(part_fixture) || { echo "not triggered bdk-part (fixture failed)"; exit 1; }
   # One attempt: a second one would run on the part the first one committed.
-  cd bdk-tree && bdk_plugin=$repo mode=bypassPermissions attempts=1
-  run_check bdk-tree 'report of a|kind[^a-z]{0,6}report' "-" \
-    "Use the Agent tool with subagent_type bdk:lead, run_in_background true, and this prompt: Read $lead_package and work on it. Wait until it finishes, then reply with its answer verbatim."
+  cd bdk-part && bdk_plugin=$repo mode=bypassPermissions attempts=1
+  run_check bdk-part 'report of a|kind[^a-z]{0,6}report' "-" \
+    "Use the Agent tool with subagent_type bdk:worker, run_in_background true, and this prompt: $part_package. Wait until it finishes, then reply with its answer verbatim."
   rc=$?
-  node "$repo/dist/bdk.mjs" agents list --all --json > "$out/bdk-tree--Agents.json" 2>&1
-  git log --format='%s%n%(trailers)' > "$out/bdk-tree--GitLog.txt" 2>&1
+  node "$repo/dist/bdk.mjs" agents list --all --json > "$out/bdk-part--Agents.json" 2>&1
+  git log --format='%s%n%(trailers)' > "$out/bdk-part--GitLog.txt" 2>&1
   exit $rc
 ) || status=1
 

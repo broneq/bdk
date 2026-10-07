@@ -336,12 +336,12 @@ describe("guard scripts", () => {
       }
     });
 
-    it("pre-tool.sh hands a lead's call and a SendMessage to the kernel", () => {
+    it("pre-tool.sh hands a runner's call and a SendMessage to the kernel", () => {
       const project = mkdtempSync(join(tmpdir(), "bdk-pre-"));
       try {
         const status = (payload: unknown) =>
           guard(PRE_TOOL, JSON.stringify(payload), project, process.env.PATH ?? "", project).status;
-        expect(status({ ...read(WORKER), agent_type: "bdk:lead" })).toBe(2);
+        expect(status({ ...read(WORKER), agent_type: "bdk:runner" })).toBe(2);
         expect(
           status({
             ...read(WORKER),

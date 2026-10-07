@@ -56,8 +56,8 @@ An entry of an `id` list is addressed by its `id` as a path segment, in
 
 ### Key spelling
 
-Every key segment and every `id` is kebab-case (`task-redispatch`, not
-`taskRedispatch`). An unknown key fails `bdk config check` with
+Every key segment and every `id` is kebab-case (`review-fix`, not
+`reviewFix`). An unknown key fails `bdk config check` with
 `policy/unknown-config-key` and, when a key is close, the one you probably
 meant. A key that BDK 2 used names its replacement; see
 [Migration from v2](../getting-started/migration-from-v2.md).
@@ -125,29 +125,28 @@ Each loop of a Change has a budget of tickets per round. When a budget runs
 out, the ladder moves on: one escalation ticket with a fresh context and a
 stronger model, then a question to you.
 
-| Key                              | Default | Setup     | What it sets                                                                                               |
-| -------------------------------- | ------- | --------- | ---------------------------------------------------------------------------------------------------------- |
-| `policy.budgets.task-redispatch` | `3`     | `default` | Re-dispatches of one task.                                                                                 |
-| `policy.budgets.verify-fix`      | `2`     | `default` | Fix rounds after a failed verification of one part.                                                        |
-| `policy.budgets.review-fix`      | `2`     | `default` | Fix rounds after the review of the Change.                                                                 |
-| `policy.budgets.verifier`        | `2`     | `default` | Iterations of one verifier over one artifact.                                                              |
-| `policy.budgets.part-lead`       | `2`     | `default` | Lead tickets of one plan part.                                                                             |
-| `policy.budgets.not-run`         | `3`     | `default` | Consecutive closes of one loop and target that ran nothing.                                                |
-| `policy.oscillation.threshold`   | `2`     | `default` | Failures of one round with the same fingerprint that shorten the ladder.                                   |
-| `policy.escalation.enabled`      | `true`  | `default` | `false` skips the escalation rung.                                                                         |
-| `policy.escalation.model`        | `opus`  | `default` | The model class the escalation ticket names.                                                               |
-| `policy.escalation.per-change`   | `3`     | `default` | Escalation tickets one Change may open in total.                                                           |
-| `policy.checkpoint.enabled`      | `true`  | `default` | Commits the Change directory at park, escalation and session end; `false` leaves that to the task commits. |
+| Key                            | Default | Setup     | What it sets                                                                                               |
+| ------------------------------ | ------- | --------- | ---------------------------------------------------------------------------------------------------------- |
+| `policy.budgets.part`          | `3`     | `default` | Tickets of one plan part: its part agent, then the re-dispatches after a failed close.                     |
+| `policy.budgets.verify-fix`    | `2`     | `default` | Fix rounds after a failed verification of one part.                                                        |
+| `policy.budgets.review-fix`    | `2`     | `default` | Fix rounds after the review of the Change.                                                                 |
+| `policy.budgets.verifier`      | `2`     | `default` | Iterations of one verifier over one artifact.                                                              |
+| `policy.budgets.not-run`       | `3`     | `default` | Consecutive closes of one loop and target that ran nothing.                                                |
+| `policy.oscillation.threshold` | `2`     | `default` | Failures of one round with the same fingerprint that shorten the ladder.                                   |
+| `policy.escalation.enabled`    | `true`  | `default` | `false` skips the escalation rung.                                                                         |
+| `policy.escalation.model`      | `opus`  | `default` | The model class the escalation ticket names.                                                               |
+| `policy.escalation.per-change` | `3`     | `default` | Escalation tickets one Change may open in total.                                                           |
+| `policy.checkpoint.enabled`    | `true`  | `default` | Commits the Change directory at park, escalation and session end; `false` leaves that to the task commits. |
 
 ### Verifiers
 
 A verifier blocks only on a finding of a blocking category; any other blocker
 is recorded as a reviewed observation.
 
-| Key                                   | Default                                                                                                           | Setup     | What it sets                                                                |
-| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | --------- | --------------------------------------------------------------------------- |
-| `policy.verifier.blocking-categories` | `architecture`, `security`, `irreversible-step`, `integration-failure`, `unresolved-decision`, `false-code-claim` | `default` | The categories a blocker may name; you can add your own, the defaults stay. |
-| `policy.verifier.not-a-fail`          | `style`, `template-conformance`, `files-bookkeeping`, `wording`, `report-length`, `verification-defect`           | `default` | The categories shown to a verifier as never failing an artifact.            |
+| Key                                   | Default                                                                                                                             | Setup     | What it sets                                                                |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | --------- | --------------------------------------------------------------------------- |
+| `policy.verifier.blocking-categories` | `architecture`, `security`, `irreversible-step`, `integration-failure`, `unresolved-decision`, `false-code-claim`, `costly-command` | `default` | The categories a blocker may name; you can add your own, the defaults stay. |
+| `policy.verifier.not-a-fail`          | `style`, `template-conformance`, `files-bookkeeping`, `wording`, `report-length`, `verification-defect`                             | `default` | The categories shown to a verifier as never failing an artifact.            |
 
 Each entry is `{id, description}`, merged by `id`.
 
@@ -163,13 +162,24 @@ Each entry is `{id, description}`, merged by `id`.
 [Verification scoping](../concepts/verification-scoping.md) explains the tree
 hash.
 
+## Plan parts
+
+One part agent implements a whole plan part, so a part stays small enough for
+one context. The `plan-part` checks refuse a larger part; `bdk part split`
+divides it. The plan instruction of `bdk next` states both limits, so the plan
+writer sizes the parts to them.
+
+| Key                   | Default | Setup     | What it sets                                       |
+| --------------------- | ------- | --------- | -------------------------------------------------- |
+| `plan.part.max-tasks` | `5`     | `default` | Tasks one plan part holds at most, 1 to 8.         |
+| `plan.part.max-files` | `10`    | `default` | Distinct `Files:` paths of one plan part, 1 to 30. |
+
 ## Execution
 
 | Key                                | Default                   | Setup     | What it sets                                                                                 |
 | ---------------------------------- | ------------------------- | --------- | -------------------------------------------------------------------------------------------- |
 | `execution.concurrency`            | `5`                       | `default` | The most dispatches of one wave that run at once.                                            |
-| `execution.tree.enabled`           | `true`                    | `default` | `false` runs every part flat, with the main session dispatching its tasks.                   |
-| `execution.tree.min-parts`         | `2`                       | `default` | Ready parts a `large` Change needs before they run as a tree, one lead per part.             |
+| `execution.checks.timeout`         | `300`                     | `default` | Seconds each command of `bdk check run` may run, 10 to 540; a command past it is killed.     |
 | `execution.worktree.enabled`       | `true`                    | `default` | `false` runs a part marked `isolation: worktree` in your checkout, alone in its wave.        |
 | `execution.worktree.dir`           | `.bdk/.machine/worktrees` | `default` | Where the kernel's worktrees live, relative to the project root unless absolute.             |
 | `execution.worktree.setup.command` | unset                     | `derived` | A shell command run in a new worktree after the `.worktreeinclude` copy, such as an install. |

@@ -29,8 +29,8 @@ was skipped.
 2. **`/bdk:plan`** writes one plan part, usually one task, with its test cases
    or `Verification: none` for a task that touches only non-executable files.
    The plan is not verified by a separate agent.
-3. **`/bdk:execute`** builds the task through an implementer, the simplifier
-   and the runner, and commits it with its trailers.
+3. **`/bdk:execute`** builds the part through an implementer, which commits
+   the task with its trailers, then a conformer, which runs the checks.
 4. **`/bdk:cr`** reviews the Change and runs the full test and lint suite once.
 5. **`/bdk:close`** passes the review gate, archives the Change and prints the
    PR summary.

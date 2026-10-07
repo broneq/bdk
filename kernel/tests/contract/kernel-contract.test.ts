@@ -14,7 +14,7 @@ import { listPage, listPageSchema } from "../../src/shared/output/index.ts";
 import { refusalSchema, RULES } from "../../src/shared/refusal/index.ts";
 import { createRegistry, loadIndex } from "../../src/shared/registry/index.ts";
 import { systemClock } from "../../src/shared/clock/index.ts";
-import { systemGit } from "../../src/shared/git/index.ts";
+import { runCommand, systemGit } from "../../src/shared/git/index.ts";
 import { memoryIndex, memoryRegistry, memoryStore } from "../../src/shared/store/index.ts";
 import { REPO_ROOT } from "../support/run.ts";
 import { readSchema, requiredOf, SCHEMA_FILES, validatorFor } from "../support/schemas.ts";
@@ -30,6 +30,7 @@ const registry = createRegistry(
     commands: index,
     settings: settingsRegistry(),
     git: systemGit,
+    shell: runCommand,
     openIndex: memoryIndex,
     openRegistry: memoryRegistry(),
     clock: systemClock,

@@ -1,4 +1,4 @@
-// `role-contracts`: the eleven role skills under skills/roles/, their adapter
+// `role-contracts`: the ten role skills under skills/roles/, their adapter
 // binding (the same table `dispatch build` stamps), and the wording every role
 // contract must and must not carry.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -13,16 +13,15 @@ import { REPO_ROOT } from "../support/run.ts";
 
 const ROLES_DIR = join(REPO_ROOT, "skills", "roles");
 const ROLES = [
+  "conformer",
   "design-verifier",
   "implementer",
   "integration-reviewer",
   "judge",
-  "lead",
   "pr-reviewer",
   "reviewer",
   "runner",
   "scout",
-  "simplifier",
   "verifier",
 ];
 const REVIEWING = [
@@ -70,16 +69,21 @@ describe("role skills: refusals of the execute probes (T46)", () => {
     expect(body).toMatch(/not a (console|summary) line|never the console/i);
   });
 
-  it("lead: closes a task ticket only after every step, and uses the task's own ticket", () => {
-    const { body } = readRole("lead");
-    expect(body).toMatch(/only after the last step/);
-    expect(body).toMatch(/never your own/);
-    expect(body).toMatch(/close the task's earlier ticket before `bdk attempt open/);
+  it("implementer: commits each task only after its check run passed, on the part's ticket (#166)", () => {
+    const { body } = readRole("implementer");
+    expect(body).toContain("`Tasks` section");
+    expect(body).toMatch(/every command takes its ticket/);
+    const check = body.indexOf("bdk check run <task> --ticket <ticket>");
+    expect(check).toBeGreaterThan(-1);
+    expect(body.indexOf("run the commit command it printed")).toBeGreaterThan(check);
+    expect(body).toMatch(/Never compose, run or record a check yourself/);
+    expect(body).not.toContain("bdk evidence record");
+    expect(body).toMatch(/spends money, needs credentials[^.]*accepted `decision`/);
   });
 });
 
 describe("role skills", () => {
-  it("are exactly the eleven roles", () => {
+  it("are exactly the ten roles, without lead and simplifier", () => {
     const dirs = existsSync(ROLES_DIR)
       ? readdirSync(ROLES_DIR, { withFileTypes: true })
           .filter((entry) => entry.isDirectory())
@@ -150,10 +154,11 @@ describe("role skills", () => {
 
     it("stores its report through ingest, calls again on a refusal, and returns the envelope", () => {
       const { body } = role();
-      expect(body).toContain("bdk log ingest --ticket");
+      expect(body).toMatch(/bdk log ingest --ticket \S+ --file <draft>/);
+      expect(body).toContain("`draft` path");
+      expect(body).toMatch(/never through a pipe or a heredoc/);
+      expect(body).not.toMatch(/\bpipe the\b/i);
       expect(body).toMatch(/fix the field it names and call it again/);
-      expect(body).toMatch(/never write the report file yourself/);
-      expect(body).not.toMatch(/write the (full )?report to/i);
       expect(body).toMatch(/return only the envelope/i);
       expect(body).toContain("report path as the package names it");
     });
@@ -162,6 +167,7 @@ describe("role skills", () => {
       const { body } = role();
       expect(body).toMatch(/ledger id and one sentence, never the content/);
       expect(body).toContain("bdk agents list --affected-by <entry>");
+      expect(body).toContain("BDK-AGENT-ID");
       expect(body).toContain("bdk log show <id>");
       expect(body).toMatch(/return `blocked` with the entry id/);
     });
@@ -169,8 +175,7 @@ describe("role skills", () => {
     // T46: the call forms the execute probes of T41 showed refused (`role-contracts`,
     // Contracts steer the kernel calls that repeat as refusals).
     it("shows the envelope as a complete frontmatter with reason left as a comment", () => {
-      // A plain fence holds the envelope alone; a heredoc fence opens with the ingest line (#158).
-      const fence = /```(?:sh\n[^\n]*<<'REPORT')?\n(---\n[\s\S]*?\n---)\n/.exec(role().body)?.[1];
+      const fence = /```\n(---\n[\s\S]*?\n---)\n/.exec(role().body)?.[1];
       expect(fence, "an envelope example between two --- lines").toBeDefined();
       const lines = (fence ?? "").split("\n");
       expect(lines.filter((line) => line.startsWith("reason:"))).toEqual([]);
@@ -234,7 +239,7 @@ describe("T42: the implementer fixes the blockers of a review-fix package", () =
       sentence.includes("`review-fix`"),
     );
     expect(fix.join(" ")).toMatch(/blocking entr/);
-    expect(fix.join(" ")).toMatch(/by id in your report/);
+    expect(fix.join(" ")).toMatch(/ids in your report/);
     expect(fix.join(" ")).toMatch(/resolve none/);
   });
 });
@@ -246,22 +251,32 @@ describe("P3: reviewing roles authorise nothing", () => {
 });
 
 describe("T3: the working-tree git sentence of the worker roles", () => {
-  it.each(["implementer", "simplifier"])(
-    "%s forbids discarding or history-writing git once and says to return blocked",
+  it.each(["implementer", "conformer"])(
+    "%s forbids discarding or history-writing git once, but the check run commit, and says to return blocked",
     (name) => {
       const matches = sentences(readRole(name).body).filter((sentence) => /\bgit\b/.test(sentence));
       expect(matches).toHaveLength(1);
       expect(matches[0]).toMatch(/blocked/);
+      expect(matches[0]).toContain("`bdk check run` prints");
     },
   );
 });
 
-describe("T23-D43: the simplifier keeps behaviour", () => {
-  it("keeps behaviour unchanged within the task's Files:", () => {
-    const { body } = readRole("simplifier");
-    expect(body).toMatch(/keep behaviour unchanged/i);
-    expect(body).toMatch(/only the task's `Files:`/);
-    expect(body).toMatch(/uncommitted/);
+describe("#166: the conformer answers each rule and keeps behaviour", () => {
+  it("checks the range against rules, instructions and tasks within the part's Files:", () => {
+    const { body } = readRole("conformer");
+    expect(body).toContain("## Conformance");
+    expect(body).toContain("`Range`");
+    expect(body).toContain("`Project instructions`");
+    expect(body).toContain("bdk check run <part> --ticket <ticket>");
+    expect(body).toMatch(/keeping behaviour unchanged/i);
+    expect(body).toMatch(/within the part's `Files:`/);
+  });
+});
+
+describe("#166: no role waits on children", () => {
+  it.each(ROLES)("%s names no bdk agents wait", (name) => {
+    expect(readRole(name).body).not.toContain("bdk agents wait");
   });
 });
 
@@ -275,7 +290,7 @@ describe("T4: the runner records its checks as evidence", () => {
     const notRun = sentences(body).filter((sentence) => sentence.includes("`not-run`"));
     expect(notRun.some((sentence) => sentence.includes("reason"))).toBe(true);
     expect(body).toContain("never write or edit that output yourself");
-    expect(body).toContain("under `.bdk/.machine/checks/`");
+    expect(body).toContain("under `.bdk/.machine/checks/<ticket>/`");
   });
 });
 
@@ -319,7 +334,7 @@ describe("the verifier checks a whole plan", () => {
 describe("rule ids are cited [S4]", () => {
   const CITING = [
     "implementer",
-    "simplifier",
+    "conformer",
     "reviewer",
     "integration-reviewer",
     "pr-reviewer",
@@ -346,31 +361,8 @@ describe("rule ids are cited [S4]", () => {
     expect(cited[0]).toMatch(/finding/);
   });
 
-  it.each(["runner", "scout", "lead", "judge"])("%s carries no citation line", (name) => {
+  it.each(["runner", "scout", "judge"])("%s carries no citation line", (name) => {
     expect(citation(readRole(name).body)).toStrictEqual([]);
-  });
-});
-
-describe("T41-D11: the lead runs its part and waits instead of ending its turn", () => {
-  it("dispatches in the background, waits, closes and commits, and edits nothing", () => {
-    const { body } = readRole("lead");
-    for (const needle of [
-      "bdk agents wait",
-      "run_in_background: true",
-      "bdk attempt close",
-      "bdk commit",
-      "bdk log ingest --ticket",
-      "elapsed",
-    ]) {
-      expect(body).toContain(needle);
-    }
-    expect(body).not.toMatch(/\b(Edit|Write)\b/);
-  });
-
-  it("escalates its own task on the model dispatch build returns (T41-D14)", () => {
-    const { body } = readRole("lead");
-    expect(body).toContain("bdk attempt open task-redispatch <task> --escalate");
-    expect(body).toMatch(/`model` that `bdk dispatch build` returns/);
   });
 });
 
@@ -411,11 +403,11 @@ describe("T42-A1: reviewers of a round work under their group reference", () => 
     expect(body).not.toMatch(/`git diff <range>`(?! -- <file>)/);
   });
 
-  it("has the reviewer check its group against the plan part and leave style to simplify and lint", () => {
+  it("has the reviewer check its group against the plan part and leave conformance to conform and lint", () => {
     const { body } = readRole("reviewer");
     expect(body).toMatch(/against the plan part/);
     expect(body).toMatch(/unit and end-to-end cases that are missing/);
-    expect(body).toMatch(/to `simplify` and `lint`/);
+    expect(body).toMatch(/to `conform` and `lint`/);
   });
 });
 
@@ -449,13 +441,13 @@ describe("T42-H: findings explain why they matter, and areas are summarised", ()
   });
 });
 
-describe("#158: readers write no file and the integration reviewer traces the intent", () => {
+describe("#158: readers edit no project file and the integration reviewer traces the intent", () => {
   const READERS = ["reviewer", "integration-reviewer", "judge"];
 
-  it.each(READERS)("%s hands its report over in a quoted heredoc and writes no file", (name) => {
+  it.each(READERS)("%s writes only its report draft and edits no project file (#166)", (name) => {
     const { body } = readRole(name);
-    expect(body).toMatch(/bdk log ingest --ticket \S+ <<'REPORT'/);
-    expect(body).toMatch(/write no file/i);
+    expect(body).toMatch(/bdk log ingest --ticket \S+ --file <draft>/);
+    expect(body).toMatch(/edit no project file/i);
   });
 
   it.each(["reviewer", "integration-reviewer"])("%s reads a diff one file at a time", (name) => {
@@ -531,20 +523,20 @@ describe("T41-D4: the adapters' Agent lists and guard/agent-spawn agree", () => 
 });
 
 describe("roles in a part worktree (T45)", () => {
-  it.each(["implementer", "simplifier", "runner", "scout", "lead"])(
+  it.each(["implementer", "conformer", "runner", "scout"])(
     "%s works inside the package's Work root",
     (name) => {
       const { body } = readRole(name);
-      expect(body).toMatch(/`Work root` section, every (file you read or edit and every )?command/);
-      expect(body).toMatch(/the kernel finds the home checkout itself/);
+      expect(body).toMatch(/`Work root` section, (every|keep every) (file|command)/);
+      expect(body).toMatch(/`bdk` commands stay as written/);
     },
   );
 
   it("the implementer edits only the Conflict paths and leaves the merge to the kernel", () => {
     const { body } = readRole("implementer");
-    expect(body).toMatch(/`Conflict` section, edit only its paths and follow its instruction/);
-    expect(body).toMatch(/leave staging and the merge commit to the kernel/);
-    expect(body).toMatch(/return `blocked` naming the paths the instruction does not settle/);
+    expect(body).toMatch(/`Conflict` section, edit only its paths as its instruction says/);
+    expect(body).toMatch(/commit nothing/);
+    expect(body).toMatch(/return `blocked` naming the paths it does not settle/);
   });
 
   it("the verifier checks isolation as an integration-failure", () => {
@@ -565,19 +557,19 @@ describe("contracts leave BDK's own files to setup (T51)", () => {
     return found[0] ?? "";
   }
 
-  it.each(["implementer", "simplifier", "runner", "reviewer", "integration-reviewer"])(
+  it.each(["implementer", "conformer", "runner", "reviewer", "integration-reviewer"])(
     "%s turns a problem caused only by .bdk/ files into a question",
     (name) => {
       expect(bdkLine(name)).toContain("`question`");
     },
   );
 
-  it.each(["implementer", "simplifier"])(
+  it.each(["implementer", "conformer"])(
     "%s never changes the tool configuration nor formats .bdk/",
     (name) => {
       const line = bdkLine(name);
       expect(line).toMatch(/never change the project's tool configuration/i);
-      expect(line).toMatch(/never rewrite [^.]*with a formatter/);
+      expect(line).toMatch(/rewrite them with a formatter/);
     },
   );
 
