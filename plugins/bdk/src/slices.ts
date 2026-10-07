@@ -18,6 +18,10 @@ export const SLICES: Readonly<
     imports: [],
     why: "review scope and reviewer groups of a branch; reads only git and its own files",
   },
+  hooks: {
+    imports: ["config"],
+    why: "the session-start context and the subagent-git guard read the resolved configuration through loadConfig",
+  },
   plan: {
     imports: ["config"],
     why: "bdk plan check reads the part limits plan.part.* through loadConfig, a config use case",
@@ -43,4 +47,5 @@ export const SHARED: Readonly<
   fs: { admitted: "os-boundary", why: "file system" },
   git: { admitted: "os-boundary", why: "child processes: the git executable" },
   shell: { admitted: "os-boundary", why: "child processes: command lines through /bin/sh" },
+  stdin: { admitted: "os-boundary", why: "standard input, read for an explicit - argument" },
 };

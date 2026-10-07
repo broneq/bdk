@@ -16,6 +16,6 @@ The `bdk` CLI helps skills; it never runs the process. Spec: `openspec/specs/bdk
 - Reach another slice only through its `index.ts`, and add a matrix edge only for a use case that slice owns. Data several slices read goes through `shared/`.
 - `shared/` takes only an OS boundary, the CLI frame, or code three or more slices import. Two slices needing the same helper keep two copies.
 - File system, child processes, environment and `process` only in `src/main.ts` and `shared/` OS boundary modules; use cases get them injected and are unit-tested without them.
-- Output: the result on stdout; `--json` prints one compact JSON document; errors are `<usage|env|internal>/<name>`; exit 0 ok, 1 "the answer is no" with a normal result, 2 usage, 3 environment, 4 internal. Read stdin only for an explicit `-`.
+- Output: the result on stdout; `--json` prints one compact JSON document; errors are `<usage|env|internal>/<name>`; exit 0 ok, 1 "the answer is no" with a normal result, 2 usage, 3 environment, 4 internal. Read stdin only for an explicit `-`. Exception: `bdk hooks` prints the host's hook JSON and exits 0 for every decision, a denial included (`plugins/bdk/tests/hooks.test.ts`).
 
 ESLint (`plugins/bdk/eslint.architecture.ts`, run by `pnpm lint`) enforces the matrix, the layer direction and the OS boundary; `plugins/bdk/tests/shared-admission.test.ts` the `shared/` admission. When they fail, fix the import; change `src/slices.ts` only with a reason in its `why` field. Never silence a `boundaries/*` rule with an `eslint-disable` comment.
