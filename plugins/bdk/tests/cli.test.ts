@@ -176,3 +176,62 @@ describe("bin/bdk", () => {
     expect(stderr.split("\n")).toHaveLength(2);
   });
 });
+
+describe("bin/bdk config", () => {
+  // A project and a home directory of their own, so the user's real global layer is never read.
+  function project(files: Readonly<Record<string, string>>): string {
+    const dir = mkdtempSync(join(root, "project-"));
+    for (const [path, text] of Object.entries(files)) {
+      mkdirSync(join(dir, path, ".."), { recursive: true });
+      writeFileSync(join(dir, path), text);
+    }
+    return dir;
+  }
+
+  function config(cwd: string, args: readonly string[]) {
+    const home = join(root, "home");
+    const { status, stdout, stderr } = spawnSync(join(plugin, "bin", "bdk"), ["config", ...args], {
+      cwd,
+      encoding: "utf8",
+      env: { PATH: process.env.PATH, HOME: home, XDG_CONFIG_HOME: join(home, "xdg") },
+    });
+    return { status, stdout, stderr };
+  }
+
+  it("shows values with their origin layer from a subdirectory", () => {
+    const dir = project({
+      ".bdk/settings.yaml": "languages: [typescript]\n",
+      ".bdk/settings.local.yaml": "execution:\n  lead: foreground\n",
+      "openspec/config.yaml": "schema: spec-driven\n",
+      "src/deep/.keep": "",
+    });
+    const { status, stdout, stderr } = config(join(dir, "src", "deep"), ["show"]);
+    expect([status, stderr]).toEqual([0, ""]);
+    expect(stdout).toContain('languages: ["typescript"]  # project\n');
+    expect(stdout).toContain('execution.lead: "foreground"  # local\n');
+    expect(stdout).toContain("plan.part.max-tasks: 5  # default\n");
+  });
+
+  it("prints the stop line with exit 0 in a project without a configuration", () => {
+    expect(config(project({ "README.md": "" }), ["show"])).toEqual({
+      status: 0,
+      stdout: "BDK not configured: run /bdk:setup\n",
+      stderr: "",
+    });
+  });
+
+  it("rejects an invalid value naming its key, and sets a valid one", () => {
+    const dir = project({
+      ".bdk/settings.yaml": "plan:\n  part:\n    max-files: many\n",
+      "openspec/x": "",
+    });
+    const checked = config(dir, ["check"]);
+    expect(checked.status).toBe(1);
+    expect(checked.stdout).toMatch(/\.bdk\/settings\.yaml: plan\.part\.max-files: /);
+    expect(config(dir, ["set", "plan.part.max-files", "12"]).status).toBe(0);
+    expect(config(dir, ["check"]).status).toBe(0);
+    expect(config(dir, ["show", "plan.part.max-files"]).stdout).toMatch(
+      /\nplan\.part\.max-files: 12 {2}# project\n$/,
+    );
+  });
+});
