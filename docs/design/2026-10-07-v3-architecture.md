@@ -498,7 +498,7 @@ flowchart LR
 
 ### Configuration and extension points
 
-Three layers as in draft 1: global (`~/.config/bdk/settings.yaml`), project (`.bdk/settings.yaml`, committed) and local (`.bdk/settings.local.yaml`). Arrays merge by `id`. Every BDK skill starts with a `!` block running `bdk config show` and lists `Bash(bdk *)` in `allowed-tools`, which the host requires for the block to run in default mode. The block injects the resolved configuration before the model's first turn. Without a configuration or without OpenSpec, the block prints one line, "BDK not configured: run /bdk:setup", and the skill's first instruction is to stop and pass it on. Only `/bdk:setup` runs without a configuration.
+Three layers as in draft 1: global (`~/.config/bdk/settings.yaml`), project (`.bdk/settings.yaml`, committed) and local (`.bdk/settings.local.yaml`). Arrays merge by `id`. Every BDK skill that reads the configuration starts with a `!` block running `bdk config show` and lists `Bash(bdk *)` in `allowed-tools`, which the host requires for the block to run in default mode. The block injects the resolved configuration before the model's first turn. Without a configuration or without OpenSpec, the block prints one line, "BDK not configured: run /bdk:setup", and the skill's first instruction is to stop and pass it on. Only `/bdk:setup` and the tools that read no configuration (`commit`, `adr`) run without one.
 
 | Key | Purpose |
 |---|---|
