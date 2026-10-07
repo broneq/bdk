@@ -21,6 +21,10 @@ export async function build({ outfile = join(ROOT, "dist", "bdk.mjs") } = {}): P
     target: "node22.18",
     outfile,
     define: { __BDK_VERSION__: JSON.stringify(version) },
+    // A CommonJS dependency (yaml's node build) calls require(), which an ESM bundle lacks.
+    banner: {
+      js: 'import { createRequire as __bdkCreateRequire } from "node:module"; const require = __bdkCreateRequire(import.meta.url);',
+    },
     logLevel: "warning",
   });
 }

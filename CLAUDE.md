@@ -43,7 +43,7 @@ openspec/                        - SDLC specs and changes
 
 ## Current state
 
-The repository holds three plugins, plus the pnpm workspace and toolchain, PR CI (`.github/workflows/pr.yml`), the release flow (`release.yml`, `scripts/publish-plugin.ts`), `docs/` and `.claude-plugin/marketplace.json`. `plugins/git-identity/` and `plugins/bdk-skill-kit/` were imported from their archived repositories (tags `<name>--v<version>`); `plugins/bdk/` is the `bdk` plugin: manifest, `bin/bdk` and its CLI (#178), one slice per command group under `src/`: `findings` (#187), `run` (#188). v2 is gone from this line; its source stays in git history and on `main` (tag `v2.7.0`).
+The repository holds three plugins, plus the pnpm workspace and toolchain, PR CI (`.github/workflows/pr.yml`), the release flow (`release.yml`, `scripts/publish-plugin.ts`), `docs/` and `.claude-plugin/marketplace.json`. `plugins/git-identity/` and `plugins/bdk-skill-kit/` were imported from their archived repositories (tags `<name>--v<version>`); `plugins/bdk/` is the `bdk` plugin: manifest, `bin/bdk` and its CLI (#178), one slice per command group under `src/`: `findings` (#187), `run` (#188), `git` (#186). v2 is gone from this line; its source stays in git history and on `main` (tag `v2.7.0`).
 
 - The `bdk` marketplace entry installs `plugins/bdk` from the `release` branch; until the first `bdk--v*` release is published from `main` (#213), installing it fails, and `v2.7.0` stays installable by its tag.
 - v2 tools come back one by one in their own tasks, rebuilt as v3 skills (see "Building skills (v3)").

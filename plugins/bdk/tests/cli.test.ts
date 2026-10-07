@@ -95,6 +95,31 @@ describe("bin/bdk", () => {
     });
   });
 
+  it("runs a git command from the bundle in a repository", () => {
+    const repo = join(root, "repo");
+    mkdirSync(join(repo, "plan"), { recursive: true });
+    const git = (...args: string[]): void => {
+      spawnSync("git", ["-c", "user.name=bdk", "-c", "user.email=bdk@example.com", ...args], {
+        cwd: repo,
+      });
+    };
+    git("init", "-q", "-b", "main");
+    git("commit", "-q", "--allow-empty", "--no-gpg-sign", "-m", "base");
+    writeFileSync(join(repo, "plan", "01.md"), "---\nfiles: [plan/01.md]\n---\n");
+    git("add", "-A");
+    git("commit", "-q", "--no-gpg-sign", "-m", "part");
+    const { status, stdout, stderr } = spawnSync(
+      join(plugin, "bin", "bdk"),
+      ["git", "groups", "HEAD~1", "--plan", "plan", "--json"],
+      { cwd: repo, encoding: "utf8" },
+    );
+    expect({ status, stderr }).toEqual({ status: 0, stderr: "" });
+    expect((JSON.parse(stdout) as { groups: { id: string }[] }).groups.map((g) => g.id)).toEqual([
+      "p01",
+      "integration",
+    ]);
+  });
+
   it("finishes while stdin stays open", async () => {
     const child = spawn(join(plugin, "bin", "bdk"), ["--help"], { cwd: elsewhere, stdio: "pipe" });
     const code = await new Promise<number | null>((resolve) => child.on("exit", resolve));
