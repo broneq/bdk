@@ -8,6 +8,7 @@ export type Admission = "os-boundary" | "frame" | "three-slices";
 export const SLICES: Readonly<
   Record<string, { readonly imports: readonly string[]; readonly why: string }>
 > = {
+  config: { imports: [], why: "leaf: the configuration every other slice may read" },
   findings: { imports: [], why: "leaf: the findings event log of a review round" },
   git: {
     imports: [],
