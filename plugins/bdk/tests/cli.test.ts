@@ -1,5 +1,13 @@
 import { spawn, spawnSync } from "node:child_process";
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync } from "node:fs";
+import {
+  cpSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -92,6 +100,47 @@ describe("bin/bdk", () => {
     const code = await new Promise<number | null>((resolve) => child.on("exit", resolve));
     child.stdin.destroy();
     expect(code).toBe(0);
+  });
+
+  it("renders a run from the project files", () => {
+    const write = (path: string, text: string): void => {
+      mkdirSync(join(elsewhere, path, ".."), { recursive: true });
+      writeFileSync(join(elsewhere, path), text);
+    };
+    write(
+      ".bdk/runs/run.json",
+      JSON.stringify({
+        version: 1,
+        mode: "interactive",
+        queue: [{ change: "v3-1-demo", issue: 1 }],
+        current: "v3-1-demo",
+      }),
+    );
+    write("openspec/changes/v3-1-demo/proposal.md", "# Proposal\n");
+    write("openspec/changes/v3-1-demo/design.md", "# Design\n");
+    write(".bdk/runs/v3-1-demo/design/verify-1.md", "Verdict: FAIL\n");
+    const { status, stdout, stderr } = bdk(join(plugin, "bin", "bdk"), ["run", "status", "--json"]);
+    rmSync(join(elsewhere, ".bdk"), { recursive: true });
+    rmSync(join(elsewhere, "openspec"), { recursive: true });
+    expect({ status, stderr }).toEqual({ status: 0, stderr: "" });
+    expect(JSON.parse(stdout)).toEqual({
+      mode: "interactive",
+      current: "v3-1-demo",
+      changes: [
+        {
+          change: "v3-1-demo",
+          issue: 1,
+          current: true,
+          stage: "design",
+          step: null,
+          row: 2,
+          round: null,
+          reason: "design/verify-1.md does not pass",
+        },
+      ],
+      parts: [],
+      warnings: [],
+    });
   });
 
   it("exits 3 with one repair line when the bundle is missing", () => {

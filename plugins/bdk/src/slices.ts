@@ -9,6 +9,10 @@ export const SLICES: Readonly<
   Record<string, { readonly imports: readonly string[]; readonly why: string }>
 > = {
   findings: { imports: [], why: "leaf: the findings event log of a review round" },
+  run: {
+    imports: ["findings"],
+    why: "bdk run status folds the last review round through listFindings, a findings use case",
+  },
 };
 
 /** Every module under `src/shared/`, and why it is shared rather than owned by a slice. */
