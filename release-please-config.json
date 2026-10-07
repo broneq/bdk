@@ -1,0 +1,11 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "release-type": "simple",
+  "include-component-in-tag": true,
+  "tag-separator": "--",
+  "separate-pull-requests": true,
+  "extra-files": [
+    { "type": "json", "path": ".claude-plugin/plugin.json", "jsonpath": "$.version" }
+  ],
+  "packages": {}
+}

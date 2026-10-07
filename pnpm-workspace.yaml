@@ -1,0 +1,14 @@
+packages:
+  - plugins/*
+  - docs
+
+# pnpm runs no dependency build script unless it is allowed here.
+allowBuilds:
+  "@anthropic-ai/claude-code": true
+  esbuild: true
+
+# Packages younger than pnpm's minimum release age are held back. A bump to a
+# newer version is excluded here by name, in the PR that bumps it.
+minimumReleaseAgeExclude:
+  - "@anthropic-ai/claude-code"
+  - "@anthropic-ai/claude-code-*"
