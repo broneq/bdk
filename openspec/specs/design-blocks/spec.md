@@ -103,6 +103,15 @@ When the last `.bdk/runs/<change>/design/verify-N.md` says `Verdict: FAIL`, `des
 - **WHEN** the last report holds `M1` saying `design.md` names a function the code does not have
 - **THEN** `design.md` no longer names that function, and the reply lists `M1` as fixed
 
+### Requirement: Design draft revises on a request
+
+When the Change already has a `design.md`, the last `.bdk/runs/<change>/design/verify-N.md` does not say `Verdict: FAIL`, and the arguments carry a revision request after the Change name, `design-draft` SHALL change the spec deltas and `design.md` only as far as the request needs, keep every other decision, and reply with what it changed. It SHALL ask the user only when the request leaves a decision open, following `policy.questions`.
+
+#### Scenario: Revision requested at the design gate
+
+- **WHEN** `design-draft` runs with the arguments `add-csv-export quote every label` and the Change holds a passed design that quotes only labels with a comma, a quote or a line break
+- **THEN** the spec delta and `design.md` say that every label is quoted, the other decisions of `design.md` are unchanged, and the reply names the change
+
 ### Requirement: Verify design checks the design against the code
 
 `verify-design` SHALL read the Change's `proposal.md`, spec deltas and `design.md`, `.bdk/runs/<change>/design/explore.md` when present, and the code they name. It SHALL check that every claim about the code holds, that every capability of the proposal has a spec delta whose requirements have runnable scenarios, that the design answers every requirement and the proposal's changes without contradicting them, that every decision names its alternatives, that the stated constraints are met or deferred, that diagrams match the prose, that risks are concrete, and that the open questions change neither the specs, the decisions nor the plan. A defect that would make the plan or the product wrong SHALL be a `Must address` item; every other gap SHALL be a `Should consider` item. It SHALL write the report `.bdk/runs/<change>/design/verify-N.md`, N one more than the highest existing report, with the verifier report body and stable item IDs (spec `bdk-verifier`), and reply with the verdict line and the report path.

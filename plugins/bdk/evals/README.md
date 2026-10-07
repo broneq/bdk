@@ -86,6 +86,14 @@ for c in "explore-*" "design-draft-*" "verify-design-*"; do
 done
 ```
 
+The `design-*` cases are the orchestrator cases of `/bdk:design` (`tags: [orchestrator]`, one arm). They start from the same ledger fixtures, run the design blocks inside one run (a `bdk:explorer` and an opus `bdk:verifier` agent), and need the grants of the design blocks:
+
+```bash
+pnpm --filter @bdk/bdk run eval --ablation none --tag orchestrator --allow-tools Write Edit "Bash(*/bin/bdk *)" "Bash(openspec *)" "Bash(npx -y lavish-axi *)" "Bash(git *)" --case 'design-*'
+```
+
+`--case 'design-*'` alone also matches the `design-draft-*` block cases; `--tag orchestrator` keeps only the orchestrator ones.
+
 `--case` takes one glob; a repeated `--case` keeps only the last.
 
 ### Manual browser check of `e2e-check`

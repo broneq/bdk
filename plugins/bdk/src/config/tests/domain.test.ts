@@ -28,7 +28,7 @@ describe("defaults", () => {
       policy: {
         gates: { design: "manual", review: "manual" },
         questions: "stop",
-        budgets: { "part-attempts": 3, "review-rounds": 3 },
+        budgets: { "part-attempts": 3, "review-rounds": 3, verifier: 3 },
         escalation: { model: "opus" },
       },
       plan: { part: { "max-tasks": 5, "max-files": 10, "max-bytes": 8192 } },
@@ -264,6 +264,15 @@ describe("validate", () => {
     ]);
     expect(validate([tools(1.5)], suggest).problems.map((problem) => problem.key)).toEqual([
       "tools.build.tsc.timeout",
+    ]);
+  });
+
+  it("defaults the verifier budget to 3 and reports a budget below 1", () => {
+    const budget = (verifier: unknown) => layer("project", { policy: { budgets: { verifier } } });
+    expect(validate([], suggest).settings?.policy.budgets.verifier).toBe(3);
+    expect(validate([budget(2)], suggest).settings?.policy.budgets.verifier).toBe(2);
+    expect(validate([budget(0)], suggest).problems.map((problem) => problem.key)).toEqual([
+      "policy.budgets.verifier",
     ]);
   });
 
