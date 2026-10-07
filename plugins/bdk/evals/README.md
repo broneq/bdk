@@ -66,6 +66,14 @@ pnpm --filter @bdk/bdk run eval --allow-tools Write Edit "Bash(git *)" --case 'c
 pnpm --filter @bdk/bdk run eval --allow-tools Write Edit --case 'adr-*'
 ```
 
+The `plan-draft-*` and `verify-plan-*` cases start from the shared fixture `ledger-change.sh` (a configured project with the Change `add-csv-export` ready to plan) and call `bdk plan check`; `verify-plan` runs in a `bdk:verifier` agent (opus):
+
+```bash
+pnpm --filter @bdk/bdk run eval --allow-tools Write Edit "Bash(*/bin/bdk *)" --case '*plan-*'
+```
+
+`--case` takes one glob; a repeated `--case` keeps only the last.
+
 ### Manual browser check of `e2e-check`
 
 No eval case covers the `browser` and `http` drivers: the run's sandbox refuses to bind a local port ("Host limits"). Check them by hand in a project built from `fixtures/click-counter.sh` outside this repository:

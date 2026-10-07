@@ -20,4 +20,7 @@ files:
 ## Tasks
 
 <!-- Numbered contracts: what changes, at which file and interface, and how it is verified. No code. -->
-1. <!-- task -->
+1. <!-- what changes, in one line -->
+   - File: <!-- one or more paths from files -->
+   - Interface: <!-- the function, command, endpoint or type that changes, as a signature; none when no interface changes -->
+   - Verified by: <!-- the spec scenario, the test, or both -->
