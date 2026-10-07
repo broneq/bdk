@@ -59,6 +59,13 @@ The `e2e-check-*` cases run the product of the scaffolded project as a user woul
 pnpm --filter @bdk/bdk run eval --trust-plugin --allow-tools Write Bash --case 'e2e-check-*'
 ```
 
+The `commit-*` cases run `git` and grade `.git/COMMIT_EDITMSG` and `.git/logs/HEAD`, which their scaffolds clear (on a Mac, see the `git` entry of "Host limits"); the `adr-*` cases need only `Write` and `Edit`:
+
+```bash
+pnpm --filter @bdk/bdk run eval --allow-tools Write Edit "Bash(git *)" --case 'commit-*'
+pnpm --filter @bdk/bdk run eval --allow-tools Write Edit --case 'adr-*'
+```
+
 ### Manual browser check of `e2e-check`
 
 No eval case covers the `browser` and `http` drivers: the run's sandbox refuses to bind a local port ("Host limits"). Check them by hand in a project built from `fixtures/click-counter.sh` outside this repository:
@@ -117,6 +124,13 @@ Measured with Claude Code 2.1.292:
   ```bash
   EVAL_HOME=$(mktemp -d) && mkdir -p "$EVAL_HOME/Library" && ln -s ~/Library/Keychains "$EVAL_HOME/Library/Keychains"
   HOME=$EVAL_HOME pnpm --filter @bdk/bdk run eval --allow-tools "Bash(git *)" Write --case '<case>'
+  ```
+
+- **`git` on a Mac without Homebrew git.** `git` fails in every run: `/usr/bin/git` is an `xcrun` shim that cannot write its cache in the sandbox, and the sandbox hides `/Library/Developer` from `PATH` lookup, while that git runs by its full path. `macos-git-prefix.sh` defines `git` as that full path for each Bash call. The sandbox cannot read files under your home directory, so copy it out and pass it as Claude Code's shell prefix:
+
+  ```bash
+  mkdir -p /Users/Shared/bdk-eval && cp plugins/bdk/evals/macos-git-prefix.sh /Users/Shared/bdk-eval/
+  CLAUDE_CODE_SHELL_PREFIX=/Users/Shared/bdk-eval/macos-git-prefix.sh pnpm --filter @bdk/bdk run eval ...
   ```
 
 - **`PATH` leaks from the caller.** A run inherits the `PATH` of the shell that starts it, including the `bin/` of plugins of a Claude Code session the command runs in. Start paid runs from a plain terminal.
