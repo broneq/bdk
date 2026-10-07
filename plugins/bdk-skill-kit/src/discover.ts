@@ -62,7 +62,13 @@ function read(
 ): Document {
   return parseDocument({
     kind: target.kind,
-    target: { kind: target.kind, dirs: target.dirs, profile: target.profile, name: target.name },
+    target: {
+      kind: target.kind,
+      dirs: target.dirs,
+      profile: target.profile,
+      name: target.name,
+      plugin: target.plugin,
+    },
     path: toPosix(relative(root, file)),
     dir: toPosix(relative(root, dir)),
     text: readFileSync(file, "utf8"),

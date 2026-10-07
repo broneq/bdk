@@ -7,6 +7,7 @@ const target: ResolvedTarget = {
   dirs: ["skills"],
   profile: "claude-code",
   name: "skills",
+  plugin: true,
 };
 
 function parse(text: string, files: string[] = []) {

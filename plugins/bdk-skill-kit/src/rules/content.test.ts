@@ -9,6 +9,7 @@ import {
   lineLimit,
   modelNames,
   portableSyntax,
+  reasoningPrompts,
 } from "./content.ts";
 
 function run<O>(rule: Rule<O>, d: Document, options: Partial<O> = {}): Report[] {
@@ -110,6 +111,73 @@ describe("model-names", () => {
     expect(
       run(modelNames, doc(skill("demo", "", "try llama\n")), { names: ["llama"] }),
     ).toHaveLength(1);
+  });
+});
+
+describe("reasoning-prompts", () => {
+  it("reports one finding per phrase per body line, case-insensitively", () => {
+    const d = doc(agent("rev", "", "Think step by step and show your reasoning first.\n"), {
+      kind: "agents",
+    });
+    expect(run(reasoningPrompts, d)).toEqual([
+      {
+        line: 6,
+        message:
+          "`Think step by step` asks the model to put its reasoning in the output; current models reason on their own and may decline the request; ask for a summary of the actions taken instead",
+        match: "Think step by step",
+      },
+      {
+        line: 6,
+        message:
+          "`show your reasoning` asks the model to put its reasoning in the output; current models reason on their own and may decline the request; ask for a summary of the actions taken instead",
+        match: "show your reasoning",
+      },
+    ]);
+  });
+
+  it.each([
+    "chain of thought",
+    "Fill a <thinking> section first.",
+    "Keep a scratchpad of your reasoning.",
+    "write out your thinking",
+  ])("reports %j", (text) => {
+    expect(run(reasoningPrompts, doc(skill("demo", "", `${text}\n`)))).toHaveLength(1);
+  });
+
+  it.each(["Think carefully.", "Think through the edge cases.", "Think hard about it."])(
+    "leaves encouragement alone: %j",
+    (text) => {
+      expect(run(reasoningPrompts, doc(skill("demo", "", `${text}\n`)))).toEqual([]);
+    },
+  );
+
+  it("matches whole words only and skips frontmatter other than the description", () => {
+    const d = doc(skill("demo", "argument-hint: chain of thought\n", "rethinking; a thinker.\n"));
+    expect(run(reasoningPrompts, d)).toEqual([]);
+  });
+
+  it("checks description and when_to_use at their own lines", () => {
+    const d = doc(
+      skill(
+        "demo",
+        "when_to_use: Use when asked to show your reasoning.\n",
+        "Report the defects.\n",
+      ).replace(
+        /^description: .*$/m,
+        "description: Reasons step by step. Use when a chain of thought is wanted.",
+      ),
+    );
+    expect(run(reasoningPrompts, d)).toMatchObject([
+      { line: 3, match: "chain of thought" },
+      { line: 4, match: "show your reasoning" },
+    ]);
+  });
+
+  it("uses the phrases option in place of the defaults", () => {
+    const d = doc(skill("demo", "", "think step by step; ponder deeply\n"));
+    expect(run(reasoningPrompts, d, { phrases: ["ponder deeply"] })).toMatchObject([
+      { match: "ponder deeply" },
+    ]);
   });
 });
 

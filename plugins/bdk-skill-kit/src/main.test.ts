@@ -28,6 +28,7 @@ async function cli(
 
 const rulePlugin = `export default { name: "t", rules: [
   { id: "bad-word", kinds: ["skills"], defaultSeverity: "error",
+    explain: "The body must not say BAD.\\n\\nWhy: the word is banned here.",
     check(doc, ctx) { doc.lines.forEach((l, i) => { if (l.includes("BAD")) ctx.report({ line: i + 1, message: "no BAD", match: l }); }); } },
   { id: "soft", kinds: ["skills"], defaultSeverity: "warning",
     check(doc, ctx) { if (doc.text.includes("SOFT")) ctx.report({ message: "soft" }); } },
@@ -129,6 +130,35 @@ describe("main", () => {
   it("lists enabled rules with --list-rules", async () => {
     const out = await cli(project(), ["--list-rules", "--json"]);
     expect(JSON.parse(out.stdout)).toContain("t/bad-word");
+  });
+
+  it("explains a generic rule with --explain", async () => {
+    const out = await cli(project(), ["--explain", "cli-front"]);
+    expect(out.code).toBe(0);
+    expect(out.stderr).toBe("");
+    expect(out.stdout.startsWith("cli-front  skills  default error\n\n")).toBe(true);
+    expect(out.stdout).toContain("--help");
+  });
+
+  it("explains a plugin rule, with or without an explanation", async () => {
+    const withText = await cli(project(), ["--explain", "t/bad-word"]);
+    expect(withText).toEqual({
+      code: 0,
+      stdout:
+        "t/bad-word  skills  default error\n\nThe body must not say BAD.\n\nWhy: the word is banned here.\n",
+      stderr: "",
+    });
+    const without = await cli(project(), ["--explain", "t/soft"]);
+    expect(without).toEqual({
+      code: 0,
+      stdout: "t/soft  skills  default warning\n\nThis rule has no explanation.\n",
+      stderr: "",
+    });
+  });
+
+  it("exits 2 on --explain with an unknown rule", async () => {
+    const out = await cli(project(), ["--explain", "nope"]);
+    expect(out).toEqual({ code: 2, stdout: "", stderr: "skill-check: unknown rule `nope`\n" });
   });
 
   it("narrows per-file rules to path arguments", async () => {

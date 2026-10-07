@@ -6,6 +6,7 @@ import { isDeepStrictEqual } from "node:util";
 import { defineRule } from "../index.ts";
 import {
   blockLines,
+  escapeRegex,
   isNonEmptyString,
   isStringList,
   listOf,
@@ -15,12 +16,16 @@ import {
   toolList,
 } from "./shared.ts";
 
-const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
 export const blockForm = defineRule<{ patterns: string[] }>({
   id: "block-form",
   kinds: ["skills", "agents"],
   defaultSeverity: "off",
+  explain: [
+    "Checks that every `!` block in a body is a whole line matching one of the allowed forms; with no form configured, every block is reported.",
+    "Why: a `!` block runs a shell command when the file loads; a project that allows only its own wrapper keeps arbitrary commands out of skill load time.",
+    "Fix: rewrite the block in the allowed form, or move the work into the body.",
+    "Options: `patterns` lists the regular expressions a block line must match as a whole.",
+  ].join("\n\n"),
   defaultOptions: { patterns: [] },
   validateOptions({ patterns }) {
     if (!isStringList(patterns)) return "option `patterns` must be a list of regular expressions";
@@ -44,6 +49,12 @@ export const blockAllowedTools = defineRule<{ require: string[] }>({
   id: "block-allowed-tools",
   kinds: ["skills"],
   defaultSeverity: "off",
+  explain: [
+    "Checks that a skill whose body holds a `!` block lists every required entry in `allowed-tools`.",
+    "Why: outside auto mode the host aborts a skill whose block command is not pre-approved, so the skill never loads.",
+    "Fix: add the missing entries to `allowed-tools`.",
+    "Options: `require` lists the `allowed-tools` entries every block-bearing skill must carry.",
+  ].join("\n\n"),
   defaultOptions: { require: [] },
   validateOptions: ({ require }) =>
     isStringList(require) && require.length > 0
@@ -93,7 +104,7 @@ function termProblem(value: unknown): string | undefined {
 }
 
 function termPattern(term: ForbiddenTerm): RegExp {
-  const words = term.words.map((w) => escape(w.trim()).replace(/\s+/g, "\\s+")).join("|");
+  const words = term.words.map((w) => escapeRegex(w.trim()).replace(/\s+/g, "\\s+")).join("|");
   return new RegExp(term.match === "substring" ? words : `(?<![\\w-])(?:${words})(?![\\w-])`, "g");
 }
 
@@ -101,6 +112,12 @@ export const forbiddenText = defineRule<{ terms: ForbiddenTerm[] }>({
   id: "forbidden-text",
   kinds: ["skills", "agents"],
   defaultSeverity: "off",
+  explain: [
+    "Checks that no line holds a forbidden term, as a whole word or a substring, anywhere or only in code spans and fences, except in the skills and agents the term allows.",
+    "Why: a reusable skill must not name one project's tool prefixes, team names or commands; the project decides which words those are.",
+    "Fix: replace the term as the message says.",
+    "Options: `terms` lists `{ words, match, where, message, allow }`: `match` is `word` or `substring`, `where` is `anywhere` or `code`, `allow` names exempt skills and agents.",
+  ].join("\n\n"),
   defaultOptions: { terms: [] },
   validateOptions({ terms }) {
     if (!Array.isArray(terms) || terms.length === 0)
@@ -168,6 +185,12 @@ export const requiredFields = defineRule<{ entries: FieldRequirement[] }>({
   id: "required-fields",
   kinds: ["skills", "agents"],
   defaultSeverity: "off",
+  explain: [
+    "Checks that a named skill or agent sets a field to a given value, or lists given entries in a tool-list field.",
+    "Why: some skills are gates: a planning skill that only the user may start, an agent that must not edit; the project states which, and the checker keeps the field from being dropped.",
+    "Fix: set the field as the message says.",
+    "Options: `entries` lists `{ names, field, equals, includes, reason }`.",
+  ].join("\n\n"),
   defaultOptions: { entries: [] },
   validateOptions({ entries }) {
     if (!Array.isArray(entries) || entries.length === 0)
@@ -217,6 +240,12 @@ export const bodyShape = defineRule<{
   id: "body-shape",
   kinds: ["skills", "agents"],
   defaultSeverity: "off",
+  explain: [
+    "Checks that the body stays within a number of non-blank lines and sentences, and ends with a given text.",
+    "Why: some files have a fixed shape, such as an adapter agent that is one sentence loading a skill; the shape is the project's choice.",
+    "Fix: shorten the body or end it as required.",
+    "Options: `maxLines`, `maxSentences` and `endsWith`, at least one of them.",
+  ].join("\n\n"),
   defaultOptions: {},
   validateOptions({ maxLines, maxSentences, endsWith }) {
     if (maxLines === undefined && maxSentences === undefined && endsWith === undefined)
@@ -260,6 +289,12 @@ export const namespacedRefs = defineRule<{ namespace: string; foreign: "warning"
   id: "namespaced-refs",
   kinds: ["skills", "agents"],
   defaultSeverity: "off",
+  explain: [
+    "Checks that a `/name` token or a `subagent_type` value that names a skill or agent of the checked targets carries the plugin namespace (`/<plugin>:name`); a reference to another plugin's namespace is a warning.",
+    "Why: an unqualified name can resolve to another plugin's skill, and another plugin may not be installed.",
+    "Fix: write `/<plugin>:name` and `subagent_type: <plugin>:name`.",
+    "Options: `namespace` is the plugin name; `foreign` is `warning` (default) or `off` for references to other namespaces.",
+  ].join("\n\n"),
   defaultOptions: { namespace: "", foreign: "warning" },
   validateOptions({ namespace, foreign }) {
     if (typeof namespace !== "string" || !NAME.test(namespace))

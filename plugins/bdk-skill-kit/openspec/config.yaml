@@ -4,8 +4,9 @@ context: |
   bdk-skill-kit is a Claude Code plugin in the BDK marketplace
   (https://github.com/broneq/bdk). It ships `skill-check`, a deterministic
   validator for Agent Skills directories and Claude Code agent files (CLI,
-  config, plugin API, rule catalogue, profiles, baseline, output), and two
-  skills: `skill-authoring` and `skill-check`.
+  config, plugin API, rule catalogue, profiles, baseline, output), and one
+  skill, `skill-check`. Writing a skill is Anthropic's process (best practices,
+  `skill-creator`); the kit adds no prose of its own about it.
 
   Tech: TypeScript strict, Node >= 22.18, pnpm, Vitest, ESLint, Prettier,
   knip. esbuild bundles are committed in dist/ and rebuilt by `pnpm build`;
@@ -22,7 +23,7 @@ rules:
   proposal:
     - Changes use a descriptive kebab-case name, e.g. add-rule-foo.
   specs:
-    - A new generic rule adds a row to the rule catalogue requirement, a violation fixture under fixtures/violations/<rule-id>/ and a cited guideline in skills/skill-authoring/; the kit tests fail when one is missing.
+    - A new generic rule adds a row to the rule catalogue requirement, a violation fixture under fixtures/violations/<rule-id>/ and an `explain` text on the rule definition; the kit tests fail when one is missing.
     - Every requirement has at least one "#### Scenario:" in WHEN / THEN form.
   design:
     - Each decision records the alternatives considered and why they lost.

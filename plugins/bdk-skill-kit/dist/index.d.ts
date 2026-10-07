@@ -15,6 +15,14 @@ export interface Target {
     profile?: Profile;
     /** A label for messages; defaults to the first directory. */
     name?: string;
+    /**
+     * Whether the skills or agents ship in a Claude Code plugin (the default).
+     * Plugin agents ignore `hooks`, `mcpServers`, `permissionMode` and
+     * `initialPrompt`; `false` admits those fields for agents under
+     * `.claude/agents/`. Claude Code reserves the skill names `synced` and
+     * `anthropic-skills` outside a plugin; `false` makes `name-format` report them.
+     */
+    plugin?: boolean;
     /** Rule settings for this target only, merged over the config's `rules`. */
     rules?: Record<string, RuleSetting>;
 }
@@ -30,6 +38,8 @@ export interface ResolvedTarget {
     dirs: string[];
     profile: Profile;
     name: string;
+    /** Whether the skills or agents ship in a plugin. */
+    plugin: boolean;
 }
 /** One parsed skill (`SKILL.md`) or agent file. Paths are POSIX, relative to the config root. */
 export interface Document {
@@ -85,6 +95,11 @@ export interface Rule<O = Record<string, unknown>> {
     kinds: TargetKind[];
     defaultSeverity: Severity | "off";
     defaultOptions?: O;
+    /**
+     * What the rule checks, why it matters, how to fix a finding and what each
+     * option does; `skill-check --explain <id>` prints it.
+     */
+    explain?: string;
     /**
      * Checks the merged options of an enabled rule, as the config wrote them and
      * so not yet of type `O`, and returns what is wrong with them, or undefined.

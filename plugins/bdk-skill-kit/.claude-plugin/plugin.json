@@ -1,6 +1,6 @@
 {
   "name": "bdk-skill-kit",
-  "description": "Write and check Agent Skills: the rules for writing a skill and a deterministic validator that enforces them",
+  "description": "Check Agent Skills and Claude Code agent files with a deterministic validator that explains every rule",
   "version": "0.2.2",
   "author": {
     "name": "broneq"

@@ -1,43 +1,6 @@
-# skill-kit Specification
+# Spec Delta
 
-## Purpose
-
-Defines `bdk-skill-kit`, a Claude Code plugin listed in the BDK marketplace. It covers the deterministic `skill-check` validator for Agent Skills directories and Claude Code agent files (its CLI, configuration, plugin API, rule catalogue, profiles, baseline and output), the skill the plugin ships, and how the kit is released. The contract holds for any consumer: a project's own choices reach the generic rules as options, and a rule that no option can express lives in that consumer's plugin and spec.
-
-## Requirements
-
-### Requirement: Distribution
-
-The kit SHALL live in the repository `broneq/bdk-skill-kit`, and the repository SHALL be a Claude Code plugin. The CLI and the library SHALL be committed as bundled ES modules (`dist/skill-check.mjs`, `dist/index.mjs` with `dist/index.d.ts`, `dist/testing.mjs` with `dist/testing.d.ts`) that import only `node:` modules. A consumer SHALL be able to install a release as a git-tag dependency and run `skill-check` without a build or install script, so `package.json` SHALL declare no lifecycle script that runs on install. The kit's skills SHALL invoke the CLI as `node ${CLAUDE_PLUGIN_ROOT}/dist/skill-check.mjs`, and the plugin SHALL NOT have a `bin/` directory. The kit SHALL require Node 22.18 or newer, so that a TypeScript config or plugin loads without a build step.
-
-#### Scenario: install by tag
-
-- **WHEN** a project adds `github:broneq/bdk-skill-kit#v0.1.0` as a devDependency and installs with a frozen lockfile
-- **THEN** `skill-check --help` runs, and no lifecycle script of the kit ran during installation
-
-#### Scenario: committed bundle is the build
-
-- **WHEN** the kit's CI builds the sources
-- **THEN** `git diff --exit-code dist/` passes
-
-#### Scenario: bundles import only Node built-ins
-
-- **WHEN** the kit's tests inspect `dist/skill-check.mjs`, `dist/index.mjs` and `dist/testing.mjs`
-- **THEN** every import specifier starts with `node:`, and `dist/index.d.ts` imports no other file
-
-### Requirement: Release with its own tests
-
-Every kit release SHALL be a tag, cut by release-please from Conventional Commits, whose commit passed the kit's CI. release-please SHALL bump `package.json` and `.claude-plugin/plugin.json` together. The CLI SHALL read its version from `package.json` at run time, so a version bump needs no rebuild of `dist/`. The kit's CI SHALL run: build, the bundle diff, lint, format check, typecheck, the unused code check, unit tests with coverage thresholds of 90% lines, functions and statements and 85% branches, the fixture suite of every generic rule, and `skill-check` over the kit's own `skills/` with the kit's config. It SHALL run on Node 22.18, 24 and 26.
-
-#### Scenario: a generic rule without a fixture
-
-- **WHEN** a generic rule is added to the catalogue without a seeded-violation fixture
-- **THEN** the kit's fixture suite fails
-
-#### Scenario: the kit checks itself
-
-- **WHEN** a kit skill fails a generic rule
-- **THEN** the kit's CI fails at the self-check step
+## MODIFIED Requirements
 
 ### Requirement: Invocation and exit codes
 
@@ -85,25 +48,6 @@ Path arguments narrow per-file rules to those skill directories or agent files. 
 
 - **WHEN** `skill-check --explain nope` runs
 - **THEN** the exit code is 2 and stderr names `nope`
-
-### Requirement: Output formats
-
-Every finding SHALL carry a rule ID, a severity (`error` or `warning`), a file path relative to the config root, a 1-based line, a message and a line-independent fingerprint.
-
-- The default output SHALL print one line per finding as `file:line  severity  rule  message`, then a blank line and a summary line with the error, warning and file counts and, when the baseline suppressed findings, their count.
-- When the environment variable `GITHUB_ACTIONS` is set, the default output SHALL also print one GitHub workflow annotation per finding.
-- `--json` SHALL print a single JSON object `{ version, findings, baseline: { suppressed, stale }, summary: { files, errors, warnings } }` and nothing else on stdout.
-- Findings SHALL be ordered by file, line, rule ID and message.
-
-#### Scenario: JSON output
-
-- **WHEN** `skill-check --json` finds one violation
-- **THEN** stdout parses as one JSON object whose `findings` holds one entry with `rule`, `severity`, `file`, `line`, `message` and `fingerprint`
-
-#### Scenario: annotations on GitHub Actions
-
-- **WHEN** `GITHUB_ACTIONS=true` and a finding is reported without `--json`
-- **THEN** the output contains an `::error file=<file>,line=<line>` annotation for it
 
 ### Requirement: Targets and configuration
 
@@ -341,77 +285,6 @@ A backticked path counts for `references` only outside code fences and only when
 - **WHEN** a skill of the `claude-code` profile holds a `!` block and `${CLAUDE_SKILL_DIR}`
 - **THEN** `portable-syntax` reports nothing
 
-### Requirement: CLI-fronting skills
-
-A skill that declares `metadata.fronts-cli: <command>` SHALL be checked by `cli-front`. The rule fails the skill in any of these cases:
-
-- the skill sets `disable-model-invocation: true`;
-- its `SKILL.md` exceeds 30 lines;
-- the body never mentions `<command>` together with `--help` on one line;
-- it documents usage, which is either more than three distinct `--flag` tokens other than `--help` and `--json`, or more than two table or list rows that start with a flag or a subcommand of `<command>`.
-
-The thresholds SHALL be the rule options `maxLines`, `maxFlags` and `maxUsageRows`.
-
-#### Scenario: a CLI-fronting skill that duplicates usage
-
-- **WHEN** a skill with `metadata.fronts-cli: bdk` lists five `bdk` flags in a table
-- **THEN** a `cli-front` error states that usage belongs in `bdk --help`
-
-#### Scenario: a compliant CLI-fronting skill
-
-- **WHEN** a 20-line model-invocable skill with `metadata.fronts-cli: bdk` gives one invocation form and points at `bdk --help`
-- **THEN** `cli-front` reports nothing
-
-### Requirement: Baseline
-
-A baseline SHALL be a JSON array of entries `{ rule, file, fingerprint }`, sorted, written with two-space indentation. The fingerprint SHALL be derived from the rule ID, the file path and the whitespace-normalised text that triggered the finding, and not from a line number. The baseline path SHALL come from `--baseline` (relative to the working directory) or from the config's `baseline` (relative to the config root). A run with a baseline SHALL follow these rules:
-
-- each entry suppresses at most one matching finding, so identical findings need one entry each;
-- every entry that matches no finding is reported as a `baseline-stale` error in the entry's file;
-- a finding that has no entry is never suppressed;
-- when path arguments narrow the run, entries for files outside those paths are never stale.
-
-`--baseline-init` SHALL write a baseline from the current findings and SHALL refuse with exit 2 when the file exists or no baseline path is configured. `--baseline-prune` SHALL remove stale entries and SHALL NOT add any. Both SHALL refuse path arguments and each other with exit 2. A configured baseline that is missing or is not a valid array of entries SHALL be a configuration error.
-
-#### Scenario: fixed violation left in the baseline
-
-- **WHEN** a baselined violation is fixed and the baseline is unchanged
-- **THEN** the run reports `baseline-stale` for that entry and exits 1
-
-#### Scenario: new violation in a baselined file
-
-- **WHEN** a file with baselined findings gains a new violation
-- **THEN** the new finding is reported and the run exits 1
-
-#### Scenario: edit above a baselined finding
-
-- **WHEN** lines are inserted above a baselined violation without changing it
-- **THEN** the finding stays suppressed
-
-#### Scenario: prune never grows
-
-- **WHEN** `--baseline-prune` runs on a tree with new violations
-- **THEN** the baseline loses its stale entries and gains no entry, and the new violations are reported
-
-#### Scenario: init refuses to overwrite
-
-- **WHEN** `--baseline-init` runs and the baseline file exists
-- **THEN** the exit code is 2 and the file is unchanged
-
-### Requirement: Kit skill
-
-The kit's plugin SHALL ship one skill, `skill-check`, passing every generic rule with the kit's config. It SHALL be checked in the `claude-code` profile, because it runs the plugin's bundled CLI through `${CLAUDE_PLUGIN_ROOT}`. It SHALL declare `metadata.fronts-cli: skill-check`, pre-approve `Bash(node ${CLAUDE_PLUGIN_ROOT}/dist/skill-check.mjs *)` in `allowed-tools`, pass `cli-front`, and tell the agent to run `--explain <rule>` on a finding and to run the checker after each iteration of a skill it is writing. The kit SHALL ship no prose of its own on how to write a skill: that is Anthropic's Agent Skills best practices and the `skill-creator` skill, and what a rule asks is its explanation.
-
-#### Scenario: the kit ships one skill
-
-- **WHEN** the kit's tests list `skills/`
-- **THEN** the only entry is `skill-check`
-
-#### Scenario: the kit checks itself
-
-- **WHEN** `skill-check` fails a generic rule with the kit's config
-- **THEN** the kit's CI fails at the self-check step
-
 ### Requirement: Rule tester
 
 The kit SHALL export `checkRule(rule, input)` from `bdk-skill-kit/testing`, so a plugin author can unit test one rule in process. `checkRule` SHALL resolve to the findings of that rule alone, in the CLI's report order, with each file path relative to the target directory.
@@ -458,48 +331,26 @@ The kit SHALL export `checkRule(rule, input)` from `bdk-skill-kit/testing`, so a
 - **WHEN** `checkRule` returns or the rule throws
 - **THEN** the directory the files were written to no longer exists
 
-### Requirement: Project policy rules
+## REMOVED Requirements
 
-The kit SHALL provide six rules whose values are a project's choices. Each SHALL be off by default and SHALL validate its options, so enabling it without the options it needs, or with malformed ones, is a configuration error. A skill or agent is named by its frontmatter `name`, else by its skill directory or its agent file name without `.md`. A tool list field is read as a YAML list of strings, or as a string split on whitespace and commas outside parentheses. A `!` block is as defined for `portable-syntax`.
+### Requirement: Skills shipped by the kit
 
-- `block-form` (skills, agents), option `patterns`: a list of regular expressions, default empty. Every body line that holds a `!` block SHALL match one of the patterns as a whole line; with no pattern, every block is reported. The fingerprint is built from the line text.
-- `block-allowed-tools` (skills), option `require`: a non-empty list of `allowed-tools` entries. A skill whose body holds a `!` block SHALL list every entry, compared as exact strings, in its `allowed-tools`. One finding names the missing entries, at the `allowed-tools` key or line 1, with a fingerprint that does not depend on which entries are missing.
-- `forbidden-text` (skills, agents), option `terms`: a non-empty list of `{ words, match?, where?, message, allow? }`. `match` is `word` (the default: the text is not preceded or followed by a word character or a hyphen) or `substring`; whitespace inside a word matches any run of whitespace. `where` is `anywhere` (the default, every line of the file) or `code` (backticked spans and fenced lines only). `allow` lists names the term does not apply to. One finding SHALL be reported per distinct matched text per term per line, with the message `` `<matched>`: <message> `` and a fingerprint built from the matched text and the line text.
-- `required-fields` (skills, agents), option `entries`: a non-empty list of `{ names, field, equals?, includes?, reason? }` with at least one of `equals` and `includes`. For a document whose name is in `names` and whose frontmatter parses, the field SHALL deep-equal `equals`, and the field read as a tool list SHALL contain every entry of `includes`. A finding is reported at the field's key, else the `name` key, else line 1, appends `reason`, and has a fingerprint that does not depend on the missing entries.
-- `body-shape` (skills, agents), options `maxLines`, `maxSentences` (positive integers) and `endsWith` (a non-empty string), at least one of them. The body's non-blank lines SHALL number at most `maxLines`, its sentence ends (`.`, `!` or `?` followed by whitespace or the end) at most `maxSentences`, and its last non-blank line SHALL end with `endsWith`. One finding at the first body line names every violated limit, with a fingerprint that does not depend on the counts.
-- `namespaced-refs` (skills, agents, project rule), options `namespace` (a kebab-case plugin name, required) and `foreign` (`warning`, the default, or `off`). A `/name` token or a `subagent_type` value naming a skill or agent of any checked target without a namespace SHALL be an error asking for `/<namespace>:name` or `subagent_type: <namespace>:name`. A `/<other>:name` token with another namespace SHALL be a warning when `foreign` is `warning`. A `/` inside a path or URL (preceded by a word character, `.`, `/`, `:` or `-`, or followed by `/` or a file extension) is not a token.
+**Reason**: `skill-authoring` no longer explains every generic rule, so the citation contract (every guideline cites its rule ID, cited IDs equal the catalogue) is dropped. The explanation of a rule now lives on the rule and is printed by `skill-check --explain`.
 
-#### Scenario: a block outside the allowed form
+**Migration**: `skill-authoring` is removed; `skill-check` continues under the requirement "Kit skill". Write a skill with Anthropic's best practices and `skill-creator`; read a rule's explanation with `skill-check --explain <rule>`.
 
-- **WHEN** `block-form` has the pattern of a CLI wrapper and a skill holds `` !`date` `` inside a code fence
-- **THEN** a `block-form` error is reported at that line
+## ADDED Requirements
 
-#### Scenario: a block without its allowed-tools entries
+### Requirement: Kit skill
 
-- **WHEN** `block-allowed-tools` requires two entries and a skill with a `!` block lists one of them in a space-separated `allowed-tools` string
-- **THEN** one error names the missing entry
+The kit's plugin SHALL ship one skill, `skill-check`, passing every generic rule with the kit's config. It SHALL be checked in the `claude-code` profile, because it runs the plugin's bundled CLI through `${CLAUDE_PLUGIN_ROOT}`. It SHALL declare `metadata.fronts-cli: skill-check`, pre-approve `Bash(node ${CLAUDE_PLUGIN_ROOT}/dist/skill-check.mjs *)` in `allowed-tools`, pass `cli-front`, and tell the agent to run `--explain <rule>` on a finding and to run the checker after each iteration of a skill it is writing. The kit SHALL ship no prose of its own on how to write a skill: that is Anthropic's Agent Skills best practices and the `skill-creator` skill, and what a rule asks is its explanation.
 
-#### Scenario: a code-only term in prose
+#### Scenario: the kit ships one skill
 
-- **WHEN** `forbidden-text` has the term `make` with `where: "code"` and a body line reads "Make sure" while another holds `` `make build` ``
-- **THEN** one error is reported, at the line with the code span
+- **WHEN** the kit's tests list `skills/`
+- **THEN** the only entry is `skill-check`
 
-#### Scenario: an exempt name
+#### Scenario: the kit checks itself
 
-- **WHEN** a `forbidden-text` term allows `setup` and the skill `setup` uses the term
-- **THEN** no finding is reported for that skill
-
-#### Scenario: a gate without its field
-
-- **WHEN** `required-fields` requires `disable-model-invocation: true` for `plan` and `plan/SKILL.md` does not set it
-- **THEN** an error names `plan` and the field at the `name` line
-
-#### Scenario: a body over its shape
-
-- **WHEN** `body-shape` sets `maxSentences: 1` on an agents target and an agent body has two sentences
-- **THEN** one error is reported at the first body line, and its fingerprint equals that of a body with three sentences
-
-#### Scenario: a bare reference to the plugin's own skill
-
-- **WHEN** `namespaced-refs` has the namespace `acme`, the targets hold the skill `plan`, and a body says "hand it to /plan"
-- **THEN** an error asks for `/acme:plan`, and `docs/plan`, `/plan.md` and `https://x.dev/plan` are not reported
+- **WHEN** `skill-check` fails a generic rule with the kit's config
+- **THEN** the kit's CI fails at the self-check step

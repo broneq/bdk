@@ -128,6 +128,22 @@ describe("checkRule", () => {
     expect(profiles).toEqual(["portable"]);
   });
 
+  it("applies plugin: false to an agents target", async () => {
+    const seen: boolean[] = [];
+    await checkRule(
+      defineRule({
+        id: "plugin",
+        kinds: ["agents"],
+        defaultSeverity: "error",
+        check(doc) {
+          seen.push(doc.target.plugin);
+        },
+      }),
+      { kind: "agents", plugin: false, files: { "rev.md": agent("rev") } },
+    );
+    expect(seen).toEqual([false]);
+  });
+
   it("runs a rule that is off by default, at error", async () => {
     const findings = await checkRule(
       { ...everyDoc, defaultSeverity: "off" },

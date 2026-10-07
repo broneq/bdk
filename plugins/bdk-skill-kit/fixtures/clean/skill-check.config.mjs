@@ -13,6 +13,7 @@ export default {
   rules: {
     "description-front-loaded": "error",
     "require-model": "error",
+    "reasoning-prompts": "error",
     layout: ["error", { allowed: ["references", "scripts", "assets", "examples"] }],
     "block-form": ["error", { patterns: ["!`tool ctx [a-z-]+`"] }],
     "block-allowed-tools": ["error", { require: ["Bash(tool ctx *)"] }],

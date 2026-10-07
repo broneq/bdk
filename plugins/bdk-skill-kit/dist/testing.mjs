@@ -48,7 +48,7 @@ var require_identity = __commonJS({
     var NODE_TYPE = /* @__PURE__ */ Symbol.for("yaml.node.type");
     var isAlias = (node) => !!node && typeof node === "object" && node[NODE_TYPE] === ALIAS;
     var isDocument = (node) => !!node && typeof node === "object" && node[NODE_TYPE] === DOC;
-    var isMap2 = (node) => !!node && typeof node === "object" && node[NODE_TYPE] === MAP;
+    var isMap3 = (node) => !!node && typeof node === "object" && node[NODE_TYPE] === MAP;
     var isPair = (node) => !!node && typeof node === "object" && node[NODE_TYPE] === PAIR;
     var isScalar2 = (node) => !!node && typeof node === "object" && node[NODE_TYPE] === SCALAR;
     var isSeq = (node) => !!node && typeof node === "object" && node[NODE_TYPE] === SEQ;
@@ -84,7 +84,7 @@ var require_identity = __commonJS({
     exports.isAlias = isAlias;
     exports.isCollection = isCollection;
     exports.isDocument = isDocument;
-    exports.isMap = isMap2;
+    exports.isMap = isMap3;
     exports.isNode = isNode;
     exports.isPair = isPair;
     exports.isScalar = isScalar2;
@@ -4196,9 +4196,9 @@ var require_resolve_flow_collection = __commonJS({
     var blockMsg = "Block collections are not allowed within flow collections";
     var isBlock = (token) => token && (token.type === "block-map" || token.type === "block-seq");
     function resolveFlowCollection({ composeNode, composeEmptyNode }, ctx, fc, onError, tag) {
-      const isMap2 = fc.start.source === "{";
-      const fcName = isMap2 ? "flow map" : "flow sequence";
-      const NodeClass = tag?.nodeClass ?? (isMap2 ? YAMLMap.YAMLMap : YAMLSeq.YAMLSeq);
+      const isMap3 = fc.start.source === "{";
+      const fcName = isMap3 ? "flow map" : "flow sequence";
+      const NodeClass = tag?.nodeClass ?? (isMap3 ? YAMLMap.YAMLMap : YAMLSeq.YAMLSeq);
       const coll = new NodeClass(ctx.schema);
       coll.flow = true;
       const atRoot = ctx.atRoot;
@@ -4234,7 +4234,7 @@ var require_resolve_flow_collection = __commonJS({
             offset = props.end;
             continue;
           }
-          if (!isMap2 && ctx.options.strict && utilContainsNewline.containsNewline(key))
+          if (!isMap3 && ctx.options.strict && utilContainsNewline.containsNewline(key))
             onError(
               key,
               // checked by containsNewline()
@@ -4274,7 +4274,7 @@ var require_resolve_flow_collection = __commonJS({
             }
           }
         }
-        if (!isMap2 && !sep4 && !props.found) {
+        if (!isMap3 && !sep4 && !props.found) {
           const valueNode = value ? composeNode(ctx, value, props, onError) : composeEmptyNode(ctx, props.end, sep4, null, props, onError);
           coll.items.push(valueNode);
           offset = valueNode.range[2];
@@ -4297,7 +4297,7 @@ var require_resolve_flow_collection = __commonJS({
             startOnNewline: false
           });
           if (valueProps.found) {
-            if (!isMap2 && !props.found && ctx.options.strict) {
+            if (!isMap3 && !props.found && ctx.options.strict) {
               if (sep4)
                 for (const st of sep4) {
                   if (st === valueProps.found)
@@ -4329,7 +4329,7 @@ var require_resolve_flow_collection = __commonJS({
           const pair = new Pair.Pair(keyNode, valueNode);
           if (ctx.options.keepSourceTokens)
             pair.srcToken = collItem;
-          if (isMap2) {
+          if (isMap3) {
             const map = coll;
             if (utilMapIncludes.mapIncludes(ctx, map.items, keyNode))
               onError(keyStart, "DUPLICATE_KEY", "Map keys must be unique");
@@ -4345,7 +4345,7 @@ var require_resolve_flow_collection = __commonJS({
           offset = valueNode ? valueNode.range[2] : valueProps.end;
         }
       }
-      const expectedEnd = isMap2 ? "}" : "]";
+      const expectedEnd = isMap3 ? "}" : "]";
       const [ce, ...ee] = fc.end;
       let cePos = offset;
       if (ce?.source === expectedEnd)
@@ -7387,6 +7387,12 @@ var cliFront = defineRule({
   id: "cli-front",
   kinds: ["skills"],
   defaultSeverity: "error",
+  explain: [
+    "Checks that a skill that declares `metadata.fronts-cli: <command>` stays model-invocable, is within the line limit, names `<command> --help` as the usage reference, and does not copy usage: at most the allowed number of distinct flags and of table or list rows that start with a flag or subcommand.",
+    "Why: when a CLI does the work, the skill only has to say when to reach for it; copied flags and tables go stale the moment the tool changes, while `--help` is always current.",
+    "Fix: cut the usage detail, point at `<command> --help`, and keep the skill short.",
+    "Options: `maxLines` (default 30), `maxFlags` (default 3; `--help` and `--json` do not count) and `maxUsageRows` (default 2)."
+  ].join("\n\n"),
   defaultOptions: { maxLines: 30, maxFlags: 3, maxUsageRows: 2 },
   check(doc, ctx) {
     const metadata = doc.frontmatter?.metadata;
@@ -7476,12 +7482,18 @@ function regexProblem(source) {
     return `\`${source}\` is not a valid regular expression`;
   }
 }
+var escapeRegex = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 // src/rules/content.ts
 var body = defineRule({
   id: "body",
   kinds: ["skills", "agents"],
   defaultSeverity: "error",
+  explain: [
+    "Checks that the file has a non-empty body after the frontmatter.",
+    "Why: the body is what the model follows when the skill loads; a skill with only frontmatter does nothing.",
+    "Fix: write the instructions, or delete the file."
+  ].join("\n\n"),
   check(doc, ctx) {
     if (doc.frontmatterError?.includes("not closed")) return;
     const rest = doc.lines.slice(doc.bodyStart - 1);
@@ -7494,6 +7506,12 @@ var lineLimit = defineRule({
   id: "line-limit",
   kinds: ["skills"],
   defaultSeverity: "error",
+  explain: [
+    "Checks that `SKILL.md` has at most the maximum number of lines.",
+    "Why: a long skill is skimmed, not read, and the whole file lands in context every time the skill runs.",
+    "Fix: move detail that only some runs need into files under `references/` and link them from `SKILL.md`.",
+    "Options: `max` is the limit, default 500."
+  ].join("\n\n"),
   defaultOptions: { max: 500 },
   check(doc, ctx) {
     const { max } = ctx.options;
@@ -7511,6 +7529,11 @@ var absolutePaths = defineRule({
   id: "absolute-paths",
   kinds: ["skills", "agents"],
   defaultSeverity: "error",
+  explain: [
+    "Checks that no line holds an absolute file-system path, a home-relative path (`~/...`) or a Windows drive path.",
+    "Why: such a path exists only on the author's machine; a skill with one fails for every other user.",
+    "Fix: write paths relative to the skill directory, or start them with a host variable such as `${CLAUDE_SKILL_DIR}`."
+  ].join("\n\n"),
   check(doc, ctx) {
     doc.lines.forEach((line, i) => {
       for (const match of line.matchAll(ABSOLUTE)) {
@@ -7528,6 +7551,12 @@ var modelNames = defineRule({
   id: "model-names",
   kinds: ["skills", "agents"],
   defaultSeverity: "error",
+  explain: [
+    "Checks that the body names no model family or model ID from the list; the frontmatter `model` field is exempt.",
+    "Why: a model name in prose goes stale with the next release, while a capability (`a fast model`, `the most capable model`) stays true.",
+    "Fix: name the capability, not the model.",
+    "Options: `names` is the list of regular expressions to match, case-insensitive, on whole words."
+  ].join("\n\n"),
   defaultOptions: {
     names: ["haiku", "sonnet", "opus", "fable", "gpt-[0-9][a-z0-9.-]*", "gemini(?:-[a-z0-9.-]+)?"]
   },
@@ -7544,10 +7573,60 @@ var modelNames = defineRule({
     }
   }
 });
+var REASONING_PHRASES = [
+  "think step by step",
+  "think step-by-step",
+  "show your reasoning",
+  "explain your reasoning",
+  "show your thinking",
+  "write out your thinking",
+  "reason out loud",
+  "chain of thought",
+  "<thinking>",
+  "<reasoning>",
+  "scratchpad"
+];
+var reasoningPrompts = defineRule({
+  id: "reasoning-prompts",
+  kinds: ["skills", "agents"],
+  defaultSeverity: "warning",
+  defaultOptions: { phrases: REASONING_PHRASES },
+  explain: [
+    "Checks that the body, `description` and `when_to_use` hold no phrase that asks the model to put its reasoning in the output, such as `think step by step`, `show your reasoning`, `chain of thought`, a `<thinking>` section or a scratchpad.",
+    "Why: current models reason on their own, and a prompt that asks the model to reproduce its reasoning in the response can be declined outright (the `reasoning_extraction` refusal, which has no fallback model); on other models it only costs tokens. The wording counts wherever it reaches the model, so the description, which sits in the system prompt, is checked too.",
+    "Fix: delete the phrase, and ask for what you need instead: a short summary of the actions taken, or the checks the result must pass.",
+    "Options: `phrases` is the list of phrases to match, case-insensitive, on whole words; it replaces the default list."
+  ].join("\n\n"),
+  check(doc, ctx) {
+    const words = ctx.options.phrases.map((p) => escapeRegex(p.trim()).replace(/\s+/g, "\\s+"));
+    const pattern = new RegExp(`(?<![\\w-])(?:${words.join("|")})(?![\\w-])`, "gi");
+    const report = (line, text) => {
+      for (const match of text.matchAll(pattern)) {
+        ctx.report({
+          line,
+          message: `\`${match[0]}\` asks the model to put its reasoning in the output; current models reason on their own and may decline the request; ask for a summary of the actions taken instead`,
+          match: match[0]
+        });
+      }
+    };
+    for (const key of ["description", "when_to_use"]) {
+      const value = doc.frontmatter?.[key];
+      if (typeof value === "string") report(doc.keyLines[key] ?? 1, value);
+    }
+    for (let i = doc.bodyStart - 1; i < doc.lines.length; i++) {
+      report(i + 1, doc.lines[i] ?? "");
+    }
+  }
+});
 var argumentsTypo = defineRule({
   id: "arguments-typo",
   kinds: ["skills", "agents"],
   defaultSeverity: "error",
+  explain: [
+    "Checks that the body never writes `$ARGUMENT` without the trailing `S`.",
+    "Why: only `$ARGUMENTS` is substituted; the singular reaches the model as literal text.",
+    "Fix: write `$ARGUMENTS`."
+  ].join("\n\n"),
   check(doc, ctx) {
     doc.lines.forEach((line, i) => {
       if (/\$ARGUMENT(?!S)/.test(line)) {
@@ -7565,6 +7644,11 @@ var portableSyntax = defineRule({
   id: "portable-syntax",
   kinds: ["skills"],
   defaultSeverity: "error",
+  explain: [
+    "Checks that a skill in the portable profile has no `!` block in its body and no `${CLAUDE_*}` substitution anywhere.",
+    "Why: both are Claude Code syntax; another host passes them through as literal text, so the skill runs nothing and shows the variable name.",
+    "Fix: drop the block or the variable, or move the skill to a claude-code target if it is only for Claude Code."
+  ].join("\n\n"),
   check(doc, ctx) {
     if (doc.target.profile !== "portable") return;
     doc.lines.forEach((text, i) => {
@@ -7629,12 +7713,27 @@ var CLAUDE_CODE_AGENT_FIELDS = [
   "effort",
   "isolation",
   "color",
-  "initialPrompt",
   "experimental"
 ];
-var PLUGIN_IGNORED_AGENT_FIELDS = ["hooks", "mcpServers", "permissionMode"];
-function allowedFields(kind, profile) {
-  if (kind === "agents") return CLAUDE_CODE_AGENT_FIELDS;
+var PLUGIN_IGNORED_AGENT_FIELDS = [
+  "hooks",
+  "mcpServers",
+  "permissionMode",
+  "initialPrompt"
+];
+var PERMISSION_MODES = [
+  "default",
+  "manual",
+  "acceptEdits",
+  "auto",
+  "dontAsk",
+  "bypassPermissions",
+  "plan"
+];
+function allowedFields(kind, profile, plugin = true) {
+  if (kind === "agents") {
+    return plugin ? CLAUDE_CODE_AGENT_FIELDS : [...CLAUDE_CODE_AGENT_FIELDS, ...PLUGIN_IGNORED_AGENT_FIELDS];
+  }
   return profile === "portable" ? PORTABLE_FIELDS : CLAUDE_CODE_SKILL_FIELDS;
 }
 function descriptionCap(profile) {
@@ -7647,16 +7746,29 @@ var frontmatter = defineRule({
   id: "frontmatter",
   kinds: ["skills", "agents"],
   defaultSeverity: "error",
+  explain: [
+    "Checks that the file opens with a `---` line, a YAML map and a closing `---` line.",
+    "Why: a host reads the name, description and settings of a skill or agent from that block; a file without it, or with YAML that does not parse as a map, is skipped or loaded with no metadata.",
+    "Fix: put the frontmatter first, close it, and fix the YAML error the message quotes (indentation, a stray colon, a tab)."
+  ].join("\n\n"),
   check(doc, ctx) {
     if (doc.frontmatterError) {
       ctx.report({ line: 1, message: doc.frontmatterError, match: "frontmatter" });
     }
   }
 });
+var API_RESERVED = ["anthropic", "claude"];
+var CLAUDE_CODE_RESERVED = ["synced", "anthropic-skills"];
 var nameFormat = defineRule({
   id: "name-format",
   kinds: ["skills", "agents"],
   defaultSeverity: "error",
+  explain: [
+    "Checks that `name` is present, a string of 1-64 characters in lowercase letters, digits and single hyphens, not at either end. In the portable profile a skill name must not contain the words `anthropic` or `claude`; in the claude-code profile, on a target with `plugin: false`, the skill names `synced` and `anthropic-skills` are reserved.",
+    "Why: the name is the identifier hosts register, so a name outside the Agent Skills format is rejected on upload, the Skills API refuses the reserved words, and Claude Code does not load a skill outside a plugin at a reserved name. For agents the format and the 64-character cap are the kit's convention, not the host's: Claude Code accepts an agent name of up to 256 characters and refuses only `:` and a leading hyphen.",
+    "Fix: rename the skill (and its directory, see `name-matches-dir`) to a plain kebab-case name without the reserved word.",
+    "Options: `prefix` requires every name to start with that string, for example a plugin that namespaces its skills."
+  ].join("\n\n"),
   defaultOptions: {},
   check(doc, ctx) {
     const fm = doc.frontmatter;
@@ -7690,12 +7802,30 @@ var nameFormat = defineRule({
     if (prefix && !name.startsWith(prefix)) {
       ctx.report({ line, message: `\`name\` must start with \`${prefix}\`: \`${name}\`` });
     }
+    if (doc.kind !== "skills") return;
+    if (doc.target.profile === "portable" && API_RESERVED.some((w) => name.includes(w))) {
+      ctx.report({
+        line,
+        message: `\`name\` contains a word the Skills API reserves (${API_RESERVED.join(", ")}): \`${name}\``
+      });
+    }
+    if (doc.target.profile === "claude-code" && !doc.target.plugin && CLAUDE_CODE_RESERVED.includes(name)) {
+      ctx.report({
+        line,
+        message: `\`name\` is reserved by Claude Code, which does not load a skill outside a plugin at that name: \`${name}\``
+      });
+    }
   }
 });
 var nameMatchesDir = defineRule({
   id: "name-matches-dir",
   kinds: ["skills"],
   defaultSeverity: "error",
+  explain: [
+    "Checks that the frontmatter `name` equals the name of the skill directory.",
+    "Why: hosts use one or the other depending on how a skill is invoked, so a mismatch makes `/name` and the model's view of the skill disagree.",
+    "Fix: rename the directory or the `name` so they match."
+  ].join("\n\n"),
   check(doc, ctx) {
     const name = doc.frontmatter?.name;
     const dir = basename2(doc.dir);
@@ -7711,6 +7841,11 @@ var skillFileName = defineRule({
   id: "skill-file-name",
   kinds: ["skills"],
   defaultSeverity: "error",
+  explain: [
+    "Checks that every skill directory holds `SKILL.md` in that exact case, and no directory under a skills dir holds Markdown without a skill file.",
+    "Why: hosts load only `SKILL.md`; `skill.md`, `Skill.md` or a `README.md` next to nothing is silently not a skill.",
+    "Fix: rename the file to `SKILL.md`, or move the stray Markdown out of the skills dir."
+  ].join("\n\n"),
   check(doc, ctx) {
     const file = basename2(doc.path);
     if (file !== "SKILL.md") {
@@ -7723,10 +7858,17 @@ var skillFileName = defineRule({
     }
   }
 });
+var XML_TAG = /<\/?[A-Za-z][\w:.-]*(?:\s[^<>]*)?\/?>/g;
 var description = defineRule({
   id: "description",
   kinds: ["skills", "agents"],
   defaultSeverity: "error",
+  explain: [
+    "Checks that `description` is present, a non-empty string, within the length cap, and free of XML tags (`<tag>`, `</tag>`, `<tag/>`) outside backticks.",
+    "Why: the description is what the model sees for every installed skill before it decides to load one; an empty one is never chosen, an over-long one is truncated by the host, and the Skills API rejects XML tags in it.",
+    "Fix: write one to three sentences in the third person that say what the skill does and when to use it; mention a literal tag in backticks if you must.",
+    "Options: `max` overrides the cap, whose default is the profile's: 1536 characters for `description` plus `when_to_use` in claude-code, 1024 for `description` in portable."
+  ].join("\n\n"),
   defaultOptions: {},
   check(doc, ctx) {
     const fm = doc.frontmatter;
@@ -7745,6 +7887,14 @@ var description = defineRule({
       ctx.report({ line, message: "`description` is empty" });
       return;
     }
+    const prose = text.replace(/`[^`]*`/g, " ");
+    for (const tag of new Set([...prose.matchAll(XML_TAG)].map((m) => m[0]))) {
+      ctx.report({
+        line,
+        message: `\`description\` holds the XML tag \`${tag}\`; hosts reject tags in a description`,
+        match: tag
+      });
+    }
     const max = ctx.options.max ?? descriptionCap(doc.target.profile);
     const extra = doc.target.profile === "claude-code" && typeof fm.when_to_use === "string" ? fm.when_to_use : void 0;
     const length = text.length + (extra?.length ?? 0);
@@ -7759,10 +7909,17 @@ var description = defineRule({
   }
 });
 var FILLER = /^(this skill|a skill|skill for|helps|used to)\b/i;
+var PERSON = /^(I'll|I'm|I will|I can|I|We|You)\b/;
 var descriptionFrontLoaded = defineRule({
   id: "description-front-loaded",
   kinds: ["skills"],
   defaultSeverity: "warning",
+  explain: [
+    "Checks that the description does not open with filler (`This skill`, `A skill`, `Skill for`, `Helps`, `Used to`) or a first- or second-person opener (`I`, `I'll`, `We`, `You`), and holds a trigger clause.",
+    "Why: the first words are what the model scans when it picks a skill, and the trigger clause (`Use when ...`) is what makes the skill fire on the right task; a description that reads as a chat reply hurts discovery.",
+    "Fix: lead with the capability in the third person (`Reviews ...`, `Converts ...`), then add `Use when ...` naming the tasks, files or errors that call for the skill.",
+    "Options: `trigger` is the regular expression the trigger clause must match, case-insensitive; the default accepts `Use when|for|on|if|whenever`."
+  ].join("\n\n"),
   defaultOptions: { trigger: "\\bUse (when|for|on|if|whenever)\\b" },
   check(doc, ctx) {
     const text = doc.frontmatter?.description;
@@ -7773,6 +7930,13 @@ var descriptionFrontLoaded = defineRule({
       ctx.report({
         line,
         message: `\`description\` opens with filler (\`${filler[0]}\`); lead with what the skill does`
+      });
+    }
+    const person = PERSON.exec(text.trim());
+    if (person) {
+      ctx.report({
+        line,
+        message: `\`description\` opens with \`${person[0]}\`; write it in the third person, leading with what the skill does`
       });
     }
     const trigger = new RegExp(ctx.options.trigger, "i");
@@ -7789,16 +7953,21 @@ var fields = defineRule({
   id: "fields",
   kinds: ["skills", "agents"],
   defaultSeverity: "error",
+  explain: [
+    "Checks that every frontmatter key is one the profile admits: the six Agent Skills fields in portable, plus the Claude Code skill fields in claude-code; for agents, the Claude Code subagent fields, and `hooks`, `mcpServers`, `permissionMode` only on a target with `plugin: false`.",
+    "Why: an unknown key is usually a typo that silently does nothing, a Claude-only key breaks a skill on another host, and plugin agents ignore the three fields that need `plugin: false`.",
+    "Fix: fix the spelling, drop the key, move the skill to a claude-code target, or set `plugin: false` on the agents target when the agents live in `.claude/agents/` rather than a plugin."
+  ].join("\n\n"),
   check(doc, ctx) {
     const fm = doc.frontmatter;
     if (!fm) return;
-    const allowed = allowedFields(doc.kind, doc.target.profile);
+    const allowed = allowedFields(doc.kind, doc.target.profile, doc.target.plugin);
     for (const key of Object.keys(fm)) {
       if (allowed.includes(key)) continue;
       const line = lineOf(doc, key);
       let message;
       if (doc.kind === "agents" && PLUGIN_IGNORED_AGENT_FIELDS.includes(key)) {
-        message = `\`${key}\` is ignored for plugin agents (${PLUGIN_IGNORED_AGENT_FIELDS.join(", ")}); move the agent to .claude/agents/ or drop the field`;
+        message = `\`${key}\` is ignored for plugin agents (${PLUGIN_IGNORED_AGENT_FIELDS.join(", ")}); set \`plugin: false\` on the target when the agent lives in .claude/agents/, or drop the field`;
       } else if (doc.target.profile === "portable") {
         message = `\`${key}\` is not a field of the portable profile (Agent Skills standard: ${PORTABLE_FIELDS.join(", ")})`;
       } else {
@@ -7816,10 +7985,15 @@ var fieldValues = defineRule({
   id: "field-values",
   kinds: ["skills", "agents"],
   defaultSeverity: "error",
+  explain: [
+    "Checks that known fields have the documented type or enum: `effort`, `context`, `shell`, `permissionMode`, `memory`, `color`, `isolation` as enums; booleans as booleans; `compatibility` as 1-500 characters; `metadata` as a string map; tool lists as tool patterns; `hooks` as a map; `mcpServers` as a list.",
+    "Why: a host that reads a wrong type falls back to its default or refuses the file, without telling the author.",
+    "Fix: set the value the message lists."
+  ].join("\n\n"),
   check(doc, ctx) {
     const fm = doc.frontmatter;
     if (!fm) return;
-    const allowed = allowedFields(doc.kind, doc.target.profile);
+    const allowed = allowedFields(doc.kind, doc.target.profile, doc.target.plugin);
     const has = (key) => key in fm && allowed.includes(key);
     const fail = (key, message) => {
       ctx.report({ line: lineOf(doc, key), message, match: key });
@@ -7894,8 +8068,26 @@ var fieldValues = defineRule({
     oneOf("color", COLORS, `\`color\` must be one of ${COLORS.join(", ")}`);
     if (has("isolation") && fm.isolation !== "worktree")
       fail("isolation", "`isolation` must be `worktree`");
+    oneOf(
+      "permissionMode",
+      [...PERMISSION_MODES],
+      `\`permissionMode\` must be one of ${PERMISSION_MODES.join(", ")}`
+    );
+    if (has("hooks") && !isMap(fm.hooks)) fail("hooks", "`hooks` must be a map of hook events");
+    if (has("mcpServers") && !isServerList(fm.mcpServers)) {
+      fail(
+        "mcpServers",
+        "`mcpServers` must be a list of server names or single-key server definitions"
+      );
+    }
   }
 });
+var isMap = (v) => typeof v === "object" && v !== null && !Array.isArray(v);
+function isServerList(value) {
+  return Array.isArray(value) && value.every(
+    (entry) => typeof entry === "string" || isMap(entry) && Object.keys(entry).length === 1
+  );
+}
 function splitTools(value) {
   const out = [];
   let depth = 0;
@@ -7915,6 +8107,11 @@ var invocation = defineRule({
   id: "invocation",
   kinds: ["skills"],
   defaultSeverity: "error",
+  explain: [
+    "Checks that the skill stays reachable: `disable-model-invocation: true` together with `user-invocable: false` is an error, and `agent` without `context: fork` is a warning.",
+    "Why: a skill nobody can start is dead weight in the skill listing, and `agent` only applies to a forked subagent.",
+    "Fix: drop one of the two flags, or add `context: fork` next to `agent`."
+  ].join("\n\n"),
   check(doc, ctx) {
     const fm = doc.frontmatter;
     if (!fm) return;
@@ -7937,6 +8134,11 @@ var requireModel = defineRule({
   id: "require-model",
   kinds: ["agents"],
   defaultSeverity: "off",
+  explain: [
+    "Checks that an agent file sets `model`.",
+    "Why: an agent without `model` inherits whatever the parent session runs, so a model change reaches it unreviewed; off by default because many projects want that inheritance.",
+    "Fix: set `model: inherit` to make the inheritance explicit, or a model alias."
+  ].join("\n\n"),
   check(doc, ctx) {
     if (doc.frontmatter && !("model" in doc.frontmatter))
       ctx.report({ line: 1, message: "`model` is missing" });
@@ -7945,11 +8147,16 @@ var requireModel = defineRule({
 
 // src/rules/policy.ts
 import { isDeepStrictEqual } from "node:util";
-var escape2 = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 var blockForm = defineRule({
   id: "block-form",
   kinds: ["skills", "agents"],
   defaultSeverity: "off",
+  explain: [
+    "Checks that every `!` block in a body is a whole line matching one of the allowed forms; with no form configured, every block is reported.",
+    "Why: a `!` block runs a shell command when the file loads; a project that allows only its own wrapper keeps arbitrary commands out of skill load time.",
+    "Fix: rewrite the block in the allowed form, or move the work into the body.",
+    "Options: `patterns` lists the regular expressions a block line must match as a whole."
+  ].join("\n\n"),
   defaultOptions: { patterns: [] },
   validateOptions({ patterns }) {
     if (!isStringList(patterns)) return "option `patterns` must be a list of regular expressions";
@@ -7969,6 +8176,12 @@ var blockAllowedTools = defineRule({
   id: "block-allowed-tools",
   kinds: ["skills"],
   defaultSeverity: "off",
+  explain: [
+    "Checks that a skill whose body holds a `!` block lists every required entry in `allowed-tools`.",
+    "Why: outside auto mode the host aborts a skill whose block command is not pre-approved, so the skill never loads.",
+    "Fix: add the missing entries to `allowed-tools`.",
+    "Options: `require` lists the `allowed-tools` entries every block-bearing skill must carry."
+  ].join("\n\n"),
   defaultOptions: { require: [] },
   validateOptions: ({ require: require2 }) => isStringList(require2) && require2.length > 0 ? void 0 : "option `require` must list at least one `allowed-tools` entry",
   check(doc, ctx) {
@@ -7997,13 +8210,19 @@ function termProblem(value) {
   return void 0;
 }
 function termPattern(term) {
-  const words = term.words.map((w) => escape2(w.trim()).replace(/\s+/g, "\\s+")).join("|");
+  const words = term.words.map((w) => escapeRegex(w.trim()).replace(/\s+/g, "\\s+")).join("|");
   return new RegExp(term.match === "substring" ? words : `(?<![\\w-])(?:${words})(?![\\w-])`, "g");
 }
 var forbiddenText = defineRule({
   id: "forbidden-text",
   kinds: ["skills", "agents"],
   defaultSeverity: "off",
+  explain: [
+    "Checks that no line holds a forbidden term, as a whole word or a substring, anywhere or only in code spans and fences, except in the skills and agents the term allows.",
+    "Why: a reusable skill must not name one project's tool prefixes, team names or commands; the project decides which words those are.",
+    "Fix: replace the term as the message says.",
+    "Options: `terms` lists `{ words, match, where, message, allow }`: `match` is `word` or `substring`, `where` is `anywhere` or `code`, `allow` names exempt skills and agents."
+  ].join("\n\n"),
   defaultOptions: { terms: [] },
   validateOptions({ terms }) {
     if (!Array.isArray(terms) || terms.length === 0)
@@ -8049,6 +8268,12 @@ var requiredFields = defineRule({
   id: "required-fields",
   kinds: ["skills", "agents"],
   defaultSeverity: "off",
+  explain: [
+    "Checks that a named skill or agent sets a field to a given value, or lists given entries in a tool-list field.",
+    "Why: some skills are gates: a planning skill that only the user may start, an agent that must not edit; the project states which, and the checker keeps the field from being dropped.",
+    "Fix: set the field as the message says.",
+    "Options: `entries` lists `{ names, field, equals, includes, reason }`."
+  ].join("\n\n"),
   defaultOptions: { entries: [] },
   validateOptions({ entries }) {
     if (!Array.isArray(entries) || entries.length === 0)
@@ -8092,6 +8317,12 @@ var bodyShape = defineRule({
   id: "body-shape",
   kinds: ["skills", "agents"],
   defaultSeverity: "off",
+  explain: [
+    "Checks that the body stays within a number of non-blank lines and sentences, and ends with a given text.",
+    "Why: some files have a fixed shape, such as an adapter agent that is one sentence loading a skill; the shape is the project's choice.",
+    "Fix: shorten the body or end it as required.",
+    "Options: `maxLines`, `maxSentences` and `endsWith`, at least one of them."
+  ].join("\n\n"),
   defaultOptions: {},
   validateOptions({ maxLines, maxSentences, endsWith }) {
     if (maxLines === void 0 && maxSentences === void 0 && endsWith === void 0)
@@ -8131,6 +8362,12 @@ var namespacedRefs = defineRule({
   id: "namespaced-refs",
   kinds: ["skills", "agents"],
   defaultSeverity: "off",
+  explain: [
+    "Checks that a `/name` token or a `subagent_type` value that names a skill or agent of the checked targets carries the plugin namespace (`/<plugin>:name`); a reference to another plugin's namespace is a warning.",
+    "Why: an unqualified name can resolve to another plugin's skill, and another plugin may not be installed.",
+    "Fix: write `/<plugin>:name` and `subagent_type: <plugin>:name`.",
+    "Options: `namespace` is the plugin name; `foreign` is `warning` (default) or `off` for references to other namespaces."
+  ].join("\n\n"),
   defaultOptions: { namespace: "", foreign: "warning" },
   validateOptions({ namespace, foreign }) {
     if (typeof namespace !== "string" || !NAME.test(namespace))
@@ -8295,6 +8532,11 @@ var referencesRule = defineRule({
   id: "references",
   kinds: ["skills"],
   defaultSeverity: "error",
+  explain: [
+    "Checks that every relative link, backticked relative path or `${CLAUDE_SKILL_DIR}/` path from `SKILL.md` resolves inside the skill directory (error), and a referenced file does not link on to a further file that `SKILL.md` never mentions (warning).",
+    "Why: a broken link sends the model to a file that is not there, and a file two links deep is usually never opened because the model reads one level down.",
+    "Fix: fix the path, or link the deeper file from `SKILL.md` as well."
+  ].join("\n\n"),
   check(doc, ctx) {
     const top = topLevelOf(doc);
     const direct = references(doc.lines, doc.inFence, top);
@@ -8328,6 +8570,11 @@ var unusedFiles = defineRule({
   id: "unused-files",
   kinds: ["skills"],
   defaultSeverity: "error",
+  explain: [
+    "Checks that every file in the skill directory is referenced from `SKILL.md` or from a file that `SKILL.md` references.",
+    "Why: a file nothing points at is never read, so it is either dead weight or a sign of a missing link.",
+    "Fix: link the file from `SKILL.md`, or delete it."
+  ].join("\n\n"),
   check(doc, ctx) {
     const mentioned = (text) => doc.files.filter((f) => text.includes(f));
     const first = mentioned(doc.text);
@@ -8348,6 +8595,12 @@ var layout = defineRule({
   id: "layout",
   kinds: ["skills"],
   defaultSeverity: "error",
+  explain: [
+    "Checks that the top-level entries of a skill directory are among the allowed ones.",
+    "Why: a fixed layout (`references/`, `scripts/`, `assets/`, `examples/`) keeps skills predictable for readers and for tools that scan them.",
+    "Fix: move the file into an allowed directory, or extend the allowed list.",
+    "Options: `allowed` lists the top-level entries a skill directory may hold besides `SKILL.md`; by default any entry is allowed."
+  ].join("\n\n"),
   defaultOptions: {},
   check(doc, ctx) {
     const { allowed } = ctx.options;
@@ -8371,6 +8624,11 @@ var uniqueNames = defineRule({
   id: "unique-names",
   kinds: ["skills"],
   defaultSeverity: "error",
+  explain: [
+    "Checks that skill names are unique across every skills target.",
+    "Why: with two skills of one name the host picks one silently.",
+    "Fix: rename one of them."
+  ].join("\n\n"),
   checkProject(docs, ctx) {
     const byName = /* @__PURE__ */ new Map();
     for (const doc of docs) {
@@ -8412,6 +8670,10 @@ function loadTarget(value, index, root, rules, settings) {
       "the portable profile has no agents (the Agent Skills standard defines only skills)"
     );
   }
+  if (target.plugin !== void 0 && typeof target.plugin !== "boolean") {
+    throw fail("`plugin` must be true or false");
+  }
+  const plugin = target.plugin ?? true;
   if (dirs.length === 0 || !dirs.every((d) => typeof d === "string")) {
     throw fail("dirs must list at least one directory");
   }
@@ -8423,7 +8685,7 @@ function loadTarget(value, index, root, rules, settings) {
   }
   const own = target.rules ?? {};
   checkSettings(own, rules, `target \`${name}\``);
-  return { kind, dirs, profile, name, settings: { ...settings, ...own } };
+  return { kind, dirs, profile, name, plugin, settings: { ...settings, ...own } };
 }
 function validateOptions(rules, settings, targets) {
   for (const rule of rules.values()) {
@@ -8522,7 +8784,13 @@ function discover(root, targets) {
 function read(root, target, file, dir, files) {
   return parseDocument({
     kind: target.kind,
-    target: { kind: target.kind, dirs: target.dirs, profile: target.profile, name: target.name },
+    target: {
+      kind: target.kind,
+      dirs: target.dirs,
+      profile: target.profile,
+      name: target.name,
+      plugin: target.plugin
+    },
     path: toPosix(relative(root, file)),
     dir: toPosix(relative(root, dir)),
     text: readFileSync2(file, "utf8"),
@@ -8647,7 +8915,7 @@ async function checkRule(rule, test) {
       await mkdir(dirname2(full), { recursive: true });
       await writeFile(full, content);
     }
-    const target = { kind, dirs: ["."], profile: test.profile, name: kind };
+    const target = { kind, dirs: ["."], profile: test.profile, plugin: test.plugin, name: kind };
     const targets = [loadTarget(target, 0, root, rules, settings)];
     validateOptions(rules, settings, targets);
     return runChecks({ root, targets, rules, settings }, { cwd: root, paths: [] }).findings;

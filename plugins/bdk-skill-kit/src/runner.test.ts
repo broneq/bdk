@@ -101,6 +101,18 @@ describe("loadConfig", () => {
     expect(loaded.root).toBe(root);
   });
 
+  it("resolves plugin on every target, true by default", async () => {
+    const root = project(
+      base.replace(`dirs: ["agents"] }`, `dirs: ["agents"], plugin: false }`).replace("RULES", ""),
+    );
+    const loaded = await loadConfig(root);
+    expect(loaded.targets.map((t) => t.plugin)).toEqual([true, false]);
+    const skills = project(
+      base.replace(`dirs: ["skills"] }`, `dirs: ["skills"], plugin: false }`).replace("RULES", ""),
+    );
+    expect((await loadConfig(skills)).targets.map((t) => t.plugin)).toEqual([false, true]);
+  });
+
   it("fails when no config file exists", async () => {
     const root = tree({ "a.txt": "" });
     await expect(loadConfig(root)).rejects.toThrow(
@@ -128,6 +140,11 @@ describe("loadConfig", () => {
         .replace(`dirs: ["agents"] }`, `dirs: ["agents"], profile: "portable" }`)
         .replace("RULES", ""),
       "target `agents`: the portable profile has no agents (the Agent Skills standard defines only skills)",
+    ],
+    [
+      "a non-boolean plugin",
+      base.replace(`dirs: ["agents"] }`, `dirs: ["agents"], plugin: "no" }`).replace("RULES", ""),
+      "target `agents`: `plugin` must be true or false",
     ],
     [
       "an invalid severity",

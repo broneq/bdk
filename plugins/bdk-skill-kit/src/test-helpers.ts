@@ -26,6 +26,7 @@ export function agent(name: string, extra = "", body = "Review the change.\n"): 
 interface DocOptions {
   kind?: TargetKind;
   profile?: ResolvedTarget["profile"];
+  plugin?: boolean;
   path?: string;
   dir?: string;
   files?: string[];
@@ -37,7 +38,13 @@ export function doc(text: string, options: DocOptions = {}): Document {
   const dir = options.dir ?? (kind === "skills" ? "skills/demo" : "agents");
   return parseDocument({
     kind,
-    target: { kind, dirs: [kind], profile: options.profile ?? "claude-code", name: kind },
+    target: {
+      kind,
+      dirs: [kind],
+      profile: options.profile ?? "claude-code",
+      name: kind,
+      plugin: options.plugin ?? true,
+    },
     path: options.path ?? (kind === "skills" ? `${dir}/SKILL.md` : `${dir}/demo.md`),
     dir,
     text,

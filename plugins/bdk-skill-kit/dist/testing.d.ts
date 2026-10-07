@@ -6,6 +6,8 @@ export interface RuleTest<O extends object = Record<string, unknown>> {
     kind?: TargetKind;
     /** Defaults to `claude-code`. */
     profile?: Profile;
+    /** Whether the skills or agents ship in a plugin. Defaults to true. */
+    plugin?: boolean;
     /** Merged over the rule's default options, as a config setting is. */
     options?: Partial<O>;
 }
