@@ -8,6 +8,10 @@ export type Admission = "os-boundary" | "frame" | "three-slices";
 export const SLICES: Readonly<
   Record<string, { readonly imports: readonly string[]; readonly why: string }>
 > = {
+  check: {
+    imports: ["config", "findings"],
+    why: "bdk check run reads tools.* through loadConfig and appends red checks through addFinding",
+  },
   config: { imports: [], why: "leaf: the configuration every other slice may read" },
   findings: { imports: [], why: "leaf: the findings event log of a review round" },
   git: {
@@ -38,4 +42,5 @@ export const SHARED: Readonly<
   },
   fs: { admitted: "os-boundary", why: "file system" },
   git: { admitted: "os-boundary", why: "child processes: the git executable" },
+  shell: { admitted: "os-boundary", why: "child processes: command lines through /bin/sh" },
 };

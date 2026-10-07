@@ -58,7 +58,7 @@ The configuration SHALL accept exactly these keys; any other key at any level SH
 
 | Key                                                  | Type                                                                                                         | Default      |
 | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------ |
-| `tools.test`, `tools.lint`, `tools.build`            | items by `id`: `command` (string, required), `scoped` (string holding `{files}`, optional)                   | `[]`         |
+| `tools.test`, `tools.lint`, `tools.build`            | items by `id`: `command` (string, required), `scoped` (string holding `{files}`, optional), `timeout` (integer seconds, 1 to 86400, optional; `bdk check run` uses 600 when absent) | `[]`         |
 | `tools.e2e`                                          | items by `id`: `start` (command), `ready` (URL or command), `driver` (`cli`, `http`, `browser`), `env` (map of variable name to string, optional); all but `env` required | `[]`         |
 | `languages`                                          | list of kebab-case names                                                                                     | `[]`         |
 | `rules.disabled`                                     | list of rule names                                                                                           | `[]`         |
@@ -83,6 +83,11 @@ A missing required field, a value of the wrong type or outside its allowed value
 
 - **WHEN** no layer sets any `plan.part` key
 - **THEN** `bdk config show plan.part` prints `max-tasks` 5, `max-files` 10 and `max-bytes` 8192, each with origin `default`
+
+#### Scenario: Check timeout
+
+- **WHEN** `.bdk/settings.yaml` gives the `tools.test` item `unit` the field `timeout: 0`
+- **THEN** `bdk config check` reports `tools.test.unit.timeout` and that it must be at least 1, and exits 1
 
 ### Requirement: Configured project
 

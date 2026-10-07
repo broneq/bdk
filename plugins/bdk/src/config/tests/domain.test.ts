@@ -154,7 +154,7 @@ describe("keys", () => {
     expect(resolveKey("models.Bad")).toMatchObject({ ok: false, known: [] });
     expect(resolveKey("languages.x")).toMatchObject({ ok: false, at: "languages" });
     expect(knownUnder("")).toContain("tools");
-    expect(knownUnder("tools.test.unit")).toEqual(["command", "scoped"]);
+    expect(knownUnder("tools.test.unit")).toEqual(["command", "scoped", "timeout"]);
   });
 });
 
@@ -243,6 +243,26 @@ describe("validate", () => {
       ["tools.lint", "duplicate id a"],
       ["models.Bad", "invalid key"],
       ["plan.part.max-files", "Invalid input"],
+    ]);
+  });
+
+  it("accepts a check timeout of at least one second and reports a smaller one", () => {
+    const tools = (timeout: unknown) =>
+      layer("project", { tools: { build: [{ id: "tsc", command: "tsc", timeout }] } });
+    expect(validate([tools(30)], suggest).settings?.tools.build).toEqual([
+      { id: "tsc", command: "tsc", timeout: 30 },
+    ]);
+    expect(validate([tools(0)], suggest).problems).toEqual([
+      expect.objectContaining({
+        key: "tools.build.tsc.timeout",
+        message: expect.stringContaining(">=1") as unknown,
+      }) as unknown,
+    ]);
+    expect(validate([tools(86_401)], suggest).problems.map((problem) => problem.key)).toEqual([
+      "tools.build.tsc.timeout",
+    ]);
+    expect(validate([tools(1.5)], suggest).problems.map((problem) => problem.key)).toEqual([
+      "tools.build.tsc.timeout",
     ]);
   });
 

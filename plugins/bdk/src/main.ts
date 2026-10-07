@@ -4,6 +4,7 @@
 import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
 
+import { checkGroup } from "./check/index.ts";
 import { configGroup } from "./config/index.ts";
 import { findingsGroup } from "./findings/index.ts";
 import { gitGroup } from "./git/index.ts";
@@ -14,6 +15,7 @@ import { run } from "./shared/cli/index.ts";
 import type { Group } from "./shared/cli/index.ts";
 import { files } from "./shared/fs/index.ts";
 import { git } from "./shared/git/index.ts";
+import { shell } from "./shared/shell/index.ts";
 
 /** Replaced by `build.ts` with the `plugin.json` version. */
 declare const __BDK_VERSION__: string;
@@ -22,6 +24,7 @@ declare const __BDK_VERSION__: string;
 const deps = { files, cwd: process.cwd(), home: homedir(), env: process.env };
 
 const GROUPS: readonly Group[] = [
+  checkGroup({ ...deps, shell: (command, options) => shell(command, options) }),
   configGroup(deps),
   findingsGroup({ files }),
   runGroup(deps),
