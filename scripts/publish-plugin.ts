@@ -23,7 +23,7 @@ import { join, relative, sep } from "node:path";
 import { parseArgs } from "node:util";
 
 // Development-only paths of a plugin directory; everything else ships.
-const DEV_ONLY = new Set(["src", "tests", "evals", "node_modules", "version.txt"]);
+const DEV_ONLY = new Set(["src", "tests", "evals", "node_modules"]);
 const TAG = /^(?<name>[a-z0-9][a-z0-9-]*)--v(?<version>\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?)$/;
 
 interface Release {

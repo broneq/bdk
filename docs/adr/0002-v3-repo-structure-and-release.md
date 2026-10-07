@@ -47,7 +47,7 @@ It is the only option that keeps one change of CLI and skill in one PR and one r
 ### Implementation Requirements
 
 - [ ] Repository skeleton: root pnpm workspace and toolchain, `pr.yml`, `release.yml`, release-please manifest config, `release` branch bootstrap, GitHub App and ruleset.
-- [ ] Release-please dry run confirming the `extra-files` updater on `.claude-plugin/plugin.json` and the handling of `version.txt`.
+- [x] Release-please dry run confirming the `extra-files` updater on `.claude-plugin/plugin.json` and the handling of `version.txt` (OpenSpec Change `v3-173-release-please-dry-run`).
 - [ ] Migrate v2 into `plugins/bdk/`: remove or port the Python hooks and the pytest job, quote `${CLAUDE_PLUGIN_ROOT}` in hooks.
 - [ ] Merge `git-identity` and `bdk-skill-kit` into `plugins/` with history, switch the marketplace entries, archive both repositories.
 
