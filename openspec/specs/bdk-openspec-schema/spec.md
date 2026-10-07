@@ -50,10 +50,17 @@ The `plan` artifact SHALL generate one file per part, `plan/parts/NN.md`, where 
 
 After the frontmatter, a part SHALL hold its goal, its acceptance scenarios taken from the Change's spec deltas, and its tasks as contracts. The part template and the plan instruction SHALL state this format.
 
+Under `## Tasks`, each task SHALL be one numbered item whose first line says what changes, followed by three labelled lines: `File:` naming one or more paths from the part's `files`, `Interface:` naming the function, command, endpoint or type that changes as a signature without code (`Interface: none` when no interface changes), and `Verified by:` naming the spec scenario, the test, or both. The part template and the plan instruction SHALL show these three lines.
+
 #### Scenario: Template carries the frontmatter
 
 - **WHEN** the part template of the shipped schema is read
 - **THEN** it begins with YAML frontmatter that has the keys `id`, `depends-on`, `isolation` and `files`, with `id` a quoted two-digit string and `isolation` one of `worktree` and `shared`
+
+#### Scenario: Template carries the task contract
+
+- **WHEN** the part template of the shipped schema is read
+- **THEN** its `## Tasks` section shows a numbered task followed by the lines `File:`, `Interface:` and `Verified by:`
 
 #### Scenario: Plan artifact done with one part
 

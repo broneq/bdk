@@ -116,6 +116,15 @@ describe("shipped files", () => {
       "files",
     ]);
   });
+
+  it("shows the task contract lines in the part template and the plan instruction", () => {
+    const part = readFileSync(join(SCHEMA, "templates", "part.md"), "utf8");
+    const tasks = /^## Tasks$([\s\S]*)/m.exec(part)?.[1] ?? "";
+    expect(tasks).toMatch(/^1\. .+\n {3}- File: .+\n {3}- Interface: .+\n {3}- Verified by: .+$/m);
+    const schema = readFileSync(join(SCHEMA, "schema.yaml"), "utf8");
+    for (const label of ["`File:`", "`Interface:`", "`Verified by:`"])
+      expect(schema).toContain(label);
+  });
 });
 
 describe("installed by copying", () => {
