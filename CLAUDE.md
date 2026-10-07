@@ -13,6 +13,23 @@ Claude Code plugin packaging reusable dev workflows (skills, agents, hooks) that
 
 The first attempt (`draft/v3-1`, milestone `v3.0-draft1`) built a TypeScript kernel and failed on speed and on product-level correctness. What it taught is in `docs/v3-draft1/` (start with `run-b1/2026-10-07-bdk-v3-findings.md`). Read it before designing anything; do not repeat its root causes.
 
+## Target layout (v3)
+
+Decided in [ADR-0002](docs/adr/0002-v3-repo-structure-and-release.md); details in `docs/design/2026-10-07-v3-repo-structure-cicd.md`. Not built yet (issues #172-#175).
+
+```
+.claude-plugin/marketplace.json  - one marketplace; each entry installs plugins/<name> at ref: release
+plugins/<name>/                  - one plugin per directory: manifest, skills, agents, hooks, bin/, CLI src/ and tests/, evals/
+docs/                            - VitePress site, ADRs, designs, archives
+openspec/                        - SDLC specs and changes
+```
+
+- Directory name = plugin name = release-please component = tag prefix (`bdk--v3.0.0`).
+- Every plugin works alone; plugins never import from each other.
+- `plugin.json` `version` is the only version of a plugin; release-please bumps it.
+- Node only, no Python. `dist/` is never committed; the release job builds the released plugin and writes it to the `release` branch.
+- Hooks call `node "${CLAUDE_PLUGIN_ROOT}/dist/<cli>.mjs"`; everything else calls `bin/<cli>`.
+
 ## Current state (v2, being replaced)
 
 The code on `staging/v3` is still v2. Its layout:
