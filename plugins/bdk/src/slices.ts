@@ -7,7 +7,9 @@ export type Admission = "os-boundary" | "frame" | "three-slices";
 /** Every slice under `src/`, and the slices whose `index.ts` its use cases may import. */
 export const SLICES: Readonly<
   Record<string, { readonly imports: readonly string[]; readonly why: string }>
-> = {};
+> = {
+  findings: { imports: [], why: "leaf: the findings event log of a review round" },
+};
 
 /** Every module under `src/shared/`, and why it is shared rather than owned by a slice. */
 export const SHARED: Readonly<
@@ -17,4 +19,5 @@ export const SHARED: Readonly<
     admitted: "frame",
     why: "routing, help, flags, output, errors and exit codes of every command",
   },
+  fs: { admitted: "os-boundary", why: "file system" },
 };
