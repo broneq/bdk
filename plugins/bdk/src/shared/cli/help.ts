@@ -43,7 +43,10 @@ export function commandHelp(path: string, command: Command): string {
   const usage = args.map((arg) => (arg.required === true ? `<${arg.name}>` : `[<${arg.name}>]`));
   const flags = Object.entries(command.flags ?? {}).map(
     ([name, flag]) =>
-      [flag.type === "string" ? `--${name} <value>` : `--${name}`, flag.description] as const,
+      [
+        flag.type === "string" ? `--${name} <value>` : `--${name}`,
+        flag.multiple === true ? `${flag.description} (repeatable)` : flag.description,
+      ] as const,
   );
   const exits = [
     ["0", "success"],

@@ -9,7 +9,7 @@ import { set } from "../use-cases/set.ts";
 
 const LAYERS: readonly FileLayerName[] = ["global", "project", "local"];
 
-function layerOf(flag: string | boolean | undefined): FileLayerName {
+function layerOf(flag: string | boolean | readonly string[] | undefined): FileLayerName {
   if (flag === undefined) return "project";
   const layer = LAYERS.find((name) => name === flag);
   if (layer === undefined) {

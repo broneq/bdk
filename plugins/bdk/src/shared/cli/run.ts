@@ -61,7 +61,10 @@ function parse(path: string, command: Command, argv: readonly string[]): Input {
     parsed = parseArgs({
       args: [...argv],
       options: Object.fromEntries(
-        Object.entries(command.flags ?? {}).map(([name, flag]) => [name, { type: flag.type }]),
+        Object.entries(command.flags ?? {}).map(([name, flag]) => [
+          name,
+          { type: flag.type, multiple: flag.multiple === true },
+        ]),
       ),
       strict: true,
       allowPositionals: true,
@@ -98,10 +101,10 @@ function parse(path: string, command: Command, argv: readonly string[]): Input {
     }
     args[arg.name] = value;
   });
-  // No flag is declared `multiple`, so parseArgs gives no arrays.
-  const flags: Record<string, string | boolean | undefined> = {};
+  const flags: Record<string, string | boolean | readonly string[] | undefined> = {};
   for (const [name, value] of Object.entries(parsed.values)) {
-    if (!Array.isArray(value)) flags[name] = value;
+    // Only a flag declared `multiple` gives an array, and only of its own type: strings.
+    flags[name] = Array.isArray(value) ? value.map(String) : value;
   }
   return { args, flags };
 }
