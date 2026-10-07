@@ -45,6 +45,14 @@ pnpm --filter @bdk/bdk run eval --allow-tools "Bash(*/bin/bdk *)" "Bash(git *)" 
 pnpm --filter @bdk/bdk run eval --allow-tools "Bash(*/bin/bdk *)" "Bash(git *)" --case 'judge-*'
 ```
 
+The `propose-*` cases run `/bdk:propose`, which calls `bdk`, OpenSpec and `gh issue view`. A run has no GitHub credential, so `propose-from-issue` reads its issue through the offline stand-in `fixtures/bin/gh`: its scaffold copies the stand-in to `.git/bdk-eval/bin/gh` and the issue to `.git/bdk-eval/issues/42.json`. A run cannot execute a file outside its workspace, even with that directory on `PATH`, so put the relative directory first:
+
+```bash
+PATH=".git/bdk-eval/bin:$PATH" pnpm --filter @bdk/bdk run eval --allow-tools Write Edit "Bash(*/bin/bdk *)" "Bash(openspec *)" "Bash(gh *)" "Bash(git *)" --case 'propose-*'
+```
+
+A case that reads issues writes `.git/bdk-eval/issues/<n>.json` with the fields of `gh issue view --json` (`number`, `title`, `body`, `labels`, `state`, `url`) and copies the stand-in the same way.
+
 The `e2e-check-*` cases run the product of the scaffolded project as a user would, through commands the skill cannot know in advance, so they need `Bash` itself; the sandbox still confines every command to the run's workspace. `--trust-plugin` lets the run start without a terminal:
 
 ```bash

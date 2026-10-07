@@ -245,3 +245,83 @@ describe("eval suite layout", () => {
     expect(status).toBe(0);
   });
 });
+
+describe("offline gh stand-in", () => {
+  const GH = join(EVALS, "fixtures", "bin", "gh");
+  const ISSUE = {
+    number: 42,
+    title: "Export the ledger as CSV",
+    body: "## Goal\nExport.",
+    labels: [{ id: "L1", name: "enhancement", description: "", color: "a2eeef" }],
+    state: "OPEN",
+    url: "https://github.com/acme/tiny-ledger/issues/42",
+  };
+
+  /** A git workspace whose scaffold wrote issue 42, the way a case scaffold does. */
+  function workspace(): string {
+    const dir = join(fresh("gh"), "workspace");
+    mkdirSync(join(dir, ".git", "bdk-eval", "issues"), { recursive: true });
+    writeFileSync(join(dir, ".git", "bdk-eval", "issues", "42.json"), JSON.stringify(ISSUE));
+    mkdirSync(join(dir, "src"));
+    return dir;
+  }
+
+  function gh(cwd: string, ...args: string[]) {
+    return spawnSync(GH, args, { cwd, encoding: "utf8", env: { PATH: process.env.PATH } });
+  }
+
+  it("prints only the --json fields, from a subdirectory too", () => {
+    const { status, stdout } = gh(
+      join(workspace(), "src"),
+      "issue",
+      "view",
+      "#42",
+      "--json",
+      "number,title",
+    );
+    expect(status).toBe(0);
+    expect(JSON.parse(stdout)).toEqual({ number: 42, title: "Export the ledger as CSV" });
+  });
+
+  it.each([["42"], ["https://github.com/acme/tiny-ledger/issues/42"], ["acme/tiny-ledger#42"]])(
+    "resolves the reference %s",
+    (ref) => {
+      const { status, stdout } = gh(workspace(), "issue", "view", ref, "--json", "url");
+      expect(status).toBe(0);
+      expect(JSON.parse(stdout)).toEqual({ url: ISSUE.url });
+    },
+  );
+
+  it("accepts --repo and -R before or after the number", () => {
+    const dir = workspace();
+    expect(
+      gh(dir, "issue", "view", "--repo", "acme/tiny-ledger", "42", "--json", "state").status,
+    ).toBe(0);
+    expect(gh(dir, "issue", "view", "42", "-R", "acme/tiny-ledger", "--json", "state").status).toBe(
+      0,
+    );
+  });
+
+  it("prints title, state and body as text without --json", () => {
+    const { status, stdout } = gh(workspace(), "issue", "view", "42");
+    expect(status).toBe(0);
+    expect(stdout).toContain("title:\tExport the ledger as CSV");
+    expect(stdout).toContain("state:\tOPEN");
+    expect(stdout).toContain("labels:\tenhancement");
+    expect(stdout).toContain("## Goal\nExport.");
+  });
+
+  it("fails like gh for an issue the scaffold did not write", () => {
+    const { status, stderr } = gh(workspace(), "issue", "view", "7");
+    expect(status).toBe(1);
+    expect(stderr).toContain(
+      "GraphQL: Could not resolve to an issue or pull request with the number of 7.",
+    );
+  });
+
+  it("refuses every other command and names itself", () => {
+    const { status, stderr } = gh(workspace(), "pr", "list");
+    expect(status).toBe(1);
+    expect(stderr).toContain("offline gh stand-in");
+  });
+});
