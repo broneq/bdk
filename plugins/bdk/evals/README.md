@@ -72,7 +72,11 @@ The `plan-draft-*` and `verify-plan-*` cases start from the shared fixture `ledg
 pnpm --filter @bdk/bdk run eval --allow-tools Write Edit "Bash(*/bin/bdk *)" --case '*plan-*'
 ```
 
-`--case` takes one glob; a repeated `--case` keeps only the last.
+The `spec-conformance-*` cases start from the shared fixture `tally-change.sh` (the Change `add-total` on its branch, with `main` as the base and a main spec to merge into); each scaffold adds one commit with what it tests. The block runs in a `bdk:verifier` agent (opus), reads `git diff` against `main` and writes `close/spec-conformance.md` (on a Mac, see the `git` entry of "Host limits"):
+
+```bash
+pnpm --filter @bdk/bdk run eval --allow-tools Write "Bash(*/bin/bdk *)" "Bash(git *)" --case 'spec-conformance-*'
+```
 
 The design-block cases (`explore-*`, `design-draft-*`, `verify-design-*`) start from the fixtures `ledger-proposal.sh`, `ledger-explored.sh` and `ledger-designed.sh`, and need the `bdk` launcher, OpenSpec, `git` and the Lavish CLI. `design-draft-lavish` and `design-draft-ask` put a `lavish-axi` stub into the workspace's `node_modules`, which `npx -y lavish-axi` runs before any installed one: the first opens every page and answers the poll, the second fails as a session without a browser does. `AskUserQuestion` is not available in a run, so `design-draft-ask` grades the questions in the reply.
 
@@ -81,6 +85,8 @@ for c in "explore-*" "design-draft-*" "verify-design-*"; do
   pnpm --filter @bdk/bdk run eval --allow-tools Write Edit "Bash(*/bin/bdk *)" "Bash(openspec *)" "Bash(npx -y lavish-axi *)" "Bash(git *)" --case "$c"
 done
 ```
+
+`--case` takes one glob; a repeated `--case` keeps only the last.
 
 ### Manual browser check of `e2e-check`
 
