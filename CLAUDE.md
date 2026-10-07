@@ -13,6 +13,14 @@ Claude Code plugin packaging reusable dev workflows (skills, agents, hooks) that
 
 The first attempt (`draft/v3-1`, milestone `v3.0-draft1`) built a TypeScript kernel and failed on speed and on product-level correctness. What it taught is in `docs/v3-draft1/` (start with `run-b1/2026-10-07-bdk-v3-findings.md`). Read it before designing anything; do not repeat its root causes.
 
+## Building skills (v3)
+
+The v3 architecture is in `docs/design/2026-10-07-v3-architecture.md`.
+
+- Logic lives in skills. The `bdk` CLI only helps: it computes or saves a model turn, and it never decides the order of the work or blocks a skill.
+- A new skill starts as a plain skill with an eval case. Add a CLI helper, hook or workflow only when an eval or a measurement shows a concrete problem, and record that problem.
+- One block, one job: an author block writes, a verifier block checks, an orchestrator only composes blocks. Each block runs alone and has its own eval cases.
+
 ## Target layout (v3)
 
 Decided in [ADR-0002](docs/adr/0002-v3-repo-structure-and-release.md); details in `docs/design/2026-10-07-v3-repo-structure-cicd.md`. Not built yet (issues #172-#175).
