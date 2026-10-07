@@ -9,6 +9,10 @@ export const SLICES: Readonly<
   Record<string, { readonly imports: readonly string[]; readonly why: string }>
 > = {
   findings: { imports: [], why: "leaf: the findings event log of a review round" },
+  git: {
+    imports: [],
+    why: "review scope and reviewer groups of a branch; reads only git and its own files",
+  },
   run: {
     imports: ["findings"],
     why: "bdk run status folds the last review round through listFindings, a findings use case",
@@ -24,4 +28,5 @@ export const SHARED: Readonly<
     why: "routing, help, flags, output, errors and exit codes of every command",
   },
   fs: { admitted: "os-boundary", why: "file system" },
+  git: { admitted: "os-boundary", why: "child processes: the git executable" },
 };
