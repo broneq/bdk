@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.0](https://github.com/broneq/bdk-skill-kit/compare/v0.2.2...v0.3.0) (2026-10-07)
+
+
+### ⚠ BREAKING CHANGES
+
+* the `skill-authoring` skill is removed. The plugin ships `skill-check` alone; use Anthropic's best practices and `skill-creator`.
+
+### Features
+
+* add --explain and reasoning-prompts rule, drop skill-authoring ([28086a2](https://github.com/broneq/bdk-skill-kit/commit/28086a2a5040318148b95bb9c727d9be9cbaa12b))
+
 ## [0.2.2](https://github.com/broneq/bdk-skill-kit/compare/v0.2.1...v0.2.2) (2026-09-28)
 
 
