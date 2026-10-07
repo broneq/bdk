@@ -14,6 +14,10 @@ export const SLICES: Readonly<
     imports: [],
     why: "review scope and reviewer groups of a branch; reads only git and its own files",
   },
+  plan: {
+    imports: ["config"],
+    why: "bdk plan check reads the part limits plan.part.* through loadConfig, a config use case",
+  },
   run: {
     imports: ["findings"],
     why: "bdk run status folds the last review round through listFindings, a findings use case",
