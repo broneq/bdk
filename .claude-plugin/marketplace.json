@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "bdk",
-  "description": "Broneq Dev Kit — reusable dev workflows, skills, agents, and hooks for any project",
+  "description": "Broneq Dev Kit - reusable dev workflows, skills, agents, and hooks for any project",
   "owner": {
     "name": "Przemysław Broniszewski",
     "url": "https://github.com/broneq"
@@ -9,8 +9,13 @@
   "plugins": [
     {
       "name": "bdk",
-      "description": "Broneq Dev Kit — reusable dev workflows, skills, agents, and hooks for any project",
-      "source": "./",
+      "description": "Broneq Dev Kit - reusable dev workflows, skills, agents, and hooks for any project",
+      "source": {
+        "source": "github",
+        "repo": "broneq/bdk",
+        "ref": "v2.7.0",
+        "sha": "09bb418068504342560ab9cf7ac04e703b5352b3"
+      },
       "category": "productivity"
     },
     {

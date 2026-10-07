@@ -4,8 +4,8 @@ BDK v3 is being rebuilt on `staging/v3`; this guide will describe its convention
 
 ## Trying a change
 
-Run BDK in a separate test project, never in this repository:
+Run a plugin from this repository in a separate test project, never in this repository:
 
 ```bash
-claude --plugin-dir ~/projects/bdk
+claude --plugin-dir ~/projects/bdk/plugins/<name>
 ```
