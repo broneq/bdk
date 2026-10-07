@@ -1,5 +1,5 @@
 // The findings log on disk (design D3): read whole, appended one event line per write.
-import { dirname } from "node:path";
+import { dirname, join } from "node:path";
 
 import type { Files } from "../../shared/fs/index.ts";
 import { toLine } from "../domain/events.ts";
@@ -14,4 +14,11 @@ export function readLog(files: Files, log: string): string | undefined {
 
 export function appendEvent(files: Files, log: string, event: Event): void {
   files.appendText(log, toLine(event));
+}
+
+/** Writes `report.md` next to the log, replacing an earlier one; returns its path. */
+export function writeReport(files: Files, log: string, text: string): string {
+  const path = join(dirname(log), "report.md");
+  files.writeText(path, text);
+  return path;
 }

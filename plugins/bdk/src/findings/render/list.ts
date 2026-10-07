@@ -1,5 +1,5 @@
 // The text form of `bdk findings list`, for a model reading a Bash result (design D4).
-import { DECISIONS, LEVELS } from "../domain/events.ts";
+import { countsLine } from "../domain/counts.ts";
 import type { Finding } from "../domain/fold.ts";
 import type { ListResult } from "../schema/list.ts";
 
@@ -44,13 +44,7 @@ export function renderList(
   { findings, counts, skipped }: ListResult,
   filters: ListFilters,
 ): string {
-  const level = [...LEVELS, "unleveled" as const].map((key) => `${counts.level[key]} ${key}`);
-  const decision = [...DECISIONS, "undecided" as const].map(
-    (key) => `${counts.decision[key]} ${key}`,
-  );
-  const lines = [
-    `${counts.findings} findings. Level: ${level.join(", ")}. Decision: ${decision.join(", ")}.`,
-  ];
+  const lines = [countsLine(counts)];
   const flags = Object.entries(filters).flatMap(([name, value]) =>
     value === undefined ? [] : [`--${name} ${value}`],
   );

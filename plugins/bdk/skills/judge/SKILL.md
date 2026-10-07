@@ -1,0 +1,66 @@
+---
+name: judge
+description: 'Judges the findings of a BDK review round - checks each unleveled finding against the code and sets its level (blocker, should-fix, nice-to-have, not-a-problem) by what the product does, with bdk findings level - then writes the round report with bdk findings report. Use when a review round or a user asks to judge, level, rate or triage the findings of a round, or to finish a review round.'
+argument-hint: "[<round-dir>]"
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(git diff *) Bash(git show *) Read Grep Glob
+---
+
+Current BDK configuration of this project:
+
+!`"${CLAUDE_PLUGIN_ROOT}/bin/bdk" config show`
+
+Arguments: $ARGUMENTS
+
+# Judge a review round
+
+Set the level of every finding of one round, then write the round report. You look for no new problem, add no finding, record no decision (triage decides what happens), change no file and start no agent. Run `bdk` always as `"${CLAUDE_PLUGIN_ROOT}/bin/bdk"`, each command on its own, without pipes or `&&`.
+
+If the block above says "BDK not configured: run /bdk:setup", stop and pass that line on. If it shows the command instead of its output, run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" config show` first.
+
+## 1. Find the round
+
+With a round directory in the arguments or the request (`.bdk/runs/<change>/review/round-<N>/`), use it. Otherwise use the highest `.bdk/runs/manual/review/round-<N>/` that holds `findings.jsonl` and no `report.md`. The log is `<round-dir>/findings.jsonl`; the Change is `openspec/changes/<change>/`, `<change>` being the directory under `.bdk/runs/`.
+
+Run `bdk findings list <log> --level unleveled`. These are the findings to judge; a finding that already has a level keeps it.
+
+Done when you have the list (it may be empty: go to step 4).
+
+## 2. Read what the product must do
+
+Read `proposal.md` and the scenarios under `specs/` of the Change: a level depends on whether the product breaks them. Read a rule a finding cites in the rules of `bdk rules for --stage review --files <file>` for its file.
+
+Done when you know the scenarios and the intent.
+
+## 3. Judge each finding
+
+For each finding, once: read the code at its `file` and `line`, and its evidence. Ask:
+
+1. Does the failure scenario hold? Trace the evidence's input through the code. A guard, a type, a caller or a test that already prevents it makes it a false positive.
+2. Which level fits, by the product's behaviour:
+
+| Level | When |
+|---|---|
+| `blocker` | The product breaks a spec scenario or the intent of the Change; a check is red (source `check`); a security hole; data loss; a regression of existing behaviour |
+| `should-fix` | The product works, but the change breaks a rule or a project instruction, or has a concrete maintenance cost the finding names |
+| `nice-to-have` | An improvement whose absence costs nothing concrete |
+| `not-a-problem` | The failure scenario does not hold; out of the Change's scope; already handled; or it repeats another finding (name that id) |
+
+A rule violation alone is never a `blocker`, however the reviewer worded it: `should-fix` at most. A finding that would be a `blocker` but whose scenario does not hold is `not-a-problem`, not a lower level. "Out of the Change's scope" means code or behaviour the Change does not touch; an improvement to what the Change touches that no scenario asks for is `nice-to-have`.
+
+Then set it:
+
+```
+"${CLAUDE_PLUGIN_ROOT}/bin/bdk" findings level <log> <id> <level> --reason "<one sentence: why this level, citing the scenario, the rule or the guard>"
+```
+
+Done when every finding of step 1 has a level.
+
+## 4. Write the report
+
+Run `bdk findings list <log> --level unleveled` again: it must list none (a finding added meanwhile is judged as in step 3). Then run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" findings report <log>`. It writes `report.md` in the round directory, which finishes the round, and prints its path and the counts.
+
+Done when the report exists and counts 0 unleveled.
+
+## 5. Return
+
+Return only the report's path and the counts line it printed, then one line per `blocker`: id and summary.

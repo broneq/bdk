@@ -7,6 +7,7 @@ import { addResult } from "../schema/add.ts";
 import { decideResult } from "../schema/decide.ts";
 import { levelResult } from "../schema/level.ts";
 import { listResult } from "../schema/list.ts";
+import { reportResult } from "../schema/report.ts";
 import { MemoryFiles } from "./memory-files.ts";
 
 // Spec `bdk-cli/findings`, the commands through the CLI frame against an in-memory `Files`.
@@ -425,9 +426,137 @@ describe("bdk findings list", () => {
 });
 
 describe("bdk findings help", () => {
-  it("lists the four commands", async () => {
+  it("lists the five commands", async () => {
     const { stdout } = await bdk(new MemoryFiles(), "findings", "--help");
-    for (const verb of ["add", "level", "decide", "list"])
+    for (const verb of ["add", "level", "decide", "list", "report"])
       expect(stdout).toMatch(new RegExp(`^  ${verb} `, "m"));
+  });
+});
+
+describe("bdk findings report", () => {
+  const REPORT = `${DIR}/report.md`;
+
+  async function judged(): Promise<{ files: MemoryFiles; idB: string }> {
+    const files = new MemoryFiles();
+    await bdk(files, "findings", "add", LOG, ...A, "--evidence", "a(1) gives 2\nnot 1");
+    const idB = (
+      await bdk(
+        files,
+        "findings",
+        "add",
+        LOG,
+        "--source",
+        "review-group",
+        "--summary",
+        "short name",
+        "--file",
+        "src/b.ts",
+        "--rule",
+        "BDK-CQ-1",
+      )
+    ).stdout.trim();
+    await bdk(files, "findings", "level", LOG, idA, "blocker", "--reason", "breaks a scenario");
+    await bdk(files, "findings", "level", LOG, idB, "not-a-problem", "--reason", "idiomatic");
+    await bdk(files, "findings", "decide", LOG, idB, "defer", "--issue", "#4", "--reason", "big");
+    return { files, idB };
+  }
+
+  it("writes report.md next to the log with every section", async () => {
+    const { files, idB } = await judged();
+    expect(await bdk(files, "findings", "report", LOG)).toEqual({
+      code: 0,
+      stdout: `${REPORT}\n2 findings. Level: 1 blocker, 0 should-fix, 0 nice-to-have, 1 not-a-problem, 0 unleveled. Decision: 0 fix, 0 accept, 1 defer, 1 undecided.\n`,
+      stderr: "",
+    });
+    expect(files.readText(REPORT)).toBe(
+      [
+        "# Review round report",
+        "",
+        "2 findings. Level: 1 blocker, 0 should-fix, 0 nice-to-have, 1 not-a-problem, 0 unleveled. Decision: 0 fix, 0 accept, 1 defer, 1 undecided.",
+        "",
+        "## blocker",
+        "",
+        `- ${idA} \`src/a.ts:3\` a is wrong (review-group)`,
+        "  - Evidence: a(1) gives 2",
+        "    not 1",
+        "  - Level reason: breaks a scenario",
+        "",
+        "## should-fix",
+        "",
+        "None.",
+        "",
+        "## nice-to-have",
+        "",
+        "None.",
+        "",
+        "## not-a-problem",
+        "",
+        `- ${idB} \`src/b.ts\` [BDK-CQ-1] short name (review-group)`,
+        "  - Level reason: idiomatic",
+        "  - Decision: defer #4",
+        "  - Decision reason: big",
+        "",
+        "## unleveled",
+        "",
+        "None.",
+        "",
+      ].join("\n"),
+    );
+  });
+
+  it("prints the path and the counts under --json", async () => {
+    const { files } = await judged();
+    const result = reportResult.parse(await json(files, "findings", "report", LOG));
+    expect(result.report).toBe(REPORT);
+    expect(result.counts.level.blocker).toBe(1);
+  });
+
+  it("writes the same report for the same log", async () => {
+    const { files } = await judged();
+    await bdk(files, "findings", "report", LOG);
+    const first = files.readText(REPORT);
+    await bdk(files, "findings", "report", LOG);
+    expect(files.readText(REPORT)).toBe(first);
+  });
+
+  it("replaces an earlier report", async () => {
+    const files = new MemoryFiles();
+    await bdk(files, "findings", "add", LOG, ...A);
+    files.writeText(REPORT, "stale\n");
+    await bdk(files, "findings", "report", LOG);
+    expect(files.readText(REPORT)).toContain(`## unleveled\n\n- ${idA} `);
+    await bdk(files, "findings", "level", LOG, idA, "should-fix");
+    await bdk(files, "findings", "report", LOG);
+    const text = files.readText(REPORT) ?? "";
+    expect(text).toContain(`## should-fix\n\n- ${idA} `);
+    expect(text).toContain("## unleveled\n\nNone.\n");
+    expect(text).not.toContain("stale");
+  });
+
+  it("lists skipped lines only when there are some", async () => {
+    const files = new MemoryFiles();
+    await bdk(files, "findings", "add", LOG, ...A);
+    await bdk(files, "findings", "report", LOG);
+    expect(files.readText(REPORT)).not.toContain("## Skipped lines");
+    files.appendText(LOG, "{oops\n");
+    await bdk(files, "findings", "report", LOG);
+    expect(files.readText(REPORT)).toMatch(/## Skipped lines\n\n- Line 2: not valid JSON\n$/);
+  });
+
+  it("reports a round without findings", async () => {
+    const files = new MemoryFiles([DIR]);
+    const result = reportResult.parse(await json(files, "findings", "report", LOG));
+    expect(result.counts.findings).toBe(0);
+    const text = files.readText(REPORT) ?? "";
+    expect(text.match(/^None\.$/gm)).toHaveLength(5);
+  });
+
+  it("reports a missing directory and writes nothing", async () => {
+    const files = new MemoryFiles();
+    expect(await error(files, "findings", "report", LOG)).toEqual({
+      code: 3,
+      error: "env/log-dir-missing",
+    });
+    expect(files.texts.size).toBe(0);
   });
 });

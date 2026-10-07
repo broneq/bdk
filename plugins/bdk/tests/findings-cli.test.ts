@@ -1,7 +1,7 @@
 import { spawn, spawnSync } from "node:child_process";
 import { cpSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { build } from "../build.ts";
@@ -106,5 +106,22 @@ describe("bdk findings, built", () => {
     const [finding] = listResult.parse(JSON.parse(listed.stdout)).findings;
     expect(finding).toMatchObject({ id, level: "blocker", decision: "fix" });
     expect(finding).not.toHaveProperty("issue");
+  });
+
+  it("writes report.md next to the log", () => {
+    const log = join(root, "runs", "report", "review", "round-1", "findings.jsonl");
+    const id = sync([
+      "findings",
+      "add",
+      log,
+      "--source",
+      "review-group",
+      "--summary",
+      "s",
+    ]).stdout.trim();
+    expect(sync(["findings", "level", log, id, "blocker"]).status).toBe(0);
+    const report = join(dirname(log), "report.md");
+    expect(sync(["findings", "report", log])).toMatchObject({ status: 0 });
+    expect(readFileSync(report, "utf8")).toContain(`## blocker\n\n- ${id} - s (review-group)\n`);
   });
 });

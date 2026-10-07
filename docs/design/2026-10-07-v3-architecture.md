@@ -579,7 +579,7 @@ The BDK rule pack works as in draft 1: one file per rule with `kind`, `paths` an
 - [ ] Whether a subagent can use `AskUserQuestion` itself (probe); today a lead returns a blocker and the main thread asks.
 - [ ] Whether the main thread in `claude -p` keeps running while a background lead works (probe); `execution.lead: foreground` covers non-interactive runs until then.
 - [ ] Exact JSON schemas of `run.json` and a part state (the finding events are in spec `bdk-cli/findings`).
-- [ ] Probe: does `!` resolve in a skill preloaded into an agent with `skills:`? If not, the agent's prompt carries the configuration from its caller.
+- [x] Probe: does `!` resolve in a skill preloaded into an agent with `skills:`? Yes, and `${CLAUDE_PLUGIN_ROOT}` is substituted too (probed on Claude Code 2.1.293 in #193).
 - [ ] The `Stop`/`SubagentStop` hook engine for the autopilot: deferred until measured; probes of the `Stop` payload (`background_tasks`, `last_assistant_message`) belong to that work.
 - [x] How many subagents run at once: `execution.max-parallel`, default measured in #200 ([D8](./2026-10-07-v3-skills-decisions.md#d8-wave-size-limit)).
 - [ ] When one session for the whole queue degrades quality: measured; the fallback is one session per Change.
