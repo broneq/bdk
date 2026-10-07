@@ -1,1 +1,4 @@
-{}
+{
+  "plugins/bdk-skill-kit": "0.3.0",
+  "plugins/git-identity": "0.2.0"
+}

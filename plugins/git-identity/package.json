@@ -1,0 +1,13 @@
+{
+  "name": "@bdk/git-identity",
+  "private": true,
+  "description": "Per-project GitHub account and git identity profiles for Claude Code",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "typecheck": "tsc -p ."
+  }
+}

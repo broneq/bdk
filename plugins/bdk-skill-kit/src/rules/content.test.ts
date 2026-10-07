@@ -1,0 +1,226 @@
+import { describe, expect, it } from "vitest";
+import type { Document, Report, Rule } from "../index.ts";
+import { agent, doc, skill } from "../test-helpers.ts";
+import { checkRule } from "../testing.ts";
+import {
+  absolutePaths,
+  argumentsTypo,
+  body,
+  lineLimit,
+  modelNames,
+  portableSyntax,
+  reasoningPrompts,
+} from "./content.ts";
+
+function run<O>(rule: Rule<O>, d: Document, options: Partial<O> = {}): Report[] {
+  const reports: Report[] = [];
+  rule.check?.(d, {
+    options: { ...(rule.defaultOptions ?? ({} as O)), ...options },
+    root: "/",
+    report: (r) => reports.push(r),
+  });
+  return reports;
+}
+
+describe("body", () => {
+  it("passes a body with text", () => {
+    expect(run(body, doc(skill("demo")))).toEqual([]);
+  });
+
+  it("reports an empty body after the frontmatter", () => {
+    expect(run(body, doc(skill("demo", "", "\n\n")))).toEqual([
+      { line: 5, message: "the body after the frontmatter is empty" },
+    ]);
+  });
+
+  it("skips a file whose frontmatter is not closed", () => {
+    expect(run(body, doc("---\nname: x\n"))).toEqual([]);
+  });
+});
+
+describe("line-limit", () => {
+  const lines = (n: number) => skill("demo", "", "x\n".repeat(n - 5));
+
+  it("passes a file at the limit", () => {
+    expect(run(lineLimit, doc(lines(500)))).toEqual([]);
+  });
+
+  it("reports a file over the default of 500", () => {
+    expect(run(lineLimit, doc(lines(501)))).toMatchObject([
+      { line: 501, message: "the skill file has 501 lines; the limit is 500" },
+    ]);
+  });
+
+  it("uses the max option", () => {
+    expect(run(lineLimit, doc(lines(201)), { max: 200 })).toHaveLength(1);
+  });
+});
+
+describe("absolute-paths", () => {
+  it.each([
+    "Read /Users/me/notes.md",
+    "Write to /home/me/out",
+    "cache in ~/.cache/x",
+    "open C:\\temp\\x",
+    "log to /tmp/run.log",
+  ])("reports %j", (line) => {
+    const [report] = run(absolutePaths, doc(skill("demo", "", `${line}\n`)));
+    expect(report?.line).toBe(6);
+    expect(report?.message).toMatch(
+      /^absolute path `.+`; use a path relative to the skill or a \$\{VAR\}$/,
+    );
+  });
+
+  it.each([
+    "Run ${CLAUDE_PLUGIN_ROOT}/dist/x.mjs",
+    "See https://example.com/home/page",
+    "Read references/guide.md",
+    "Use `a/b` and ./tmp/x",
+  ])("passes %j", (line) => {
+    expect(run(absolutePaths, doc(skill("demo", "", `${line}\n`)))).toEqual([]);
+  });
+
+  it("checks agents too", () => {
+    expect(
+      run(absolutePaths, doc(agent("rev", "", "Open /Users/x\n"), { kind: "agents" })),
+    ).toHaveLength(1);
+  });
+});
+
+describe("model-names", () => {
+  it("reports a model family in the body, not in the model field", () => {
+    const d = doc(skill("demo", "model: sonnet\n", "Delegate to a Haiku agent.\n"));
+    expect(run(modelNames, d)).toEqual([
+      {
+        line: 7,
+        message: "the body names the model `Haiku`; name the capability, not the model",
+        match: "Haiku",
+      },
+    ]);
+  });
+
+  it.each(["uses gpt-4o", "on gemini-2.5-pro", "opus"])("reports %j", (text) => {
+    expect(run(modelNames, doc(skill("demo", "", `${text}\n`)))).toHaveLength(1);
+  });
+
+  it("does not match inside words", () => {
+    expect(run(modelNames, doc(skill("demo", "", "the opuscule and sonnets\n")))).toEqual([]);
+  });
+
+  it("uses the names option", () => {
+    expect(
+      run(modelNames, doc(skill("demo", "", "try llama\n")), { names: ["llama"] }),
+    ).toHaveLength(1);
+  });
+});
+
+describe("reasoning-prompts", () => {
+  it("reports one finding per phrase per body line, case-insensitively", () => {
+    const d = doc(agent("rev", "", "Think step by step and show your reasoning first.\n"), {
+      kind: "agents",
+    });
+    expect(run(reasoningPrompts, d)).toEqual([
+      {
+        line: 6,
+        message:
+          "`Think step by step` asks the model to put its reasoning in the output; current models reason on their own and may decline the request; ask for a summary of the actions taken instead",
+        match: "Think step by step",
+      },
+      {
+        line: 6,
+        message:
+          "`show your reasoning` asks the model to put its reasoning in the output; current models reason on their own and may decline the request; ask for a summary of the actions taken instead",
+        match: "show your reasoning",
+      },
+    ]);
+  });
+
+  it.each([
+    "chain of thought",
+    "Fill a <thinking> section first.",
+    "Keep a scratchpad of your reasoning.",
+    "write out your thinking",
+  ])("reports %j", (text) => {
+    expect(run(reasoningPrompts, doc(skill("demo", "", `${text}\n`)))).toHaveLength(1);
+  });
+
+  it.each(["Think carefully.", "Think through the edge cases.", "Think hard about it."])(
+    "leaves encouragement alone: %j",
+    (text) => {
+      expect(run(reasoningPrompts, doc(skill("demo", "", `${text}\n`)))).toEqual([]);
+    },
+  );
+
+  it("matches whole words only and skips frontmatter other than the description", () => {
+    const d = doc(skill("demo", "argument-hint: chain of thought\n", "rethinking; a thinker.\n"));
+    expect(run(reasoningPrompts, d)).toEqual([]);
+  });
+
+  it("checks description and when_to_use at their own lines", () => {
+    const d = doc(
+      skill(
+        "demo",
+        "when_to_use: Use when asked to show your reasoning.\n",
+        "Report the defects.\n",
+      ).replace(
+        /^description: .*$/m,
+        "description: Reasons step by step. Use when a chain of thought is wanted.",
+      ),
+    );
+    expect(run(reasoningPrompts, d)).toMatchObject([
+      { line: 3, match: "chain of thought" },
+      { line: 4, match: "show your reasoning" },
+    ]);
+  });
+
+  it("uses the phrases option in place of the defaults", () => {
+    const d = doc(skill("demo", "", "think step by step; ponder deeply\n"));
+    expect(run(reasoningPrompts, d, { phrases: ["ponder deeply"] })).toMatchObject([
+      { match: "ponder deeply" },
+    ]);
+  });
+});
+
+describe("arguments-typo", () => {
+  it("reports $ARGUMENT without S", () => {
+    expect(run(argumentsTypo, doc(skill("demo", "", "Use $ARGUMENT here\n")))).toMatchObject([
+      { line: 6, message: "`$ARGUMENT` is not substituted; write `$ARGUMENTS`" },
+    ]);
+  });
+
+  it("passes $ARGUMENTS and $ARGUMENTS[0]", () => {
+    expect(run(argumentsTypo, doc(skill("demo", "", "$ARGUMENTS and $ARGUMENTS[0]\n")))).toEqual(
+      [],
+    );
+  });
+});
+
+describe("portable-syntax", () => {
+  const text = skill(
+    "craft",
+    "allowed-tools: Bash(${CLAUDE_SKILL_DIR}/run.sh *)\n",
+    "Read ${CLAUDE_PLUGIN_ROOT}/x and ${CLAUDE_PLUGIN_ROOT}/y.\n!`date`\n```!\ndate\n```\nPlain text, $ARGUMENTS and ${HOME}.\n",
+  );
+  const files = { "craft/SKILL.md": text };
+
+  it("reports Claude Code substitutions and blocks in a portable skill", async () => {
+    const findings = await checkRule(portableSyntax, { profile: "portable", files });
+    expect(findings.map((f) => [f.line, f.message.split(";")[0]])).toEqual([
+      [4, "`${CLAUDE_SKILL_DIR}` is Claude Code syntax"],
+      [7, "`${CLAUDE_PLUGIN_ROOT}` is Claude Code syntax"],
+      [8, "a `!` block is Claude Code syntax"],
+      [9, "a `!` block is Claude Code syntax"],
+    ]);
+  });
+
+  it("ignores skills outside the portable profile", async () => {
+    expect(await checkRule(portableSyntax, { files })).toEqual([]);
+  });
+
+  it("keys the fingerprint on the construct and the line text", async () => {
+    const moved = { "craft/SKILL.md": text.replace("\n\nRead", "\n\nIntro.\n\nRead") };
+    const a = await checkRule(portableSyntax, { profile: "portable", files });
+    const b = await checkRule(portableSyntax, { profile: "portable", files: moved });
+    expect(b.map((f) => f.fingerprint)).toEqual(a.map((f) => f.fingerprint));
+  });
+});

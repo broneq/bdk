@@ -1,0 +1,65 @@
+# Changelog
+
+## [0.3.0](https://github.com/broneq/bdk-skill-kit/compare/v0.2.2...v0.3.0) (2026-10-07)
+
+
+### ⚠ BREAKING CHANGES
+
+* the `skill-authoring` skill is removed. The plugin ships `skill-check` alone; use Anthropic's best practices and `skill-creator`.
+
+### Features
+
+* add --explain and reasoning-prompts rule, drop skill-authoring ([28086a2](https://github.com/broneq/bdk-skill-kit/commit/28086a2a5040318148b95bb9c727d9be9cbaa12b))
+
+## [0.2.2](https://github.com/broneq/bdk-skill-kit/compare/v0.2.1...v0.2.2) (2026-09-28)
+
+
+### Features
+
+* treat a skills dir nested in another as a container ([daa432d](https://github.com/broneq/bdk-skill-kit/commit/daa432d1ae8cb9a395bcb8f87dcf62522ff451d5))
+* treat a skills dir nested in another as a container ([b141885](https://github.com/broneq/bdk-skill-kit/commit/b14188571023b807338b1ea552db72cdd0d7a17e))
+
+## [0.2.1](https://github.com/broneq/bdk-skill-kit/compare/v0.2.0...v0.2.1) (2026-09-26)
+
+
+### Bug Fixes
+
+* skip gitignored files in skill discovery ([540eb03](https://github.com/broneq/bdk-skill-kit/commit/540eb0341ca83b886be43eff9c88add62a357bd1))
+* skip gitignored files in skill discovery ([57da5a0](https://github.com/broneq/bdk-skill-kit/commit/57da5a0f2d4a62c08ae043886d657c18bbe664ee)), closes [#6](https://github.com/broneq/bdk-skill-kit/issues/6)
+
+## [0.2.0](https://github.com/broneq/bdk-skill-kit/compare/v0.1.2...v0.2.0) (2026-09-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* portable-syntax is on by default and reports Claude Code syntax in portable skills that passed before.
+
+### Features
+
+* add project policy rules and portable-syntax ([297d836](https://github.com/broneq/bdk-skill-kit/commit/297d836f505482d69ff4f30d66fc92fa25ee1425))
+
+## [0.1.2](https://github.com/broneq/bdk-skill-kit/compare/v0.1.1...v0.1.2) (2026-09-25)
+
+
+### Features
+
+* add in-process rule tester as bdk-skill-kit/testing ([6b35c22](https://github.com/broneq/bdk-skill-kit/commit/6b35c222b2dcb32eb428d616b2a2910aac6bf038))
+
+
+### Bug Fixes
+
+* keep baseline fingerprints stable across length, position and option changes ([31e7f61](https://github.com/broneq/bdk-skill-kit/commit/31e7f61a2862a2f26cd767d18932861deb1ee3c9))
+
+## [0.1.1](https://github.com/broneq/bdk-skill-kit/compare/v0.1.0...v0.1.1) (2026-09-25)
+
+
+### Bug Fixes
+
+* exit quietly when stdout is closed early ([2dcef55](https://github.com/broneq/bdk-skill-kit/commit/2dcef551a6f9efcedf46b949597b793292571f1e))
+
+## 0.1.0 (2026-09-25)
+
+
+### Features
+
+* add skill-check validator, rule catalogue, baseline and kit skills ([c423889](https://github.com/broneq/bdk-skill-kit/commit/c423889381055dd5adea9ccdccdd305b36e199ac))

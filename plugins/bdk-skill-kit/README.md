@@ -1,0 +1,159 @@
+# bdk-skill-kit
+
+Deterministic checks and authoring guidance for [Agent Skills](https://agentskills.io/specification) and Claude Code subagent files.
+
+- **`skill-check`**, a CLI that validates skill directories and agent files: frontmatter per host profile, size, references, layout, duplicate names and thin CLI-fronting skills. It has no runtime dependencies beyond Node.
+- **One skill** for the agent, `skill-check`: when to run the checker and how to read a finding. Writing a skill is Anthropic's process (the Agent Skills best practices and the `skill-creator` skill); the kit checks the result and explains each rule with `skill-check --explain <rule>`.
+
+## Install
+
+### As a Claude Code plugin
+
+The kit is listed in the BDK marketplace:
+
+```text
+/plugin marketplace add broneq/bdk
+/plugin install bdk-skill-kit@bdk
+```
+
+The plugin brings the `skill-check` skill, which runs the bundled CLI from the plugin directory.
+
+### As a project dev dependency
+
+For CI and pre-commit hooks, pin a commit of the `release` branch of [broneq/bdk](https://github.com/broneq/bdk), where each release of the kit lands built under `plugins/bdk-skill-kit/`. The package is not on npm.
+
+```sh
+pnpm add -D "github:broneq/bdk#<release-commit>&path:/plugins/bdk-skill-kit"
+pnpm exec skill-check --help
+```
+
+Releases up to 0.3.0 came from the archived repository `broneq/bdk-skill-kit`, whose tags still install as `github:broneq/bdk-skill-kit#v0.3.0`.
+
+Node 22.18 or newer is required, so that a `skill-check.config.ts` loads without a build step.
+
+## Configure
+
+`skill-check` reads `skill-check.config.ts` (or `.mjs`, `.js`) from the working directory. A target is a set of directories checked with one profile: `claude-code` (the default) accepts the Claude Code fields, and `portable` accepts only the six fields of the Agent Skills standard.
+
+```ts
+import { defineConfig } from "bdk-skill-kit";
+
+export default defineConfig({
+  targets: [
+    { kind: "skills", dirs: ["skills"] },
+    { kind: "agents", dirs: ["agents"] },
+    { kind: "skills", dirs: [".claude/skills"], plugin: false },
+    { kind: "agents", dirs: [".claude/agents"], plugin: false },
+    { kind: "skills", dirs: ["craft"], profile: "portable", name: "craft" },
+  ],
+  rules: {
+    "description-front-loaded": "error",
+    "require-model": "error",
+    layout: ["error", { allowed: ["references", "scripts", "assets", "examples"] }],
+  },
+  baseline: "skill-check.baseline.json",
+});
+```
+
+A skills dir may sit inside another one, for example `dirs: ["skills", "skills/roles"]`: the outer scan then treats `skills/roles` as a container of skills, not as a skill directory without `SKILL.md`.
+
+A target is a plugin's by default. On agents that means `hooks`, `mcpServers`, `permissionMode` and `initialPrompt`, which plugin agents ignore, are reported; `plugin: false` admits them for agents under `.claude/agents/`. On skills, `plugin: false` makes `name-format` report the names Claude Code reserves outside a plugin, `synced` and `anthropic-skills`.
+
+A rule setting is `"off"`, `"warning"`, `"error"` or `[severity, options]`. A target can override settings with its own `rules`.
+
+### Project policy rules
+
+Six generic rules encode a project's own choices, so they are off by default and take those choices as options. Enabling one without the options it needs, or with malformed ones, exits 2 and names the rule.
+
+```ts
+rules: {
+  // `!` blocks: only this whole-line form, and the allowed-tools entries it needs.
+  "block-form": ["error", { patterns: ["!`node \"\\$\\{CLAUDE_PLUGIN_ROOT\\}/dist/tool\\.mjs\" ctx [a-z-]+`"] }],
+  "block-allowed-tools": ["error", { require: ['Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/tool.mjs" *)'] }],
+  // Words or substrings, anywhere or only in code; `allow` exempts skills or agents by name.
+  "forbidden-text": ["error", { terms: [
+    { words: ["mcp__plugin_acme_"], match: "substring", message: "call the CLI instead" },
+    { words: ["make", "jest"], where: "code", message: "name the task, not one stack's command", allow: ["setup"] },
+  ] }],
+  // Frontmatter that named skills or agents must carry.
+  "required-fields": ["error", { entries: [
+    { names: ["ship"], field: "disable-model-invocation", equals: true, reason: "only the user starts it" },
+    { names: ["execute"], field: "disallowed-tools", includes: ["Edit", "Write", "NotebookEdit"] },
+  ] }],
+  // `/name` and `subagent_type: name` of the checked skills and agents must carry the namespace.
+  "namespaced-refs": ["error", { namespace: "acme" }],
+},
+```
+
+`body-shape` (`maxLines`, `maxSentences`, `endsWith`) fixes the shape of a body, usually as a target setting on an agents target. `portable-syntax`, on by default, reports `!` blocks and `${CLAUDE_*}` variables in skills of the portable profile.
+
+## Add project rules
+
+A plugin adds rules under its own name, so rule `x` of plugin `acme` is `acme/x`:
+
+```ts
+import { definePlugin, defineRule } from "bdk-skill-kit";
+
+const noTodo = defineRule({
+  id: "no-todo",
+  kinds: ["skills"],
+  defaultSeverity: "error",
+  check(doc, ctx) {
+    doc.lines.forEach((line, i) => {
+      if (line.includes("TODO")) ctx.report({ line: i + 1, message: "resolve the TODO", match: line });
+    });
+  },
+});
+
+export default definePlugin({ name: "acme", rules: [noTodo] });
+```
+
+List the plugin in the config with `plugins: [acme]`. A rule with `checkProject` instead of `check` runs once over every document of its kinds. A rule that takes options can declare `validateOptions(options)`, returning what is wrong with them or `undefined`; the loader calls it for every enabled rule, so a bad setting exits 2 instead of failing mid-run.
+
+## Testing rules
+
+`checkRule` from `bdk-skill-kit/testing` runs one rule in process, through the same parser, option merging and runner as the CLI, so a plugin's unit tests count toward its coverage:
+
+```ts
+import { checkRule } from "bdk-skill-kit/testing";
+
+const findings = await checkRule(noTodo, {
+  files: { "plan/SKILL.md": "---\nname: plan\n---\n\nTODO: finish\n" },
+});
+// [{ rule: "no-todo", severity: "error", file: "plan/SKILL.md", line: 5, message: "resolve the TODO", ... }]
+```
+
+`files` maps paths relative to one target directory to their contents; the tester writes them to a temporary directory and removes it afterwards. `kind` (`skills` or `agents`, default `skills`) and `profile` (default `claude-code`) set up the target, and `options` merges over the rule's `defaultOptions` like a config setting. It runs both `check` and `checkProject`, and runs a rule that is `off` by default at `error`. The finding's `rule` is the rule's own ID, without the plugin prefix.
+
+## Adopt on an existing tree
+
+A baseline records today's findings so that only new ones fail. It can only shrink:
+
+```sh
+pnpm exec skill-check --baseline-init
+pnpm exec skill-check --baseline-prune
+```
+
+`--baseline-init` refuses to overwrite an existing file. A baseline entry that no longer matches a finding is a `baseline-stale` error until `--baseline-prune` removes it, and prune never adds entries.
+
+## Rules
+
+The rule catalogue, the profiles and the exit codes are specified in the [`skill-kit` spec](../../openspec/specs/skill-kit/spec.md). `skill-check --help` is the usage reference, `skill-check --list-rules` prints the rules a config enables, and `skill-check --explain <rule>` prints what a rule checks, why, how to fix a finding and its options. A plugin rule can carry the same text in its `explain` field.
+
+## Develop
+
+The kit lives in the [BDK repository](https://github.com/broneq/bdk) and uses its root toolchain. From the repository root:
+
+```sh
+pnpm install
+pnpm check            # lint, format check, typecheck, tests with coverage, build
+pnpm --filter bdk-skill-kit build
+```
+
+`dist/` is not committed. The test suite builds it before the tests that run the bundles (`vitest.setup.ts`), and the release job builds it onto the `release` branch. The tests include the self-check: the built CLI over the kit's own `skills/` with `skill-check.config.ts`. Releases are cut per plugin by release-please from Conventional Commits, as tags `bdk-skill-kit--v<version>`; the version lives only in `.claude-plugin/plugin.json`.
+
+A change to the contract (a rule, an option, the output, the exit codes) runs as an [OpenSpec](https://github.com/Fission-AI/OpenSpec) change that updates `openspec/specs/skill-kit/spec.md` at the repository root in the same PR, following the repository's SDLC.
+
+## License
+
+MIT

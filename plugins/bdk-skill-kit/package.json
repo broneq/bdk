@@ -1,0 +1,40 @@
+{
+  "name": "bdk-skill-kit",
+  "private": true,
+  "description": "Deterministic validation for Agent Skills and Claude Code agent files, plus the rules for writing them",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/broneq/bdk.git",
+    "directory": "plugins/bdk-skill-kit"
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "bin": {
+    "skill-check": "dist/skill-check.mjs"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.mjs"
+    },
+    "./testing": {
+      "types": "./dist/testing.d.ts",
+      "default": "./dist/testing.mjs"
+    }
+  },
+  "files": [
+    "dist/",
+    ".claude-plugin/plugin.json"
+  ],
+  "scripts": {
+    "build": "node build.ts",
+    "typecheck": "tsc -p ."
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "yaml": "2.9.1"
+  }
+}

@@ -269,7 +269,7 @@ flowchart TB
 - [ ] How release-please relates to `staging/v3` while v3 is in progress (target: runs on `main` only; v3 lands through the merge of `staging/v3`).
 - [ ] Re-probe `plugin-bin-hook` on newer Claude Code versions.
 - [ ] Follow-up task (phase 0): migrate v2 into the layout (move the core to `plugins/bdk/`, remove or port the Python hooks and the pytest job, quote `${CLAUDE_PLUGIN_ROOT}`), before CI switches to the new jobs.
-- [ ] Follow-up task (phase 0): merge `git-identity` and `bdk-skill-kit` with history, then archive both repositories.
+- [x] Follow-up task (phase 0): merge `git-identity` and `bdk-skill-kit` with history, then archive both repositories (#175).
 
 ---
 
