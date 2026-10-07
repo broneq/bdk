@@ -5,6 +5,7 @@ import { add } from "./commands/add.ts";
 import { decide } from "./commands/decide.ts";
 import { level } from "./commands/level.ts";
 import { list } from "./commands/list.ts";
+import { report } from "./commands/report.ts";
 
 export { addFinding } from "./use-cases/add.ts";
 export type { AddInput } from "./use-cases/add.ts";
@@ -19,7 +20,8 @@ export interface FindingsDeps {
 export function findingsGroup({ files }: FindingsDeps): Group {
   return {
     name: "findings",
-    summary: "Record findings, levels and decisions of a review round; list them folded",
-    commands: [add(files), level(files), decide(files), list(files)],
+    summary:
+      "Record findings, levels and decisions of a review round; list them folded; write the report",
+    commands: [add(files), level(files), decide(files), list(files), report(files)],
   };
 }
