@@ -39,25 +39,12 @@ openspec/                        - SDLC specs and changes
 - Node only, no Python. `dist/` is never committed; the release job builds the released plugin and writes it to the `release` branch.
 - Hooks call `node "${CLAUDE_PLUGIN_ROOT}/dist/<cli>.mjs"`; everything else calls `bin/<cli>`.
 
-## Current state (v2, being replaced)
+## Current state
 
-The code on `staging/v3` is still v2. Its layout:
+The repository holds no plugin yet: only `docs/`, repo metadata and `.claude-plugin/marketplace.json`. v2 is gone from this line; its source stays in git history and on `main` (tag `v2.7.0`).
 
-```
-skills/                  - thin workflow definitions (language-agnostic)
-agents/                  - subagent definitions used internally by skills
-hooks/                   - hooks.json + shell scripts
-rules/                   - convention docs distributed WITH the plugin to end-users
-STARTUP_INSTRUCTIONS.md  - injected into user sessions at SessionStart via hook
-tests/evals/             - skill behavior evals (LLM output grading, iterations)
-tests/unit/              - pytest unit/integration tests for scripts
-docs/                    - design material and the draft 1 archive
-```
-
-> `rules/` = BDK distributable output - ships to user projects. Not `.claude/rules/` (dev-time conventions for BDK itself).
-
-- Skills must be **language-agnostic** - no hardcoded `pytest`, `go test`, `npm test`, etc.
-- Skills reference each other with full namespace: `/bdk:create-plan`, `/bdk:debug`
+- Until `plugins/bdk/` exists, the `bdk` marketplace entry pins the `v2.7.0` tag, so `/plugin install bdk@bdk` still installs v2.
+- v2 tools come back one by one in their own tasks, rebuilt as v3 skills (see "Building skills (v3)").
 
 ## Language
 
@@ -91,23 +78,12 @@ Every piece of work is a GitHub issue, an OpenSpec Change and a PR into `staging
 ## Development Commands
 
 ```bash
-# Install BDK locally into a test project
-# Launch Claude Code from the target project directory with:
-claude --plugin-dir ~/projects/bdk
-
-# Invoke a skill in the test project
-/bdk:commit
-/bdk:debug
+# Run a plugin from this repository in a separate test project
+# (launch Claude Code from the target project directory):
+claude --plugin-dir ~/projects/bdk/plugins/<name>
 ```
 
 Never try a BDK skill inside this repository; run it in a separate test project started with `claude --plugin-dir`.
-
-## Modifying the Shared Foundation
-
-`STARTUP_INSTRUCTIONS.md` injected into every user session. Changes affect all skills.
-- Keep concise - occupies context every session start
-- Verify skills relying on modified section still work
-- Test in isolated project after changes
 
 ## Plugin Reference Verification
 
