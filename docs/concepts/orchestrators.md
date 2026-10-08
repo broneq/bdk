@@ -17,7 +17,7 @@ flowchart TB
   S5 --> S6["permission allow rules<br/>.claude/settings.json"]
   S6 --> S7["openspec init, bdk openspec install,<br/>schema: bdk"]
   S7 --> S8["gitignore .bdk/runs/ and settings.local.yaml"]
-  S8 --> S9["bdk config show, report"]
+  S8 --> S9["bdk config show, npx -y lavish-axi --version,<br/>report with the decision surface"]
 ```
 
 A re-run keeps every value a layer sets and fills only what is missing; an argument such as "add the e2e entry" limits the run to that change.
