@@ -71,6 +71,7 @@ The configuration SHALL accept exactly these keys; any other key at any level SH
 | `plan.part.max-tasks`, `plan.part.max-files`, `plan.part.max-bytes` | integer, at least 1                                                                           | `5`, `10`, `8192` |
 | `steps.<orchestrator>`                               | items by `id`: `enabled` (boolean, optional), `use` (project skill or agent replacing the block, optional)    | none set     |
 | `execution.lead`                                     | `background` or `foreground`                                                                                 | `background` |
+| `execution.max-parallel`                             | integer, at least 1: the most part agents the execute lead runs at once                                      | `10`         |
 | `hooks.subagent-git`                                 | boolean                                                                                                      | `false`      |
 
 A missing required field, a value of the wrong type or outside its allowed values SHALL be a problem naming the full dotted key and what is allowed. The task that builds the consumer of a key MAY change that key's row through a delta of this spec.
@@ -99,6 +100,11 @@ A missing required field, a value of the wrong type or outside its allowed value
 
 - **WHEN** no layer sets `policy.budgets.verifier` and the project layer sets nothing under `policy`
 - **THEN** `bdk config show policy.budgets.verifier` prints 3 with origin `default`, and `policy.budgets.verifier: 0` in a layer makes `bdk config check` report `policy.budgets.verifier` and exit 1
+
+#### Scenario: Wave size limit
+
+- **WHEN** no layer sets `execution.max-parallel`, and later the local layer sets `execution.max-parallel: 0`
+- **THEN** `bdk config show execution.max-parallel` first prints 10 with origin `default`, then `bdk config check` reports `execution.max-parallel` and that it must be at least 1, and exits 1
 
 ### Requirement: Configured project
 

@@ -41,6 +41,7 @@ describe("bdk config show", () => {
     expect(lines).toContain('languages: ["typescript"]  # project');
     expect(lines).toContain('models.implementer: "sonnet"  # local');
     expect(lines).toContain('execution.lead: "background"  # default');
+    expect(lines).toContain("execution.max-parallel: 10  # default");
   });
 
   it("prints exactly the stop line with exit 0 when not configured", async () => {

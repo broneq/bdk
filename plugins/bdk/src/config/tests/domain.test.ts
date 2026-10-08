@@ -33,7 +33,7 @@ describe("defaults", () => {
       },
       plan: { part: { "max-tasks": 5, "max-files": 10, "max-bytes": 8192 } },
       steps: {},
-      execution: { lead: "background" },
+      execution: { lead: "background", "max-parallel": 10 },
       hooks: { "subagent-git": false },
     });
   });
@@ -273,6 +273,15 @@ describe("validate", () => {
     expect(validate([budget(2)], suggest).settings?.policy.budgets.verifier).toBe(2);
     expect(validate([budget(0)], suggest).problems.map((problem) => problem.key)).toEqual([
       "policy.budgets.verifier",
+    ]);
+  });
+
+  it("defaults the wave size limit to 10 and reports a limit below 1", () => {
+    const limit = (value: unknown) => layer("local", { execution: { "max-parallel": value } });
+    expect(validate([], suggest).settings?.execution["max-parallel"]).toBe(10);
+    expect(validate([limit(4)], suggest).settings?.execution["max-parallel"]).toBe(4);
+    expect(validate([limit(0)], suggest).problems.map((problem) => problem.key)).toEqual([
+      "execution.max-parallel",
     ]);
   });
 

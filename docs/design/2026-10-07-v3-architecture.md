@@ -577,11 +577,11 @@ The BDK rule pack works as in draft 1: one file per rule with `kind`, `paths` an
 
 - [ ] Living architecture documentation for user projects: dropped for v3.0. Specs cover behaviour only; a `docs-sync` block can be added later without changing the rest.
 - [ ] Whether a subagent can use `AskUserQuestion` itself (probe); today a lead returns a blocker and the main thread asks.
-- [ ] Whether the main thread in `claude -p` keeps running while a background lead works (probe); `execution.lead: foreground` covers non-interactive runs until then.
+- [x] Whether the main thread in `claude -p` keeps running while a background lead works: yes, it waits for the lead's notification (probed on Claude Code 2.1.294 in #200); `execution.lead: foreground` stays a switch.
 - [ ] Exact JSON schemas of `run.json` and a part state (the finding events are in spec `bdk-cli/findings`).
 - [x] Probe: does `!` resolve in a skill preloaded into an agent with `skills:`? Yes, and `${CLAUDE_PLUGIN_ROOT}` is substituted too (probed on Claude Code 2.1.293 in #193).
 - [ ] The `Stop`/`SubagentStop` hook engine for the autopilot: deferred until measured; probes of the `Stop` payload (`background_tasks`, `last_assistant_message`) belong to that work.
-- [x] How many subagents run at once: `execution.max-parallel`, default measured in #200 ([D8](./2026-10-07-v3-skills-decisions.md#d8-wave-size-limit)).
+- [x] How many subagents run at once: 19 workers under one lead ran at once in the probe of #200, the host refusing the 20th (20 running subagents per session); `execution.max-parallel` defaults to 10 ([D8](./2026-10-07-v3-skills-decisions.md#d8-wave-size-limit)).
 - [ ] When one session for the whole queue degrades quality: measured; the fallback is one session per Change.
 - [x] Stacked PR upkeep: no stacking ([D9](./2026-10-07-v3-skills-decisions.md#d9-no-stacked-prs)).
 - [x] Lavish in user projects: optional, `AskUserQuestion` without it ([D4](./2026-10-07-v3-skills-decisions.md#d4-lavish)).
