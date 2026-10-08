@@ -2,7 +2,7 @@
 name: setup
 description: 'Configures a project for BDK in one run - detects the stack and how to start the product for E2E, writes .bdk/settings.yaml, adds permission allow rules, initialises OpenSpec with the BDK schema. Use when setting up or starting BDK in a project, when a BDK skill says "BDK not configured: run /bdk:setup" or reports an invalid configuration, or to change what setup detected.'
 argument-hint: "[what to change, e.g. 'add the e2e entry']"
-allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(openspec *) Bash(npx -y @fission-ai/openspec@1.13.2 *) Bash(git check-ignore *) Bash(node -e *) Bash(pnpm add -D @playwright/test@1.63.0) Bash(pnpm --filter * add -D @playwright/test@1.63.0) Bash(npm install -D @playwright/test@1.63.0) Bash(npm install -D @playwright/test@1.63.0 -w *) Bash(yarn add -D @playwright/test@1.63.0) Bash(yarn workspace * add -D @playwright/test@1.63.0) Bash(bun add -d @playwright/test@1.63.0) Bash(bun add -d @playwright/test@1.63.0 --cwd *) Bash(pnpm exec playwright install chromium) Bash(pnpm --filter * exec playwright install chromium) Bash(npx playwright install chromium) Bash(yarn playwright install chromium) Bash(bunx playwright install chromium) Read Write Edit Glob Grep AskUserQuestion
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(openspec *) Bash(npx -y @fission-ai/openspec@1.13.2 *) Bash(git check-ignore *) Bash(node -e *) Bash(pnpm add -D @playwright/test@1.63.0) Bash(pnpm --filter * add -D @playwright/test@1.63.0) Bash(npm install -D @playwright/test@1.63.0) Bash(npm install -D @playwright/test@1.63.0 -w *) Bash(yarn add -D @playwright/test@1.63.0) Bash(yarn workspace * add -D @playwright/test@1.63.0) Bash(bun add -d @playwright/test@1.63.0) Bash(bun add -d @playwright/test@1.63.0 --cwd *) Bash(pnpm exec playwright install chromium) Bash(pnpm --filter * exec playwright install chromium) Bash(npx playwright install chromium) Bash(yarn playwright install chromium) Bash(bunx playwright install chromium) Bash(npx -y lavish-axi --version) Read Write Edit Glob Grep AskUserQuestion
 ---
 
 Current BDK configuration of this project:
@@ -104,10 +104,15 @@ Done when the install ran or was not asked for, and you know which report line o
 
 ## 10. Verify and report
 
-Run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" config show` and confirm it prints the configuration, not a "not configured" or "invalid" line. Then report briefly:
+Run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" config show` and confirm it prints the configuration, not a "not configured" or "invalid" line.
+
+Then check which decision surface the project gets: run `npx -y lavish-axi --version` once. Exit 0 means BDK asks the user through a Lavish page; any other exit, or a command that cannot run, means `AskUserQuestion`. Never install Lavish and write nothing for it: `design-draft` and `triage` choose their surface again when they ask.
+
+Report briefly:
 
 - each value written, with the file it came from (`tools.test.vitest: pnpm test (package.json scripts.test)`);
 - E2E: the entries written, or "E2E skipped" with the reason (a library has nothing to run); for a `browser` item, the Playwright line of [Playwright](references/e2e.md#playwright);
+- the decision surface, in one line: "questions and triage use a Lavish page" or "questions and triage use AskUserQuestion; install lavish-axi for a browser review page";
 - the files created or changed, left uncommitted for review;
 - answers taken without asking, and anything left for the user (installing OpenSpec, an install of Playwright not asked for or declined, a group the project has none of);
 - how to change a value: `bdk config set <key> <value>` or an edit of `.bdk/settings.yaml`, then `bdk config check`.

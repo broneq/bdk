@@ -14,6 +14,7 @@ Every BDK command reads the project's configuration first. Until a project has o
 4. **Adds permission rules** to `.claude/settings.json`, so the stages can run `bdk`, `openspec`, `git`, `gh` and your project's commands without asking each time. Claude Code asks you to approve this write, and applies the rules only in a project folder you trusted (the dialog Claude Code shows the first time you open the folder).
 5. **Sets up OpenSpec** with the BDK schema: `openspec/config.yaml` says `schema: bdk`, and the schema lives in `openspec/schemas/bdk/`.
 6. **Keeps run files out of git:** `.bdk/runs/` and `.bdk/settings.local.yaml` go into `.gitignore`; `.bdk/settings.yaml` stays tracked, so the team shares it.
+7. **Reports where you will answer questions.** It runs `npx -y lavish-axi --version`: when it works, design questions and review triage come as a Lavish page in the browser; otherwise they come as `AskUserQuestion` in the terminal, and the report suggests installing `lavish-axi` for the browser page. Setup installs nothing for it.
 
 Setup commits nothing: review the files and commit them yourself.
 

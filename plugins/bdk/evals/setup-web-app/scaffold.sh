@@ -122,3 +122,16 @@ TS
 git init --quiet --initial-branch=main
 git add .
 git -c user.name="BDK eval" -c user.email="eval@example.invalid" commit --quiet -m "feat: habit board"
+
+# A lavish-axi stub that npx -y runs first: Lavish runs in this session.
+mkdir -p node_modules/lavish-axi node_modules/.bin
+cat > node_modules/lavish-axi/package.json <<'JSON'
+{ "name": "lavish-axi", "version": "0.0.0-eval", "bin": { "lavish-axi": "cli.js" } }
+JSON
+cat > node_modules/lavish-axi/cli.js <<'JS'
+#!/usr/bin/env node
+if (process.argv[2] === "--version") console.log("0.0.0-eval");
+else { console.error("lavish-axi: setup only checks the version"); process.exit(1); }
+JS
+chmod +x node_modules/lavish-axi/cli.js
+ln -s ../lavish-axi/cli.js node_modules/.bin/lavish-axi
