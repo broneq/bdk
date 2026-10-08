@@ -154,6 +154,13 @@ The `pr-review-*` cases are the orchestrator cases of `/bdk:pr-review` (one arm)
 PATH=".git/bdk-eval/bin:$PATH" pnpm --filter @bdk/bdk run eval --ablation none --tag orchestrator --allow-tools Write Edit "Bash(*/bin/bdk *)" "Bash(gh *)" "Bash(git *)" "Bash(cd *)" "Bash(mkdir -p *)" --case 'pr-review-*'
 ```
 
+The `diagnose-bug-*` and `debug-*` cases start from the shared fixture `tally-bug.sh`: the configured tally CLI on `main` with its main spec `tally`, a `cli` e2e item, a local git identity, no open Change, and one seeded bug (`tally add` stores the text it was given, so `tally total` after an add crashes). The prompts name the fix Change `fix-total-crash`, so the graders read its files by path. `diagnose-bug` reproduces the bug through commands the skill cannot know in advance, so the cases need `Bash` itself, as the `e2e-check-*` cases do. The block cases grade the reproduction, the fix Change and that no code was edited; `debug-fix` (orchestrator, both gates `auto`, `execution.lead: foreground`) runs the whole fix - `diagnose-bug`, `commit`, `execute` with a `bdk:implementer` and a `bdk:conformer`, and `auto-review` with reviewers, the E2E tester, an opus integration reviewer and the judge - and is the acceptance signal of `/bdk:debug`; `debug-manual-gate` grades that the default gate asks before anything is committed or built. Expect `debug-fix` to take tens of minutes and a few dollars per run (on a Mac, see the `git` entry of "Host limits"):
+
+```bash
+pnpm --filter @bdk/bdk run eval --trust-plugin --allow-tools Write Edit Bash --case 'diagnose-bug-*'
+pnpm --filter @bdk/bdk run eval --trust-plugin --ablation none --tag orchestrator --allow-tools Write Edit Bash --case 'debug-*'
+```
+
 A grader on the order of Bash calls is a `regex` on the trace, not `tool_order`: the free check loads cases with the grants `Write Edit`, under which a `tool_order` naming Bash cannot pass.
 
 `--case` takes one glob; a repeated `--case` keeps only the last.
