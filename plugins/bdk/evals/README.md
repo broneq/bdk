@@ -132,6 +132,12 @@ The `close-*` cases are the orchestrator cases of `/bdk:close` (one arm). They s
 PATH=".git/bdk-eval/bin:$PATH" pnpm --filter @bdk/bdk run eval --ablation none --tag orchestrator --allow-tools Write Edit "Bash(*/bin/bdk *)" "Bash(openspec *)" "Bash(gh *)" "Bash(git *)" --case 'close-*'
 ```
 
+The `pr-review-*` cases are the orchestrator cases of `/bdk:pr-review` (one arm). They start from the shared fixture `monthly-report-pr.sh`: the `monthly-report` Change with its two seeded bugs as pull request 7 of a bare `origin` inside the workspace (`refs/pull/7/head`), the user's checkout on `main`, and the offline `gh` stand-in, which answers `gh pr view 7`, `gh repo view` and `gh api user`, and records a posted review in `.git/bdk-eval/reviews/7-<k>.json`. One `bdk:lead` fetches the head into `.bdk/runs/pr-7/worktree`, records the groups and runs the review blocks there (two `bdk:reviewer`, an opus `bdk:integration-reviewer`, a `bdk:judge`). `pr-review-post` asks to post without a question; `pr-review-confirm` does not, and grades that nothing is posted (on a Mac, see the `git` entry of "Host limits"):
+
+```bash
+PATH=".git/bdk-eval/bin:$PATH" pnpm --filter @bdk/bdk run eval --ablation none --tag orchestrator --allow-tools Write Edit "Bash(*/bin/bdk *)" "Bash(gh *)" "Bash(git *)" "Bash(cd *)" "Bash(mkdir -p *)" --case 'pr-review-*'
+```
+
 A grader on the order of Bash calls is a `regex` on the trace, not `tool_order`: the free check loads cases with the grants `Write Edit`, under which a `tool_order` naming Bash cannot pass.
 
 `--case` takes one glob; a repeated `--case` keeps only the last.

@@ -434,4 +434,121 @@ describe("offline gh stand-in", () => {
     expect(status).toBe(1);
     expect(stderr).toContain('no pull requests found for branch "add-total"');
   });
+
+  const PR = {
+    number: 7,
+    url: "https://github.com/bdk-eval/repo/pull/7",
+    state: "MERGED",
+    isDraft: false,
+    author: { login: "teammate" },
+    baseRefName: "main",
+    headRefName: "monthly-report",
+    headRefOid: "0123456789abcdef0123456789abcdef01234567",
+    title: "Monthly report",
+    body: "Adds `ledger report`.",
+    closingIssuesReferences: [],
+  };
+
+  /** A workspace whose scaffold wrote pull request 7, as the pr-review fixture does. */
+  function prWorkspace(): string {
+    const dir = workspace();
+    mkdirSync(join(dir, ".git", "bdk-eval", "prs"), { recursive: true });
+    writeFileSync(join(dir, ".git", "bdk-eval", "prs", "7.json"), JSON.stringify(PR));
+    return dir;
+  }
+
+  it.each([["7"], ["#7"], ["https://github.com/bdk-eval/repo/pull/7"]])(
+    "views pull request %s by number, whatever its state",
+    (ref) => {
+      const { status, stdout } = gh(
+        prWorkspace(),
+        "pr",
+        "view",
+        ref,
+        "--json",
+        "number,headRefOid,author,state",
+      );
+      expect(status).toBe(0);
+      expect(JSON.parse(stdout)).toEqual({
+        author: { login: "teammate" },
+        headRefOid: PR.headRefOid,
+        number: 7,
+        state: "MERGED",
+      });
+    },
+  );
+
+  it("fails like gh for a pull request number the scaffold did not write", () => {
+    const { status, stderr } = gh(workspace(), "pr", "view", "9");
+    expect(status).toBe(1);
+    expect(stderr).toContain("GraphQL: Could not resolve to a PullRequest with the number of 9.");
+  });
+
+  it("views the repository and the user", () => {
+    const dir = workspace();
+    const repo = gh(dir, "repo", "view", "--json", "nameWithOwner,url");
+    expect(repo.status).toBe(0);
+    expect(JSON.parse(repo.stdout)).toEqual({
+      nameWithOwner: "bdk-eval/repo",
+      url: "https://github.com/bdk-eval/repo",
+    });
+    const user = gh(dir, "api", "user");
+    expect(user.status).toBe(0);
+    expect(JSON.parse(user.stdout)).toEqual({ login: "bdk-eval-user" });
+  });
+
+  function postReview(dir: string, review: unknown, ...flags: string[]) {
+    writeFileSync(join(dir, "review.json"), JSON.stringify(review));
+    return gh(
+      dir,
+      "api",
+      "repos/bdk-eval/repo/pulls/7/reviews",
+      ...(flags.length > 0 ? flags : ["-X", "POST"]),
+      "--input",
+      "review.json",
+    );
+  }
+
+  it("records a posted review and answers with its id and state", () => {
+    const dir = prWorkspace();
+    const review = { commit_id: PR.headRefOid, event: "REQUEST_CHANGES", body: "x", comments: [] };
+    const first = postReview(dir, review);
+    expect(first.status).toBe(0);
+    expect(JSON.parse(first.stdout)).toEqual({
+      id: 1,
+      html_url: "https://github.com/bdk-eval/repo/pull/7#pullrequestreview-1",
+      state: "CHANGES_REQUESTED",
+    });
+    const second = postReview(dir, { event: "COMMENT", body: "y" }, "--method", "POST");
+    expect(JSON.parse(second.stdout)).toMatchObject({ id: 2, state: "COMMENTED" });
+    const recorded = join(dir, ".git", "bdk-eval", "reviews", "7-1.json");
+    expect(JSON.parse(readFileSync(recorded, "utf8"))).toEqual(review);
+  });
+
+  it.each([
+    [{ body: "no event" }, "HTTP 422"],
+    [{ event: "APPROVE" }, "HTTP 422"],
+  ])("refuses the review %j", (review, message) => {
+    const dir = prWorkspace();
+    const { status, stderr } = postReview(dir, review);
+    expect(status).toBe(1);
+    expect(stderr).toContain(message);
+    expect(existsSync(join(dir, ".git", "bdk-eval", "reviews"))).toBe(false);
+  });
+
+  it("refuses a review of a pull request the scaffold did not write", () => {
+    const dir = workspace();
+    writeFileSync(join(dir, "review.json"), JSON.stringify({ event: "COMMENT", body: "x" }));
+    const { status, stderr } = gh(
+      dir,
+      "api",
+      "repos/bdk-eval/repo/pulls/9/reviews",
+      "-X",
+      "POST",
+      "--input",
+      "review.json",
+    );
+    expect(status).toBe(1);
+    expect(stderr).toContain("HTTP 404");
+  });
 });
