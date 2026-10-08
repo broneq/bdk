@@ -106,6 +106,14 @@ pnpm --filter @bdk/bdk run eval --ablation none --tag orchestrator --allow-tools
 
 `--case 'design-*'` alone also matches the `design-draft-*` block cases; `--tag orchestrator` keeps only the orchestrator ones.
 
+The `plan-fresh`, `plan-resume-after-fail`, `plan-budget-spent` and `plan-verify-written` cases are the orchestrator cases of `/bdk:plan` (one arm). They start from the shared fixture `ledger-change.sh`, reuse the part sets of the `plan-draft-*` and `verify-plan-*` cases, run `plan-draft` and an opus `bdk:verifier` inside one run, and need the grants of the plan blocks:
+
+```bash
+pnpm --filter @bdk/bdk run eval --ablation none --tag orchestrator --allow-tools Write Edit "Bash(*/bin/bdk *)" --case 'plan-*'
+```
+
+`--case 'plan-*'` alone also matches the `plan-draft-*` block cases; `--tag orchestrator` keeps only the orchestrator ones.
+
 The `close-*` cases are the orchestrator cases of `/bdk:close` (one arm). They start from the shared fixture `tally-reviewed.sh`: the Change `add-total` after review, a bare repository `.git/bdk-eval/remote.git` inside the workspace as `origin`, so `git push` works offline, and the offline `gh` stand-in, which records `gh pr create` in `.git/bdk-eval/prs/<n>.json` and answers `gh pr view` from there. Put its directory first on `PATH` as for the `propose-*` cases; the run starts an opus `bdk:verifier` and runs `commit` (on a Mac, see the `git` entry of "Host limits"):
 
 ```bash
