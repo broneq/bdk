@@ -37,7 +37,7 @@ Done when you know the Change, the base and whether an earlier report exists.
 2. Every `openspec/changes/<change>/specs/**/spec.md`. Note each requirement under `## ADDED`, `## MODIFIED`, `## REMOVED` and `## RENAMED Requirements`, and each `#### Scenario:` with its file, heading line, WHEN and THEN.
 3. For each capability a delta modifies, removes or renames, its main spec `openspec/specs/<capability>/spec.md`: archive applies the delta to it, and the result is what must be right.
 4. The code: `git diff --stat <base>...HEAD`, then the changed files and every file a scenario runs through from its entry point (a command's dispatch, a route, a page, a configuration loader).
-5. E2E results when `.bdk/runs/<change>/e2e/verdict.md` exists: the verdict and every scenario file whose first line is not `Result: pass`.
+5. The latest E2E results, when there are any: of `.bdk/runs/<change>/e2e/verdict.md` and `.bdk/runs/<change>/review/round-*/e2e/verdict.md`, the file modified last (Glob lists the newest first); read its verdict and every scenario file next to it whose first line is not `Result: pass`.
 
 Judge from the code and the E2E results only. What `design.md`, a plan part or a commit message says the code does is a claim, not evidence.
 
@@ -78,11 +78,11 @@ Verdict: FAIL
 
 ## Checked
 - "Export" / "Two notes": src/export.js:12 prints both notes as a JSON array, exit 0.
-- E2E: `Verdict: PASS`, 3 scenarios (e2e/verdict.md).
+- E2E: `Verdict: PASS`, 3 scenarios (review/round-1/e2e/verdict.md).
 ```
 
 - Each `Must address` item names the spec location (file, requirement, scenario), what the spec says, what the product does, and, when the proposal settles it, which side disagrees with the intent. Its `Evidence:` line is a file and line with what the code does there, or the E2E scenario file.
-- `Checked` lists each scenario that holds, with where it holds, and states the E2E input: the verdict read, or `no E2E results` when `e2e/verdict.md` is missing (a `SKIPPED` or `BLOCKED` verdict is stated the same way).
+- `Checked` lists each scenario that holds, with where it holds, and states the E2E input: the verdict read with the path of its file under `.bdk/runs/<change>/`, or `no E2E results` when no E2E verdict exists (a `SKIPPED` or `BLOCKED` verdict is stated the same way).
 - `Verdict: FAIL` if and only if `Must address` holds an item. An empty section holds `- None.`
 - IDs: when step 1 found an earlier report, keep the ID of every problem still open, give a new problem the next unused number, and put `Closed: <IDs>` (or `Closed: none`) on the line under the verdict. Then replace the file: there is one report per Change, read by `bdk run status`. A first report has no `Closed:` line.
 

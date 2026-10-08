@@ -2,7 +2,7 @@
 name: e2e-check
 description: 'Runs the product as a user would against the spec scenarios of an OpenSpec Change - starts it from tools.e2e, drives each scenario through its CLI, HTTP API or a browser, writes evidence per scenario and a verdict, and records each broken scenario as a finding. Use when asked to check a change end to end, to test it manually or as a user, before a PR, or when a review round needs its E2E check.'
 argument-hint: "<change> [<findings log>]"
-allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(curl *) Bash(mktemp *) Bash(env CHROME_DEVTOOLS_AXI_SESSION=bdk-e2e npx -y chrome-devtools-axi *) Read Write Glob Grep
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(curl *) Bash(mktemp *) Bash(mkdir -p .bdk/runs/*) Bash(node *) Bash(npm install --prefix .bdk/runs/*) Bash(rm -rf .bdk/runs/*) Read Write Glob Grep
 ---
 
 Current BDK configuration of this project:
@@ -13,16 +13,15 @@ Arguments: $ARGUMENTS
 
 # E2E check
 
-Act as a manual tester. Start the product, use it the way its user would, and compare what it shows with each spec scenario of the Change. Never change product files and never write tests: you check the product, you do not fix it. Write only under `.bdk/runs/<change>/e2e/` and to the findings log. Run `bdk` always as `"${CLAUDE_PLUGIN_ROOT}/bin/bdk"`.
+Act as a manual tester. Start the product, use it the way its user would, and compare what it shows with each spec scenario of the Change. Never change product files and never write tests: you check the product, you do not fix it. Write only under `E2E` (step 1), to the findings log, and to the scratch directory a browser driver makes under `.bdk/runs/<change>/`. Run `bdk` always as `"${CLAUDE_PLUGIN_ROOT}/bin/bdk"`. Read and search files with Read, Glob and Grep, not with Bash. Run each command on its own, without `;`, `&&` or pipes, and give paths under `.bdk/runs/` relative to the project root: a compound command or another form of path asks the user for permission.
 
 ## 1. Inputs
 
 - The block above says `BDK not configured` or `BDK configuration invalid`: reply with that line and stop. Run nothing, write nothing.
 - Change: the first argument. Without one, take the only directory under `openspec/changes/` other than `archive/`; with several, ask which Change and stop.
-- Findings log: the second argument (a review round passes `.bdk/runs/<change>/review/round-N/findings.jsonl`), else `.bdk/runs/<change>/e2e/findings.jsonl`.
-- `E2E` below means `.bdk/runs/<change>/e2e/`.
+- Findings log and `E2E`, the directory of your evidence: with a second argument, that is the log, and `E2E` is `e2e/` next to it (a review round passes `.bdk/runs/<change>/review/round-N/findings.jsonl`, so `E2E` is `.bdk/runs/<change>/review/round-N/e2e/`). Without one, `E2E` is `.bdk/runs/<change>/e2e/` and the log is `E2E/findings.jsonl`.
 
-Done when you know the Change, the log and the `tools.e2e` items of the configuration.
+Done when you know the Change, the log, `E2E` and the `tools.e2e` items of the configuration.
 
 ## 2. Scenarios
 
@@ -37,7 +36,7 @@ Done when every scenario has an item or a `not-driven` reason.
 Read [drivers](references/drivers.md) for each driver you use. Per item, run `start` with its `env` (`env NAME=value <start>`), then wait for `ready`:
 
 - `cli`: run `start` to its end, then `ready` once; it must exit 0.
-- `http`, `browser`: first call the `ready` URL once (`curl -sS -o /dev/null -w '%{http_code}\n' --max-time 3 <url>`). Any status other than `000` means another process holds the port: do not start, do not drive it; mark the item's scenarios `blocked` and the run `BLOCKED` with the port in the reason. Otherwise run `start` with the Bash tool's `run_in_background`, note its task id, and wait with one call: `curl -sS -o /dev/null -w '%{http_code}\n' --retry 60 --retry-delay 2 --retry-connrefused <url>`. Ready is a status below 500. A command `ready` is run again until it exits 0, at most 10 times.
+- `http`, `browser`: first call the `ready` URL once (`curl -sS -o /dev/null -w '%{http_code}\n' --max-time 3 <url>`). Any status other than `000` means another process holds the port: do not start, do not drive it; mark the item's scenarios `blocked` and the run `BLOCKED` with the port in the reason. Otherwise run `start` with the Bash tool's `run_in_background`, never with `&` or `nohup`, and note its task id, which is how step 6 stops it; and wait with one call: `curl -sS -o /dev/null -w '%{http_code}\n' --retry 60 --retry-delay 2 --retry-connrefused <url>`. Ready is a status below 500. A command `ready` is run again until it exits 0, at most 10 times.
 
 When `start` fails or `ready` does not pass in about 120 seconds, the product does not start: add one finding for the item (step 5) with the output that shows why, mark its scenarios `blocked`, and go on with the other items.
 
@@ -66,7 +65,7 @@ Item: cli (cli)
 exit 1, `todo: no list file`
 ```
 
-The first line is `Result: pass`, `Result: fail`, `Result: blocked` or `Result: not-driven`. Write the file for `blocked` and `not-driven` scenarios too, with the reason under `## Observed`. A browser scenario lists its screenshots under `## Evidence`.
+The first line is `Result: pass`, `Result: fail`, `Result: blocked` or `Result: not-driven`. Write the file for `blocked` and `not-driven` scenarios too, with the reason under `## Observed`. A browser scenario ends with `## Evidence`, listing its screenshots and its video by file name, all saved in `E2E` next to the file (`add-one-1.png`, `add-one.webm`).
 
 Done when every scenario has its file.
 
@@ -84,7 +83,7 @@ Done when every failed scenario and every start failure has exactly one finding.
 
 ## 6. Stop and record the verdict
 
-Stop every process you started: `TaskStop` with each task id. For a URL item, call the `ready` URL once more: `000` means it stopped; anything else, stop it again. Close the browser as [drivers](references/drivers.md) says.
+Stop every process you started: `TaskStop` with each task id. For a URL item, call the `ready` URL once more: `000` means it stopped; anything else, stop it again. Close the browser and delete the scratch directory as [drivers](references/drivers.md) says.
 
 Write `E2E/verdict.md`:
 
@@ -98,7 +97,7 @@ Verdict: FAIL
 
 The first line is `Verdict: SKIPPED` with the reason when step 2 skipped; `Verdict: BLOCKED` when only the environment stopped the run (a taken port, no browser); `Verdict: FAIL` when a scenario failed or an item did not start; otherwise `Verdict: PASS`. A rerun replaces the files.
 
-Done when no process of yours runs and `E2E/verdict.md` exists.
+Done when no process of yours runs, no scratch directory of yours is left, and `E2E/verdict.md` exists.
 
 ## 7. Reply
 

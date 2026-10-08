@@ -59,7 +59,7 @@ The configuration SHALL accept exactly these keys; any other key at any level SH
 | Key                                                  | Type                                                                                                         | Default      |
 | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------ |
 | `tools.test`, `tools.lint`, `tools.build`            | items by `id`: `command` (string, required), `scoped` (string holding `{files}`, optional), `timeout` (integer seconds, 1 to 86400, optional; `bdk check run` uses 600 when absent) | `[]`         |
-| `tools.e2e`                                          | items by `id`: `start` (command), `ready` (URL or command), `driver` (`cli`, `http`, `browser`), `env` (map of variable name to string, optional), `browser` (`chrome-devtools-axi` or `chrome-devtools-mcp`, optional; read only for `driver: browser`, where an absent field means `chrome-devtools-axi`); all but `env` and `browser` required | `[]`         |
+| `tools.e2e`                                          | items by `id`: `start` (command), `ready` (URL or command), `driver` (`cli`, `http`, `browser`), `env` (map of variable name to string, optional), `browser` (`playwright` or `chrome-devtools-mcp`, optional; read only for `driver: browser`, where an absent field means `playwright`); all but `env` and `browser` required | `[]`         |
 | `languages`                                          | list of kebab-case names                                                                                     | `[]`         |
 | `rules.disabled`                                     | list of rule names                                                                                           | `[]`         |
 | `models.<role>`                                      | model name or alias                                                                                          | none set     |
@@ -93,8 +93,13 @@ A missing required field, a value of the wrong type or outside its allowed value
 
 #### Scenario: Browser tool of an E2E entry
 
-- **WHEN** `.bdk/settings.yaml` gives the `tools.e2e` item `web` the field `browser: chrome-devtools-mcp`, and the item `admin` the field `browser: playwright`
-- **THEN** `bdk config check` accepts `tools.e2e.web.browser`, reports `tools.e2e.admin.browser` with the allowed values, and exits 1
+- **WHEN** `.bdk/settings.yaml` gives the `tools.e2e` item `web` the field `browser: playwright`, the item `docs` the field `browser: chrome-devtools-mcp`, and the item `admin` the field `browser: chrome-devtools-axi`
+- **THEN** `bdk config check` accepts `tools.e2e.web.browser` and `tools.e2e.docs.browser`, reports `tools.e2e.admin.browser` with the allowed values `playwright` and `chrome-devtools-mcp`, and exits 1
+
+#### Scenario: Browser tool absent
+
+- **WHEN** the `tools.e2e` item `web` has `driver: browser` and no `browser` field
+- **THEN** `bdk config check` exits 0 and `bdk config show tools.e2e.web` prints no `browser` value, which the tester reads as `playwright`
 
 #### Scenario: Verifier budget
 

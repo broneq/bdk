@@ -300,15 +300,16 @@ describe("validate", () => {
           ],
         },
       });
-    for (const browser of ["chrome-devtools-axi", "chrome-devtools-mcp"]) {
+    for (const browser of ["playwright", "chrome-devtools-mcp"]) {
       expect(validate([web(browser)], suggest).settings?.tools.e2e[0]?.browser).toBe(browser);
     }
-    expect(validate([web("playwright")], suggest).problems).toEqual([
-      expect.objectContaining({
-        key: "tools.e2e.web.browser",
-        message: expect.stringContaining("chrome-devtools-mcp") as unknown,
-      }) as unknown,
+    expect(validate([web(undefined)], suggest).settings?.tools.e2e[0]?.browser).toBeUndefined();
+    const { problems } = validate([web("chrome-devtools-axi")], suggest);
+    expect(problems).toEqual([
+      expect.objectContaining({ key: "tools.e2e.web.browser" }) as unknown,
     ]);
+    expect(problems[0]?.message).toContain("playwright");
+    expect(problems[0]?.message).toContain("chrome-devtools-mcp");
   });
 
   it("attributes a problem of a key no layer sets to the layer above it", () => {

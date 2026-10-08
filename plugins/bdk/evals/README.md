@@ -30,10 +30,10 @@ A run gets only the read-only tools a case lists in `allowed_tools`; `Write`, `E
 
 ### Cases that need Bash
 
-The `setup-*` cases run `/bdk:setup`, which calls the plugin's `bdk`, OpenSpec and `git`. Grant them, with the clean `HOME` of "Host limits" and a `PATH` without other plugins' `bin/`:
+The `setup-*` cases run `/bdk:setup`, which calls the plugin's `bdk`, OpenSpec, `git`, and `node -e` to look for a browser for Playwright. Grant them, with the clean `HOME` of "Host limits" and a `PATH` without other plugins' `bin/`:
 
 ```bash
-pnpm --filter @bdk/bdk run eval --allow-tools Write Edit "Bash(*/bin/bdk *)" "Bash(openspec *)" "Bash(npx *)" "Bash(git *)" --case 'setup-*'
+pnpm --filter @bdk/bdk run eval --allow-tools Write Edit "Bash(*/bin/bdk *)" "Bash(openspec *)" "Bash(npx *)" "Bash(node -e *)" "Bash(git *)" --case 'setup-*'
 ```
 
 Claude Code refuses every write to `.claude/settings.json` in a run, whatever the grants, so the cases grade the permission rules from the reply, where setup lists them for the user.
@@ -167,14 +167,19 @@ A grader on the order of Bash calls is a `regex` on the trace, not `tool_order`:
 
 ### Manual browser check of `e2e-check`
 
-No eval case covers the `browser` and `http` drivers: the run's sandbox refuses to bind a local port ("Host limits"). Check them by hand in a project built from `fixtures/click-counter.sh` outside this repository:
+No eval case covers the `browser` and `http` drivers: the run's sandbox refuses to bind a local port and finds no browser ("Host limits"). Check them by hand in projects built from the browser fixtures outside this repository, each with no Playwright of its own, so the tester installs the pinned one for the run:
 
 ```bash
 mkdir -p /tmp/click-counter && cd /tmp/click-counter && bash <repo>/plugins/bdk/evals/fixtures/click-counter.sh
 claude -p "Use the app the way a user would and check that change add-counter does what its spec scenarios say." --plugin-dir <repo>/plugins/bdk --permission-mode auto
+
+mkdir -p /tmp/account-page && cd /tmp/account-page && bash <repo>/plugins/bdk/evals/fixtures/web-hard-defects.sh
+claude -p "Use the app the way a user would and check that change add-account-page does what its spec scenarios say." --plugin-dir <repo>/plugins/bdk --permission-mode auto
 ```
 
-Expected: `.bdk/runs/add-counter/e2e/verdict.md` starts with `Verdict: FAIL`, `add-one.md` with `Result: fail` and a screenshot next to it, one `e2e-check` finding for "Add one", and nothing listening on port 5180 afterwards.
+Expected for `click-counter`: `.bdk/runs/add-counter/e2e/verdict.md` starts with `Verdict: FAIL`; `add-one.md` starts with `Result: fail` and its `## Evidence` lists `add-one-1.png` and `add-one.webm`, both next to it and not empty; one `e2e-check` finding for "Add one"; nothing listening on port 5180 afterwards, and no file outside `.bdk/runs/` in `git status`.
+
+Expected for `account-page` (the three defects are described at the top of the fixture): `Verdict: FAIL`; `place-order-once.md`, `save-a-note.md` and `save-profile-on-a-narrow-screen.md` start with `Result: fail` and name, under `## Observed`, the two orders, the `Could not save` message and the element that covers "Save profile"; `no-orders-yet.md` starts with `Result: pass`; one finding per failed scenario, each scenario with a screenshot and a video; nothing listening on port 5182 afterwards.
 
 ## Write a case
 
@@ -288,4 +293,4 @@ Measured with Claude Code 2.1.292:
 - **`PATH` leaks from the caller.** A run inherits the `PATH` of the shell that starts it, including the `bin/` of plugins of a Claude Code session the command runs in. Start paid runs from a plain terminal.
 - **Background tasks end 10 minutes after the last turn.** Claude Code 2.1.294 in `claude -p` stops a background agent that still runs 10 minutes after the main thread's last turn ("Background tasks still running 10m after the last turn ...; stopping them"). A review round runs longer, so the `auto-review-*` cases set `execution.lead: foreground` in `.bdk/settings.local.yaml`.
 - **No Artifact tool, no project configuration.** A run cannot publish artifacts and loads no `CLAUDE.md`, `.claude/` or `.mcp.json`; ship what a case needs in the plugin.
-- **No local server.** Measured with Claude Code 2.1.292: a Bash-granting run cannot bind a local port (`listen EPERM: operation not permitted 0.0.0.0:5180`), so a case cannot start a web app or an HTTP API. `e2e-check` then reports `Verdict: BLOCKED`, as it should; its browser path is checked by hand (see "Manual browser check of `e2e-check`").
+- **No local server, no browser.** Measured with Claude Code 2.1.292: a Bash-granting run cannot bind a local port (`listen EPERM: operation not permitted 0.0.0.0:5180`), so a case cannot start a web app or an HTTP API. It also cannot launch a browser: Playwright looks for its browsers under the run's own `HOME`, and the system Chrome fails with `Failed to create a ProcessSingleton for your profile directory`. `e2e-check` then reports `Verdict: BLOCKED`, as it should; its browser path is checked by hand (see "Manual browser check of `e2e-check`").

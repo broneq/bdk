@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 bash "$(dirname "$0")/../fixtures/tally-change.sh"
-# E2E results of the Change, as e2e-check writes them (ignored by git, like every run file).
-mkdir -p .bdk/runs/add-total/e2e
-cat > .bdk/runs/add-total/e2e/verdict.md <<'MD'
+# E2E results of the Change, as e2e-check writes them in review round 1 (ignored by git, like
+# every run file).
+mkdir -p .bdk/runs/add-total/review/round-1/e2e
+cat > .bdk/runs/add-total/review/round-1/e2e/verdict.md <<'MD'
 Verdict: PASS
 
 - pass: Total of added amounts - total-of-added-amounts.md
@@ -12,7 +13,7 @@ Verdict: PASS
 - pass: Unknown command - unknown-command.md
 MD
 scenario() {
-  cat > ".bdk/runs/add-total/e2e/$1.md" <<MD
+  cat > ".bdk/runs/add-total/review/round-1/e2e/$1.md" <<MD
 Result: pass
 Requirement: $2
 Scenario: $3
