@@ -45,6 +45,12 @@ pnpm --filter @bdk/bdk run eval --allow-tools "Bash(*/bin/bdk *)" "Bash(git *)" 
 pnpm --filter @bdk/bdk run eval --allow-tools "Bash(*/bin/bdk *)" "Bash(git *)" --case 'judge-*'
 ```
 
+The `triage-*` cases start from the shared fixture `monthly-report-judged.sh`: round 1 of `monthly-report` judged, one finding of each level, no decision. The block records decisions only through `bdk findings decide`, so it needs `bdk` and, for the manual cases, `Write` for the page and the Lavish CLI. `triage-lavish` and `triage-ask` put a `lavish-axi` stub into `node_modules` as the `design-draft` cases do; `triage-auto-policy` sets `policy.gates.review: auto` and grades that nothing is asked:
+
+```bash
+pnpm --filter @bdk/bdk run eval --allow-tools Write "Bash(*/bin/bdk *)" "Bash(npx -y lavish-axi *)" --case 'triage-*'
+```
+
 The `propose-*` cases run `/bdk:propose`, which calls `bdk`, OpenSpec and `gh issue view`. A run has no GitHub credential, so `propose-from-issue` reads its issue through the offline stand-in `fixtures/bin/gh`: its scaffold copies the stand-in to `.git/bdk-eval/bin/gh` and the issue to `.git/bdk-eval/issues/42.json`. A run cannot execute a file outside its workspace, even with that directory on `PATH`, so put the relative directory first:
 
 ```bash

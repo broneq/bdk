@@ -15,7 +15,7 @@ export function decide(files: Files): Command {
       { name: "decision", description: DECISIONS.join(", "), required: true },
     ],
     flags: {
-      issue: { type: "string", description: "The issue that tracks it; required for defer only" },
+      issue: { type: "string", description: "The issue that tracks it; defer only, optional" },
       reason: { type: "string", description: "Why this decision, in one line" },
     },
     run(input) {
