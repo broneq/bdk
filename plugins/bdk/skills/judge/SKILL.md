@@ -1,8 +1,8 @@
 ---
 name: judge
 description: 'Judges the findings of a BDK review round - checks each unleveled finding against the code and sets its level (blocker, should-fix, nice-to-have, not-a-problem) by what the product does, with bdk findings level - then writes the round report with bdk findings report. Use when a review round or a user asks to judge, level, rate or triage the findings of a round, or to finish a review round.'
-argument-hint: "[<round-dir>]"
-allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(git diff *) Bash(git show *) Read Grep Glob
+argument-hint: "[<round-dir>] [--workdir <path>] [--change <path>|none] [--intent <file>]"
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(git diff *) Bash(git show *) Bash(git -C *) Bash(cd *) Read Grep Glob
 ---
 
 Current BDK configuration of this project:
@@ -16,6 +16,14 @@ Arguments: $ARGUMENTS
 Set the level of every finding of one round, then write the round report. You look for no new problem, add no finding, record no decision (triage decides what happens), change no file and start no agent. Run `bdk` always as `"${CLAUDE_PLUGIN_ROOT}/bin/bdk"`, each command on its own, without pipes or `&&`.
 
 If the block above says "BDK not configured: run /bdk:setup", stop and pass that line on. If it shows the command instead of its output, run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" config show` first.
+
+## Another checkout, Change or intent
+
+A caller that reviews code outside the working directory (`/bdk:pr-review` reviews a pull request in its own worktree) adds up to three inputs. Without them, skip this section.
+
+- `--workdir <path>`: the checkout to review. Give every Read, Grep and Glob call an absolute path under it, and read the Change and the plan parts there too; run git as `git -C <path> <command>` (the host refuses `cd` followed by `git`) and `bdk` as `cd <path> && "${CLAUDE_PLUGIN_ROOT}/bin/bdk" <command>`, one command per call. Never read the same paths in the working directory: that is another commit. The round directory and its log stay where the arguments say.
+- `--change <path>`: the Change directory, relative to the work directory (`openspec/changes/archive/2026-10-01-monthly-report` for an archived one), in place of `openspec/changes/<change>/`. `--change none`: the range carries no Change.
+- `--intent <file>`: what the author meant (a pull request's title, description and linked issues). Read it whole in step 2 with the proposal, or in its place when there is no Change: a level depends on whether the product breaks what the author meant.
 
 ## 1. Find the round
 

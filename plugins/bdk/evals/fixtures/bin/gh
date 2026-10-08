@@ -2,8 +2,10 @@
 // Offline gh stand-in for eval runs (spec skill-evals, "Offline gh stand-in"). An eval run has
 // its own HOME and no GitHub credential, so the real gh cannot read an issue or open a pull
 // request. This script answers `gh issue view <ref>` from .git/bdk-eval/issues/<n>.json, written
-// by the case scaffold, and `gh pr create` / `gh pr view <head>` from .git/bdk-eval/prs/<n>.json,
-// and never reaches the network. A run cannot execute files outside its workspace, so the
+// by the case scaffold, `gh pr create` / `gh pr view <head|number|url>` from
+// .git/bdk-eval/prs/<n>.json, `gh repo view` and `gh api user` with fixed answers, and records
+// `gh api repos/<o>/<r>/pulls/<n>/reviews -X POST --input <file>` in .git/bdk-eval/reviews/, and
+// never reaches the network. A run cannot execute files outside its workspace, so the
 // scaffold copies this script to .git/bdk-eval/bin/gh and the eval command puts that relative
 // directory first on PATH (evals/README.md).
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -141,12 +143,26 @@ function prCreate(rest) {
   process.stdout.write(`${pr.url}\n`);
 }
 
+/** The number of a pull request reference (`7`, `#7`, a pull request URL), else undefined. */
+function prNumber(ref) {
+  return /^(?:#?(\d+)|https?:\/\/[^\s]*\/pull\/(\d+)\/?)$/.exec(ref)?.slice(1).find(Boolean);
+}
+
 function prView(rest) {
   const { flags, positional } = parse(rest, ["--json", "--repo"], { "-R": "--repo" });
-  const head = positional[0];
-  if (head === undefined) fail("offline gh stand-in: pr view needs the branch name in eval runs");
-  const pr = openPullRequest(head);
-  if (pr === undefined) fail(`no pull requests found for branch "${head}"`);
+  const ref = positional[0];
+  if (ref === undefined)
+    fail("offline gh stand-in: pr view needs a branch name or a number in eval runs");
+  const number = prNumber(ref);
+  let pr;
+  if (number === undefined) {
+    pr = openPullRequest(ref);
+    if (pr === undefined) fail(`no pull requests found for branch "${ref}"`);
+  } else {
+    pr = pullRequests().find((candidate) => candidate.number === Number(number));
+    if (pr === undefined)
+      fail(`GraphQL: Could not resolve to a PullRequest with the number of ${number}.`);
+  }
   print(
     pr,
     flags["--json"],
@@ -154,16 +170,80 @@ function prView(rest) {
   );
 }
 
+const REPO = {
+  nameWithOwner: "bdk-eval/repo",
+  url: "https://github.com/bdk-eval/repo",
+  defaultBranchRef: { name: "main" },
+};
+
+function repoView(rest) {
+  const { flags } = parse(rest, ["--json"]);
+  print(REPO, flags["--json"], `name:\t${REPO.nameWithOwner}\nurl:\t${REPO.url}\n`);
+}
+
+const REVIEW_STATES = {
+  APPROVE: "APPROVED",
+  REQUEST_CHANGES: "CHANGES_REQUESTED",
+  COMMENT: "COMMENTED",
+};
+
+function api(rest) {
+  const { flags, positional } = parse(rest, ["--input", "--method"], { "-X": "--method" });
+  const endpoint = positional[0] ?? "";
+  if (endpoint === "user" && flags["--method"] === undefined) {
+    process.stdout.write(`${JSON.stringify({ login: "bdk-eval-user" })}\n`);
+    return;
+  }
+  const review = /^\/?repos\/[^/]+\/[^/]+\/pulls\/(\d+)\/reviews$/.exec(endpoint);
+  if (review === null || flags["--method"]?.toUpperCase() !== "POST" || !flags["--input"]) {
+    fail(
+      `offline gh stand-in: only "gh api user" and "gh api repos/<owner>/<repo>/pulls/<n>/reviews -X POST --input <file>" are available in eval runs, not "gh api ${rest.join(" ")}"`,
+    );
+  }
+  const number = Number(review[1]);
+  if (!pullRequests().some((pr) => pr.number === number)) fail("gh: Not Found (HTTP 404)");
+  const path = resolve(process.cwd(), flags["--input"]);
+  if (!existsSync(path)) fail(`open ${flags["--input"]}: no such file or directory`);
+  const text = readFileSync(path, "utf8");
+  let payload;
+  try {
+    payload = JSON.parse(text);
+  } catch {
+    fail("gh: Problems parsing JSON (HTTP 422: Unprocessable Entity)");
+  }
+  if (REVIEW_STATES[payload?.event] === undefined || typeof payload.body !== "string") {
+    fail("gh: Validation Failed (HTTP 422: Unprocessable Entity)");
+  }
+  const dir = join(store, "reviews");
+  mkdirSync(dir, { recursive: true });
+  const id =
+    readdirSync(dir).filter((name) => name.startsWith(`${number}-`) && name.endsWith(".json"))
+      .length + 1;
+  writeFileSync(join(dir, `${number}-${id}.json`), text);
+  process.stdout.write(
+    `${JSON.stringify({
+      id,
+      html_url: `https://github.com/bdk-eval/repo/pull/${number}#pullrequestreview-${id}`,
+      state: REVIEW_STATES[payload.event],
+    })}\n`,
+  );
+}
+
 const commands = {
   "issue view": issueView,
   "pr create": prCreate,
   "pr view": prView,
+  "repo view": repoView,
 };
 
-const command = commands[`${args[0]} ${args[1]}`];
-if (command === undefined) {
-  fail(
-    `offline gh stand-in: only "gh issue view", "gh pr create" and "gh pr view" are available in eval runs, not "gh ${args.join(" ")}"`,
-  );
+if (args[0] === "api") {
+  api(args.slice(1));
+} else {
+  const command = commands[`${args[0]} ${args[1]}`];
+  if (command === undefined) {
+    fail(
+      `offline gh stand-in: only "gh issue view", "gh pr create", "gh pr view", "gh repo view" and "gh api" are available in eval runs, not "gh ${args.join(" ")}"`,
+    );
+  }
+  command(args.slice(2));
 }
-command(args.slice(2));

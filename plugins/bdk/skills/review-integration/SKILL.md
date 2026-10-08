@@ -1,8 +1,8 @@
 ---
 name: review-integration
 description: 'Reviews a whole BDK Change top down after its group reviews - every spec scenario reached by the product and proven by a test, behaviour no scenario names, and the seams between plan parts (units, fields, empty values, error contracts) - and appends each problem to the round findings log with bdk findings add. Use when a review round or a user asks to check a Change or branch as a whole, whether it does what its spec says, or how its parts fit together.'
-argument-hint: "[<round-dir>] [--base <ref>]"
-allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(git diff *) Bash(git log *) Bash(git show *) Bash(git symbolic-ref *) Bash(git rev-parse *) Read Grep Glob
+argument-hint: "[<round-dir>] [--base <ref>] [--workdir <path>] [--change <path>|none] [--intent <file>]"
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(git diff *) Bash(git log *) Bash(git show *) Bash(git symbolic-ref *) Bash(git rev-parse *) Bash(git -C *) Bash(cd *) Read Grep Glob
 ---
 
 Current BDK configuration of this project:
@@ -16,6 +16,14 @@ Arguments: $ARGUMENTS
 The group reviewers read the files of one group each. You read the Change from its intent down and find what no single group shows: a scenario the product does not reach, a scenario no test proves, and a contract one part changes that another part uses differently. Append each problem to the round's findings log. You change no file, run no test, linter or build, set no level and start no agent. Run `bdk` always as `"${CLAUDE_PLUGIN_ROOT}/bin/bdk"`, each command on its own, without pipes or `&&`.
 
 If the block above says "BDK not configured: run /bdk:setup", stop and pass that line on. If it shows the command instead of its output, run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" config show` first.
+
+## Another checkout, Change or intent
+
+A caller that reviews code outside the working directory (`/bdk:pr-review` reviews a pull request in its own worktree) adds up to three inputs. Without them, skip this section.
+
+- `--workdir <path>`: the checkout to review. Give every Read, Grep and Glob call an absolute path under it, and read the Change and the plan parts there too; run git as `git -C <path> <command>` (the host refuses `cd` followed by `git`) and `bdk` as `cd <path> && "${CLAUDE_PLUGIN_ROOT}/bin/bdk" <command>`, one command per call. Never read the same paths in the working directory: that is another commit. The round directory and its log stay where the arguments say.
+- `--change <path>`: the Change directory, relative to the work directory (`openspec/changes/archive/2026-10-01-monthly-report` for an archived one), in place of `openspec/changes/<change>/`. `--change none`: the range carries no Change.
+- `--intent <file>`: what the author meant (a pull request's title, description and linked issues). Read it whole as the intent in step 2, next to the proposal, or in its place when there is no Change.
 
 ## 1. Find the round
 
