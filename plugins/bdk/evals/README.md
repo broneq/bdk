@@ -242,6 +242,14 @@ pnpm --filter @bdk/bdk run eval --allow-tools Write Edit "Bash(*/bin/bdk *)" --c
 
 Recorded 2026-10-08 (sonnet): WITH 1.00, W/OUT 0.80, Δ +0.20; with the plugin every plan keeps the part limits and 4 of 6 pass `verify-plan` first time, without it none does (part 01 over the limits every time).
 
+`plan-draft-household-book-gap` measures the design-gap stop of `plan-draft` step 2 (#253). Its scaffold builds the ready-to-plan state and then opens one product choice in the Change: recurring days run from 1 to 31, and neither the specs nor the design say what an entry does in a month without its day; the edits are folded into the fixture's last commit. Its `gap-named` judge passes a reply that names the choice and leaves it undecided, and fails one that names it but writes a rule into a part. Whether a part decides it is read on the kept workspaces; the archived Change `v3-253-measure-plan-draft-gap` holds the method and the result:
+
+```bash
+pnpm --filter @bdk/bdk run eval --allow-tools Write Edit "Bash(*/bin/bdk *)" --case 'plan-draft-household-book-gap' --model sonnet -j 3 --keep-temp
+```
+
+Recorded 2026-10-08 (sonnet, $4.39): WITH 1.00, W/OUT 0.89, Δ +0.11 with the first rubric; read by hand, every run names the gap, but without the plugin every run also decides it in a part (skip the month once, clamp to the last day twice), with it none does. The gap rule is kept.
+
 A case that plans, executes or times the Change uses the fixture from its own scaffold, as any shared fixture. By hand, build a workspace outside this repository and run the stage there:
 
 ```bash
