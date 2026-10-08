@@ -1,0 +1,8 @@
+---
+type: regex
+target: { source: file, path: .bdk/runs/monthly-report/review/round-1/findings.jsonl }
+pattern: '"type":"decision"'
+match: not_contains
+---
+
+In manual mode nobody answered, so no decision is recorded.

@@ -29,19 +29,21 @@ A caller that reviews code outside the working directory (`/bdk:pr-review` revie
 
 With a round directory in the arguments or the request (`.bdk/runs/<change>/review/round-<N>/`), use it. Otherwise use the manual round: `.bdk/runs/manual/review/round-<N>/`, `N` the lowest number whose directory holds no `report.md`; when it holds no `groups.json`, record it with `bdk git groups <base> --rounds .bdk/runs/manual/review --record <round-dir>` (add `--plan openspec/changes/<change>/plan/parts` when `openspec/changes/` holds exactly one Change besides `archive/`; `<base>` is the `--base` given, else the branch `git symbolic-ref --short refs/remotes/origin/HEAD` names, else `main`).
 
-Read `groups.json`: `range` and the `integration` group's files. The log is `<round-dir>/findings.jsonl`; run `bdk findings list <log>` and keep what the group reviews found, so you do not repeat it. The Change is `openspec/changes/<change>/`, `<change>` being the directory under `.bdk/runs/`.
+Read `groups.json`: `range`, `anchor` and the `integration` group's files. An `anchor` of `kind` `round` makes this a fix round: it reviews only the fixes made since round `anchor.round`. The log is `<round-dir>/findings.jsonl`; run `bdk findings list <log>` and keep what the group reviews found, so you do not repeat it. The Change is `openspec/changes/<change>/`, `<change>` being the directory under `.bdk/runs/`.
 
 Done when you know the range, the changed files, the findings so far, and the Change.
 
 ## 2. Read the intent
 
-Read `proposal.md`, every file under `specs/` (each requirement and scenario), `design.md` and every file of `plan/parts/`. Without a Change, the intent is the commit subjects of the range (`git log --format=%s <range>`) and what the user said.
+Read `proposal.md`, every file under `specs/` (each requirement and scenario), `design.md`, every file of `plan/parts/`, and the fix parts of earlier rounds (`.bdk/runs/<change>/review/round-*/fixes/parts/*.md`; their tasks name the findings they fix). Without a Change, the intent is the commit subjects of the range (`git log --format=%s <range>`) and what the user said.
 
 Done when you have the list of scenarios, and for each part the contracts it creates or changes (its tasks' `Interface` lines).
 
 ## 3. Check scenarios, tests and seams
 
 Read code to confirm or refute each item; do not review files line by line again.
+
+In a fix round, check only the scenarios whose path from the entry point runs through a changed file, and the contracts a changed file defines or uses, each followed to all its users, inside the scope or not. Every other scenario was reviewed in an earlier round and its code did not change; skip it, and skip item 4 for files outside the scope.
 
 1. **Scenario to product.** For each scenario, follow it as a user runs it: from the entry point (a command, a route, a page, a configuration key) through the code to the result. Take the scenario's own inputs and compute what the code returns or prints, value by value. A scenario whose result differs, or that no entry point reaches, is a finding.
 2. **Scenario to test.** Each scenario has a test that would fail without it, at a level that proves it: a unit test with hand-built input does not prove what a command prints from a file. Name the scenario without such a test.

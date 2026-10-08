@@ -1,7 +1,7 @@
 ---
 name: conform-part
 description: 'Checks the uncommitted diff of one implemented plan part of an OpenSpec Change on the bdk:conformer agent - against the execute rules, the project instructions (CLAUDE.md, AGENTS.md, .claude/rules) and the part''s tasks - fixes each violation it can fix without changing behaviour, leaves the rest, runs the part checks, and writes execute/conform-NN.md. Use when a part is implemented and about to be committed, when asked to clean up or check a part against the rules, or when the execute lead conforms a part.'
-argument-hint: "[<change>] <part-id> [--run-dir <path>] [--workdir <path>]"
+argument-hint: "[<change>] <part-id> [--run-dir <path>] [--workdir <path>] [--parts <dir>]"
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(mkdir -p *) Bash(cd *) Bash(git -C *) Bash(git status *) Bash(git diff *) Bash(git log *) Bash(git show *) Read Grep Glob Edit Write Agent
 ---
 
@@ -26,7 +26,7 @@ Done when you are `bdk:conformer`, or the agent has answered.
 ## 1. Find the part, the run directory and the implementer report
 
 - Change: the first argument when two are given. Without one, take the only directory under `openspec/changes/` other than `archive/`; with none or several, name what you found and stop.
-- Part: `openspec/changes/<change>/plan/parts/<part-id>.md`. Without a part id, or when the file is missing, list the parts there and stop.
+- Part: `<part-id>.md` in `--parts <dir>` when given (the execute lead passes the absolute directory of a review round's fix parts), else in `openspec/changes/<change>/plan/parts/`. Without a part id, or when the file is missing, list the parts there and stop. A fix part's tasks name the findings they fix; read each in the round's log `<parts dir>/../../findings.jsonl` (`bdk findings list <log>`) for its failure scenario.
 - Run directory: `--run-dir <path>` when given, else `.bdk/runs/<change>/`. Run `mkdir -p <run-dir>/execute`.
 - Work directory: `--workdir <path>` when given (the execute lead passes the worktree of a part that runs in its own worktree), else the working directory. A subagent cannot change its working directory, so with `--workdir`: give every Read, Edit, Write, Glob and Grep call an absolute path under the work directory, read the part, the specs and the design there too, run git as `git -C <workdir> <command>` (`git -C /work/app/.bdk/runs/add-csv-export/worktrees/02 status --porcelain`; the host refuses `cd` followed by `git`), and every other Bash command as `cd <workdir> && <one command>`, never a longer chain: a session that grants commands one by one denies the whole chain. Read files with Read and list them with Glob, not with `cat`, `head`, `ls` or `find`. Never read or edit the same paths in the main checkout: that is another part's tree.
 - Implementer report: `<run-dir>/execute/part-<part-id>.md`. When it is missing or its first line is not `Status: done`, write the report of step 6 with `Verdict: FAIL` and one `Left` item naming that, change nothing, and reply.

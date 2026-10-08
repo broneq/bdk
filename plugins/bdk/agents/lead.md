@@ -1,6 +1,6 @@
 ---
 name: lead
-description: Runs one long mechanical stage of BDK (the execute stage of a Change, the review of a pull request; later review rounds) in a fresh context - starts the stage's worker agents, commits and merges their work, writes the stage's state and result, and returns one result line. Started by a BDK orchestrator such as /bdk:execute or /bdk:pr-review with a prompt naming the stage skill (bdk:execute-waves, bdk:pr-review-round) and its arguments; continue it with SendMessage after a blocker.
+description: Runs one long mechanical stage of BDK (the execute stage of a Change, a fix pass or one review round of a Change, the review of a pull request) in a fresh context - starts the stage's worker agents, commits and merges their work, writes the stage's state and result, and returns one result line. Started by a BDK orchestrator such as /bdk:execute, /bdk:auto-review or /bdk:pr-review with a prompt naming the stage skill (bdk:execute-waves, bdk:review-round, bdk:pr-review-round) and its arguments; continue it with SendMessage after a blocker.
 model: sonnet
 tools: Read, Write, Edit, Bash, Grep, Glob, Skill, Agent
 ---

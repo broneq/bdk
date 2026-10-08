@@ -1,7 +1,7 @@
 ---
 name: implement-part
 description: 'Implements one plan part of an OpenSpec Change on the bdk:implementer agent - checks the task contracts first and stops on a plan defect, writes a test per acceptance scenario and sees it red, builds the tasks inside the part''s files, runs the part checks until green - and writes execute/part-NN.md. Use when asked to implement, build or code a plan part (01, 02) of a Change, or when the execute lead runs a part.'
-argument-hint: "[<change>] <part-id> [--run-dir <path>] [--workdir <path>]"
+argument-hint: "[<change>] <part-id> [--run-dir <path>] [--workdir <path>] [--parts <dir>]"
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(mkdir -p *) Bash(cd *) Bash(git -C *) Bash(git status *) Bash(git diff *) Bash(git log *) Bash(git show *) Read Grep Glob Edit Write Agent
 ---
 
@@ -26,7 +26,7 @@ Done when you are `bdk:implementer`, or the agent has answered.
 ## 1. Find the part and the run directory
 
 - Change: the first argument when two are given. Without one, take the only directory under `openspec/changes/` other than `archive/`; with none or several, name what you found and stop.
-- Part: `openspec/changes/<change>/plan/parts/<part-id>.md`. Without a part id, or when the file is missing, list the parts there and stop.
+- Part: `<part-id>.md` in `--parts <dir>` when given (the execute lead passes the absolute directory of a review round's fix parts), else in `openspec/changes/<change>/plan/parts/`. Without a part id, or when the file is missing, list the parts there and stop. A fix part's tasks name the findings they fix; read each in the round's log `<parts dir>/../../findings.jsonl` (`bdk findings list <log>`) for its failure scenario.
 - Run directory: `--run-dir <path>` when given (the execute lead passes the absolute path of the main checkout when you work in a worktree), else `.bdk/runs/<change>/`. Run `mkdir -p <run-dir>/execute`. Reports and check results go under the run directory; the code you read and edit is in the working directory.
 - Work directory: `--workdir <path>` when given (the execute lead passes the worktree of a part that runs in its own worktree), else the working directory. A subagent cannot change its working directory, so with `--workdir`: give every Read, Edit, Write, Glob and Grep call an absolute path under the work directory, read the part, the specs and the design there too, run git as `git -C <workdir> <command>` (`git -C /work/app/.bdk/runs/add-csv-export/worktrees/02 status --porcelain`; the host refuses `cd` followed by `git`), and every other Bash command as `cd <workdir> && <one command>`, never a longer chain: a session that grants commands one by one denies the whole chain. Read files with Read and list them with Glob, not with `cat`, `head`, `ls` or `find`. Never read or edit the same paths in the main checkout: that is another part's tree.
 - An earlier `<run-dir>/execute/part-<part-id>.md` means this is a retry: read it, then continue from the files as they are now. When `<run-dir>/execute/conform-<part-id>.md` says `Verdict: FAIL`, each `Left` item naming a task is work still to do (a test for it first, seen red), and a red conform check is a check to make green.

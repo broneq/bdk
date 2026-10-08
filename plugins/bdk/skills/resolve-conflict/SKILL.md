@@ -1,7 +1,7 @@
 ---
 name: resolve-conflict
 description: 'Resolves the merge conflict a plan part left when the execute lead merged its branch into the Change branch, on the bdk:implementer agent - reads both sides and the parts that wanted them, edits each conflicted file to keep what both meant, runs the checks of those parts, and writes execute/merge-NN.md, leaving the merge for the lead to commit. Use when merging a part of a Change stopped on conflicts, or when the execute lead hands over a conflicted merge.'
-argument-hint: "[<change>] <part-id> [--run-dir <path>]"
+argument-hint: "[<change>] <part-id> [--run-dir <path>] [--parts <dir>]"
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(mkdir -p *) Bash(git status *) Bash(git diff *) Bash(git log *) Bash(git show *) Bash(git rev-parse *) Read Grep Glob Edit Write Agent
 ---
 
@@ -26,7 +26,8 @@ Done when you are `bdk:implementer`, or the agent has answered.
 ## 1. Find the merge
 
 - Change: the first argument when two are given. Without one, take the only directory under `openspec/changes/` other than `archive/`; with none or several, name what you found and stop.
-- Part: the part whose branch is being merged, `openspec/changes/<change>/plan/parts/<part-id>.md`. Without a part id, list the parts and stop.
+- Parts directory: `--parts <dir>` when given (the execute lead passes the fix parts of a review round), else `openspec/changes/<change>/plan/parts/`.
+- Part: the part whose branch is being merged, `<parts dir>/<part-id>.md`. Without a part id, list the parts and stop.
 - Run directory: `--run-dir <path>` when given, else `.bdk/runs/<change>/`. Run `mkdir -p <run-dir>/execute`.
 - Unmerged files: `git diff --name-only --diff-filter=U`. When it prints nothing, reply `No merge conflict found` and stop: change nothing, write no report.
 
@@ -35,7 +36,7 @@ Done when you hold the part, the run directory and the list of unmerged files.
 ## 2. Learn what each side meant
 
 1. `git log --oneline -5 HEAD` and `git log --oneline -5 MERGE_HEAD`: what the Change branch already holds, and what the part's branch adds.
-2. The parts behind each unmerged file: the part `<part-id>` and every part under `openspec/changes/<change>/plan/parts/` whose `files` lists that file. Read their goals, tasks and acceptance scenarios, and the scenarios in `openspec/changes/<change>/specs/**/spec.md`.
+2. The parts behind each unmerged file: the part `<part-id>` and every part under the parts directory whose `files` lists that file. Read their goals, tasks and acceptance scenarios, and the scenarios in `openspec/changes/<change>/specs/**/spec.md`.
 3. Each unmerged file whole, with its conflict hunks (`<<<<<<<`, `=======`, `>>>>>>>`), and `git diff MERGE_HEAD^1...MERGE_HEAD -- <file>` for what the part changed in it.
 
 Done when you can say, for each hunk, what each side added and why.
