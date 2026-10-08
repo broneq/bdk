@@ -84,6 +84,12 @@ The `spec-conformance-*` cases start from the shared fixture `tally-change.sh` (
 pnpm --filter @bdk/bdk run eval --allow-tools Write "Bash(*/bin/bdk *)" "Bash(git *)" --case 'spec-conformance-*'
 ```
 
+The `implement-part-*` and `conform-part-*` cases start from the shared fixtures `ledger-planned.sh` (the Change `add-csv-export` with its two verified plan parts) and `ledger-implemented.sh` (part 01 built and left uncommitted, with the implementer's report, as the execute lead hands it to `conform-part`). The blocks run in a `bdk:implementer` or `bdk:conformer` agent (sonnet), edit the part's files, run the checks through `bdk check run`, read the diff with `git status` and `git diff`, and create the run directory with `mkdir -p` (on a Mac, see the `git` entry of "Host limits"):
+
+```bash
+pnpm --filter @bdk/bdk run eval --allow-tools Write Edit "Bash(*/bin/bdk *)" "Bash(mkdir -p *)" "Bash(git *)" --case '*-part-*'
+```
+
 The design-block cases (`explore-*`, `design-draft-*`, `verify-design-*`) start from the fixtures `ledger-proposal.sh`, `ledger-explored.sh` and `ledger-designed.sh`, and need the `bdk` launcher, OpenSpec, `git` and the Lavish CLI. `design-draft-lavish` and `design-draft-ask` put a `lavish-axi` stub into the workspace's `node_modules`, which `npx -y lavish-axi` runs before any installed one: the first opens every page and answers the poll, the second fails as a session without a browser does. `AskUserQuestion` is not available in a run, so `design-draft-ask` grades the questions in the reply.
 
 ```bash
