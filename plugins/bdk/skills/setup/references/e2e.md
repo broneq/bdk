@@ -30,7 +30,39 @@ A web UI that serves its own API in one process is one `web` item. A workspace w
 
 ## `browser`
 
-Only on a `browser` item, and only as `browser: chrome-devtools-mcp`, when the project's `.mcp.json` declares a server that runs the `chrome-devtools-mcp` package. Otherwise leave it out: the E2E tester then uses `chrome-devtools-axi` through `npx`.
+Never write it. The E2E tester then drives the browser with Playwright; a user who wants the Chrome DevTools MCP server sets `browser: chrome-devtools-mcp` themselves. When the project's `.mcp.json` declares a server running the `chrome-devtools-mcp` package, say that in the report.
+
+## Playwright
+
+For each `browser` item, the E2E tester runs Playwright: the project's own `@playwright/test` or `playwright` when it resolves from the web app's package, else Playwright 1.63.0 it installs for each run into a scratch directory. It launches the Chromium Playwright installed, else the system Chrome.
+
+Detect, in step 2, whatever the user later answers (the report needs both):
+
+- Project Playwright: `@playwright/test` or `playwright` in `dependencies` or `devDependencies` of the web app's `package.json`.
+- A browser: run this once; it prints the Chromium builds Playwright installed and the system Chrome, if any:
+
+  ```bash
+  node -e "const fs=require('fs'),os=require('os'),path=require('path');const dir=process.env.PLAYWRIGHT_BROWSERS_PATH||path.join(os.homedir(),{darwin:'Library/Caches',linux:'.cache',win32:'AppData/Local'}[process.platform]||'.cache','ms-playwright');let builds=[];try{builds=fs.readdirSync(dir).filter((n)=>/^chromium(_headless_shell)?-/.test(n))}catch{}const chrome=['/Applications/Google Chrome.app','/usr/bin/google-chrome','/usr/bin/google-chrome-stable','C:/Program Files/Google/Chrome/Application/chrome.exe'].find((f)=>fs.existsSync(f));console.log(JSON.stringify({builds,chrome:chrome||null}))"
+  ```
+
+Ask, in step 3, only when the web app's package is a Node package (it has a `package.json`) and it has no Playwright, or no build and no Chrome were found: "Install Playwright for the E2E tester?", recommended first "Install @playwright/test 1.63.0 (and Chromium)", second "Do not install; the tester installs Playwright for each run". Among the E2E questions this one goes first. A web app without `package.json` (Django templates, Rails) gets no question: the tester's own install covers it.
+
+Install, in step 9, after a yes, with the package manager of the lockfile, in the web app's package:
+
+| Package manager | Add the package | Install Chromium (when no build was found) |
+|---|---|---|
+| pnpm | `pnpm add -D @playwright/test@1.63.0` (workspace: `pnpm --filter <package> add -D @playwright/test@1.63.0`) | `pnpm exec playwright install chromium` (workspace: `pnpm --filter <package> exec playwright install chromium`) |
+| npm | `npm install -D @playwright/test@1.63.0` (workspace: `npm install -D @playwright/test@1.63.0 -w <package>`) | `npx playwright install chromium` |
+| yarn | `yarn add -D @playwright/test@1.63.0` (workspace: `yarn workspace <package> add -D @playwright/test@1.63.0`) | `yarn playwright install chromium` |
+| bun | `bun add -d @playwright/test@1.63.0` (workspace: `bun add -d @playwright/test@1.63.0 --cwd <dir>`) | `bunx playwright install chromium` |
+
+When the project has Playwright and only the browser is missing, ask the same question and run only the second column. Check with `node -e "console.log(require.resolve('@playwright/test', {paths: ['<package dir>']}))"`.
+
+Report one line per `browser` item:
+
+- `E2E browser: the project's Playwright (@playwright/test <version>)`, when it has or now has it; add `run <pm> install first` when it is declared but does not resolve yet;
+- `E2E browser: Playwright 1.63.0 installed by the tester for each run; to use your own, <the add command>`, when it has none;
+- and, when no build and no Chrome were found and nothing installed one: `no browser found: npx -y playwright@1.63.0 install chromium`.
 
 ## `env`
 
@@ -38,4 +70,4 @@ Only a variable the start command needs that the project documents (`.env.exampl
 
 ## When to ask
 
-Ask (step 3 of the skill) only when two candidates compete for `start`, or when the port is a framework default and the code or config suggests another one. A library is not a question: report "E2E skipped: the project has nothing to run (no UI, server or CLI)".
+Ask (step 3 of the skill) only when two candidates compete for `start`, or when the port is a framework default and the code or config suggests another one. The Playwright question is in [Playwright](#playwright). A library is not a question: report "E2E skipped: the project has nothing to run (no UI, server or CLI)".

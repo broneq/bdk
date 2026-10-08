@@ -23,7 +23,7 @@ cp "$here/bin/gh" .git/bdk-eval/bin/gh
 
 # Run files, as the earlier stages write them (ignored by git).
 runs=.bdk/runs/add-total
-mkdir -p "$runs/review/round-1" "$runs/e2e"
+mkdir -p "$runs/review/round-1/e2e"
 : > "$runs/review/round-1/findings.jsonl"
 cat > "$runs/review/round-1/report.md" <<'MD'
 # Review round 1: add-total
@@ -31,7 +31,7 @@ cat > "$runs/review/round-1/report.md" <<'MD'
 No blockers. 0 findings.
 MD
 
-cat > "$runs/e2e/verdict.md" <<'MD'
+cat > "$runs/review/round-1/e2e/verdict.md" <<'MD'
 Verdict: PASS
 
 - pass: Total of added amounts - total-of-added-amounts.md
@@ -40,7 +40,7 @@ Verdict: PASS
 - pass: Unknown command - unknown-command.md
 MD
 scenario() {
-  cat > "$runs/e2e/$1.md" <<MD
+  cat > "$runs/review/round-1/e2e/$1.md" <<MD
 Result: pass
 Requirement: $2
 Scenario: $3

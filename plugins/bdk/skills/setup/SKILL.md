@@ -2,7 +2,7 @@
 name: setup
 description: 'Configures a project for BDK in one run - detects the stack and how to start the product for E2E, writes .bdk/settings.yaml, adds permission allow rules, initialises OpenSpec with the BDK schema. Use when setting up or starting BDK in a project, when a BDK skill says "BDK not configured: run /bdk:setup" or reports an invalid configuration, or to change what setup detected.'
 argument-hint: "[what to change, e.g. 'add the e2e entry']"
-allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(openspec *) Bash(npx -y @fission-ai/openspec@1.13.2 *) Bash(git check-ignore *) Read Write Edit Glob Grep AskUserQuestion
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(openspec *) Bash(npx -y @fission-ai/openspec@1.13.2 *) Bash(git check-ignore *) Bash(node -e *) Bash(pnpm add -D @playwright/test@1.63.0) Bash(pnpm --filter * add -D @playwright/test@1.63.0) Bash(npm install -D @playwright/test@1.63.0) Bash(npm install -D @playwright/test@1.63.0 -w *) Bash(yarn add -D @playwright/test@1.63.0) Bash(yarn workspace * add -D @playwright/test@1.63.0) Bash(bun add -d @playwright/test@1.63.0) Bash(bun add -d @playwright/test@1.63.0 --cwd *) Bash(pnpm exec playwright install chromium) Bash(pnpm --filter * exec playwright install chromium) Bash(npx playwright install chromium) Bash(yarn playwright install chromium) Bash(bunx playwright install chromium) Read Write Edit Glob Grep AskUserQuestion
 ---
 
 Current BDK configuration of this project:
@@ -21,7 +21,7 @@ The block above shows one of three states:
 
 - `BDK not configured: run /bdk:setup`: a first run. Do every step.
 - `BDK configuration invalid`: fix the problems it lists, then continue with step 5.
-- The configuration with origins: a re-run. Keep every value a layer sets. When the arguments name a change ("add the e2e entry"), do only that change, then steps 5, 6 (rules for its new commands) and 9. Otherwise detect only the groups that are still empty and the rules and files still missing.
+- The configuration with origins: a re-run. Keep every value a layer sets. When the arguments name a change ("add the e2e entry"), do only that change, then steps 5, 6 (rules for its new commands), 9 (for a new `browser` item) and 10. Otherwise detect only the groups that are still empty and the rules and files still missing.
 
 Done when you know which steps this run does.
 
@@ -33,9 +33,9 @@ Note for every value the file it came from. Done when every group has a value, a
 
 ## 3. Ask, only when something is open
 
-Open questions are only these: two commands competing for one group, a test or lint group with no command found, an E2E `start` or port the files do not settle, an `openspec/config.yaml` naming a schema other than `spec-driven` or `bdk`, and deleting v2 files. When none is open, ask nothing and go on.
+Open questions are only these: two commands competing for one group, a test or lint group with no command found, an E2E `start` or port the files do not settle, an `openspec/config.yaml` naming a schema other than `spec-driven` or `bdk`, deleting v2 files, and installing Playwright for a `browser` item ([Playwright](references/e2e.md#playwright)). When none is open, ask nothing and go on.
 
-Otherwise ask them all in one `AskUserQuestion` call (at most 4 questions), the recommended answer first in each. A group with no command found offers "The project has none" first. When you cannot ask, take the recommended answers and name them in the report, except deleting files: then keep the v2 files and list them in the report. Done when every open question has an answer.
+Otherwise ask them all in one `AskUserQuestion` call (at most 4 questions), the recommended answer first in each. A group with no command found offers "The project has none" first. When you cannot ask, take the recommended answers and name them in the report, except deleting files and installing: then keep the v2 files, install nothing, and list both in the report. Done when every open question has an answer.
 
 ## 4. Write `.bdk/settings.yaml`
 
@@ -96,12 +96,18 @@ Done when `openspec/schemas/bdk/schema.yaml` exists and `openspec/config.yaml` s
 
 Done when `git check-ignore -q .bdk/settings.yaml` exits 1 and `git check-ignore -q .bdk/runs/x` exits 0.
 
-## 9. Verify and report
+## 9. Playwright for the browser item
+
+Only for a `browser` item, and only when the user agreed in step 3: install what [Playwright](references/e2e.md#playwright) says, one command at a time, then check that `@playwright/test` resolves from the web app's package. A failed install goes into the report with its output; go on.
+
+Done when the install ran or was not asked for, and you know which report line of [Playwright](references/e2e.md#playwright) applies.
+
+## 10. Verify and report
 
 Run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" config show` and confirm it prints the configuration, not a "not configured" or "invalid" line. Then report briefly:
 
 - each value written, with the file it came from (`tools.test.vitest: pnpm test (package.json scripts.test)`);
-- E2E: the entries written, or "E2E skipped" with the reason (a library has nothing to run);
+- E2E: the entries written, or "E2E skipped" with the reason (a library has nothing to run); for a `browser` item, the Playwright line of [Playwright](references/e2e.md#playwright);
 - the files created or changed, left uncommitted for review;
-- answers taken without asking, and anything left for the user (installing OpenSpec, a group the project has none of);
+- answers taken without asking, and anything left for the user (installing OpenSpec, an install of Playwright not asked for or declined, a group the project has none of);
 - how to change a value: `bdk config set <key> <value>` or an edit of `.bdk/settings.yaml`, then `bdk config check`.

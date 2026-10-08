@@ -87,7 +87,7 @@ Otherwise gather the body from files (Read and Grep, not from memory):
 - What the Change does: the Why and What Changes of the archived `proposal.md`, in a few lines.
 - `Resolves #<n>` when the issue is known: the Change's `issue` in `.bdk/runs/run.json`, else the issue the first line under Why names (`Tracks #42.`).
 - Specs: the capabilities whose main specs the archive changed (`openspec/specs/<capability>/`), and the spec-conformance verdict line.
-- E2E: the first line of `.bdk/runs/<change>/e2e/verdict.md`, or `no E2E results`.
+- E2E: the first line of the latest E2E verdict, the file modified last of `.bdk/runs/<change>/e2e/verdict.md` and `.bdk/runs/<change>/review/round-*/e2e/verdict.md` (Glob lists the newest first), or `no E2E results`.
 - Review: the number of `.bdk/runs/<change>/review/round-N/` directories, or `no review round ran`.
 - Decisions taken without the user: the bullets under `## Decided without the user` of `proposal.md` and every line of `design.md` that starts with `Decided without the user:`, or `none`.
 

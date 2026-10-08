@@ -53,10 +53,14 @@ export function shell(
     }
     const killGroup = (): void => {
       if (child.pid === undefined) return;
-      try {
-        process.kill(-child.pid, "SIGKILL");
-      } catch {
-        // The group is already gone.
+      // The shell first: a group kill is not atomic, and a shell that outlives its child by a
+      // moment writes `Killed: 9 ...` into the output.
+      for (const pid of [child.pid, -child.pid]) {
+        try {
+          process.kill(pid, "SIGKILL");
+        } catch {
+          // Already gone.
+        }
       }
     };
     const interrupted = (signal: NodeJS.Signals): void => {

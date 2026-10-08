@@ -16,7 +16,7 @@
 | D2 | Definitions of the finding levels | The product's behaviour decides `blocker`; a rule violation is at most `should-fix` | #193, #195, #201 |
 | D3 | What auto mode decides per level | Fix `blocker` and `should-fix`; defer `nice-to-have` without an issue; accept `not-a-problem` | #195, #201 |
 | D4 | Is Lavish a dependency of BDK? | Optional: used when available, `AskUserQuestion` otherwise | #190, #195, #181 |
-| D5 | How `e2e-check` drives a browser | Interactively, through `chrome-devtools-axi` or the Chrome DevTools MCP server, chosen by configuration | #194 |
+| D5 | How `e2e-check` drives a browser | Superseded by [ADR-0004](../adr/0004-e2e-browser-driver-playwright.md): Playwright scripts the tester writes as it goes, or the Chrome DevTools MCP server. Was: interactively, through `chrome-devtools-axi` or the Chrome DevTools MCP server, chosen by configuration | #194, #267 |
 | D6 | Verifier report body | `Verdict:` line, then `Must address`, `Should consider`, `Checked`, with stable item IDs | #190, #191, #196 |
 | D7 | Implementer and conformer report format | `Status:` or `Verdict:` first line, then fixed sections | #192, #200 |
 | D8 | Wave size limit | `execution.max-parallel`, default measured in #200 (5 until then); the lead runs larger waves in batches | #200 |
@@ -86,6 +86,8 @@ A rule violation is never a `blocker` by itself. 14 of the 17 rules in the pack 
 - Each of the two skills has eval cases for both paths.
 
 ## D5 - How `e2e-check` drives a browser
+
+> **Superseded** by [ADR-0004](../adr/0004-e2e-browser-driver-playwright.md) (#267): the default browser tool is Playwright driven by the tester, `chrome-devtools-axi` is removed, and `/bdk:setup` no longer writes `browser`. The text below is the decision as taken for #194.
 
 **Context:** a project's own E2E test suite is one command and runs through `bdk check run`. `e2e-check` is different: the agent acts as a manual tester. It starts the product from `tools.e2e`, waits for `ready`, and walks every spec scenario of the Change as a user would, to find what the tests do not cover.
 

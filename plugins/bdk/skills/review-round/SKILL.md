@@ -99,13 +99,13 @@ Report: report.md
 - checks/round-2.json: pass
 
 ## E2E
-- e2e/verdict.md: Verdict: SKIPPED (no tools.e2e entry)
+- round-2/e2e/verdict.md: Verdict: SKIPPED (no tools.e2e entry)
 
 ## Gaps
 - None.
 ```
 
-- The counts per group come from each worker's reply; the checks verdict from the check run's output; the E2E line is the first line of `<run dir>/e2e/verdict.md`.
+- The counts per group come from each worker's reply; the checks verdict from the check run's output; the E2E line is the first line of `<round dir>/e2e/verdict.md`, where the E2E tester writes its evidence when given the round's log.
 - `Gaps`: a worker that failed twice, an anchor `fallback`, uncommitted files left out of the scope. An empty section holds `- None.`
 
 Done when `round.md` exists.

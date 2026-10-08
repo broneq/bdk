@@ -14,4 +14,4 @@ fs.writeFileSync(file, text.replace(before, after));
 '
 git add .
 git -c user.name="BDK eval" -c user.email="eval@example.invalid" commit --quiet -m "fix: refuse a total without a ledger"
-rm -r .bdk/runs/add-total/e2e
+rm -r .bdk/runs/add-total/review/round-1/e2e
