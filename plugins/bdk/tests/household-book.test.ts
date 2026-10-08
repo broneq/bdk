@@ -25,6 +25,7 @@ let scratch: string;
 let ready: string;
 let planned: string;
 let queued: string;
+let gap: string;
 
 /** Builds a fixture the way the harness runs a scaffold: empty directory, minimal env. */
 function build(script: string): string {
@@ -101,7 +102,8 @@ beforeAll(() => {
   ready = build("household-book.sh");
   planned = build("household-book-planned.sh");
   queued = build("household-book-queued.sh");
-}, 3 * BUILD_LIMIT_MS);
+  gap = build("../plan-draft-household-book-gap/scaffold.sh");
+}, 4 * BUILD_LIMIT_MS);
 
 afterAll(() => {
   rmSync(scratch, { recursive: true, force: true });
@@ -222,5 +224,62 @@ describe("household-book-queued.sh: ready for an unattended plan-to-PR run", () 
     expect(config.settings.policy.gates).toEqual({ design: "auto", review: "auto" });
     expect(config.settings.policy.questions).toBe("decide-and-record");
     expect(config.settings.execution.lead).toBe("foreground");
+  });
+});
+
+/** Every file under `dir`, as paths relative to it. */
+function tree(dir: string): string[] {
+  return readdirSync(dir, { recursive: true, withFileTypes: true })
+    .filter((entry) => entry.isFile())
+    .map((entry) => join(entry.parentPath, entry.name).slice(dir.length + 1))
+    .sort();
+}
+
+// The case plan-draft-household-book-gap (spec skill-evals, "plan-draft design-gap case on the
+// B1-sized fixture"; design D1, D2 of v3-253-measure-plan-draft-gap): one product choice open.
+describe("plan-draft-household-book-gap: the short-month choice is open", () => {
+  const RECURRING = "specs/ledger-recurring/spec.md";
+
+  it("accepts recurring days 1 to 31", () => {
+    const spec = readFileSync(join(gap, CHANGE, RECURRING), "utf8");
+    expect(spec).toContain("`<day>` SHALL be a whole number from 1 to 31");
+    expect(spec).toContain("ledger recurring add -900 Rent --day 32");
+    expect(spec).toContain("it prints `ledger: day must be 1 to 31` to stderr and exits 2");
+  });
+
+  it("names neither the old range nor a short-month rule in the Change or its records", () => {
+    const rule = /1 to 28|29-31|--day 31\b|last day|clamp|every month has/i;
+    const naming = [CHANGE, ".bdk/runs/add-household-book"].flatMap((root) =>
+      tree(join(gap, root))
+        .filter((path) => rule.test(readFileSync(join(gap, root, path), "utf8")))
+        .map((path) => `${root}/${path}`),
+    );
+    expect(naming).toEqual([]);
+  });
+
+  it("keeps the 71 scenarios and holds no plan", () => {
+    expect(specScenarios(gap)).toEqual(specScenarios(ready));
+    expect(specScenarios(gap)).toHaveLength(71);
+    expect(existsSync(join(gap, CHANGE, "plan"))).toBe(false);
+  });
+
+  it("changes no other file of the Change", () => {
+    const files = tree(join(ready, CHANGE));
+    expect(tree(join(gap, CHANGE))).toEqual(files);
+    for (const path of files.filter((file) => file !== RECURRING && file !== "design.md")) {
+      expect({ path, text: readFileSync(join(gap, CHANGE, path), "utf8") }).toEqual({
+        path,
+        text: readFileSync(join(ready, CHANGE, path), "utf8"),
+      });
+    }
+  });
+
+  it("is committed into the fixture's history, the tree clean", () => {
+    expect(git(gap, "log", "--format=%s")).toBe(git(ready, "log", "--format=%s"));
+    const { stdout } = spawnSync("git", ["status", "--porcelain", "--ignored"], {
+      cwd: gap,
+      encoding: "utf8",
+    });
+    expect(stdout).toBe("!! .bdk/runs/\n");
   });
 });
