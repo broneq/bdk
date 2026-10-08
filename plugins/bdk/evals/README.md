@@ -182,7 +182,7 @@ bash "$(dirname "$0")/../fixtures/tiny-ledger.sh"
 
 ### B1-sized fixture
 
-The speed targets and the plan shape are measured on a Change the size of B1 (27 tasks, 62 files; architecture design, "Product requirements", Speed). Two shared fixtures hold one, in two states of the same project: the Node CLI `ledger` (a book in `ledger.json`, `add` and `balance`, 11 passing tests, its main spec), configured for BDK with a `node-test` test tool and a `cli` e2e tool, and the Change `add-household-book`, which grows it into a household book: accounts and transfers, categories and rules, CSV statement import, budgets and recurring entries, list and export, reports. Seven capabilities, 70 scenarios.
+The speed targets and the plan shape are measured on a Change the size of B1 (27 tasks, 62 files; architecture design, "Product requirements", Speed). Two shared fixtures hold one, in two states of the same project: the Node CLI `ledger` (a book in `ledger.json`, `add` and `balance`, 11 passing tests, its main spec), configured for BDK with a `node-test` test tool and a `cli` e2e tool, and the Change `add-household-book`, which grows it into a household book: accounts and transfers, categories and rules, CSV statement import, budgets and recurring entries, list and export, reports. Seven new capabilities and the modified `ledger`, 71 scenarios.
 
 | Fixture | State | Start a run at |
 |---|---|---|
@@ -198,6 +198,14 @@ pnpm --filter @bdk/bdk run eval --allow-tools Write "Bash(*/bin/bdk *)" "Bash(gi
 ```
 
 On a Mac it needs the clean `HOME` and the git shell prefix of "Host limits". Recorded 2026-10-08: score 1.00, 114 s, $0.77.
+
+`plan-draft-household-book` runs `plan-draft` on the ready-to-plan state, with and without the plugin; it is where `plan-draft` shows what it adds over the BDK schema on a Change of this size (#242). Its graders cannot read every part, so keep each run's workspace and measure the parts there as well (`bdk plan check`, scenario ownership, a `/bdk:verify-plan` round); the archived Change `v3-242-measure-plan-draft` holds the method and the recorded result:
+
+```bash
+pnpm --filter @bdk/bdk run eval --allow-tools Write Edit "Bash(*/bin/bdk *)" --case 'plan-draft-household-book' --model sonnet -j 3 --keep-temp
+```
+
+Recorded 2026-10-08 (sonnet): WITH 1.00, W/OUT 0.80, Δ +0.20; with the plugin every plan keeps the part limits and 4 of 6 pass `verify-plan` first time, without it none does (part 01 over the limits every time).
 
 A case that plans, executes or times the Change uses the fixture from its own scaffold, as any shared fixture. By hand, build a workspace outside this repository and run the stage there:
 
