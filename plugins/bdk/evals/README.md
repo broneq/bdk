@@ -140,6 +140,14 @@ The `close-*` cases are the orchestrator cases of `/bdk:close` (one arm). They s
 PATH=".git/bdk-eval/bin:$PATH" pnpm --filter @bdk/bdk run eval --ablation none --tag orchestrator --allow-tools Write Edit "Bash(*/bin/bdk *)" "Bash(openspec *)" "Bash(gh *)" "Bash(git *)" --case 'close-*'
 ```
 
+The `run-*` cases are the orchestrator cases of `/bdk:run` (one arm). `run-two-prs`, `run-resume` and `run-waiting-blocker` start from the shared fixture `tally-queue.sh`: `tally-reviewed.sh` plus a second reviewed Change `add-count` on its own branch from `main`, the records of the stages before review for both Changes (so `bdk run status` puts them at `close`), issues 1 and 2 for the offline `gh` stand-in, and `.bdk/runs/run.json` queueing both. `run-resume` closes `add-total` and archives `add-count` in its scaffold; `run-waiting-blocker` replaces the second entry with a Change of issue 2 blocked by `add-total` and not started. `run-queue-from-issues` starts from `tiny-ledger-bdk.sh` with a bare `origin` and two issues, 1 blocked by 2, and stops at the manual design gate of the first Change, so it runs `propose` and the design blocks (an opus `bdk:verifier`). Put the stand-in first on `PATH` as for the `close-*` cases (on a Mac, see the `git` entry of "Host limits"):
+
+```bash
+PATH=".git/bdk-eval/bin:$PATH" pnpm --filter @bdk/bdk run eval --ablation none --tag orchestrator --allow-tools Write Edit "Bash(*/bin/bdk *)" "Bash(openspec *)" "Bash(gh *)" "Bash(git *)" --case 'run-*'
+```
+
+Recorded 2026-10-08: every `run-*` case 1.00 over 3 runs, 392 s with `-j 4`, $9.35 in total.
+
 The `pr-review-*` cases are the orchestrator cases of `/bdk:pr-review` (one arm). They start from the shared fixture `monthly-report-pr.sh`: the `monthly-report` Change with its two seeded bugs as pull request 7 of a bare `origin` inside the workspace (`refs/pull/7/head`), the user's checkout on `main`, and the offline `gh` stand-in, which answers `gh pr view 7`, `gh repo view` and `gh api user`, and records a posted review in `.git/bdk-eval/reviews/7-<k>.json`. One `bdk:lead` fetches the head into `.bdk/runs/pr-7/worktree`, records the groups and runs the review blocks there (two `bdk:reviewer`, an opus `bdk:integration-reviewer`, a `bdk:judge`). `pr-review-post` asks to post without a question; `pr-review-confirm` does not, and grades that nothing is posted (on a Mac, see the `git` entry of "Host limits"):
 
 ```bash

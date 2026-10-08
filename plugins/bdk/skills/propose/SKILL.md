@@ -1,7 +1,7 @@
 ---
 name: propose
 description: 'Opens a BDK Change from an intent or a GitHub issue - runs openspec new change with the BDK schema and writes proposal.md with the capabilities the design stage works from. Use when starting a feature or fix in a BDK project, when asked to "start a change", "propose" or "open a change for issue #N", or when /bdk:run reaches the propose stage.'
-argument-hint: '"<intent>" | #<issue> | <issue URL>'
+argument-hint: '"<intent>" | #<issue> | <issue URL> [--name <change>]'
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(openspec *) Bash(gh issue view *) Read Write Edit Glob Grep AskUserQuestion
 ---
 
@@ -26,8 +26,9 @@ Done when the project is configured, or you have stopped.
 - An issue reference (`#42`, `42`, `owner/repo#42`, an issue URL): run `gh issue view <ref> --json number,title,body,labels,state,url`. Pass `#42` as `42`, and `owner/repo#42` as `42 --repo owner/repo`. When it exits non-zero, stop: create nothing and quote the `gh` error.
 - Any other text: the intent, as the user wrote it.
 - No argument and no request in the conversation: ask the user what to change, and create nothing until they answer.
+- `--name <change>` (as `/bdk:run` passes it): the Change's name, taken off the input. When it does not match `^[a-z0-9][a-z0-9-]*$`, stop: create nothing and name the rule.
 
-Done when you hold the issue's title and body, or the intent.
+Done when you hold the issue's title and body, or the intent, and the name when `--name` gave one.
 
 ## 3. Read the main specs it touches
 
@@ -46,7 +47,7 @@ Done when every open question has an answer.
 
 ## 5. Open the Change
 
-Name it in kebab-case, two to five words of the change; from an issue, `<issue-number>-<slug>` (`42-csv-export`). When `openspec/changes/<name>/` exists: with a `proposal.md`, stop and report that Change and its proposal path, changing nothing; without one, write the proposal into it. Otherwise run `openspec new change <name> --schema bdk`.
+With `--name`, use that name. Otherwise name it in kebab-case, two to five words of the change; from an issue, `<issue-number>-<slug>` (`42-csv-export`). When `openspec/changes/<name>/` exists: with a `proposal.md`, stop and report that Change and its proposal path, changing nothing; without one, write the proposal into it. Otherwise run `openspec new change <name> --schema bdk`.
 
 Done when `openspec/changes/<name>/.openspec.yaml` exists.
 
