@@ -117,7 +117,7 @@ describe("fold", () => {
         "",
         event({ type: "level", id: idA, level: "urgent" }),
         event({ type: "comment", id: idA }),
-        event({ type: "decision", id: idA, decision: "defer" }),
+        event({ type: "decision", id: idA, decision: "fix", issue: "#9" }),
         event({ type: "level", id: "f-000000000000", level: "blocker" }),
         "[1]",
         finding(B),

@@ -491,7 +491,7 @@ flowchart LR
   class F store
 ```
 
-- The file is an event log. A `finding` line holds `id`, `source`, `file`, `line`, `rule`, `summary`, `evidence`. A `level` line (judge: blocker, should-fix, nice-to-have, not-a-problem) and a `decision` line (triage: fix, accept, defer with an issue) name a finding id. `bdk findings list` folds the log into the current view; the event schema and the dedupe key are in spec `bdk-cli/findings`.
+- The file is an event log. A `finding` line holds `id`, `source`, `file`, `line`, `rule`, `summary`, `evidence`. A `level` line (judge: blocker, should-fix, nice-to-have, not-a-problem) and a `decision` line (triage: fix, accept, defer, with an issue only when the user chose one) name a finding id. `bdk findings list` folds the log into the current view; the event schema and the dedupe key are in spec `bdk-cli/findings`.
 - Writers append through `bdk findings add|level|decide`, which opens the file in append mode and writes one line per call, so parallel reviewers never rewrite each other's lines. `bdk check run` appends red checks itself.
 - In draft 1 a kernel ledger held findings (`bdk log add|list|triage`); here the file and `bdk findings` replace it.
 - The model writes the triage page from the merged findings, following the `lavish-axi` playbooks. In auto mode the judge's levels and the policy decide.

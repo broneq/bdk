@@ -224,9 +224,23 @@ describe("bdk findings decide", () => {
     ]);
   });
 
+  it("defers without an issue", async () => {
+    const files = new MemoryFiles();
+    await bdk(files, "findings", "add", LOG, ...A);
+    expect(
+      decideResult.parse(
+        await json(files, "findings", "decide", LOG, idA, "defer", "--reason", "nice-to-have"),
+      ),
+    ).toEqual({ id: idA, decision: "defer" });
+    expect(lines(files).slice(1)).toEqual([
+      { type: "decision", id: idA, decision: "defer", reason: "nice-to-have" },
+    ]);
+    expect((await bdk(files, "findings", "list", LOG)).stdout).toContain(`${idA}  -  defer  `);
+  });
+
   it.each([
-    [["defer"], "usage/invalid-argument"],
     [["fix", "--issue", "#9"], "usage/invalid-argument"],
+    [["accept", "--issue", "#9"], "usage/invalid-argument"],
     [["later"], "usage/invalid-argument"],
   ])("refuses %j with %s", async (rest, code) => {
     const files = new MemoryFiles();

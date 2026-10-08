@@ -41,8 +41,8 @@ export const decisionEvent = z
     issue: text.optional(),
     reason: text.optional(),
   })
-  .refine((event) => (event.decision === "defer") === (event.issue !== undefined), {
-    message: "a defer decision needs an issue, other decisions take none",
+  .refine((event) => event.decision === "defer" || event.issue === undefined, {
+    message: "only a defer decision takes an issue",
   });
 
 export const event = z.discriminatedUnion("type", [findingEvent, levelEvent, decisionEvent]);
