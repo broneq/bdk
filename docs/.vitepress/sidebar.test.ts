@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { sidebarItems } from "./sidebar.ts";
+import { declaredItems, sidebar, sidebarItems, unlistedPages, USER_SECTIONS } from "./sidebar.ts";
 
 function docsDir(files: Record<string, string>): string {
   const root = mkdtempSync(join(tmpdir(), "bdk-sidebar-"));
@@ -55,5 +55,51 @@ describe("sidebarItems", () => {
     expect(sidebarItems(root, "design").map((item) => item.link)).toContain(
       "/design/2026-10-07-v3-architecture",
     );
+  });
+});
+
+describe("user sections", () => {
+  const sections = [{ text: "Concepts", dir: "concepts", pages: ["index", "b"] }];
+
+  it("lists a section in its declared order, the index as the section root", () => {
+    const root = docsDir({
+      "concepts/b.md": "# B - second\n",
+      "concepts/index.md": "# Concepts - start\n",
+    });
+
+    expect(
+      declaredItems(root, { text: "Concepts", dir: "concepts", pages: ["index", "b"] }),
+    ).toEqual([
+      { text: "Concepts", link: "/concepts/" },
+      { text: "B", link: "/concepts/b" },
+    ]);
+  });
+
+  it("names a page missing from the sidebar and a sidebar page without a file", () => {
+    const root = docsDir({
+      "concepts/index.md": "# Concepts\n",
+      "concepts/extra.md": "# Extra\n",
+      "concepts/deep/page.md": "# Deep\n",
+    });
+
+    expect(unlistedPages(root, sections)).toEqual([
+      "docs/concepts/deep/page.md is not in the Concepts sidebar",
+      "docs/concepts/extra.md is not in the Concepts sidebar",
+      "the Concepts sidebar lists docs/concepts/b.md, which does not exist",
+    ]);
+  });
+
+  it("lists every Guide, Concepts and Reference page of this site, and only those", () => {
+    expect(unlistedPages(import.meta.dirname + "/..", USER_SECTIONS)).toEqual([]);
+  });
+
+  it("orders the sections Guide, Concepts, Reference, decisions, designs", () => {
+    expect(sidebar(import.meta.dirname + "/..").map((section) => section.text)).toEqual([
+      "Guide",
+      "Concepts",
+      "Reference",
+      "Architecture decisions",
+      "Designs",
+    ]);
   });
 });
