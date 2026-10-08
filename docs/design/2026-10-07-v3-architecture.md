@@ -568,7 +568,7 @@ The BDK rule pack works as in draft 1: one file per rule with `kind`, `paths` an
 | Hidden cost: every block and orchestrator needs paid eval cases | Each model change | A small case set per block; the B1 fixture runs by hand |
 | Hidden cost: the tree uses all 3 levels under the main thread | A helper of an implementer needs its own helper | Helpers do not spawn; the limit is configurable by the host but not relied on |
 | Experimental dependency: OpenSpec project schemas | An OpenSpec release changes schema handling | Pin the OpenSpec version in setup; `bdk config check` validates the schema; fall back to `spec-driven` plus BDK plan files |
-| Assumption: 15 min execute is reachable | B1 took 47 min for 6 waves with one agent per task; the time of one part agent is not measured | Measure the time per part on the B1 fixture; `bdk plan check` reports waves; keep plans to 2-3 waves |
+| Assumption: 15 min execute is reachable | B1 took 47 min for 6 waves with one agent per task; the time of one part agent is not measured | Measure the time per part on the B1 fixture; `bdk plan check` reports waves; keep plans to 2-3 waves. Measured (#208, archived Change `v3-208-measure-speed-b1`): execute 7.6-7.8 min in 3 waves, plan to PR 22.9-26.5 min |
 | Assumption: a background lead works in interactive sessions and a foreground lead in `-p` | Host changes in background task handling | `execution.lead` switch; probe both modes before building the leads |
 
 ---

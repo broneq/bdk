@@ -43,6 +43,7 @@ Alternative: one file per collection - lost, one file keeps the "current directo
 - `subcommand(command, args, names): string`: `args[0]` when it is one of `names`, otherwise `UsageError("<command> needs one of <names in name order, joined by ', '>")`. A command with subcommands calls it on its raw arguments first, then `parseArgs(args.slice(1), <the options of that subcommand>)`, so `ledger recurring list --day 3` is an unknown option.
 - `openBook(io): Book` and `writeBook(io, book): void` on `<io.cwd>/ledger.json`; `openBook` throws `UsageError("cannot read ledger.json")` on a read error.
 - `readAmount(text): number` (`not an amount: <text>`), `readDate(text): string` (`invalid date <text>`), `readMonth(text): string` (`invalid month <text>`), `requireAccount(book, name)` (`no account <name>`), `requireCategory(book, name)` (`no category <name>`): argument checks every command shares, each throwing `UsageError`.
+- A command called without a positional argument it requires throws `UsageError("<command> needs <the missing arguments>")`, `<command>` with its subcommand (`import needs a file`), or checks its arguments with the missing ones as empty texts, failing on the first check (`readAmount("")` gives `not an amount: `), spec `ledger` ("Options").
 
 `add` and `balance` move to `src/commands/add.js` and `src/commands/balance.js`.
 
