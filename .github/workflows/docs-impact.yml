@@ -1,0 +1,33 @@
+name: docs-impact
+
+# A pull request that changes what a BDK user sees (skills, agents, hooks, plugin sources, main
+# specs) changes a Guide or Concepts page too, or says why in its description
+# (v3-268-docs-site-user-docs, design D9). Its own workflow, so that editing the description
+# re-runs only this job.
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+jobs:
+  docs-impact:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      # The body goes through the environment, never into the script text.
+      - name: Check that user docs follow the sources
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: node scripts/docs-impact.ts

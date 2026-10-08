@@ -18,3 +18,5 @@ docs/v3-draft1/
 openspec/changes/archive/
 # Local agent worktrees: full copies of the repository.
 .claude/worktrees/
+# Copied unchanged from the design system (docs/.vitepress/theme/design-system/README.md).
+docs/.vitepress/theme/design-system/

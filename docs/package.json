@@ -6,12 +6,19 @@
     "docs:build": "vitepress build",
     "docs:dev": "vitepress dev",
     "docs:preview": "vitepress preview",
-    "typecheck": "tsc -p .vitepress"
+    "typecheck": "vue-tsc -p .vitepress"
   },
   "devDependencies": {
+    "happy-dom": "20.0.0",
     "mermaid": "12.1.0",
     "typescript": "6.0.3",
     "vitepress": "1.6.4",
-    "vue": "3.5.43"
+    "vue": "3.5.43",
+    "vue-tsc": "3.3.11"
+  },
+  "dependencies": {
+    "@fontsource-variable/archivo": "5.3.0",
+    "@fontsource-variable/geist": "5.3.0",
+    "@fontsource-variable/jetbrains-mono": "5.3.0"
   }
 }

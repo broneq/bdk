@@ -43,6 +43,7 @@ rules:
     - Carry the task's Input over by citation - design section headings, ADR numbers and decision IDs (e.g. ADR-0003, D2-2). Do not restate a decision; do not reopen a decided one.
     - Every item under the task's "To resolve in the spec" is either resolved in proposal.md / design.md or listed as an open question for the user with a recommendation.
     - Stay inside the task's Scope. Work that another issue owns is named as out of scope with that issue number.
+    - Impact names the user docs pages (docs/guide/, docs/concepts/) the Change updates, or says that it changes nothing a BDK user sees.
   specs:
     - Every item in the task's Acceptance signal becomes a Requirement with at least one "#### Scenario:" in WHEN / THEN form.
     - "A task whose output is only documents or research (no behaviour change) sets `skip_specs: true` instead of inventing requirements."
@@ -54,12 +55,14 @@ rules:
     - Code tasks are test-first - the failing test is its own step before the implementation step.
     - A skill is built or rewritten with /skill-creator, and its eval case is its own step before the skill text. A CLI helper, hook or workflow is added only for a problem an eval or a measurement showed; the task names that problem.
     - A skill is tried in a separate test project started with `claude --plugin-dir`, never inside this repository.
+    - A Change that changes what a BDK user sees (a skill, agent, hook, `bdk` command, settings key, or the flow between them) has a task group "Docs" before the last one, naming each docs/guide/ or docs/concepts/ page it updates and running `pnpm docs:reference`. A Change with no user-visible change has no Docs group and says why in the proposal's Impact.
     - The last task group checks the Acceptance signal end to end, then runs every check CI runs (.github/workflows/), `openspec validate <change> --strict` and `openspec validate --specs --strict`.
 
 operations:
   apply:
     guidance:
       - When starting, make sure the tracking issue is assigned and its card on the project board is "In Progress" (CLAUDE.md, SDLC "Start").
+      - Do the "Docs" task group like any other - update the pages it names and run `pnpm docs:reference`. `pnpm check` fails on a stale Reference page or a docs page that names something gone.
   archive:
     guidance:
-      - Archive only after /opsx:verify passes and the main specs are synced. The archived change lands through one Conventional Commit and a PR into staging/v3; after the merge, close the tracking issue with gh issue close.
+      - Archive only after /opsx:verify passes, the "Docs" task group (when the Change has one) is checked, and the main specs are synced. The archived change lands through one Conventional Commit and a PR into staging/v3; after the merge, close the tracking issue with gh issue close.

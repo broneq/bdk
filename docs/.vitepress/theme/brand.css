@@ -1,0 +1,616 @@
+/*
+ * The Broniszewski design system on the VitePress default theme. The tokens come unchanged from
+ * ./design-system/ (see its README.md); this file maps them onto VitePress's variables and
+ * restyles the parts of the default theme the site uses. Light theme by default, the
+ * design system's dark theme under VitePress's `.dark` class.
+ */
+
+@import "@fontsource-variable/archivo";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/jetbrains-mono";
+@import "./design-system/colors.css";
+@import "./design-system/typography.css";
+@import "./design-system/spacing.css";
+@import "./design-system/effects.css";
+@import "./design-system/components.css";
+
+/* The fonts are self-hosted variable fonts, so their family names carry "Variable". */
+:root {
+  --font-display: "Archivo Variable", "Archivo", "Geist Variable", system-ui, sans-serif;
+  --font-sans: "Geist Variable", "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono:
+    "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+
+/*
+ * The dark theme of colors.css (`.bn-dark`), for VitePress's `.dark` on <html> and for the
+ * navigation bar, which is dark in both themes. design-system.test.ts keeps it equal to
+ * colors.css.
+ */
+html.dark,
+.VPNav,
+.VPNavScreen,
+.bdk-dark {
+  --bg-page: var(--bn-ink-900);
+  --bg-subtle: var(--bn-ink-850);
+  --bg-raised: var(--bn-ink-800);
+  --bg-inverse: var(--bn-white);
+  --fg-default: #f2f3f5;
+  --fg-body: var(--bn-ink-300);
+  --fg-muted: var(--bn-ink-400);
+  --line-default: rgba(255, 255, 255, 0.1);
+  --line-strong: rgba(255, 255, 255, 0.32);
+  --line-input: var(--bn-ink-500);
+  --grid-line: rgba(255, 255, 255, 0.045);
+  --accent-text: var(--bn-blue-400);
+  --signal-text: var(--bn-signal-500);
+  --focus-color: var(--bn-blue-400);
+  --danger-text: var(--bn-danger-300);
+  --success-text: var(--bn-success-300);
+}
+
+/*
+ * VitePress's variables from the tokens. Declared on every element that sets the tokens, because
+ * a custom property resolves its var() where it is declared.
+ */
+:root,
+html.dark,
+.VPNav,
+.VPNavScreen,
+.bdk-dark {
+  --vp-font-family-base: var(--font-sans);
+  --vp-font-family-mono: var(--font-mono);
+
+  --vp-c-bg: var(--bg-page);
+  --vp-c-bg-alt: var(--bg-subtle);
+  --vp-c-bg-elv: var(--bg-raised);
+  --vp-c-bg-soft: var(--bg-subtle);
+  --vp-c-text-1: var(--fg-default);
+  --vp-c-text-2: var(--fg-body);
+  --vp-c-text-3: var(--fg-muted);
+  --vp-c-divider: var(--line-default);
+  --vp-c-border: var(--line-input);
+  --vp-c-gutter: var(--line-default);
+
+  --vp-c-brand-1: var(--accent-text);
+  --vp-c-brand-2: var(--accent-hover);
+  --vp-c-brand-3: var(--accent-fill);
+  --vp-c-brand-soft: var(--bn-blue-a16);
+  --vp-c-default-soft: var(--bg-subtle);
+
+  --vp-c-tip-1: var(--accent-text);
+  --vp-c-tip-soft: var(--bn-blue-a16);
+  --vp-c-success-1: var(--success-text);
+  --vp-c-danger-1: var(--danger-text);
+  --vp-c-danger-soft: rgba(229, 72, 77, 0.12);
+  --vp-c-warning-1: var(--signal-text);
+  --vp-c-warning-soft: var(--bn-signal-a22);
+
+  --vp-nav-bg-color: var(--bg-page);
+  --vp-sidebar-bg-color: var(--bg-subtle);
+  --vp-local-nav-bg-color: var(--bg-page);
+  --vp-backdrop-bg-color: rgba(10, 12, 16, 0.6);
+
+  --vp-code-bg: var(--bg-subtle);
+  --vp-code-color: var(--fg-default);
+  --vp-code-block-bg: var(--bn-ink-950);
+  --vp-code-block-color: var(--bn-ink-200);
+  --vp-code-block-divider-color: rgba(255, 255, 255, 0.1);
+  --vp-code-lang-color: var(--bn-ink-400);
+  --vp-code-copy-code-bg: var(--bn-ink-800);
+  --vp-code-copy-code-hover-bg: var(--bn-ink-700);
+  --vp-code-copy-code-border-color: rgba(255, 255, 255, 0.1);
+  --vp-code-copy-code-hover-border-color: rgba(255, 255, 255, 0.32);
+  --vp-code-copy-code-active-text: var(--bn-ink-200);
+  --vp-code-line-highlight-color: rgba(61, 107, 255, 0.16);
+
+  --vp-input-bg-color: var(--bg-page);
+  --vp-input-border-color: var(--line-input);
+  --vp-local-search-bg: var(--bg-subtle);
+  --vp-local-search-result-bg: var(--bg-page);
+  --vp-local-search-result-border: var(--line-default);
+  --vp-local-search-result-selected-bg: var(--bg-page);
+  --vp-local-search-result-selected-border: var(--accent);
+  --vp-local-search-highlight-bg: var(--bn-blue-a16);
+  --vp-local-search-highlight-text: var(--fg-default);
+
+  --vp-shadow-1: none;
+  --vp-shadow-2: none;
+  --vp-shadow-3: var(--shadow-pop);
+  --vp-shadow-4: var(--shadow-pop);
+  --vp-shadow-5: var(--shadow-pop);
+}
+
+/* Focus, selection and motion as the design system sets them on every page. */
+:focus-visible {
+  outline: var(--focus-width) solid var(--focus-color);
+  outline-offset: var(--focus-offset);
+}
+
+::selection {
+  background: var(--bn-signal-500);
+  color: var(--bn-ink-900);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Utilities of the design system's base.css the site uses, scoped so they leave VitePress's own
+   `.container` alone. */
+.bdk-home .container {
+  width: 100%;
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding-inline: var(--container-pad);
+}
+
+/* Headings of the home page's components, as base.css sets them. */
+/* Element specificity, as in base.css: above VitePress's heading reset, below every component rule. */
+:where(.bdk-home) :is(h1, h2, h3, h4) {
+  font-family: var(--font-display);
+  font-weight: 800;
+  color: var(--fg-default);
+  text-wrap: balance;
+}
+
+:where(.bdk-home) :is(h1, h2) {
+  line-height: var(--lh-heading);
+  letter-spacing: var(--ls-heading);
+}
+
+:where(.bdk-home) :is(h3, h4) {
+  font-weight: 700;
+  line-height: var(--lh-title);
+  letter-spacing: var(--ls-title);
+}
+
+.bn-label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.bn-dot,
+.bdk-dot {
+  color: var(--accent);
+}
+
+.bn-grid {
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: var(--grid-size) var(--grid-size);
+}
+
+.bdk-dark {
+  background-color: var(--bg-page);
+  color: var(--fg-body);
+}
+
+/* ---------- Navigation bar: dark in both themes, the wordmark with its blue period ---------- */
+
+.VPNav {
+  color: var(--fg-body);
+}
+
+.VPNavBar,
+.VPNavBar:not(.home),
+.VPNavBar.has-sidebar .content,
+.VPNavBar.has-sidebar .title {
+  background-color: var(--bg-page) !important;
+}
+
+.VPNavBar .divider-line,
+.VPNavBar.has-sidebar .divider-line {
+  background-color: var(--line-default);
+}
+
+.VPNavBarTitle .title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 21px;
+  letter-spacing: -0.02em;
+  color: var(--fg-default);
+}
+
+.VPNavBarTitle .title::after {
+  content: ".";
+  color: var(--accent);
+}
+
+.VPNavBarMenuLink {
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--fg-body);
+}
+
+.VPNavBarMenuLink:hover {
+  color: var(--fg-default);
+}
+
+/* The current section: white text with the accent dot before it, as in the site header. */
+.VPNavBarMenuLink.active {
+  position: relative;
+  color: var(--fg-default);
+}
+
+.VPNavBarMenuLink.active::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.DocSearch-Button {
+  border-radius: var(--radius-xs);
+  background: var(--bg-subtle);
+}
+
+/* ---------- Sidebar and outline: mono labels, the accent rule on the current item ---------- */
+
+.VPSidebar {
+  border-right: 1px solid var(--line-default);
+}
+
+.VPSidebarItem.level-0 > .item > .text,
+.VPSidebarItem.level-0 > .item > h2.text {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  font-weight: 400;
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.VPSidebarItem.level-0 > .item > .text::before {
+  content: "// ";
+  color: var(--accent-text);
+}
+
+.VPSidebarItem.level-1 .text {
+  font-size: 14px;
+  color: var(--fg-body);
+}
+
+.VPSidebarItem.level-1 .link:hover .text {
+  color: var(--fg-default);
+}
+
+/* The current page: default text with the accent rule, as the design system's table of contents
+   marks it. The extra .VPSidebar outranks VitePress's scoped brand-coloured rule. */
+.VPSidebar .VPSidebarItem.level-1.is-active > .item > .link > .text {
+  color: var(--fg-default);
+  font-weight: 500;
+}
+
+.VPSidebar .VPSidebarItem.level-1.is-active > .item > .indicator {
+  left: -17px;
+  width: 2px;
+  background-color: var(--accent);
+}
+
+.VPDocAsideOutline .outline-title {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  font-weight: 400;
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.VPDocAsideOutline .outline-marker {
+  width: 2px;
+  background-color: var(--accent);
+}
+
+.VPDocAsideOutline .outline-link {
+  font-size: 14px;
+  color: var(--fg-muted);
+}
+
+.VPDocAsideOutline .outline-link:hover,
+.VPDocAsideOutline .outline-link.active {
+  color: var(--fg-default);
+}
+
+/* ---------- Page header: eyebrow, Archivo title with the blue period, lead ---------- */
+
+.bdk-eyebrow {
+  margin: 0 0 20px;
+}
+
+.vp-doc h1 {
+  margin: 0 0 0 var(--display-inset);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(36px, 2.4vw + 22px, 56px);
+  line-height: var(--lh-heading);
+  letter-spacing: var(--ls-heading);
+  color: var(--fg-default);
+  text-wrap: balance;
+}
+
+.vp-doc .bdk-page-lead {
+  margin: 20px 0 0;
+  padding-bottom: var(--space-10);
+  border-bottom: 1px solid var(--line-default);
+  font-size: var(--fs-lead);
+  line-height: 1.55;
+  color: var(--fg-body);
+}
+
+/* ---------- Prose: the article styles of the design system ---------- */
+
+.vp-doc {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--fg-body);
+}
+
+.vp-doc p,
+.vp-doc summary {
+  line-height: 1.65;
+}
+
+.vp-doc strong {
+  font-weight: 600;
+  color: var(--fg-default);
+}
+
+.vp-doc a {
+  color: var(--accent-text);
+  font-weight: 400;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.vp-doc a:hover {
+  color: var(--fg-default);
+}
+
+.vp-doc h2,
+.vp-doc h3,
+.vp-doc h4 {
+  font-family: var(--font-display);
+  color: var(--fg-default);
+}
+
+.vp-doc h2 {
+  margin: 56px 0 20px;
+  padding-top: 40px;
+  border-top: 1px solid var(--line-default);
+  font-weight: 800;
+  font-size: clamp(26px, 1vw + 20px, 34px);
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+}
+
+/* Guide and Concepts number their chapters, as the design system's articles do. */
+.vp-doc {
+  counter-reset: bdk-chapter;
+}
+
+.bdk-numbered .vp-doc h2 {
+  counter-increment: bdk-chapter;
+}
+
+.bdk-numbered .vp-doc h2::before {
+  content: counter(bdk-chapter, decimal-leading-zero);
+  display: block;
+  margin-bottom: 14px;
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: var(--fs-label);
+  line-height: 1.3;
+  letter-spacing: var(--ls-label);
+  color: var(--accent-text);
+}
+
+.vp-doc h3 {
+  margin: 40px 0 12px;
+  font-weight: 700;
+  font-size: 22px;
+  line-height: var(--lh-title);
+  letter-spacing: var(--ls-title);
+}
+
+.vp-doc h4 {
+  margin: 32px 0 10px;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: var(--ls-title);
+}
+
+.vp-doc .header-anchor {
+  color: var(--accent-text);
+  text-decoration: none;
+}
+
+/* Lists: accent squares, mono numbers. */
+.vp-doc ul,
+.vp-doc ol {
+  padding-left: 0;
+  list-style: none;
+}
+
+.vp-doc ol {
+  counter-reset: bdk-ol;
+}
+
+.vp-doc li {
+  position: relative;
+  padding-left: 1.75em;
+}
+
+.vp-doc ul > li::before {
+  content: "";
+  position: absolute;
+  left: 0.15em;
+  top: calc(0.825em - 3px);
+  width: 6px;
+  height: 6px;
+  background: var(--accent);
+}
+
+.vp-doc ol > li {
+  counter-increment: bdk-ol;
+}
+
+.vp-doc ol > li::before {
+  content: counter(bdk-ol, decimal-leading-zero);
+  position: absolute;
+  left: 0;
+  top: 0.2em;
+  font-family: var(--font-mono);
+  font-size: 0.75em;
+  letter-spacing: 0.04em;
+  color: var(--accent-text);
+}
+
+/* Tables: hairline rows under a strong top rule, mono heads, no stripes. */
+.vp-doc table {
+  border-collapse: collapse;
+  border-top: 2px solid var(--line-strong);
+}
+
+.vp-doc tr,
+.vp-doc tr:nth-child(2n) {
+  background-color: transparent;
+  border-top: 0;
+}
+
+.vp-doc th,
+.vp-doc td {
+  border: 0;
+  border-bottom: 1px solid var(--line-default);
+  padding: 12px 16px 12px 0;
+  font-size: 15px;
+}
+
+.vp-doc th {
+  background-color: transparent;
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: var(--fs-micro);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+/* A plugin, key or command name in a table cell stays on one line: `bdk-craft` broke at its
+   hyphen. A wide table scrolls, as every VitePress table does. */
+.vp-doc td code {
+  white-space: nowrap;
+}
+
+/* Code: mono on a subtle chip inline; blocks are always dark ink. */
+.vp-doc :not(pre) > code {
+  padding: 0.15em 0.4em;
+  border-radius: var(--radius-xs);
+  font-size: 0.85em;
+}
+
+/* In a heading, code is the heading's own mono type, not a chip. */
+.vp-doc :is(h1, h2, h3, h4) code {
+  padding: 0;
+  background: none;
+  font-size: 0.9em;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.vp-doc div[class*="language-"] {
+  border-radius: var(--radius-sm);
+}
+
+.vp-doc blockquote {
+  padding: 2px 0 2px 24px;
+  border-left: 2px solid var(--accent);
+  color: var(--fg-default);
+}
+
+.vp-doc hr {
+  border-top: 1px solid var(--line-default);
+}
+
+/* Custom blocks: a hairline frame with the accent rule. */
+.vp-doc .custom-block {
+  border: 1px solid var(--line-default);
+  border-left: 2px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-subtle);
+  color: var(--fg-body);
+}
+
+.vp-doc .custom-block.warning,
+.vp-doc .custom-block.caution {
+  border-left-color: var(--signal);
+}
+
+.vp-doc .custom-block.danger {
+  border-left-color: var(--bn-danger);
+}
+
+.vp-doc .custom-block-title {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: var(--fs-micro);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--fg-default);
+}
+
+/* Previous and next page: hairline cards with mono labels. */
+.VPDocFooter .pager-link {
+  border: 1px solid var(--line-default);
+  border-radius: var(--radius-sm);
+}
+
+.VPDocFooter .pager-link:hover {
+  border-color: var(--line-strong);
+}
+
+.VPDocFooter .desc {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.VPDocFooter .title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: var(--ls-title);
+  color: var(--fg-default);
+}
+
+/* ---------- Diagrams: hairline frame, no shadows on the shapes ---------- */
+
+.vp-doc .mermaid svg :is(rect, polygon, path, circle, ellipse) {
+  filter: none !important;
+}
+
+.vp-doc .mermaid {
+  margin: 24px 0;
+  padding: 24px;
+  border: 1px solid var(--line-default);
+  border-radius: var(--radius-sm);
+}
