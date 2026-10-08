@@ -1,19 +1,4 @@
-# bdk-pr-review Specification
-
-## Purpose
-
-Defines the PR review of the `bdk` plugin: the thin orchestrator `/bdk:pr-review`, which starts one `bdk:lead` agent that reviews a GitHub pull request with the review blocks, and turns the judged findings into one GitHub review that is posted only after the user confirms it.
-
-## Requirements
-
-### Requirement: Skills and agent
-
-The `bdk` plugin SHALL ship the skills `pr-review` (`skills/pr-review/`, the user command `/bdk:pr-review`) and `pr-review-round` (`skills/pr-review-round/`, not user-invocable). `/bdk:pr-review` SHALL start one `bdk:lead` agent whose prompt names the skill `bdk:pr-review-round` and the arguments `<number> --run-dir <absolute .bdk/runs/pr-<number>>`; it SHALL start no reviewer itself and edit no project file. `pr-review-round` SHALL run only on `bdk:lead`; started anywhere else it SHALL do nothing and name `/bdk:pr-review`.
-
-#### Scenario: Lead started with its skill
-
-- **WHEN** `/bdk:pr-review https://github.com/bdk-eval/repo/pull/7` runs in a configured project whose repository is `bdk-eval/repo`
-- **THEN** the main conversation starts one `bdk:lead` agent whose prompt names `bdk:pr-review-round` and `7 --run-dir <absolute .bdk/runs/pr-7>`, and starts no `bdk:reviewer` itself
+## MODIFIED Requirements
 
 ### Requirement: Start of a PR review
 
@@ -62,22 +47,6 @@ After the judge, the lead SHALL remove the worktree and write `<run dir>/result.
 - **WHEN** the leads of pull requests 7 and 8 fetch from `origin` in one repository at once
 - **THEN** each lead makes its worktree at the head commit of its own brief, whatever the other fetched
 
-### Requirement: Rendered review and verdict
-
-After the lead returns `Status: done`, `/bdk:pr-review` SHALL read the round's findings with `bdk findings list` and render one review from `references/comment-templates.md`:
-
-- each `blocker` and `should-fix` finding whose line lies inside a hunk of `git diff <range> -- <file>` on the new side SHALL be an inline comment on that line; one outside the diff SHALL go to the summary's section of findings outside the diff;
-- each `nice-to-have` finding SHALL be a line of the summary; a `not-a-problem` finding SHALL NOT be posted;
-- the computed verdict SHALL be `request-changes` when any finding is `blocker`, else `approve`;
-- the summary SHALL end with a hidden marker naming `bdk-pr-review`, the verdict and the reviewed head commit.
-
-Before anything is posted it SHALL show the user the computed verdict and every finding it will post, the whole `nice-to-have` list included.
-
-#### Scenario: Blockers request changes
-
-- **WHEN** the judged round holds two `blocker` findings on changed lines of `src/parse.js` and `src/report.js` and one `nice-to-have`
-- **THEN** the review has the event `REQUEST_CHANGES`, inline comments on those two lines, and the `nice-to-have` finding in the summary
-
 ### Requirement: Confirmation and posting
 
 Nothing SHALL reach GitHub before the user confirms it, except when `policy.questions` is `decide-and-record` or the user's request says to post without asking; then the computed verdict SHALL be posted and the reply SHALL say that it was posted without a question. With `policy.questions: stop` (the default) it SHALL ask with `AskUserQuestion` whether to post with the computed verdict (recommended), post with the other verdict, post as a comment, or not post; when that tool is not available it SHALL put the question at the end of the reply and stop without posting. With several pull requests it SHALL ask once for all of them, after showing every review: one question per pull request in one `AskUserQuestion` call for up to four, and for more one question whether to post every review with its computed verdict (recommended), choose per pull request, or post none.
@@ -124,6 +93,8 @@ It SHALL also hold `pr-review-verify` on the fixture `monthly-report-pr-reviewed
 
 - **WHEN** `pr-review-several` runs with the plugin
 - **THEN** `.git/bdk-eval/reviews/7-1.json` holds `REQUEST_CHANGES` and `.git/bdk-eval/reviews/8-1.json` holds `APPROVE`
+
+## ADDED Requirements
 
 ### Requirement: Verify mode
 

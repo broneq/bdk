@@ -95,5 +95,5 @@ Every stage writes its progress to files and starts at its first missing file. A
 ## Other entry points
 
 - **A bug:** `/bdk:debug "<what is broken>"` or `/bdk:debug #57`. BDK reproduces the bug on the running product, writes a one-part fix Change, asks you at the fix gate (`policy.gates.design`), builds and reviews it. Close it with `/bdk:close`.
-- **Any pull request:** `/bdk:pr-review 123` reviews an open pull request, BDK's or anyone's, with the same group and integration reviewers and the same judge, and posts one GitHub review after you agree.
+- **Any pull request:** `/bdk:pr-review 123` reviews an open pull request, BDK's or anyone's, with the same group and integration reviewers and the same judge, and posts one GitHub review after you agree. Several at once: `/bdk:pr-review 7 8` reviews them in parallel and asks you once for all. After the author answered: `/bdk:pr-review --verify 7` checks each `blocker` and `should-fix` finding of your previous review at the new head, resolves the threads of the fixed ones and posts what is left.
 - **One block alone:** every block is a skill you can run by itself, for example `/bdk:e2e-check add-csv-export` to check the product against the Change's scenarios, or `/bdk:adr` to record a decision. The [skills reference](/reference/bdk/skills) lists them all.

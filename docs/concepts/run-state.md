@@ -57,7 +57,7 @@ openspec/specs/<capability>/spec.md   main specs: openspec archive merges the de
     debug/reproduction.md, diagnosis.md, scratch/   /bdk:diagnose-bug
     debug/gate.md, result.md          /bdk:debug
   pr-<N>/                             /bdk:pr-review
-    pr.md, result.md, worktree/, review/round-k/{groups.json, findings.jsonl, report.md, review.json, posted.md}
+    pr.md, previous.json (--verify), result.md, worktree/, review/round-k/{groups.json, previous.json, findings.jsonl, report.md, review.json, posted.md}
 ```
 
 ## Who reads each file later, and why

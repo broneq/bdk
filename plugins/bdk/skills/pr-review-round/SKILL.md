@@ -1,7 +1,7 @@
 ---
 name: pr-review-round
-description: 'The review of a GitHub pull request, run by the bdk:lead agent that /bdk:pr-review starts - fetches the PR head into a detached worktree under the run directory, finds the OpenSpec Change it carries, records the groups with bdk git groups, runs review-group per group in parallel batches, then review-integration, then judge, removes the worktree and writes result.md. Not for users: /bdk:pr-review is the command.'
-argument-hint: "<pr-number> --run-dir <absolute path>"
+description: 'The review of a GitHub pull request, run by the bdk:lead agent that /bdk:pr-review starts - fetches the PR head into a detached worktree under the run directory, finds the OpenSpec Change it carries, records the groups with bdk git groups, runs review-group per group in parallel batches, then review-integration, then judge, removes the worktree and writes result.md. With --verify it re-checks the findings of the previous review with the judge instead. Not for users: /bdk:pr-review is the command.'
+argument-hint: "<pr-number> --run-dir <absolute path> [--verify]"
 user-invocable: false
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(cd *) Bash(mkdir -p *) Bash(git *) Read Write Grep Glob Agent
 ---
@@ -27,17 +27,21 @@ Done when you are `bdk:lead`.
 ## 1. Read the inputs
 
 - **Pull request**: the first argument, a number `<N>`.
+- **Mode**: `verify` with `--verify`, else `review`.
 - **Run directory**: `--run-dir <path>`, an absolute path; without it, `.bdk/runs/pr-<N>` under the path `git rev-parse --show-toplevel` prints.
 - **Brief**: `<run dir>/pr.md`, written by `/bdk:pr-review`. Keep its `Base` branch and `Head commit`. Without the brief, go to step 7 with the blocker `no brief: run /bdk:pr-review <N>`.
 - **Settings** from the configuration above: `execution.max-parallel` (default 10), and `models.reviewer`, `models.integration-reviewer` and `models.judge` when set.
+- **Previous findings** (verify mode): `<run dir>/previous.json`, written by `/bdk:pr-review --verify`: a list of `{thread, id, level, file, line, summary, evidence}`. Without it, go to step 7 with the blocker `no previous findings: run /bdk:pr-review --verify <N>`.
 - **Round directory**: `<run dir>/review/round-<k>/`, `k` the lowest number whose directory holds no `report.md` (1 when there is none).
 
 Done when you hold the number, the run directory, the base, the head commit and the round directory.
 
 ## 2. Fetch and make the worktree
 
-1. `git fetch origin pull/<N>/head`, then `git rev-parse FETCH_HEAD`. When it is not the brief's head commit, the pull request moved after `/bdk:pr-review` read it: go to step 7 with the blocker naming both commits and `/bdk:pr-review <N>` to start again.
-2. `git fetch origin <base>`. The base is now `origin/<base>`.
+Leads of other pull requests may fetch in this repository at the same time, so never read `FETCH_HEAD`: another fetch may have written it.
+
+1. `git ls-remote origin refs/pull/<N>/head`. When its commit is not the brief's head commit, the pull request moved after `/bdk:pr-review` read it: go to step 7 with the blocker naming both commits and `/bdk:pr-review <N>` to start again.
+2. `git fetch --no-write-fetch-head origin pull/<N>/head <base>`. It brings the head's commits and updates `origin/<base>`. When it fails on a lock (`cannot lock ref`, `Unable to create ... .lock`), another lead is fetching: run it once more.
 3. The worktree is `<run dir>/worktree`. When `git worktree list` lists it (an earlier run crashed), run `git worktree remove --force <worktree>`. Then `git worktree add --detach <worktree> <head commit>`.
 4. `git merge-base <head commit> origin/<base>`: the range is `<merge base>..<head commit>`.
 
@@ -50,6 +54,8 @@ Done when the worktree is at the head commit and you hold the range.
 Run `git -C <worktree> diff --name-only <range> -- openspec/changes/`. Take the Change directories it touches: `openspec/changes/<name>/` or `openspec/changes/archive/<date>-<name>/`. Keep those that hold `proposal.md` in the worktree (Glob under the worktree). Exactly one: that is the Change, as a path relative to the worktree. None or several: the Change is `none`, and the brief alone states the intent.
 
 Done when the Change is a path or `none`.
+
+In verify mode, go to step 5b after this step.
 
 ## 4. Record the groups
 
@@ -75,6 +81,24 @@ After the judge, `<round dir>/report.md` must exist. When it does not, start the
 
 Done when `report.md` exists.
 
+## 5b. Verify mode: re-check the previous findings
+
+No groups and no reviewers: the judge decides, at the current head, whether each previous finding still fails.
+
+1. For each entry of `<run dir>/previous.json`, in order, run:
+
+   ```
+   "${CLAUDE_PLUGIN_ROOT}/bin/bdk" findings add <round dir>/findings.jsonl --source previous-review --file <file> --line <line> --summary "<summary>" --evidence "<evidence>"
+   ```
+
+   Keep the id it prints.
+2. Write `<round dir>/previous.json`: the same list, each entry with `"finding": "<that id>"` added.
+3. Start one `bdk:judge` as in step 5.3 (the same prompt and inputs), and check `report.md` the same way.
+
+`not-a-problem` means the finding is fixed; any other level means it is left. You do not interpret the levels: the main conversation does.
+
+Done when `report.md` exists and `<round dir>/previous.json` names a finding id for every entry.
+
 ## 6. Remove the worktree
 
 Run `git worktree remove --force <worktree>`. The main conversation renders the review from git objects, which it shares with the worktree.
@@ -88,6 +112,7 @@ Write `<run dir>/result.md`, replacing an earlier one:
 ```markdown
 Status: done
 
+- Mode: review
 - Pull request: 7
 - Round: /work/app/.bdk/runs/pr-7/review/round-1
 - Range: 1a2b3c..4d5e6f
@@ -100,6 +125,7 @@ Status: done
 ```
 
 - `Status: done` when the round has its `report.md`, or when the range had no changes (then `Report: No changes to review.`); else `Status: blocked`, with each reason under `## Blockers` and the command that unblocks it.
+- `Mode:` is `review` or `verify`.
 - `Report:` is the counts line of `report.md` (its second non-empty line).
 - On a blocker, remove the worktree first when you made it.
 
