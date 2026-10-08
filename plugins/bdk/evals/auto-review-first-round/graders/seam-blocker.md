@@ -1,6 +1,6 @@
 ---
 type: regex
-target: { source: file, path: .bdk/runs/monthly-report/review/round-1/report.md }
+target: { source: file, path: .bdk/runs/monthly-report/review/round-1/review.md }
 pattern: '## blocker\n[\s\S]*?(src/report\.js|bin/ledger\.js)[\s\S]*?\n## should-fix'
 ---
 

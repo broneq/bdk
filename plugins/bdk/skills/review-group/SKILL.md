@@ -29,7 +29,7 @@ A caller that reviews code outside the working directory (`/bdk:pr-review` revie
 
 With a round directory in the arguments or the request (`.bdk/runs/<change>/review/round-<N>/`), use it and the group id given with it. Otherwise prepare a manual round:
 
-1. The round directory is `.bdk/runs/manual/review/round-<N>/`, `N` the lowest number whose directory holds no `report.md` (1 when there is none).
+1. The round directory is `.bdk/runs/manual/review/round-<N>/`, `N` the lowest number whose directory holds no `review.md` (1 when there is none).
 2. When it holds no `groups.json`, record the groups: `bdk git groups <base> --rounds .bdk/runs/manual/review --record <round-dir>`, adding `--plan openspec/changes/<change>/plan/parts` when `openspec/changes/` holds exactly one Change besides `archive/`. `<base>` is the `--base` given, else the branch `git symbolic-ref --short refs/remotes/origin/HEAD` names, else `main`.
 3. Without a group id, review every group except `integration`, one after another, from step 2 on.
 

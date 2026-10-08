@@ -27,7 +27,7 @@ A caller that reviews code outside the working directory (`/bdk:pr-review` revie
 
 ## 1. Find the round
 
-With a round directory in the arguments or the request (`.bdk/runs/<change>/review/round-<N>/`), use it. Otherwise use the highest `.bdk/runs/manual/review/round-<N>/` that holds `findings.jsonl` and no `report.md`. The log is `<round-dir>/findings.jsonl`; the Change is `openspec/changes/<change>/`, `<change>` being the directory under `.bdk/runs/`.
+With a round directory in the arguments or the request (`.bdk/runs/<change>/review/round-<N>/`), use it. Otherwise use the highest `.bdk/runs/manual/review/round-<N>/` that holds `findings.jsonl` and no `review.md`. The log is `<round-dir>/findings.jsonl`; the Change is `openspec/changes/<change>/`, `<change>` being the directory under `.bdk/runs/`.
 
 Run `bdk findings list <log> --level unleveled`. These are the findings to judge; a finding that already has a level keeps it.
 
@@ -65,7 +65,7 @@ Done when every finding of step 1 has a level.
 
 ## 4. Write the report
 
-Run `bdk findings list <log> --level unleveled` again: it must list none (a finding added meanwhile is judged as in step 3). Then run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" findings report <log>`. It writes `report.md` in the round directory, which finishes the round, and prints its path and the counts.
+Run `bdk findings list <log> --level unleveled` again: it must list none (a finding added meanwhile is judged as in step 3). Then run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" findings report <log>`. It writes `review.md` in the round directory, which finishes the round, and prints its path and the counts.
 
 Done when the report exists and counts 0 unleveled.
 

@@ -108,7 +108,7 @@ describe("bdk findings, built", () => {
     expect(finding).not.toHaveProperty("issue");
   });
 
-  it("writes report.md next to the log", () => {
+  it("writes review.md next to the log", () => {
     const log = join(root, "runs", "report", "review", "round-1", "findings.jsonl");
     const id = sync([
       "findings",
@@ -120,7 +120,7 @@ describe("bdk findings, built", () => {
       "s",
     ]).stdout.trim();
     expect(sync(["findings", "level", log, id, "blocker"]).status).toBe(0);
-    const report = join(dirname(log), "report.md");
+    const report = join(dirname(log), "review.md");
     expect(sync(["findings", "report", log])).toMatchObject({ status: 0 });
     expect(readFileSync(report, "utf8")).toContain(`## blocker\n\n- ${id} - s (review-group)\n`);
   });

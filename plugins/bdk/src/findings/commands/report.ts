@@ -7,7 +7,7 @@ import { arg, LOG } from "./flags.ts";
 export function report(files: Files): Command {
   return {
     verb: "report",
-    summary: "Write the folded log as report.md next to it, the round report",
+    summary: "Write the folded log as review.md next to it, the round report",
     arguments: [LOG],
     run(input) {
       const result = reportFindings(files, { log: arg(input, "log") });

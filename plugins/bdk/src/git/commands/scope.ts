@@ -14,7 +14,7 @@ export const BASE = {
 export const ROUNDS = {
   type: "string",
   description:
-    "The run's review/ directory; start after the last round-<N>/ holding report.md and groups.json",
+    "The run's review/ directory; start after the last round-<N>/ holding review.md and groups.json",
 } as const;
 
 export function scopeCommand(deps: GitDeps): Command {

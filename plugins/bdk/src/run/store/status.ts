@@ -157,7 +157,7 @@ function changeFiles(files: Files, cwd: string, change: string): ChangeFiles {
   const reviewDir = at("review");
   const rounds: Round[] = numbered(files.list(reviewDir), /^round-([1-9]\d*)$/, true).map((n) => ({
     n,
-    report: has(files.list(join(reviewDir, `round-${String(n)}`)), "report.md"),
+    report: has(files.list(join(reviewDir, `round-${String(n)}`)), "review.md"),
   }));
   const last = rounds.at(-1);
   const lastLog =

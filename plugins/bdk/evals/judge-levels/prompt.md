@@ -1,5 +1,5 @@
 ---
-description: "judge levels four findings by the product's behaviour (D2): bug blocker, rule violation should-fix, false positive not-a-problem, idea nice-to-have; then writes report.md."
+description: "judge levels four findings by the product's behaviour (D2): bug blocker, rule violation should-fix, false positive not-a-problem, idea nice-to-have; then writes review.md."
 tags: [block]
 max_turns: 40
 allowed_tools: [Read, Glob, Grep, Skill, Bash]

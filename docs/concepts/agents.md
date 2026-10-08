@@ -47,8 +47,8 @@ flowchart LR
 | `/bdk:review-group` | verifier | `bdk:reviewer` (sonnet) | finding events | group files, part, scenarios, review rules |
 | `/bdk:review-integration` | verifier | `bdk:integration-reviewer` (opus) | finding events | whole Change, group findings |
 | `/bdk:e2e-check` | verifier | `bdk:e2e-tester` (sonnet) | `R/review/round-N/e2e/` (`R/e2e/` alone), finding events | spec scenarios, the running product |
-| `/bdk:judge` | verifier | `bdk:judge` (sonnet) | level events, `round-N/report.md` | findings, code, scenarios |
-| `/bdk:triage` | decider | main thread | decision events, `report.md` refresh | judged findings |
+| `/bdk:judge` | verifier | `bdk:judge` (sonnet) | level events, `round-N/review.md` | findings, code, scenarios |
+| `/bdk:triage` | decider | main thread | decision events, `review.md` refresh | judged findings |
 | `/bdk:plan-fixes` | author | main thread | `round-N/fixes/parts/NN.md`, `fixes/index.md` | fix decisions, code |
 | `/bdk:spec-conformance` | verifier | `bdk:verifier` (opus) | `R/close/spec-conformance.md` | spec deltas, main specs, diff, E2E results |
 | `/bdk:diagnose-bug` | author | main thread | fix Change, `R/debug/*.md` | bug report, product, code |

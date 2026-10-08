@@ -145,7 +145,7 @@ stages_done add-count "Add the command \`tally count\`"
 runs=.bdk/runs/add-count
 mkdir -p "$runs/review/round-1"
 : > "$runs/review/round-1/findings.jsonl"
-cat > "$runs/review/round-1/report.md" <<'MD'
+cat > "$runs/review/round-1/review.md" <<'MD'
 # Review round 1: add-count
 
 No blockers. 0 findings.

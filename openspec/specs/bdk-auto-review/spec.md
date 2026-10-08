@@ -31,7 +31,7 @@ The `bdk` plugin SHALL ship the skills `auto-review` (`skills/auto-review/`, the
 #### Scenario: First round in parallel
 
 - **WHEN** round 1 of `monthly-report` runs with groups `p01`, `p02`, `unplanned` and `integration`
-- **THEN** three `bdk:reviewer` agents, one `bdk:e2e-tester` and `bdk check run` start in one message, then `bdk:integration-reviewer`, then `bdk:judge`, and `round-1/report.md` and `round-1/round.md` exist
+- **THEN** three `bdk:reviewer` agents, one `bdk:e2e-tester` and `bdk check run` start in one message, then `bdk:integration-reviewer`, then `bdk:judge`, and `round-1/review.md` and `round-1/round.md` exist
 
 #### Scenario: E2E evidence per round
 
@@ -58,11 +58,11 @@ A round after the first SHALL review only the commits since the last finished ro
 
 ### Requirement: Rounds until nothing is left to fix
 
-`/bdk:auto-review` SHALL derive its next step from the round files: no round, or a last round without `report.md`, runs that round; a last round with an undecided finding runs `triage` on it; a last round without a `fix` decision ends the stage `done`; a last round with a `fix` decision and no `fixes/index.md` runs `plan-fixes`; a finding under `## Not planned` stops the stage `blocked`; no `fixes/result.md` with `Status: done` runs the fix pass, a `bdk:lead` with `execute-waves <change> --run-dir <dir> --parts <round dir>/fixes/parts`, and a blocked fix pass stops the stage `blocked`; a done fix pass runs the next round. Undecided findings left after a manual triage SHALL stop the stage until the user decides. Run again, the skill SHALL continue from the first missing file.
+`/bdk:auto-review` SHALL derive its next step from the round files: no round, or a last round without `review.md`, runs that round; a last round with an undecided finding runs `triage` on it; a last round without a `fix` decision ends the stage `done`; a last round with a `fix` decision and no `fixes/index.md` runs `plan-fixes`; a finding under `## Not planned` stops the stage `blocked`; no `fixes/result.md` with `Status: done` runs the fix pass, a `bdk:lead` with `execute-waves <change> --run-dir <dir> --parts <round dir>/fixes/parts`, and a blocked fix pass stops the stage `blocked`; a done fix pass runs the next round. Undecided findings left after a manual triage SHALL stop the stage until the user decides. Run again, the skill SHALL continue from the first missing file.
 
 #### Scenario: Resume after a fix pass
 
-- **WHEN** `round-1/` holds `report.md`, a `fix` decision, `fixes/index.md` and `fixes/result.md` reading `Status: done`, and no `round-2/` exists
+- **WHEN** `round-1/` holds `review.md`, a `fix` decision, `fixes/index.md` and `fixes/result.md` reading `Status: done`, and no `round-2/` exists
 - **THEN** `/bdk:auto-review` starts the lead for round 2 and runs neither triage nor `plan-fixes` nor a fix pass for round 1
 
 ### Requirement: Round budget
@@ -90,4 +90,4 @@ The suite SHALL hold the block cases `plan-fixes-judged-round` and `triage-last-
 #### Scenario: Acceptance signal
 
 - **WHEN** `auto-review-fix-round` runs with the plugin
-- **THEN** its graders pass: `round-1/fixes/result.md` reads `Status: done`, `round-2/groups.json` is anchored on round 1 and holds only files of the fix commits, and `round-2/report.md` exists
+- **THEN** its graders pass: `round-1/fixes/result.md` reads `Status: done`, `round-2/groups.json` is anchored on round 1 and holds only files of the fix commits, and `round-2/review.md` exists

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # The monthly-report project with review round 1 judged: one finding of each level, no decision
-# yet, and report.md as `bdk findings report` writes it. The start of every triage case.
+# yet, and review.md as `bdk findings report` writes it. The start of every triage case.
 set -euo pipefail
 bash "$(dirname "$0")/monthly-report.sh"
 ROUND=.bdk/runs/monthly-report/review/round-1
@@ -14,7 +14,7 @@ cat > "$ROUND/findings.jsonl" <<'JSONL'
 {"type":"level","id":"f-7f8d50faa9d4","level":"not-a-problem","reason":"parseEntries returns [] for blank input at src/parse.js:7 before splitting, so the crash does not happen."}
 {"type":"level","id":"f-8c0aba573c66","level":"nice-to-have","reason":"No scenario asks for a newest-first order; ascending matches the spec."}
 JSONL
-cat > "$ROUND/report.md" <<'MD'
+cat > "$ROUND/review.md" <<'MD'
 # Review round report
 
 4 findings. Level: 1 blocker, 1 should-fix, 1 nice-to-have, 1 not-a-problem, 0 unleveled. Decision: 0 fix, 0 accept, 0 defer, 4 undecided.

@@ -29,7 +29,7 @@ Paths SHALL be byte-exact (no quoting of unusual characters) and sorted by code 
 
 #### Scenario: Later round reviews only the fixes
 
-- **WHEN** `<dir>/round-1/` holds `report.md` and a `groups.json` whose `head` is `H1`, one fix commit follows `H1`, and `bdk git scope main --rounds <dir> --json` runs
+- **WHEN** `<dir>/round-1/` holds `review.md` and a `groups.json` whose `head` is `H1`, one fix commit follows `H1`, and `bdk git scope main --rounds <dir> --json` runs
 - **THEN** `anchor` is `{"kind": "round", "sha": H1, "round": 1}` and `files` holds only the files of the fix commit
 
 #### Scenario: Rewritten history falls back to the merge base
@@ -49,16 +49,16 @@ Paths SHALL be byte-exact (no quoting of unusual characters) and sorted by code 
 
 ### Requirement: Round record
 
-A round SHALL count as finished when its directory `<dir>/round-<N>/` (`N` a positive decimal integer without leading zeros) holds a file `report.md`. The last finished round SHALL be the finished round with the highest `N`; a round directory without `report.md`, as after a crash, SHALL be ignored, so a rerun of that round is anchored where its first run was. The commit a round reviewed SHALL be the `head` field of `<dir>/round-<N>/groups.json`, the file `bdk git groups --record <dir>/round-<N>` writes. `--rounds <dir>` naming a directory that does not exist SHALL mean that no round has finished.
+A round SHALL count as finished when its directory `<dir>/round-<N>/` (`N` a positive decimal integer without leading zeros) holds a file `review.md`. The last finished round SHALL be the finished round with the highest `N`; a round directory without `review.md`, as after a crash, SHALL be ignored, so a rerun of that round is anchored where its first run was. The commit a round reviewed SHALL be the `head` field of `<dir>/round-<N>/groups.json`, the file `bdk git groups --record <dir>/round-<N>` writes. `--rounds <dir>` naming a directory that does not exist SHALL mean that no round has finished.
 
 #### Scenario: Crashed round is ignored
 
-- **WHEN** `round-1/` holds `report.md` and `groups.json` with `head` `H1`, and `round-2/` holds `groups.json` but no `report.md`
+- **WHEN** `round-1/` holds `review.md` and `groups.json` with `head` `H1`, and `round-2/` holds `groups.json` but no `review.md`
 - **THEN** `bdk git scope main --rounds <dir> --json` gives `anchor.round` 1 and `anchor.sha` `H1`
 
 #### Scenario: Missing record falls back
 
-- **WHEN** the last finished round holds `report.md` but no readable `groups.json` whose `head` is a full lowercase hexadecimal object name (40 digits, or 64 in a SHA-256 repository)
+- **WHEN** the last finished round holds `review.md` but no readable `groups.json` whose `head` is a full lowercase hexadecimal object name (40 digits, or 64 in a SHA-256 repository)
 - **THEN** `anchor.kind` is `base` and `anchor.fallback` names the round and the missing or invalid record
 
 #### Scenario: Same state, same groups
@@ -119,7 +119,7 @@ With `--record <round-dir>`, `bdk git groups` SHALL write its result, the same d
 
 #### Scenario: Record feeds the next round
 
-- **WHEN** `bdk git groups main --rounds <dir> --record <dir>/round-1` runs at `H1`, `report.md` is then written into `<dir>/round-1/`, a fix is committed, and `bdk git scope main --rounds <dir> --json` runs
+- **WHEN** `bdk git groups main --rounds <dir> --record <dir>/round-1` runs at `H1`, `review.md` is then written into `<dir>/round-1/`, a fix is committed, and `bdk git scope main --rounds <dir> --json` runs
 - **THEN** `anchor` is `{"kind": "round", "sha": H1, "round": 1}`
 
 ### Requirement: Errors of the git commands

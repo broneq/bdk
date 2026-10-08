@@ -16,9 +16,9 @@ export function appendEvent(files: Files, log: string, event: Event): void {
   files.appendText(log, toLine(event));
 }
 
-/** Writes `report.md` next to the log, replacing an earlier one; returns its path. */
+/** Writes `review.md` next to the log, replacing an earlier one; returns its path. */
 export function writeReport(files: Files, log: string, text: string): string {
-  const path = join(dirname(log), "report.md");
+  const path = join(dirname(log), "review.md");
   files.writeText(path, text);
   return path;
 }
