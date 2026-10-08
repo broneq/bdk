@@ -168,6 +168,37 @@ bash "$(dirname "$0")/../fixtures/tiny-ledger.sh"
 
 `claude plugin eval` runs the scaffold in place from the case directory, so the relative path holds. The scaffold gets only `PATH`, an empty `HOME`, `TMPDIR` and `TERM=dumb`; pass `-c user.name=... -c user.email=...` to `git commit`. Configuration it writes (`.claude/`, `CLAUDE.md`) is not loaded by the run.
 
+### B1-sized fixture
+
+The speed targets and the plan shape are measured on a Change the size of B1 (27 tasks, 62 files; architecture design, "Product requirements", Speed). Two shared fixtures hold one, in two states of the same project: the Node CLI `ledger` (a book in `ledger.json`, `add` and `balance`, 11 passing tests, its main spec), configured for BDK with a `node-test` test tool and a `cli` e2e tool, and the Change `add-household-book`, which grows it into a household book: accounts and transfers, categories and rules, CSV statement import, budgets and recurring entries, list and export, reports. Seven capabilities, 70 scenarios.
+
+| Fixture | State | Start a run at |
+|---|---|---|
+| `household-book.sh` | proposal, spec deltas and design; `.bdk/runs/add-household-book/design/verify-1.md` (`FAIL`), `verify-2.md` (`PASS`) and `gate.md` (`Gate: approved`, naming `verify-2.md`); no plan | plan |
+| `household-book-planned.sh` | the same, plus the plan (7 parts, 27 tasks, 62 files, 3 waves: `01`, then `02`-`06`, then `07`) and `plan/verify-1.md` (`Verdict: PASS`), in one more commit | execute, or plan-to-PR |
+
+The Change's markdown lives in `fixtures/household-book/` (`change/` mirrors `openspec/changes/add-household-book/`, `runs/` the approval records); the scripts copy it. Every approval report is what `verify-design` or `verify-plan` wrote on these files. `plugins/bdk/tests/household-book.test.ts` checks for free what the planned state must hold: `bdk plan check` passes with 7 parts in 3 waves, 27 tasks, 62 distinct files, every scenario named by exactly one part. After editing a part, a spec delta or the design, run it, and run the verifier again before replacing a report.
+
+`verify-plan-household-book` runs `verify-plan` on the planned state (its scaffold removes the plan report), graded on `Verdict: PASS` and the `bdk plan check` line of the report; it is also the cheap probe that the scaffold builds in a run:
+
+```bash
+pnpm --filter @bdk/bdk run eval --allow-tools Write "Bash(*/bin/bdk *)" "Bash(git *)" --case 'verify-plan-household-book' --runs 1 --ablation none
+```
+
+On a Mac it needs the clean `HOME` and the git shell prefix of "Host limits". Recorded 2026-10-08: score 1.00, 114 s, $0.77.
+
+A case that plans, executes or times the Change uses the fixture from its own scaffold, as any shared fixture. By hand, build a workspace outside this repository and run the stage there:
+
+```bash
+mkdir -p /tmp/household-book && cd /tmp/household-book && bash <repo>/plugins/bdk/evals/fixtures/household-book.sh
+claude -p "/bdk:plan add-household-book" --plugin-dir <repo>/plugins/bdk --permission-mode auto
+
+mkdir -p /tmp/household-book-planned && cd /tmp/household-book-planned && bash <repo>/plugins/bdk/evals/fixtures/household-book-planned.sh
+claude -p "/bdk:execute add-household-book" --plugin-dir <repo>/plugins/bdk --permission-mode auto
+```
+
+`/bdk:plan` runs this way now; `/bdk:execute` (#200) once it is merged. Plan-to-PR runs the stages after the plan in order on the planned workspace. The workspace has no `origin`; a run that ends in a pull request needs the offline `gh` stand-in and a bare remote, as `fixtures/tally-reviewed.sh` sets them up for the `close-*` cases. Set `LEDGER_TODAY=2026-10-08` when you drive the product by hand: the Change's scenarios count from that date.
+
 ## Free check in CI
 
 `plugins/bdk/tests/evals.test.ts` (part of `pnpm test`) loads every case with `claude plugin eval --max-cost-usd 0`, which checks the case files and the graders against the grants `Write Edit` but starts no run and needs no credential. It also runs every fixture and case scaffold as the harness does, and checks names and tags. Run it alone with `pnpm exec vitest run plugins/bdk/tests/evals.test.ts`.
