@@ -87,7 +87,19 @@ pnpm --filter @bdk/bdk run eval --allow-tools Write "Bash(*/bin/bdk *)" "Bash(gi
 The `implement-part-*` and `conform-part-*` cases start from the shared fixtures `ledger-planned.sh` (the Change `add-csv-export` with its two verified plan parts) and `ledger-implemented.sh` (part 01 built and left uncommitted, with the implementer's report, as the execute lead hands it to `conform-part`). The blocks run in a `bdk:implementer` or `bdk:conformer` agent (sonnet), edit the part's files, run the checks through `bdk check run`, read the diff with `git status` and `git diff`, and create the run directory with `mkdir -p` (on a Mac, see the `git` entry of "Host limits"):
 
 ```bash
-pnpm --filter @bdk/bdk run eval --allow-tools Write Edit "Bash(*/bin/bdk *)" "Bash(mkdir -p *)" "Bash(git *)" --case '*-part-*'
+pnpm --filter @bdk/bdk run eval --allow-tools Write Edit "Bash(*/bin/bdk *)" "Bash(mkdir -p *)" "Bash(cd *)" "Bash(git *)" --case '*-part-*'
+```
+
+The `resolve-conflict-*` case starts from the shared fixture `ledger-totals-planned.sh` (the Change `add-totals`: two `worktree` parts in one wave that both add a function at the end of `src/ledger.js`) with both parts committed on their branches, part 01 merged and the merge of part 02 stopped on the conflict. The block runs in a `bdk:implementer` agent, reads the merge with `git`, runs the checks through `bdk check run` and leaves the merge open:
+
+```bash
+pnpm --filter @bdk/bdk run eval --allow-tools Write Edit "Bash(*/bin/bdk *)" "Bash(mkdir -p *)" "Bash(git *)" --case 'resolve-conflict-*'
+```
+
+The `execute-*` cases are the orchestrator cases of `/bdk:execute` (one arm), on the same fixture. One `bdk:lead` agent runs the parts in git worktrees under `.bdk/runs/add-totals/worktrees/`, starts `bdk:implementer` and `bdk:conformer` agents (sonnet) that work there through `cd <worktree> && ...`, commits, merges and runs `resolve-conflict`; `execute-plan-defect` makes task 1 of part 02 contradict its scenario. The fixture sets a local git identity for the lead's commits (on a Mac, see the `git` entry of "Host limits"):
+
+```bash
+pnpm --filter @bdk/bdk run eval --ablation none --tag orchestrator --allow-tools Write Edit "Bash(*/bin/bdk *)" "Bash(mkdir -p *)" "Bash(cd *)" "Bash(git *)" --case 'execute-*'
 ```
 
 The design-block cases (`explore-*`, `design-draft-*`, `verify-design-*`) start from the fixtures `ledger-proposal.sh`, `ledger-explored.sh` and `ledger-designed.sh`, and need the `bdk` launcher, OpenSpec, `git` and the Lavish CLI. `design-draft-lavish` and `design-draft-ask` put a `lavish-axi` stub into the workspace's `node_modules`, which `npx -y lavish-axi` runs before any installed one: the first opens every page and answers the poll, the second fails as a session without a browser does. `AskUserQuestion` is not available in a run, so `design-draft-ask` grades the questions in the reply.

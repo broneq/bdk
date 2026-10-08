@@ -77,7 +77,11 @@ export const SettingsSchema = z
       .prefault({}),
     steps: z.record(kebab, z.array(Step)).default({}),
     execution: z
-      .strictObject({ lead: z.enum(["background", "foreground"]).default("background") })
+      .strictObject({
+        lead: z.enum(["background", "foreground"]).default("background"),
+        /** Part agents the execute lead runs at once; 10 from the concurrency probe of #200. */
+        "max-parallel": count(10),
+      })
       .prefault({}),
     hooks: z.strictObject({ "subagent-git": z.boolean().default(false) }).prefault({}),
   })
