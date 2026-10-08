@@ -333,4 +333,105 @@ describe("offline gh stand-in", () => {
     expect(status).toBe(1);
     expect(stderr).toContain("offline gh stand-in");
   });
+
+  function prFile(dir: string, number: number) {
+    return JSON.parse(
+      readFileSync(join(dir, ".git", "bdk-eval", "prs", `${number}.json`), "utf8"),
+    ) as Record<string, unknown>;
+  }
+
+  it("records a pull request from a body file and prints its URL", () => {
+    const dir = workspace();
+    writeFileSync(join(dir, "body.md"), "## Summary\n\nAdds `tally total`.\n");
+    const { status, stdout } = gh(
+      join(dir, "src"),
+      "pr",
+      "create",
+      "--base",
+      "main",
+      "--head",
+      "add-total",
+      "--title",
+      "feat: tally total",
+      "--body-file",
+      "../body.md",
+    );
+    expect(status).toBe(0);
+    expect(stdout.trim()).toBe("https://github.com/bdk-eval/repo/pull/1");
+    expect(prFile(dir, 1)).toEqual({
+      number: 1,
+      url: "https://github.com/bdk-eval/repo/pull/1",
+      state: "OPEN",
+      baseRefName: "main",
+      headRefName: "add-total",
+      title: "feat: tally total",
+      body: "## Summary\n\nAdds `tally total`.\n",
+    });
+  });
+
+  it("numbers pull requests and takes --body and = forms", () => {
+    const dir = workspace();
+    gh(dir, "pr", "create", "--base=main", "--head=a", "--title=A", "--body=first");
+    const { status, stdout } = gh(
+      dir,
+      "pr",
+      "create",
+      "-B",
+      "main",
+      "-H",
+      "b",
+      "-t",
+      "B",
+      "-b",
+      "x",
+    );
+    expect(status).toBe(0);
+    expect(stdout.trim()).toBe("https://github.com/bdk-eval/repo/pull/2");
+    expect(prFile(dir, 1)).toMatchObject({ headRefName: "a", body: "first" });
+    expect(prFile(dir, 2)).toMatchObject({ headRefName: "b", title: "B", body: "x" });
+  });
+
+  it.each([
+    [["--head", "a", "--title", "A", "--body", "x"], "--base"],
+    [["--base", "main", "--title", "A", "--body", "x"], "--head"],
+    [["--base", "main", "--head", "a", "--body", "x"], "--title"],
+    [["--base", "main", "--head", "a", "--title", "A", "--body-file", "missing.md"], "missing.md"],
+  ])("refuses pr create %j, naming %s", (args, named) => {
+    const dir = workspace();
+    const { status, stderr } = gh(dir, "pr", "create", ...args);
+    expect(status).toBe(1);
+    expect(stderr).toContain(named);
+    expect(existsSync(join(dir, ".git", "bdk-eval", "prs", "1.json"))).toBe(false);
+  });
+
+  it("refuses a second open pull request of the same head", () => {
+    const dir = workspace();
+    const args = ["pr", "create", "--base", "main", "--head", "a", "--title", "A", "--body", "x"];
+    gh(dir, ...args);
+    const { status, stderr } = gh(dir, ...args);
+    expect(status).toBe(1);
+    expect(stderr).toContain('a pull request for branch "a" into branch "main" already exists');
+    expect(existsSync(join(dir, ".git", "bdk-eval", "prs", "2.json"))).toBe(false);
+  });
+
+  it("views the open pull request of a branch", () => {
+    const dir = workspace();
+    gh(dir, "pr", "create", "--base", "main", "--head", "add-total", "--title", "T", "--body", "x");
+    const json = gh(dir, "pr", "view", "add-total", "--json", "url,state");
+    expect(json.status).toBe(0);
+    expect(JSON.parse(json.stdout)).toEqual({
+      state: "OPEN",
+      url: "https://github.com/bdk-eval/repo/pull/1",
+    });
+    const text = gh(dir, "pr", "view", "add-total");
+    expect(text.status).toBe(0);
+    expect(text.stdout).toContain("title:\tT");
+    expect(text.stdout).toContain("url:\thttps://github.com/bdk-eval/repo/pull/1");
+  });
+
+  it("fails like gh when the branch has no pull request", () => {
+    const { status, stderr } = gh(workspace(), "pr", "view", "add-total");
+    expect(status).toBe(1);
+    expect(stderr).toContain('no pull requests found for branch "add-total"');
+  });
 });

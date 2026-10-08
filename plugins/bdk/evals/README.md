@@ -94,6 +94,14 @@ pnpm --filter @bdk/bdk run eval --ablation none --tag orchestrator --allow-tools
 
 `--case 'design-*'` alone also matches the `design-draft-*` block cases; `--tag orchestrator` keeps only the orchestrator ones.
 
+The `close-*` cases are the orchestrator cases of `/bdk:close` (one arm). They start from the shared fixture `tally-reviewed.sh`: the Change `add-total` after review, a bare repository `.git/bdk-eval/remote.git` inside the workspace as `origin`, so `git push` works offline, and the offline `gh` stand-in, which records `gh pr create` in `.git/bdk-eval/prs/<n>.json` and answers `gh pr view` from there. Put its directory first on `PATH` as for the `propose-*` cases; the run starts an opus `bdk:verifier` and runs `commit` (on a Mac, see the `git` entry of "Host limits"):
+
+```bash
+PATH=".git/bdk-eval/bin:$PATH" pnpm --filter @bdk/bdk run eval --ablation none --tag orchestrator --allow-tools Write Edit "Bash(*/bin/bdk *)" "Bash(openspec *)" "Bash(gh *)" "Bash(git *)" --case 'close-*'
+```
+
+A grader on the order of Bash calls is a `regex` on the trace, not `tool_order`: the free check loads cases with the grants `Write Edit`, under which a `tool_order` naming Bash cannot pass.
+
 `--case` takes one glob; a repeated `--case` keeps only the last.
 
 ### Manual browser check of `e2e-check`
@@ -156,10 +164,11 @@ Measured with Claude Code 2.1.292:
   HOME=$EVAL_HOME pnpm --filter @bdk/bdk run eval --allow-tools "Bash(git *)" Write --case '<case>'
   ```
 
-- **`git` on a Mac without Homebrew git.** `git` fails in every run: `/usr/bin/git` is an `xcrun` shim that cannot write its cache in the sandbox, and the sandbox hides `/Library/Developer` from `PATH` lookup, while that git runs by its full path. `macos-git-prefix.sh` defines `git` as that full path for each Bash call. The sandbox cannot read files under your home directory, so copy it out and pass it as Claude Code's shell prefix:
+- **`git` on a Mac without Homebrew git.** `git` fails in every run: `/usr/bin/git` is an `xcrun` shim that cannot write its cache in the sandbox, and the sandbox hides `/Library/Developer` from `PATH` lookup, while that git runs by its full path. `macos-git-prefix.sh` defines `git` as that full path for each Bash call; copied as `bin/git` next to itself, it is also the `git` that git starts by name (a `git push` runs `pack-objects` and the remote's `receive-pack` that way). The sandbox cannot read files under your home directory, so copy it out and pass it as Claude Code's shell prefix:
 
   ```bash
-  mkdir -p /Users/Shared/bdk-eval && cp plugins/bdk/evals/macos-git-prefix.sh /Users/Shared/bdk-eval/
+  mkdir -p /Users/Shared/bdk-eval/bin && cp plugins/bdk/evals/macos-git-prefix.sh /Users/Shared/bdk-eval/
+  cp plugins/bdk/evals/macos-git-prefix.sh /Users/Shared/bdk-eval/bin/git
   CLAUDE_CODE_SHELL_PREFIX=/Users/Shared/bdk-eval/macos-git-prefix.sh pnpm --filter @bdk/bdk run eval ...
   ```
 
