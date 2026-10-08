@@ -4,14 +4,16 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
+import { loadConfig } from "../src/config/index.ts";
 import { planGroup } from "../src/plan/index.ts";
 import { checkResult } from "../src/plan/schema/check.ts";
 import type { CheckResult } from "../src/plan/schema/check.ts";
+import { runGroup } from "../src/run/index.ts";
 import { run } from "../src/shared/cli/index.ts";
 import { files } from "../src/shared/fs/index.ts";
 
-// The B1-sized fixture (spec skill-evals, "B1-sized fixture"; design D6 of v3-243-b1-eval-fixture):
-// what the two states must hold beyond building, so an edit of a part, a spec delta or the
+// The B1-sized fixture (spec skill-evals, "B1-sized fixture"; design D6 of v3-243-b1-eval-fixture,
+// D2 of v3-208-measure-speed-b1): what the three states must hold beyond building, so an edit of a part, a spec delta or the
 // default part limits cannot break the fixture silently.
 
 const FIXTURES = join(import.meta.dirname, "..", "evals", "fixtures");
@@ -22,6 +24,7 @@ const BUILD_LIMIT_MS = 120_000;
 let scratch: string;
 let ready: string;
 let planned: string;
+let queued: string;
 
 /** Builds a fixture the way the harness runs a scaffold: empty directory, minimal env. */
 function build(script: string): string {
@@ -36,6 +39,10 @@ function build(script: string): string {
   });
   expect({ status, stderr }).toEqual({ status: 0, stderr: "" });
   return dir;
+}
+
+function git(cwd: string, ...args: string[]): string {
+  return spawnSync("git", args, { cwd, encoding: "utf8" }).stdout;
 }
 
 async function planCheck(cwd: string): Promise<{ code: number; result: CheckResult }> {
@@ -93,7 +100,8 @@ beforeAll(() => {
   scratch = mkdtempSync(join(tmpdir(), "bdk-household-book-"));
   ready = build("household-book.sh");
   planned = build("household-book-planned.sh");
-}, 2 * BUILD_LIMIT_MS);
+  queued = build("household-book-queued.sh");
+}, 3 * BUILD_LIMIT_MS);
 
 afterAll(() => {
   rmSync(scratch, { recursive: true, force: true });
@@ -172,5 +180,47 @@ describe("household-book-planned.sh: ready to execute", () => {
     ]);
     const report = join(planned, ".bdk/runs/add-household-book/plan/verify-1.md");
     expect(readFileSync(report, "utf8")).toMatch(/^Verdict: PASS\n/);
+  });
+});
+
+describe("household-book-queued.sh: ready for an unattended plan-to-PR run", () => {
+  it("puts add-household-book at execute in the run's queue", async () => {
+    let stdout = "";
+    const code = await run({
+      argv: ["run", "status", "--json"],
+      version: "0.0.0",
+      nodeVersion: process.versions.node,
+      groups: [runGroup({ files, cwd: queued })],
+      stdout: (text) => (stdout += text),
+      stderr: () => undefined,
+    });
+    expect(code).toBe(0);
+    const status = JSON.parse(stdout) as {
+      mode: string;
+      changes: { change: string; stage: string }[];
+    };
+    expect(status.mode).toBe("non-interactive");
+    expect(status.changes.map(({ change, stage }) => ({ change, stage }))).toEqual([
+      { change: "add-household-book", stage: "execute" },
+    ]);
+  });
+
+  it("keeps the planned commit, a clean tree and main pushed to origin", () => {
+    expect(git(queued, "log", "--format=%s")).toBe(git(planned, "log", "--format=%s"));
+    expect(git(queued, "status", "--porcelain")).toBe("");
+    expect(git(queued, "rev-parse", "origin/main")).toBe(git(queued, "rev-parse", "main"));
+    expect(git(queued, "symbolic-ref", "refs/remotes/origin/HEAD")).toBe(
+      "refs/remotes/origin/main\n",
+    );
+    expect(existsSync(join(queued, ".git/bdk-eval/bin/gh"))).toBe(true);
+  });
+
+  it("runs unattended: auto gates, decide-and-record, a foreground lead", () => {
+    const config = loadConfig({ files, cwd: queued, home: join(queued, "..", "home"), env: {} });
+    expect(config.status).toBe("ok");
+    if (config.status !== "ok") return;
+    expect(config.settings.policy.gates).toEqual({ design: "auto", review: "auto" });
+    expect(config.settings.policy.questions).toBe("decide-and-record");
+    expect(config.settings.execution.lead).toBe("foreground");
   });
 });

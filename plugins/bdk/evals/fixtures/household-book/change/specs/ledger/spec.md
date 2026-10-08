@@ -92,7 +92,7 @@ Errors, each printed to stderr as `ledger: <message>` with exit code 2: a bad am
 
 ### Requirement: Options
 
-An argument `--<name>` after the command SHALL take the next argument as its value; every other argument is positional, in order, including a negative amount such as `-12.50`. An option the command does not take SHALL print `ledger: unknown option --<name>` to stderr and exit 2; an option without a value SHALL print `ledger: --<name> needs a value` and exit 2.
+An argument `--<name>` after the command SHALL take the next argument as its value; every other argument is positional, in order, including a negative amount such as `-12.50`. An option the command does not take SHALL print `ledger: unknown option --<name>` to stderr and exit 2; an option without a value SHALL print `ledger: --<name> needs a value` and exit 2. Every command checks its arguments as `ledger add` does: a bad amount SHALL print `ledger: not an amount: <text>`, a bad date `ledger: invalid date <text>` and a bad month `ledger: invalid month <text>`, each to stderr with exit code 2, whether the value is a positional argument or an option's value. A command called without a positional argument it requires SHALL print one `ledger: <message>` line to stderr and exit 2, without writing the book: either `<command> needs <the missing arguments>`, `<command>` with its subcommand (for example `ledger: import needs a file`), or the error of the first check the command's arguments fail when the missing ones are empty texts (for example `ledger: not an amount: ` for `ledger add` without arguments, `ledger: transfer needs two different accounts` for `ledger transfer 10`).
 
 #### Scenario: Unknown option
 

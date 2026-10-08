@@ -211,12 +211,13 @@ bash "$(dirname "$0")/../fixtures/tiny-ledger.sh"
 
 ### B1-sized fixture
 
-The speed targets and the plan shape are measured on a Change the size of B1 (27 tasks, 62 files; architecture design, "Product requirements", Speed). Two shared fixtures hold one, in two states of the same project: the Node CLI `ledger` (a book in `ledger.json`, `add` and `balance`, 11 passing tests, its main spec), configured for BDK with a `node-test` test tool and a `cli` e2e tool, and the Change `add-household-book`, which grows it into a household book: accounts and transfers, categories and rules, CSV statement import, budgets and recurring entries, list and export, reports. Seven new capabilities and the modified `ledger`, 71 scenarios.
+The speed targets and the plan shape are measured on a Change the size of B1 (27 tasks, 62 files; architecture design, "Product requirements", Speed). Three shared fixtures hold one, in three states of the same project: the Node CLI `ledger` (a book in `ledger.json`, `add` and `balance`, 11 passing tests, its main spec), configured for BDK with a `node-test` test tool and a `cli` e2e tool, and the Change `add-household-book`, which grows it into a household book: accounts and transfers, categories and rules, CSV statement import, budgets and recurring entries, list and export, reports. Seven new capabilities and the modified `ledger`, 71 scenarios.
 
 | Fixture | State | Start a run at |
 |---|---|---|
-| `household-book.sh` | proposal, spec deltas and design; `.bdk/runs/add-household-book/design/verify-1.md` (`FAIL`), `verify-2.md` (`PASS`) and `gate.md` (`Gate: approved`, naming `verify-2.md`); no plan | plan |
-| `household-book-planned.sh` | the same, plus the plan (7 parts, 27 tasks, 62 files, 3 waves: `01`, then `02`-`06`, then `07`) and `plan/verify-1.md` (`Verdict: PASS`), in one more commit | execute, or plan-to-PR |
+| `household-book.sh` | proposal, spec deltas and design; `.bdk/runs/add-household-book/design/verify-1.md` (`FAIL`), `verify-2.md` and `verify-3.md` (`PASS`) and `gate.md` (`Gate: approved`, naming `verify-3.md`); no plan | plan |
+| `household-book-planned.sh` | the same, plus the plan (7 parts, 27 tasks, 62 files, 3 waves: `01`, then `02`-`06`, then `07`) and `plan/verify-1.md` (`Verdict: PASS`), in one more commit | execute |
+| `household-book-queued.sh` | the planned state, no further commit, plus a bare `origin` holding `main`, a local git identity, the offline `gh` stand-in at `.git/bdk-eval/bin/gh`, `.bdk/runs/run.json` queueing `add-household-book`, and `.bdk/settings.local.yaml` with both gates `auto`, `policy.questions: decide-and-record` and `execution.lead: foreground` | plan-to-PR, unattended (`/bdk:run`) |
 
 The Change's markdown lives in `fixtures/household-book/` (`change/` mirrors `openspec/changes/add-household-book/`, `runs/` the approval records); the scripts copy it. Every approval report is what `verify-design` or `verify-plan` wrote on these files. `plugins/bdk/tests/household-book.test.ts` checks for free what the planned state must hold: `bdk plan check` passes with 7 parts in 3 waves, 27 tasks, 62 distinct files, every scenario named by exactly one part. After editing a part, a spec delta or the design, run it, and run the verifier again before replacing a report.
 
@@ -246,7 +247,19 @@ mkdir -p /tmp/household-book-planned && cd /tmp/household-book-planned && bash <
 claude -p "/bdk:execute add-household-book" --plugin-dir <repo>/plugins/bdk --permission-mode auto
 ```
 
-`/bdk:plan` runs this way now; `/bdk:execute` (#200) once it is merged. Plan-to-PR runs the stages after the plan in order on the planned workspace. The workspace has no `origin`; a run that ends in a pull request needs the offline `gh` stand-in and a bare remote, as `fixtures/tally-reviewed.sh` sets them up for the `close-*` cases. Set `LEDGER_TODAY=2026-10-08` when you drive the product by hand: the Change's scenarios count from that date.
+Set `LEDGER_TODAY=2026-10-08` when you drive the product by hand: the Change's scenarios count from that date.
+
+Plan-to-PR runs from the queued state: `/bdk:run` without arguments takes the queue, creates the branch `add-household-book` from `origin/main` and runs execute, auto-review and close until the pull request is recorded in the stand-in. Put the stand-in's directory first on `PATH` by its absolute path (the lead and the agents work in other directories), and start from a plain terminal with a clean `HOME` ("Host limits"), so no other plugin, hook or global `CLAUDE.md` loads:
+
+```bash
+mkdir -p /tmp/household-book-queued && cd /tmp/household-book-queued && bash <repo>/plugins/bdk/evals/fixtures/household-book-queued.sh
+PATH="$PWD/.git/bdk-eval/bin:$PATH" LEDGER_TODAY=2026-10-08 \
+  claude -p "/bdk:run" --plugin-dir <repo>/plugins/bdk --permission-mode auto --output-format stream-json --verbose > run.jsonl
+```
+
+The archived Change `v3-208-measure-speed-b1` holds the method of the speed measurement (what is read from the stream, the transcripts and the run files) and the recorded result.
+
+Recorded 2026-10-08 (main thread opus, agents as their files name): execute 7.8 min, review 11.6 min (two rounds), close 3.0 min; plan-to-PR 22.9 min of machine time, $7.42, against the targets of 15 and 45 min.
 
 ## Free check in CI
 
