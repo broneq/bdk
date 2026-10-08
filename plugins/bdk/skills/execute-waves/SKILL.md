@@ -1,7 +1,7 @@
 ---
 name: execute-waves
-description: 'The execute stage of an OpenSpec Change, run by the bdk:lead agent that /bdk:execute starts - takes the waves of the plan parts from bdk plan check, runs each part through implement-part and conform-part in parallel batches (worktree parts in their own git worktrees), retries and escalates within the budget, commits each part, merges the worktrees in part order with resolve-conflict on a conflict, and writes state.json and execute/result.md. Not for users: /bdk:execute is the command.'
-argument-hint: "<change> --run-dir <absolute path>"
+description: 'The execute stage of an OpenSpec Change, run by the bdk:lead agent that /bdk:execute starts (and /bdk:auto-review for the fix parts of a review round) - takes the waves of the plan parts from bdk plan check, runs each part through implement-part and conform-part in parallel batches (worktree parts in their own git worktrees), retries and escalates within the budget, commits each part, merges the worktrees in part order with resolve-conflict on a conflict, and writes state.json and execute/result.md. Not for users: /bdk:execute is the command.'
+argument-hint: "<change> --run-dir <absolute path> [--parts <absolute dir>]"
 user-invocable: false
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(mkdir -p *) Bash(git *) Read Write Grep Glob Agent
 ---
@@ -26,22 +26,27 @@ Done when you are `bdk:lead`.
 
 ## 1. Read the inputs
 
-- **Change**: the first argument. `openspec/changes/<change>/plan/parts/` must hold parts; otherwise stop at step 8 with the blocker `no plan: run /bdk:plan <change>`.
+- **Change**: the first argument.
+- **Parts**: `--parts <dir>` when given, an absolute directory such as the fix parts of a review round (`<run dir>/review/round-<N>/fixes/parts`); else `openspec/changes/<change>/plan/parts/`. It must hold parts; otherwise stop at step 8 with the blocker `no plan: run /bdk:plan <change>` (with `--parts`: `no parts in <dir>`).
+- **State file and result file**: with `--parts`, `state.json` and `result.md` in the directory that holds the parts directory (`<run dir>/review/round-<N>/fixes/`), never in the parts directory, where `bdk plan check` takes every other `.md` for a misnamed part; else `<run dir>/state.json` and `<run dir>/execute/result.md`. Never write the other pair: the plan's state stays the plan's, and `bdk run status` reads it.
+- With `--parts`, a blocker this skill would send to `/bdk:plan <change>` names the part file in the parts directory instead: its author (`plan-fixes`) fixes it, through `/bdk:auto-review <change>`. A blocker that would name `/bdk:execute <change>` names `/bdk:auto-review <change>` instead: `/bdk:execute` builds plan parts only.
 - **Run directory**: `--run-dir <path>`, an absolute path. Without it, take `.bdk/runs/<change>` under the path `git rev-parse --show-toplevel` prints. Run `mkdir -p <run dir>/execute`. Pass this absolute path to every worker.
 - **Settings** from the configuration above, with their defaults: `execution.max-parallel` (10), `policy.budgets.part-attempts` (3), `policy.escalation.model` (`opus`), and `models.implementer` and `models.conformer` when set.
-- **State**: `<run dir>/state.json` when it exists. Its schema:
+- **State**: the state file when it exists. Its schema:
 
   ```json
   {"version": 1, "parts": {"01": {"status": "done", "attempts": 1}, "02": {"status": "blocked", "attempts": 3, "reason": "plan-defect: task 2 contradicts Scenario: Empty list"}}}
   ```
 
-  `status` is `pending`, `done` or `blocked`; `attempts` counts every implementer run of the part, in every execute run. Whenever this skill says "write the state", write the whole file with every part of the plan, a part without an entry as `pending` with 0 attempts.
+  `status` is `pending`, `done` or `blocked`; `attempts` counts every implementer run of the part, in every execute run. Whenever this skill says "write the state", write the whole state file with every part of the parts directory, a part without an entry as `pending` with 0 attempts.
 
-Done when you hold the Change, the run directory, the settings and the state.
+With `--parts`, add ` --parts <parts dir>` to every worker prompt below (`implement-part`, `conform-part`, `resolve-conflict`).
+
+Done when you hold the Change, the parts, the run directory, the settings and the state.
 
 ## 2. Waves
 
-Run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" plan check openspec/changes/<change>/plan/parts --json`. It exits 1 when it reports a problem; read the result anyway.
+Run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" plan check <parts dir> --json`. It exits 1 when it reports a problem; read the result anyway.
 
 - A part with `wave: null`, or a problem `shared-not-alone`: the order of the work is unknown or unsafe. Start nothing, change nothing, and go to step 8 with the blocker naming the problems and `/bdk:plan <change>`.
 - Any other problem (`max-tasks`, `max-files`, `max-bytes`, `overlap`): note it for `Decisions taken without the user` and go on. An `overlap` means the parts' merge may conflict; step 6 handles that.
@@ -108,7 +113,7 @@ Done when every wave ran, or a wave ended with a blocked part.
 
 ## 8. Write the result
 
-Write `<run dir>/execute/result.md`, replacing an earlier one:
+Write the result file, replacing an earlier one:
 
 ```markdown
 Status: blocked

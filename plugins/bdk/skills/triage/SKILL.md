@@ -1,7 +1,7 @@
 ---
 name: triage
 description: 'Decides what happens to each finding of a judged BDK review round - fix, accept or defer - by the fixed policy when policy.gates.review is auto, otherwise by the user through a Lavish page or AskUserQuestion, and records every decision with bdk findings decide. Use when a judged round needs its decisions, when asked to triage or decide the findings of a review, or when /bdk:auto-review reaches triage.'
-argument-hint: "[<round-dir> | <change>]"
+argument-hint: "[<round-dir> | <change>] [--last-round]"
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(npx -y lavish-axi *) Bash(gh issue create *) Read Grep Glob Write AskUserQuestion
 ---
 
@@ -36,9 +36,11 @@ The policy, which is also the recommendation in manual mode:
 | Level | Decision |
 |---|---|
 | `blocker` | `fix` |
-| `should-fix` | `fix` |
+| `should-fix` | `fix`; with `--last-round`, `defer` without an issue |
 | `nice-to-have` | `defer`, without an issue |
 | `not-a-problem` | `accept` |
+
+`--last-round` means this is the last round `policy.budgets.review-rounds` allows (`/bdk:auto-review` passes it): no later round would review a fix, so a `should-fix` finding is fixed only within the budget. A `blocker` stays `fix` whatever the budget.
 
 ## 3a. Auto mode
 
@@ -47,6 +49,8 @@ Show no page, ask nothing, create no issue. For each undecided finding, record t
 ```
 "${CLAUDE_PLUGIN_ROOT}/bin/bdk" findings decide <log> <id> <decision> --reason "policy.gates.review auto: <level>"
 ```
+
+With `--last-round`, a `should-fix` finding gets the reason `policy.gates.review auto: should-fix; policy.budgets.review-rounds spent`.
 
 Done when every finding of step 1 has a decision. Go to step 4.
 

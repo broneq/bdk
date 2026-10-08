@@ -33,9 +33,11 @@ With a round directory in the arguments or the request (`.bdk/runs/<change>/revi
 2. When it holds no `groups.json`, record the groups: `bdk git groups <base> --rounds .bdk/runs/manual/review --record <round-dir>`, adding `--plan openspec/changes/<change>/plan/parts` when `openspec/changes/` holds exactly one Change besides `archive/`. `<base>` is the `--base` given, else the branch `git symbolic-ref --short refs/remotes/origin/HEAD` names, else `main`.
 3. Without a group id, review every group except `integration`, one after another, from step 2 on.
 
-Read `groups.json` in the round directory: `range`, and the `files` of your group. The log is `<round-dir>/findings.jsonl`. The Change is `openspec/changes/<change>/`, where `<change>` is the directory under `.bdk/runs/` (none for `manual` unless step 2 found one). A group `p<NN>` has the plan part `plan/parts/<NN>.md` of the Change; `integration` belongs to `review-integration`, not to you.
+Read `groups.json` in the round directory: `range`, and the `files` of your group. The log is `<round-dir>/findings.jsonl`. The Change is `openspec/changes/<change>/`, where `<change>` is the directory under `.bdk/runs/` (none for `manual` unless step 2 found one). A group `p<NN>` has the plan part `plan/parts/<NN>.md` of the Change; when that file does not exist, the part is a fix part of an earlier review round, `.bdk/runs/<change>/review/round-<k>/fixes/parts/<NN>.md`. `integration` belongs to `review-integration`, not to you.
 
-Done when you know the range, the group's files, the log, and the part file if there is one.
+When `groups.json` has an `anchor` of `kind` `round`, this round reviews the fixes made since round `anchor.round`: keep that round's log, `.bdk/runs/<change>/review/round-<anchor.round>/findings.jsonl`, for step 3.
+
+Done when you know the range, the group's files, the log, the part file if there is one, and, in a fix round, the earlier round's log.
 
 ## 2. Read the contract
 
@@ -51,6 +53,7 @@ For each file of the group: read it whole, then its diff (`git diff <range> -- <
 2. **Tests.** Each changed behaviour has a test that would fail if the behaviour broke. A test that cannot fail, or that only covers inputs where the bug does not show, is a problem; name the input it misses.
 3. **Rules.** Each rule from step 2 that the changed lines break.
 4. **Security.** Input from outside the process reaching a query, a shell, a file path or an eval without a check.
+5. **Fixed findings.** For a fix part, each task names the finding it fixes. Read that finding in the earlier round's log (`bdk findings list <earlier log>`) and trace its failure scenario through the code as it is now. A failure that still happens is a finding; its evidence names the earlier id and the input that still fails.
 
 Leave formatting and style a linter checks to the linter. A problem you can only see with a file outside the group (a caller, the other side of a contract) belongs to `review-integration`; leave it.
 

@@ -102,6 +102,14 @@ The `execute-*` cases are the orchestrator cases of `/bdk:execute` (one arm), on
 pnpm --filter @bdk/bdk run eval --ablation none --tag orchestrator --allow-tools Write Edit "Bash(*/bin/bdk *)" "Bash(mkdir -p *)" "Bash(cd *)" "Bash(git *)" --case 'execute-*'
 ```
 
+The review stage cases start from the `monthly-report` fixtures. `plan-fixes-judged-round` (block) records the triage decisions of the judged round and grades the fix part `round-1/fixes/parts/03.md` and `fixes/index.md`; `triage-last-round` (block) runs triage with `--last-round` in auto mode and grades that the `should-fix` finding is deferred. The orchestrator cases of `/bdk:auto-review` run one arm: `auto-review-first-round` runs round 1 end to end (a `bdk:lead` with `review-round`: reviewers, `bdk check run`, the E2E tester, the integration reviewer on opus, the judge) and stops at manual triage with the `lavish-axi` stub of the `triage-*` cases; `auto-review-fix-round` starts from the judged round in auto mode with a budget of two rounds in `.bdk/settings.local.yaml` (so the tree stays clean and round 1's recorded head stays `HEAD`), plans the fixes, builds them in a `bdk:lead` with `execute-waves --parts`, and grades that round 2 covers only the files of the fix commits. Both orchestrator cases run several agents each; expect minutes and a few dollars per run:
+
+```bash
+pnpm --filter @bdk/bdk run eval --allow-tools Write "Bash(*/bin/bdk *)" --case 'plan-fixes-*'
+pnpm --filter @bdk/bdk run eval --allow-tools Write "Bash(*/bin/bdk *)" "Bash(npx -y lavish-axi *)" --case 'triage-last-round'
+pnpm --filter @bdk/bdk run eval --ablation none --tag orchestrator --allow-tools Write Edit "Bash(*/bin/bdk *)" "Bash(mkdir -p *)" "Bash(cd *)" "Bash(git *)" "Bash(npx -y lavish-axi *)" --case 'auto-review-*'
+```
+
 The design-block cases (`explore-*`, `design-draft-*`, `verify-design-*`) start from the fixtures `ledger-proposal.sh`, `ledger-explored.sh` and `ledger-designed.sh`, and need the `bdk` launcher, OpenSpec, `git` and the Lavish CLI. `design-draft-lavish` and `design-draft-ask` put a `lavish-axi` stub into the workspace's `node_modules`, which `npx -y lavish-axi` runs before any installed one: the first opens every page and answers the poll, the second fails as a session without a browser does. `AskUserQuestion` is not available in a run, so `design-draft-ask` grades the questions in the reply.
 
 ```bash
@@ -159,8 +167,8 @@ One directory per case, `evals/<block>-<case>/`, where `<block>` is the skill's 
 
 ```text
 evals/<block>-<case>/
-  prompt.md        frontmatter: tags, allowed_tools, max_turns; body: what a user would type
-  case.yaml        only for context.scaffold_script (and plugins: for the sample)
+  prompt.md        frontmatter: tags, allowed_tools, max_turns, timeout_seconds; body: what a user would type
+  case.yaml        only for context.scaffold_script (and plugins: for the sample); a timeout_seconds here is ignored
   scaffold.sh      builds the workspace, usually from a shared fixture
   graders/*.md     one grader per file
 ```
@@ -250,5 +258,6 @@ Measured with Claude Code 2.1.292:
   ```
 
 - **`PATH` leaks from the caller.** A run inherits the `PATH` of the shell that starts it, including the `bin/` of plugins of a Claude Code session the command runs in. Start paid runs from a plain terminal.
+- **Background tasks end 10 minutes after the last turn.** Claude Code 2.1.294 in `claude -p` stops a background agent that still runs 10 minutes after the main thread's last turn ("Background tasks still running 10m after the last turn ...; stopping them"). A review round runs longer, so the `auto-review-*` cases set `execution.lead: foreground` in `.bdk/settings.local.yaml`.
 - **No Artifact tool, no project configuration.** A run cannot publish artifacts and loads no `CLAUDE.md`, `.claude/` or `.mcp.json`; ship what a case needs in the plugin.
 - **No local server.** Measured with Claude Code 2.1.292: a Bash-granting run cannot bind a local port (`listen EPERM: operation not permitted 0.0.0.0:5180`), so a case cannot start a web app or an HTTP API. `e2e-check` then reports `Verdict: BLOCKED`, as it should; its browser path is checked by hand (see "Manual browser check of `e2e-check`").
