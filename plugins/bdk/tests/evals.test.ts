@@ -10,8 +10,9 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { delimiter, join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { openspecWarning, runPath } from "../evals/run.ts";
 
 // Free checks of the eval suite (spec skill-evals, design D6 of v3-189-eval-setup). Paid runs
 // never happen here: the loader check runs `claude plugin eval` at a cost ceiling of zero, which
@@ -252,6 +253,55 @@ describe("eval suite layout", () => {
       { cwd: REPO },
     );
     expect(status).toBe(0);
+  });
+});
+
+describe("eval launcher", () => {
+  /** A directory holding an executable `openspec`. */
+  function withOpenspec(parent: string): string {
+    const bin = join(parent, "bin");
+    mkdirSync(bin, { recursive: true });
+    writeFileSync(join(bin, "openspec"), "#!/bin/sh\n", { mode: 0o755 });
+    return bin;
+  }
+
+  it("is what the eval script runs after the build", () => {
+    const pkg = JSON.parse(readFileSync(join(PLUGIN, "package.json"), "utf8")) as {
+      scripts: Record<string, string>;
+    };
+    expect(pkg.scripts.eval).toBe("node build.ts && node evals/run.ts");
+  });
+
+  it("drops every workspace bin directory from PATH and keeps the rest in order", () => {
+    const path = [
+      ".git/bdk-eval/bin",
+      join(PLUGIN, "node_modules", ".bin"),
+      join(REPO, "node_modules", ".bin"),
+      "/opt/homebrew/bin",
+      "/usr/bin",
+      "/x/node_modules/.bin/",
+    ].join(delimiter);
+    expect(runPath(path)).toBe(
+      [".git/bdk-eval/bin", "/opt/homebrew/bin", "/usr/bin"].join(delimiter),
+    );
+  });
+
+  it("warns when no openspec is on PATH", () => {
+    const dir = fresh("no-openspec");
+    expect(openspecWarning(join(dir, "empty"), join(dir, "home"))).toMatch(/openspec/);
+  });
+
+  it("warns when the openspec on PATH lies under the home directory", () => {
+    const dir = fresh("home-openspec");
+    const bin = withOpenspec(join(dir, "home", ".nvm"));
+    expect(openspecWarning(bin, join(dir, "home"))).toMatch(/openspec.*home directory/s);
+  });
+
+  it("is quiet for an openspec outside the home directory, after a directory without one", () => {
+    const dir = fresh("global-openspec");
+    const bin = withOpenspec(join(dir, "opt"));
+    const path = [join(dir, "empty"), bin].join(delimiter);
+    expect(openspecWarning(path, join(dir, "home"))).toBeUndefined();
   });
 });
 

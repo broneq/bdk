@@ -7,7 +7,7 @@
   "scripts": {
     "build": "node build.ts",
     "typecheck": "tsc -p .",
-    "eval": "node build.ts && claude plugin eval . --scaffold"
+    "eval": "node build.ts && node evals/run.ts"
   },
   "devDependencies": {
     "@fission-ai/openspec": "1.13.2",
