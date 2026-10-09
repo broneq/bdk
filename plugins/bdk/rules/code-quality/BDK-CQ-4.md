@@ -3,7 +3,6 @@ kind: house
 paths:
   - "**"
 stages:
-  - plan
   - execute
   - review
 measured:

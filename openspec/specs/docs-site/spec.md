@@ -92,7 +92,7 @@ The Reference section SHALL hold one section per plugin under `plugins/` (`bdk`,
 
 #### Scenario: Rule catalogue
 - **WHEN** a reader opens the rules page of the `bdk` Reference
-- **THEN** it lists every rule of `plugins/bdk/rules/` with the id `rules.disabled` takes, its title, stages and file globs
+- **THEN** it lists every rule of `plugins/bdk/rules/` with the id a `rules` entry of the settings takes, its title, stages and file globs
 
 #### Scenario: Settings key without a description
 - **WHEN** a contributor adds a key to the settings schema without a description and runs the generator

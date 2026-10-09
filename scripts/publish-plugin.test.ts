@@ -108,7 +108,14 @@ beforeEach(() => {
       "[commit]\n\tgpgsign = false\n[tag]\n\tgpgsign = false\n" +
       "[init]\n\tdefaultBranch = main\n[maintenance]\n\tauto = false\n[gc]\n\tauto = 0\n",
   );
-  env = { ...process.env, GIT_CONFIG_GLOBAL: gitconfig, GIT_CONFIG_NOSYSTEM: "1" };
+  // The fixture plugin has no lockfile; pnpm's dependency check before `pnpm run` would install
+  // and write one. `pnpm test` turns the check off, a bare `vitest` run does not.
+  env = {
+    ...process.env,
+    GIT_CONFIG_GLOBAL: gitconfig,
+    GIT_CONFIG_NOSYSTEM: "1",
+    pnpm_config_verify_deps_before_run: "false",
+  };
   git(base, "init", "--quiet", "--bare", remote);
   git(base, "init", "--quiet", repo);
   git(repo, "remote", "add", "origin", remote);

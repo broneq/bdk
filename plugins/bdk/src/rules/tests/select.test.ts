@@ -1,12 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { closest } from "../../shared/cli/index.ts";
 import type { Rule, Stage } from "../domain/rule.ts";
 import { select } from "../domain/select.ts";
-import type { Selection } from "../domain/select.ts";
+import type { Selected } from "../domain/select.ts";
 
-// Selection by stage, path and language (spec `bdk-cli/rules`, "Rules for a stage and files";
-// spec `rule-pack`, "Switching rules off").
+// Selection by stage, path and language (spec `bdk-cli/rules`, "Rules for a stage and files").
 
 function rule(id: string, fields: Partial<Rule> = {}): Rule {
   return {
@@ -38,22 +36,20 @@ const RULES: readonly Rule[] = [
   rule("API-1", { paths: ["src/api/**"], stages: ["review"] }),
 ];
 
-function ids(selection: Selection): string[] {
-  return selection.rules.map((selected) => selected.id);
+function ids(selection: readonly Selected[]): string[] {
+  return selection.map((selected) => selected.id);
 }
 
 function run(
   stage: Stage,
   files: readonly string[],
-  options: { languages?: readonly string[]; disabled?: readonly string[] } = {},
-): Selection {
+  options: { languages?: readonly string[] } = {},
+): Selected[] {
   return select({
     rules: RULES,
     stage,
     files,
     languages: options.languages ?? ["typescript", "react"],
-    disabled: options.disabled ?? [],
-    closest,
   });
 }
 
@@ -98,13 +94,11 @@ describe("selection", () => {
       stage: "review",
       files: ["src/a/b.ts"],
       languages: [],
-      disabled: [],
-      closest,
     });
     expect(ids(flat)).toEqual([]);
   });
 
-  it("records the files each rule matched, and orders bdk before project, ids by number", () => {
+  it("records the files each rule matched, and orders by origin, ids by number", () => {
     const selection = run("review", ["src/App.tsx", "README.md", "src/api/x.ts"]);
     expect(ids(selection)).toEqual([
       "BDK-ARCH-3",
@@ -115,33 +109,21 @@ describe("selection", () => {
       "BDK-TS-7",
       "API-1",
     ]);
-    const matched = Object.fromEntries(selection.rules.map((r) => [r.id, r.matched]));
+    const matched = Object.fromEntries(selection.map((r) => [r.id, r.matched]));
     expect(matched["BDK-CQ-1"]).toEqual(["src/App.tsx", "README.md", "src/api/x.ts"]);
     expect(matched["BDK-REACT-2"]).toEqual(["src/App.tsx"]);
     expect(matched["BDK-TS-7"]).toEqual(["src/App.tsx", "src/api/x.ts"]);
     expect(matched["API-1"]).toEqual(["src/api/x.ts"]);
-    expect(selection.warnings).toEqual([]);
   });
 
-  it("drops disabled rules of either origin", () => {
-    expect(ids(run("review", ["src/api/x.ts"], { disabled: ["BDK-CQ-4", "API-1"] }))).toEqual([
-      "BDK-ARCH-3",
-      "BDK-CQ-1",
-      "BDK-TS-7",
-    ]);
-  });
-
-  it("warns about a disabled id that names no rule, with the closest id", () => {
-    const selection = run("review", [], { disabled: ["BDK-CQ-44", "nothing-like-it"] });
-    expect(selection.warnings).toEqual([
-      "rules.disabled names no rule BDK-CQ-44; did you mean BDK-CQ-4?",
-      "rules.disabled names no rule nothing-like-it",
-    ]);
-  });
-
-  it("warns about a configured language without rules", () => {
-    expect(run("review", [], { languages: ["cobol", "react"] }).warnings).toEqual([
-      "no rules for language cobol",
-    ]);
+  it("orders the origins bdk, global, project, local", () => {
+    const rules = [
+      rule("L-1", { origin: "local" }),
+      rule("P-1", { origin: "project" }),
+      rule("G-1", { origin: "global" }),
+      rule("BDK-CQ-1"),
+    ];
+    const selection = select({ rules, stage: "review", files: [], languages: [] });
+    expect(ids(selection)).toEqual(["BDK-CQ-1", "G-1", "P-1", "L-1"]);
   });
 });

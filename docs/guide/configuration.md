@@ -94,7 +94,7 @@ tools:
 
 `/bdk:setup` writes these `paths` for you in a repository of several packages: a test or build item gets its package directory (`api/**`), a lint item whose tool reads one file type gets that type in the directory (`api/**/*.py`), and an item that covers the whole repository gets none. `paths` tells each check item which files are its own, with the globs of [rule paths](/concepts/rules): `*` stays inside one directory, `**` spans any number of them. On a part that changes only `web/src/App.tsx`, `bdk check run --scope` runs the `web` tests and `eslint`, and skips `api` and `ruff`, which own none of the changed files; the result lists them as skipped. On a part that changes `api/app.py`, `ruff` checks only that file, since its `scoped` variant gets just the changed files its `paths` match. An item without `paths` gets every changed file. `paths` matters only to a scoped run: a full run, such as a review round's, runs every item's `command`.
 
-`languages` lists the packs the rule pack has; for Python, add your own rules under `.bdk/rules/languages/python/` and list `python` ([rules](/concepts/rules)).
+`languages` lists the packs the rule pack has; for Python, declare your own rules under `rules` with `paths: ["**/*.py"]` ([rules](/concepts/rules)).
 
 ### A command-line tool
 
@@ -123,7 +123,11 @@ policy:
     design: manual
     review: manual
 rules:
-  disabled: [BDK-DP-2]
+  BDK-DP-2:
+    enabled: false
+  API-1:
+    paths: ["src/api/**"]
+    text: Every handler parses its request body with the schema in src/api/schemas/.
 ```
 
 ```yaml
@@ -135,7 +139,7 @@ models:
     model: opus
 ```
 
-A key a later layer sets replaces the earlier value as a whole, except lists of items with an `id`, which merge item by item. So a local `rules.disabled` replaces the team's list rather than adding to it.
+A key a later layer sets replaces the earlier value as a whole, except mappings, which merge key by key, and lists of items with an `id`, which merge item by item. So a local `rules` entry such as `BDK-CQ-4: {enabled: false}` switches that one rule off and leaves the team's other rules in force.
 
 ### Spend less, or check more
 
@@ -245,7 +249,7 @@ models:
 
 ### Rules
 
-BDK ships a rule pack that implementers and reviewers read for the files they touch (`bdk rules for`). [`languages`](/reference/bdk/settings#languages) picks the language rules; [`rules.disabled`](/reference/bdk/settings#rules-disabled) switches single rules off for the project.
+BDK ships a rule pack that the design, plan, execute and review roles read for their stage and files (`bdk rules for`). [`languages`](/reference/bdk/settings#languages) picks the language rules; [`rules`](/reference/bdk/settings#rules) declares the project's own rules by id, switches single rules off with `enabled: false` and narrows a pack rule's `paths` or `stages` ([rules](/concepts/rules)).
 
 ### Guard git history in subagents
 

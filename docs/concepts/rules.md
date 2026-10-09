@@ -1,6 +1,6 @@
-# Rules - the coding rules implementers follow and reviewers check
+# Rules - the rules designers, planners, implementers and reviewers follow
 
-A rule is one short, concrete coding choice or fact, such as "descriptive identifiers, no abbreviations" or "avoid `enum`, use `as const` objects or unions". BDK puts the rules that apply into the prompt of the agents that write and review code, so the code follows them without you repeating them in every request. BDK ships a small rule pack and reads your project's own rules beside it.
+A rule is one short, concrete coding choice or fact, such as "descriptive identifiers, no abbreviations" or "avoid `enum`, use `as const` objects or unions". BDK puts the rules that apply into the prompt of the roles that design, plan, write and review a Change, so the work follows them without you repeating them in every request. BDK ships a small rule pack and reads your project's own rules, declared in the settings, beside it.
 
 ## Two kinds of rule
 
@@ -19,7 +19,9 @@ Your project's rules need no measurement: they are your team's choices.
 
 ```mermaid
 flowchart LR
-  R[("BDK pack<br/>+ .bdk/rules/")] --> S["bdk rules for<br/>--stage S --files F"]
+  R[("BDK pack<br/>+ rules in the settings")] --> S["bdk rules for<br/>--stage S --files F"]
+  S -->|"stage design,<br/>no files"| D["/bdk:design-draft writes,<br/>/bdk:verify-design checks"]
+  S -->|"stage plan, no files;<br/>each part's files"| P["/bdk:plan-draft writes,<br/>/bdk:verify-plan checks"]
   S -->|"stage execute,<br/>the part's files"| I["bdk:implementer<br/>writes the code"]
   S -->|"stage execute,<br/>the changed files"| C["bdk:conformer<br/>checks the code"]
   S -->|"stage review,<br/>the group's files"| V["bdk:reviewer<br/>reports findings"]
@@ -28,14 +30,18 @@ flowchart LR
 
 | Stage | Role | What it does with the rules |
 |---|---|---|
+| design | `/bdk:design-draft` | treats each rule as a constraint on the design, and names the rule's id in the decision that follows it |
+| design | `bdk:verifier` in `/bdk:verify-design` | fails a design that breaks a rule, unless a decision records your agreement to depart from it |
+| plan | `/bdk:plan-draft` | follows the rules when it cuts the parts and writes the tasks, and names the id in the part or task that follows one |
+| plan | `bdk:verifier` in `/bdk:verify-plan` | checks each part against the rules selected for its `files`, and fails a part that breaks one |
 | execute | `bdk:implementer` in `/bdk:implement-part` | writes the part's code following them |
 | execute | `bdk:conformer` in `/bdk:conform-part` | checks each changed line against them and fixes what it can without changing behaviour |
 | review | `bdk:reviewer` in `/bdk:review-group` | reports a changed line that breaks one, as a finding that names the rule's id (`bdk findings add --rule`) |
 | review | `bdk:judge` in `/bdk:judge` | reads the rule a finding cites before it sets the level |
 
-A rule file can also name the stages `design` and `plan`, and some pack rules do. No design or plan step asks for rules yet ([#272](https://github.com/broneq/bdk/issues/272)), so today a rule reaches only the execute and review roles above.
+A design or a plan has no file set yet, so the drafts ask for the rules of their stage without files: every rule of the stage applies. The plan verifier knows each part's `files` and asks per part, so a rule for `src/**` holds only for the parts that touch `src/`.
 
-A broken rule alone is never a blocker: the judge levels it `should-fix` at most, because a rule is a choice and the product still works. Triage then fixes it, or defers it in the last review round ([findings](./findings.md)).
+In the code stages a broken rule alone is never a blocker: the judge levels it `should-fix` at most, because a rule is a choice and the product still works. Triage then fixes it, or defers it in the last review round ([findings](./findings.md)). In the design and plan stages a broken rule fails the verification, which is cheap to fix before any code exists.
 
 Rules are not the only instructions the code agents read. Your project's instructions bind the code too: `CLAUDE.md` and `AGENTS.md` in the project root and in each directory on the way to a file, and each `.claude/rules/*.md` whose `paths` match the file (or that has no `paths`).
 
@@ -52,63 +58,93 @@ Rules are not the only instructions the code agents read. Your project's instruc
 
 `bdk rules for --stage <stage> --files <file>...` selects, from the pack and your project rules, every rule that:
 
-1. is not switched off in `rules.disabled`;
-2. belongs to no language pack, or to a pack that `languages` lists (`languages: [typescript, react]`);
+1. is not switched off with `enabled: false`;
+2. is your project's rule, or belongs to no language pack, or to a pack that `languages` lists (`languages: [typescript, react]`);
 3. names the stage in its `stages`;
-4. matches at least one of the files in its `paths` globs (`**` is every file, `**/*.tsx` every TSX file).
+4. matches at least one of the files in its `paths` globs (`**` is every file, `**/*.tsx` every TSX file); without files this condition is dropped.
 
 To see what a reviewer of a file would get, ask Claude to run `bdk rules for --stage review --files src/api/users.ts`.
 
 ## Add your own rule
 
-Put a Markdown file under `.bdk/rules/` in your project, in any subdirectory. The file name is the rule's id; it may not start with `BDK-`, which the pack reserves. Commit it, and every implementer and reviewer of the team reads it.
-
-```markdown
----
-kind: house
-paths: ["src/api/**"]
-stages: [execute, review]
----
-
-**Validate input at the edge.** Every handler under `src/api/` parses its request body with the
-schema in `src/api/schemas/` before it touches the data; no handler reads `req.body` directly.
-```
-
-Saved as `.bdk/rules/api/API-1.md`, this is the rule `API-1`: an implementer of a part that changes `src/api/users.ts` follows it, and a reviewer reports a handler that reads `req.body` with the finding's rule set to `API-1`.
-
-A knowledge rule adds where the fact comes from and when it was checked:
-
-```markdown
----
-kind: knowledge
-paths: ["**/*.py"]
-stages: [execute, review]
-source: "https://docs.pydantic.dev/latest/migration/"
-verified: 2026-10-01
----
-
-**Pydantic v2 validators.** Use `@field_validator` and `@model_validator`; `@validator` and
-`@root_validator` are deprecated in v2 and removed in v3.
-```
-
-For a rule of one language, put it under `.bdk/rules/languages/<name>/`: it applies only while `languages` lists `<name>`, as the pack's language rules do. That is also how you add rules for a language the pack has none for, such as `python`.
-
-Each rule should be one choice the code can follow or break on a given line. Describe what to do, not a value judgement, and keep it short: the text goes into prompts as it is.
-
-## Switch a rule off, or change one
-
-Name its id in `rules.disabled`:
+Declare it under `rules` in `.bdk/settings.yaml`, keyed by its id. The id is letters, digits and `-`, keeps its case, and may not start with `BDK-`, which the pack reserves. Commit the file, and every role of the team reads the rule.
 
 ```yaml
 rules:
-  disabled: [BDK-DP-2, BDK-REACT-10]
+  API-1:
+    paths: ["src/api/**"]
+    text: >-
+      **Validate input at the edge.** Every handler under `src/api/` parses its request body
+      with the schema in `src/api/schemas/` before it touches the data; no handler reads
+      `req.body` directly.
 ```
 
-A BDK rule cannot be edited in place. To change one, switch it off and add your own version under `.bdk/rules/` with an id of your own. An id in `rules.disabled` that names no rule gives a warning with the closest id, not an error.
+This is the rule `API-1`: an implementer of a part that changes `src/api/users.ts` follows it, and a reviewer reports a handler that reads `req.body` with the finding's rule set to `API-1`.
 
-`rules.disabled` follows the configuration layers like every other key: a later layer replaces the whole list ([configuration](/guide/configuration)). The team's list lives in `.bdk/settings.yaml`. A developer's `.bdk/settings.local.yaml` that sets `rules.disabled` replaces that list for their runs, so a team rule cannot be locked on. Review the effective list with `bdk config show rules`.
+A rule holds exactly one of `text` (the rule inline) and `file` (a Markdown file holding the text, such as a convention document you already keep). A leading `---` frontmatter block in the file is skipped. Every other field has a default:
+
+| Field | Value | Default |
+|---|---|---|
+| `kind` | `house` or `knowledge` | `house` |
+| `paths` | globs of the files the rule governs, relative to the project root | `["**"]` |
+| `stages` | among `design`, `plan`, `execute`, `review` | `[execute, review]` |
+| `source`, `verified` | where a `knowledge` fact is documented, and the date it was last checked | required for `knowledge` |
+| `enabled` | `false` switches the rule off | `true` |
+
+A design rule takes `stages: [design]`, and points to a document the team already has:
+
+```yaml
+rules:
+  IO-1:
+    stages: [design]
+    file: docs/conventions/io.md
+```
+
+A knowledge rule adds where the fact comes from and when it was checked:
+
+```yaml
+rules:
+  PY-1:
+    kind: knowledge
+    paths: ["**/*.py"]
+    source: "https://docs.pydantic.dev/latest/migration/"
+    verified: 2026-10-01
+    text: >-
+      **Pydantic v2 validators.** Use `@field_validator` and `@model_validator`; `@validator`
+      and `@root_validator` are deprecated in v2 and removed in v3.
+```
+
+Your rules belong to no language pack: their `paths` choose the files they govern, so a rule for `**/*.py` is how you add rules for a language the pack has none for.
+
+Each rule should be one choice the work can follow or break. Describe what to do, not a value judgement, and keep it short: the text goes into prompts as it is.
+
+## Rules in the configuration layers
+
+`rules` is a map, so its entries merge across the configuration layers ([configuration](/guide/configuration)) field by field: `~/.config/bdk/settings.yaml` (yours, in every project), `.bdk/settings.yaml` (the team's) and `.bdk/settings.local.yaml` (yours, in this project). A rule in your global file is a personal rule; its `file` is read relative to that file's directory. In the project files, `file` is relative to the project root.
+
+`bdk config check` checks every entry, and `bdk config show rules` shows the resolved rules with the layer that set each field. `bdk rules for` names a rule's origin: `bdk` for a pack rule, or the layer that sets its `text` or `file`.
+
+## Switch a rule off, or change one
+
+Set `enabled: false` under its id, in any layer:
+
+```yaml
+rules:
+  BDK-DP-2:
+    enabled: false
+```
+
+A local layer that switches one rule off leaves every other rule of the team in force. An entry whose id starts with `BDK-` changes the pack rule of that id, and may set only `enabled`, `paths` and `stages`; the text stays the pack's:
+
+```yaml
+rules:
+  BDK-REACT-10:
+    paths: ["apps/web/**/*.tsx"]
+```
+
+To reword a BDK rule, switch it off and add your own version with an id of your own. A `BDK-` entry that names no pack rule gives a warning with the closest id, not an error.
 
 ## Sources
 
-- `plugins/bdk/rules/` (the pack and its README), `plugins/bdk/src/rules/` (`bdk rules for`)
-- `plugins/bdk/skills/implement-part/`, `conform-part/`, `review-group/`, `judge/`
+- `plugins/bdk/rules/` (the pack and its README), `plugins/bdk/src/rules/` (`bdk rules for`), `plugins/bdk/src/config/` (the `rules` settings)
+- `plugins/bdk/skills/design-draft/`, `verify-design/`, `plan-draft/`, `verify-plan/`, `implement-part/`, `conform-part/`, `review-group/`, `judge/`

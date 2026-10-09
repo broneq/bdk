@@ -62,19 +62,201 @@ async function bdk(
   return { exit, stdout, stderr };
 }
 
+const GLOBAL = "/home/me/.config/bdk";
+
+function settings(
+  yaml: string,
+  layer: "project" | "local" | "global" = "project",
+): Record<string, string> {
+  const path = {
+    project: `${ROOT}/.bdk/settings.yaml`,
+    local: `${ROOT}/.bdk/settings.local.yaml`,
+    global: `${GLOBAL}/settings.yaml`,
+  }[layer];
+  return { [path]: yaml };
+}
+
+const PROJECT = (yaml: string): Record<string, string> =>
+  settings(`languages: [typescript]\n${yaml}`);
+
 describe("rules for", () => {
-  it("selects pack and project rules for the stage, files and languages", () => {
+  it("selects pack rules and an inline project rule for the stage, files and languages", () => {
     const result = rulesFor(
-      deps({ [`${ROOT}/.bdk/rules/api/API-1.md`]: rule("review", '["src/api/**"]') }),
+      deps(
+        PROJECT(
+          'rules:\n  API-1:\n    paths: ["src/api/**"]\n    text: Parse the body with the schema.\n',
+        ),
+      ),
       { stage: "review", files: ["src/api/users.ts"] },
     );
     expect(result.rules.map((r) => [r.id, r.origin, r.file])).toEqual([
       ["BDK-ARCH-3", "bdk", "rules/architecture/BDK-ARCH-3.md"],
       ["BDK-CQ-1", "bdk", "rules/code-quality/BDK-CQ-1.md"],
       ["BDK-TS-7", "bdk", "rules/languages/typescript/BDK-TS-7.md"],
-      ["API-1", "project", ".bdk/rules/api/API-1.md"],
+      ["API-1", "project", ".bdk/settings.yaml"],
     ]);
+    expect(result.rules[3]).toMatchObject({
+      kind: "house",
+      language: null,
+      text: "Parse the body with the schema.",
+      matched: ["src/api/users.ts"],
+    });
     expect(result.warnings).toEqual([]);
+  });
+
+  it("reads a project rule's text from its file, without the frontmatter", () => {
+    const result = rulesFor(
+      deps({
+        ...PROJECT(
+          "rules:\n  GATEWAY-1:\n    stages: [design]\n    file: docs/conventions/gateway.md\n",
+        ),
+        [`${ROOT}/docs/conventions/gateway.md`]:
+          "---\ntitle: Gateway\n---\n\nRegister every endpoint in src/gateway/routes.ts.\n",
+      }),
+      { stage: "design", files: [] },
+    );
+    expect(result.rules.map((r) => [r.id, r.origin, r.file, r.text])).toEqual([
+      ["BDK-ARCH-3", "bdk", "rules/architecture/BDK-ARCH-3.md", "Rule text."],
+      [
+        "GATEWAY-1",
+        "project",
+        "docs/conventions/gateway.md",
+        "Register every endpoint in src/gateway/routes.ts.",
+      ],
+    ]);
+  });
+
+  it("gives a minimal rule the defaults: house, every file, execute and review", () => {
+    const value = deps(PROJECT("rules:\n  X-1:\n    text: Keep it short.\n"));
+    const review = rulesFor(value, { stage: "review", files: ["any/file.md"] });
+    expect(review.rules.find((r) => r.id === "X-1")).toMatchObject({
+      kind: "house",
+      paths: ["**"],
+      stages: ["execute", "review"],
+      source: null,
+      verified: null,
+    });
+    for (const stage of ["design", "plan"] as const) {
+      expect(rulesFor(value, { stage, files: [] }).rules.map((r) => r.id)).not.toContain("X-1");
+    }
+    expect(rulesFor(value, { stage: "execute", files: [] }).rules.map((r) => r.id)).toContain(
+      "X-1",
+    );
+  });
+
+  it("resolves the file of a global rule against the global settings directory", () => {
+    const result = rulesFor(
+      deps({
+        ...settings("rules:\n  ME-1:\n    file: me-1.md\n", "global"),
+        [`${GLOBAL}/me-1.md`]: "My own rule.\n",
+      }),
+      { stage: "execute", files: [] },
+    );
+    expect(result.rules.find((r) => r.id === "ME-1")).toMatchObject({
+      origin: "global",
+      file: `${GLOBAL}/me-1.md`,
+      text: "My own rule.",
+    });
+  });
+
+  it("reads no .bdk/rules/ directory and warns about none", () => {
+    const result = rulesFor(
+      deps({ [`${ROOT}/.bdk/rules/api/API-1.md`]: rule("review", '["src/api/**"]') }),
+      { stage: "review", files: ["src/api/users.ts"] },
+    );
+    expect(result.rules.map((r) => r.id)).not.toContain("API-1");
+    expect(result.warnings).toEqual([]);
+  });
+
+  it("switches rules off with enabled: false in any layer", () => {
+    const result = rulesFor(
+      deps({
+        ...PROJECT("rules:\n  BDK-ARCH-3: {enabled: false}\n  API-1: {text: Parse it.}\n"),
+        ...settings("rules:\n  BDK-CQ-1: {enabled: false}\n", "local"),
+      }),
+      { stage: "review", files: [] },
+    );
+    expect(result.rules.map((r) => r.id)).toEqual(["BDK-TS-7", "API-1"]);
+    expect(result.warnings).toEqual([]);
+  });
+
+  it("skips the file of a disabled rule, so a missing file breaks nothing", () => {
+    const result = rulesFor(
+      deps(PROJECT("rules:\n  API-2: {file: docs/missing.md, enabled: false}\n")),
+      { stage: "review", files: [] },
+    );
+    expect(result.rules.map((r) => r.id)).not.toContain("API-2");
+  });
+
+  it("narrows a pack rule by its BDK- entry and keeps its text", () => {
+    const result = rulesFor(
+      deps(settings('languages: [react]\nrules:\n  BDK-REACT-2: {paths: ["apps/web/**/*.tsx"]}\n')),
+      { stage: "review", files: ["packages/ui/Button.tsx", "apps/web/App.tsx"] },
+    );
+    expect(result.rules.find((r) => r.id === "BDK-REACT-2")).toMatchObject({
+      origin: "bdk",
+      language: "react",
+      file: "rules/languages/react/BDK-REACT-2.md",
+      paths: ["apps/web/**/*.tsx"],
+      matched: ["apps/web/App.tsx"],
+      text: "Rule text.",
+    });
+  });
+
+  it("warns about a BDK- entry that names no pack rule, with the closest id", () => {
+    const result = rulesFor(
+      deps(
+        PROJECT("rules:\n  BDK-CQ-11: {enabled: false}\n  BDK-NOTHING-LIKE-IT: {enabled: false}\n"),
+      ),
+      { stage: "review", files: [] },
+    );
+    expect(result.warnings).toEqual([
+      "rules.BDK-CQ-11 names no rule of the BDK pack; did you mean BDK-CQ-1?",
+      "rules.BDK-NOTHING-LIKE-IT names no rule of the BDK pack",
+    ]);
+  });
+
+  it("gives no warning for a language without pack rules", () => {
+    const result = rulesFor(deps(settings("languages: [python]\n")), {
+      stage: "review",
+      files: [],
+    });
+    expect(result.warnings).toEqual([]);
+  });
+
+  it("names the layer that sets the text as origin, and the layer file as file", () => {
+    const result = rulesFor(
+      deps({
+        ...PROJECT("rules:\n  API-1: {text: Parse it.}\n"),
+        ...settings('rules:\n  API-1: {paths: ["src/api/**"]}\n', "local"),
+      }),
+      { stage: "review", files: [] },
+    );
+    expect(result.rules.find((r) => r.id === "API-1")).toMatchObject({
+      origin: "project",
+      file: ".bdk/settings.yaml",
+      paths: ["src/api/**"],
+    });
+  });
+
+  it("orders rules by origin bdk, global, project, local, then by id", () => {
+    const result = rulesFor(
+      deps({
+        ...settings("rules:\n  ME-1: {text: Mine.}\n", "global"),
+        ...PROJECT("rules:\n  B-2: {text: Two.}\n  B-10: {text: Ten.}\n"),
+        ...settings("rules:\n  A-1: {text: Local.}\n", "local"),
+      }),
+      { stage: "review", files: [] },
+    );
+    expect(result.rules.map((r) => [r.id, r.origin])).toEqual([
+      ["BDK-ARCH-3", "bdk"],
+      ["BDK-CQ-1", "bdk"],
+      ["BDK-TS-7", "bdk"],
+      ["ME-1", "global"],
+      ["B-2", "project"],
+      ["B-10", "project"],
+      ["A-1", "local"],
+    ]);
   });
 
   it("makes files root-relative from the working directory, absolute paths too, without repeats", () => {
@@ -85,17 +267,6 @@ describe("rules for", () => {
     expect(result.files).toEqual(["src/a.ts", "lib/b.tsx"]);
   });
 
-  it("applies rules.disabled and reports an unknown id as a warning", () => {
-    const result = rulesFor(
-      deps({ [`${ROOT}/.bdk/settings.yaml`]: "rules:\n  disabled: [BDK-CQ-1, BDK-CQ-11]\n" }),
-      { stage: "review", files: [] },
-    );
-    expect(result.rules.map((r) => r.id)).toEqual(["BDK-ARCH-3"]);
-    expect(result.warnings).toEqual([
-      "rules.disabled names no rule BDK-CQ-11; did you mean BDK-CQ-1?",
-    ]);
-  });
-
   it("reports a project that is not configured", () => {
     const failure = error(() =>
       rulesFor(deps({ [`${ROOT}/.bdk/settings.yaml`]: undefined }), { stage: "review", files: [] }),
@@ -104,63 +275,51 @@ describe("rules for", () => {
     expect(failure.hint).toContain("/bdk:setup");
   });
 
-  it("reports an invalid configuration", () => {
-    const failure = error(() =>
-      rulesFor(deps({ [`${ROOT}/.bdk/settings.yaml`]: "languages: [Not Kebab]\n" }), {
-        stage: "review",
-        files: [],
-      }),
-    );
+  it.each([
+    ["an invalid setting", "languages: [Not Kebab]\n"],
+    ["an invalid stage of a project rule", "rules:\n  X-1: {text: T., stages: [deploy]}\n"],
+    ["a pack rule given a text", "rules:\n  BDK-CQ-1: {text: Short names are fine.}\n"],
+    ["one rule id twice", "rules:\n  API-1: {text: A.}\n  API-1: {text: B.}\n"],
+  ])("reports an invalid configuration: %s", (_name, yaml) => {
+    const failure = error(() => rulesFor(deps(settings(yaml)), { stage: "review", files: [] }));
     expect(failure.code).toBe("env/config-invalid");
     expect(failure.hint).toContain("bdk config check");
   });
 
-  it("reports an invalid project rule with its file and field", () => {
+  it("reports the missing file of an enabled project rule by its key and path", () => {
     const failure = error(() =>
-      rulesFor(deps({ [`${ROOT}/.bdk/rules/X-1.md`]: rule("deploy") }), {
+      rulesFor(deps(PROJECT("rules:\n  API-2: {file: docs/missing.md}\n")), {
         stage: "review",
         files: [],
       }),
     );
     expect(failure.code).toBe("env/invalid-rule");
-    expect(failure.message).toContain(".bdk/rules/X-1.md");
-    expect(failure.message).toContain("stages");
+    expect(failure.message).toBe("rules.API-2.file: docs/missing.md cannot be read");
   });
 
-  it("refuses a project rule with a pack id", () => {
-    const failure = error(() =>
-      rulesFor(deps({ [`${ROOT}/.bdk/rules/BDK-CQ-1.md`]: rule("review") }), {
-        stage: "review",
-        files: [],
-      }),
-    );
-    expect(failure.code).toBe("env/invalid-rule");
-    expect(failure.message).toContain("BDK-");
-  });
-
-  it("refuses two project rules with one id", () => {
+  it("reports a rule file with no text after its frontmatter", () => {
     const failure = error(() =>
       rulesFor(
         deps({
-          [`${ROOT}/.bdk/rules/a/API-1.md`]: rule("review"),
-          [`${ROOT}/.bdk/rules/b/API-1.md`]: rule("review"),
+          ...PROJECT("rules:\n  API-2: {file: docs/empty.md}\n"),
+          [`${ROOT}/docs/empty.md`]: "---\ntitle: x\n---\n\n",
         }),
         { stage: "review", files: [] },
       ),
     );
     expect(failure.code).toBe("env/invalid-rule");
-    expect(failure.message).toBe(".bdk/rules/b/API-1.md: id API-1 is also .bdk/rules/a/API-1.md");
+    expect(failure.message).toBe("rules.API-2.file: docs/empty.md holds no rule text");
   });
 
-  it("reports a rule file that is listed but cannot be read", () => {
-    const value = deps({ [`${ROOT}/.bdk/rules/API-1.md`]: rule("review") });
+  it("reports a pack rule file that is listed but cannot be read", () => {
+    const value = deps();
     const files = {
       ...value.files,
       readText: (path: string) =>
-        path.endsWith("API-1.md") ? undefined : value.files.readText(path),
+        path.endsWith("BDK-CQ-1.md") ? undefined : value.files.readText(path),
     };
     const failure = error(() => rulesFor({ ...value, files }, { stage: "review", files: [] }));
-    expect(failure.message).toBe(".bdk/rules/API-1.md: cannot be read");
+    expect(failure.message).toBe("rules/code-quality/BDK-CQ-1.md: cannot be read");
   });
 
   it("reports a missing rule pack", () => {
@@ -187,6 +346,16 @@ describe("rules for", () => {
     );
     expect(failure.code).toBe("env/invalid-rule");
     expect(failure.message).toContain("rules/x/BDK-X-1.md");
+  });
+
+  it("refuses two pack rules with one id", () => {
+    const failure = error(() =>
+      rulesFor(deps({ [`${PACK}/x/BDK-CQ-1.md`]: rule("review") }), { stage: "review", files: [] }),
+    );
+    expect(failure.code).toBe("env/invalid-rule");
+    expect(failure.message).toBe(
+      "rules/x/BDK-CQ-1.md: id BDK-CQ-1 is also rules/code-quality/BDK-CQ-1.md",
+    );
   });
 });
 
@@ -254,14 +423,16 @@ describe("bdk rules for", () => {
       ["rules", "for", "--stage", "design"],
       deps({
         [`${PACK}/k/BDK-K-1.md`]: knowledge,
-        [`${ROOT}/.bdk/settings.yaml`]: "languages: [cobol]\n",
+        [`${ROOT}/.bdk/settings.yaml`]: "rules:\n  BDK-K-2: {enabled: false}\n",
       }),
     );
     expect(stdout).toContain("BDK rules for stage design: 2 rules\n");
     expect(stdout).toContain(
       "## BDK-K-1\nknowledge, verified 2026-09-30, source https://x.dev; applies to any file of the stage\n",
     );
-    expect(stdout).toMatch(/\nwarnings:\n {2}no rules for language cobol\n$/);
+    expect(stdout).toMatch(
+      /\nwarnings:\n {2}rules\.BDK-K-2 names no rule of the BDK pack; did you mean BDK-K-1\?\n$/,
+    );
   });
 
   it("prints an empty selection with exit 0", async () => {

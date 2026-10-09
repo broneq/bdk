@@ -29,12 +29,23 @@ beforeAll(async () => {
     cpSync(join(PLUGIN, dir), join(plugin, dir), { recursive: true });
   }
   await build({ outfile: join(plugin, "dist", "bdk.mjs") });
-  write(join(project, ".bdk", "settings.yaml"), "languages: [typescript, react]\n");
-  write(join(project, "openspec", "config.yaml"), "schema: spec-driven\n");
   write(
-    join(project, ".bdk", "rules", "UI-1.md"),
-    "---\nkind: house\npaths: [src/**/*.tsx]\nstages: [review]\n---\n\nUse the design tokens.\n",
+    join(project, ".bdk", "settings.yaml"),
+    [
+      "languages: [typescript, react]",
+      "rules:",
+      "  UI-1:",
+      "    paths: [src/**/*.tsx]",
+      "    stages: [review]",
+      "    file: docs/ui-1.md",
+      "  API-1:",
+      "    text: Parse the body with the schema.",
+      "",
+    ].join("\n"),
   );
+  write(join(project, ".bdk", "settings.local.yaml"), "rules:\n  BDK-CQ-4: {enabled: false}\n");
+  write(join(project, "docs", "ui-1.md"), "---\ntitle: UI\n---\n\nUse the design tokens.\n");
+  write(join(project, "openspec", "config.yaml"), "schema: spec-driven\n");
 });
 
 afterAll(() => {
@@ -50,7 +61,7 @@ function bdk(args: readonly string[]): { status: number | null; stdout: string; 
 }
 
 describe("bdk rules for, built", () => {
-  it("selects the general, TypeScript, React and project rules of a review of a .tsx file", () => {
+  it("selects the general, TypeScript, React and project rules of a review of a .tsx file, less the disabled", () => {
     const { status, stdout, stderr } = bdk([
       "rules",
       "for",
@@ -66,7 +77,6 @@ describe("bdk rules for, built", () => {
       "BDK-ARCH-3",
       "BDK-ARCH-4",
       "BDK-CQ-1",
-      "BDK-CQ-4",
       "BDK-DP-2",
       "BDK-DP-4",
       "BDK-DP-8",
@@ -78,8 +88,14 @@ describe("bdk rules for, built", () => {
       "BDK-REACT-17",
       "BDK-REACT-19",
       "BDK-TS-7",
+      "API-1",
       "UI-1",
     ]);
+    expect(result.rules.find((rule) => rule.id === "UI-1")).toMatchObject({
+      origin: "project",
+      file: "docs/ui-1.md",
+      text: "Use the design tokens.",
+    });
     expect(result.warnings).toEqual([]);
   });
 
@@ -87,11 +103,21 @@ describe("bdk rules for, built", () => {
     const review = bdk(["rules", "for", "--stage", "review", "--files", "src/util.ts", "--json"]);
     const ids = forSchema.parse(JSON.parse(review.stdout)).rules.map((rule) => rule.id);
     expect(ids.filter((id) => id.startsWith("BDK-REACT") || id === "UI-1")).toEqual([]);
+    expect(ids).toContain("API-1");
     expect(ids).toContain("BDK-TS-7");
     const design = bdk(["rules", "for", "--stage", "design", "--json"]);
     expect(forSchema.parse(JSON.parse(design.stdout)).rules.map((rule) => rule.id)).toEqual([
       "BDK-ARCH-3",
       "BDK-ARCH-4",
+    ]);
+  });
+
+  it("selects the plan rules of the pack: the ones a plan decides", () => {
+    const plan = bdk(["rules", "for", "--stage", "plan", "--json"]);
+    expect(forSchema.parse(JSON.parse(plan.stdout)).rules.map((rule) => rule.id)).toEqual([
+      "BDK-ARCH-3",
+      "BDK-ARCH-4",
+      "BDK-CQ-1",
     ]);
   });
 });

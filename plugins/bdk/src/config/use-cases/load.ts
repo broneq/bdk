@@ -6,9 +6,10 @@ import { CliError, closest } from "../../shared/cli/index.ts";
 import { resolveKey } from "../domain/keys.ts";
 import type { Step } from "../domain/keys.ts";
 import type { LayerFile } from "../domain/layer-files.ts";
-import type { Layer } from "../domain/merge.ts";
+import { withOrigins } from "../domain/merge.ts";
+import type { Layer, LayerName } from "../domain/merge.ts";
 import type { Settings } from "../domain/settings.ts";
-import { validate } from "../domain/validate.ts";
+import { DEFAULT_LAYER, validate } from "../domain/validate.ts";
 import type { Problem } from "../domain/validate.ts";
 import type { Files } from "../../shared/fs/index.ts";
 import { findRoot, hasOpenSpec, readLayers } from "../store/layers.ts";
@@ -53,7 +54,15 @@ export function load(deps: ConfigDeps): Loaded {
 }
 
 export type ConfigState =
-  | { readonly status: "ok"; readonly root: string; readonly settings: Settings }
+  | {
+      readonly status: "ok";
+      readonly root: string;
+      readonly settings: Settings;
+      /** The three layer files, present or not. */
+      readonly files: readonly LayerFile[];
+      /** The layer of every resolved leaf, by dotted key (`default` when no file sets it). */
+      readonly origins: ReadonlyMap<string, LayerName>;
+    }
   | {
       readonly status: "not-configured";
       readonly root: string;
@@ -70,7 +79,18 @@ export function loadConfig(deps: ConfigDeps): ConfigState {
   if (loaded.settings === undefined) {
     return { status: "invalid", root: loaded.root, problems: loaded.problems };
   }
-  return { status: "ok", root: loaded.root, settings: loaded.settings };
+  const origins = new Map(
+    withOrigins(loaded.settings, [DEFAULT_LAYER, ...loaded.layers]).map(
+      (leaf) => [leaf.key, leaf.origin] as const,
+    ),
+  );
+  return {
+    status: "ok",
+    root: loaded.root,
+    settings: loaded.settings,
+    files: loaded.files,
+    origins,
+  };
 }
 
 /** The steps of `key`, or the usage error `usage/unknown-key` with the closest known name. */

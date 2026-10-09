@@ -1,17 +1,18 @@
 // `bdk rules for`: the rules a role of a stage reads for a set of files (spec `bdk-cli/rules`),
-// from the BDK pack and the project's `.bdk/rules/`, with `languages` and `rules.disabled` of the
-// resolved configuration.
+// from the BDK pack and the `rules` entries of the resolved configuration, with its `languages`.
 
-import { isAbsolute, join, normalize, relative, resolve, sep } from "node:path";
+import { dirname, isAbsolute, normalize, relative, resolve, sep } from "node:path";
 
 import { loadConfig } from "../../config/index.ts";
-import type { ConfigDeps } from "../../config/index.ts";
+import type { ConfigDeps, ConfigState } from "../../config/index.ts";
 import { CliError, closest } from "../../shared/cli/index.ts";
-import { parseRule } from "../domain/rule.ts";
+import { adjustPack, isPackId, projectRule } from "../domain/entries.ts";
+import type { RuleEntry } from "../domain/entries.ts";
+import { parseRule, ruleBody } from "../domain/rule.ts";
 import type { Rule, Stage } from "../domain/rule.ts";
 import { select } from "../domain/select.ts";
 import type { ForResult } from "../schema/for.ts";
-import { hasDir, readRuleFiles } from "../store/rules.ts";
+import { hasDir, readRuleFiles, readRuleText } from "../store/rules.ts";
 
 export interface RulesDeps extends ConfigDeps {
   /** The BDK rule pack: `rules/` of the installed plugin. */
@@ -23,32 +24,76 @@ export interface ForInput {
   readonly files: readonly string[];
 }
 
+type Ok = Extract<ConfigState, { status: "ok" }>;
+type Layer = Exclude<Rule["origin"], "bdk">;
+
 /** Where a file the caller named sits relative to the root, `/`-separated. */
 function rootRelative(root: string, cwd: string, file: string): string {
   const absolute = isAbsolute(file) ? normalize(file) : resolve(cwd, file);
   return relative(root, absolute).split(sep).join("/");
 }
 
-function invalid(file: string, problem: string, origin: Rule["origin"]): CliError {
-  return new CliError(
-    "env/invalid-rule",
-    `${file}: ${problem}`,
-    origin === "bdk" ? "Reinstall the bdk plugin." : "Fix the rule file or delete it.",
-  );
+/** A path for output: root-relative under the root, absolute elsewhere. */
+function display(root: string, path: string): string {
+  const inside = relative(root, path);
+  if (inside === "" || inside === ".." || inside.startsWith(`..${sep}`) || isAbsolute(inside)) {
+    return path;
+  }
+  return inside.split(sep).join("/");
 }
 
-function readRules(deps: RulesDeps, dir: string, display: string, origin: Rule["origin"]): Rule[] {
+function readPack(deps: RulesDeps): Rule[] {
   const seen = new Map<string, string>();
-  return readRuleFiles(deps.files, dir).map(({ relPath, content }) => {
-    const file = `${display}/${relPath}`;
-    if (content === undefined) throw invalid(file, "cannot be read", origin);
-    const rule = parseRule({ relPath, file, origin, content });
-    if (typeof rule === "string") throw invalid(file, rule, origin);
+  const invalid = (file: string, problem: string): CliError =>
+    new CliError("env/invalid-rule", `${file}: ${problem}`, "Reinstall the bdk plugin.");
+  return readRuleFiles(deps.files, deps.pack).map(({ relPath, content }) => {
+    const file = `rules/${relPath}`;
+    if (content === undefined) throw invalid(file, "cannot be read");
+    const rule = parseRule({ relPath, file, content });
+    if (typeof rule === "string") throw invalid(file, rule);
     const other = seen.get(rule.id);
-    if (other !== undefined) throw invalid(file, `id ${rule.id} is also ${other}`, origin);
+    if (other !== undefined) throw invalid(file, `id ${rule.id} is also ${other}`);
     seen.set(rule.id, file);
     return rule;
   });
+}
+
+/** The layer whose entry sets the rule's `text` or `file`. */
+function layerOf(config: Ok, id: string): Layer {
+  const origin = config.origins.get(`rules.${id}.text`) ?? config.origins.get(`rules.${id}.file`);
+  if (origin === undefined || origin === "default") {
+    throw new Error(`no layer sets rules.${id}.text or rules.${id}.file`);
+  }
+  return origin;
+}
+
+function layerPath(config: Ok, layer: Layer): string {
+  const file = config.files.find((candidate) => candidate.layer === layer);
+  if (file === undefined) throw new Error(`no ${layer} layer file`);
+  return file.path;
+}
+
+/** An enabled project rule, its `file` read and its frontmatter skipped. */
+function readProjectRule(deps: RulesDeps, config: Ok, id: string, entry: RuleEntry): Rule {
+  const origin = layerOf(config, id);
+  if (entry.file === undefined) {
+    const file = display(config.root, layerPath(config, origin));
+    return projectRule({ id, entry, origin, file, text: entry.text ?? "" });
+  }
+  const base = origin === "global" ? dirname(layerPath(config, origin)) : config.root;
+  const path = resolve(base, entry.file);
+  const file = display(config.root, path);
+  const invalid = (problem: string): CliError =>
+    new CliError(
+      "env/invalid-rule",
+      `rules.${id}.file: ${file} ${problem}`,
+      `Fix the file, or the rules.${id} entry in the ${origin} settings.`,
+    );
+  const content = readRuleText(deps.files, path);
+  if (content === undefined) throw invalid("cannot be read");
+  const text = ruleBody(content);
+  if (text === "") throw invalid("holds no rule text");
+  return projectRule({ id, entry, origin, file, text });
 }
 
 export function rulesFor(deps: RulesDeps, input: ForInput): ForResult {
@@ -74,18 +119,17 @@ export function rulesFor(deps: RulesDeps, input: ForInput): ForResult {
       "Reinstall the bdk plugin.",
     );
   }
-  const rules = [
-    ...readRules(deps, deps.pack, "rules", "bdk"),
-    ...readRules(deps, join(config.root, ".bdk", "rules"), ".bdk/rules", "project"),
-  ];
+  const entries = config.settings.rules;
+  const pack = adjustPack(readPack(deps), entries, closest);
+  const project = Object.entries(entries)
+    .filter(([id, entry]) => !isPackId(id) && entry.enabled !== false)
+    .map(([id, entry]) => readProjectRule(deps, config, id, entry));
   const files = [...new Set(input.files.map((file) => rootRelative(config.root, deps.cwd, file)))];
-  const selection = select({
-    rules,
+  const selected = select({
+    rules: [...pack.rules, ...project],
     stage: input.stage,
     files,
     languages: config.settings.languages,
-    disabled: config.settings.rules.disabled,
-    closest,
   });
   const outside = files
     .filter((file) => file === "" || file === ".." || file.startsWith("../"))
@@ -97,7 +141,7 @@ export function rulesFor(deps: RulesDeps, input: ForInput): ForResult {
     stage: input.stage,
     files,
     // `measured` stays out: admission is the pack tests' concern, not the role's (design D3).
-    rules: selection.rules.map((rule) => ({
+    rules: selected.map((rule) => ({
       id: rule.id,
       origin: rule.origin,
       kind: rule.kind,
@@ -110,6 +154,6 @@ export function rulesFor(deps: RulesDeps, input: ForInput): ForResult {
       matched: [...rule.matched],
       text: rule.text,
     })),
-    warnings: [...outside, ...selection.warnings],
+    warnings: [...outside, ...pack.warnings],
   };
 }

@@ -26,7 +26,7 @@ A rule under `languages/<name>/` belongs to the language pack `<name>` and is re
 
 ## Project rules
 
-A project adds rules in the same format under `.bdk/rules/` (any subdirectory; `.bdk/rules/languages/<name>/` for a language pack). A project id may not start with `BDK-`. `rules.disabled` in `.bdk/settings.yaml` switches off a rule of either origin by id; to change a BDK rule, disable it and add your own.
+A project declares its own rules in its settings, not as files: entries of the map `rules` in `.bdk/settings.yaml` (or the global or local layer), keyed by id, each holding `text` or a `file` with the text. An id may not start with `BDK-`; an entry with a `BDK-` id changes the pack rule of that id (`enabled`, `paths`, `stages` only), and `enabled: false` switches a rule of either origin off. To reword a BDK rule, switch it off and add your own. See `docs/concepts/rules.md`.
 
 ## Admission
 

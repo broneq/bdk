@@ -252,7 +252,6 @@ export function readRules(dir: string): Rule[] {
       const rule = parseRule({
         relPath,
         file: relative(REPO, file),
-        origin: "bdk",
         content: readFileSync(file, "utf8"),
       });
       return typeof rule === "string" ? fail(file, rule) : rule;

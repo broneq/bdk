@@ -1,0 +1,85 @@
+## MODIFIED Requirements
+
+### Requirement: Settings keys
+
+The configuration SHALL accept exactly these keys; any other key at any level SHALL be a problem naming its full dotted key. A key segment, a `models` role, a `steps` orchestrator and an `id` SHALL be kebab-case (`^[a-z0-9][a-z0-9-]*$`), except a key directly under `rules`, which SHALL be a rule id: letters, digits and `-`, starting with a letter or digit (`^[A-Za-z0-9][A-Za-z0-9-]*$`), case kept. An item of an array merged by `id` SHALL be addressed by its `id` as a key segment (`tools.test.unit.scoped`) in every output and argument.
+
+| Key                                                  | Type                                                                                                         | Default      |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------ |
+| `tools.test`, `tools.lint`, `tools.build`            | items by `id`: `command` (string, required), `scoped` (string holding `{files}`, optional), `timeout` (integer seconds, 1 to 86400, optional; `bdk check run` uses 600 when absent) | `[]`         |
+| `tools.e2e`                                          | items by `id`: `start` (command), `ready` (URL or command), `driver` (`cli`, `http`, `browser`), `env` (map of variable name to string, optional), `browser` (`playwright` or `chrome-devtools-mcp`, optional; read only for `driver: browser`, where an absent field means `playwright`); all but `env` and `browser` required | `[]`         |
+| `languages`                                          | list of kebab-case names                                                                                     | `[]`         |
+| `rules.<id>`                                         | rule entry (spec `rule-pack`, "Project rules" and "Switching rules off"): `text` (string), `file` (path), `kind` (`house`, `knowledge`), `paths` (non-empty list of strings), `stages` (non-empty list of distinct `design`, `plan`, `execute`, `review`), `source` (string), `verified` (date `YYYY-MM-DD`), `enabled` (boolean), all optional in one layer; a resolved entry whose id does not start with `BDK-` SHALL hold exactly one of `text` and `file`, and `source` and `verified` when its `kind` is `knowledge` and only then; a resolved entry whose id starts with `BDK-` SHALL hold no field but `enabled`, `paths` and `stages` | `{}` |
+| `models.<role>`                                      | model name or alias                                                                                          | none set     |
+| `policy.gates.design`, `policy.gates.review`         | `manual` or `auto`                                                                                           | `manual`     |
+| `policy.questions`                                   | `decide-and-record` or `stop`                                                                                | `stop`       |
+| `policy.budgets.part-attempts`, `policy.budgets.review-rounds` | integer, at least 1                                                                                 | `3`, `3`     |
+| `policy.budgets.verifier`                           | integer, at least 1: the most verifier passes one design or plan orchestrator run spends                     | `3`          |
+| `policy.escalation.model`                            | model a blocked part is retried with                                                                         | `opus`       |
+| `plan.part.max-tasks`, `plan.part.max-files`, `plan.part.max-bytes` | integer, at least 1                                                                           | `5`, `10`, `8192` |
+| `steps.<orchestrator>`                               | items by `id`: `enabled` (boolean, optional), `use` (project skill or agent replacing the block, optional)    | none set     |
+| `execution.lead`                                     | `background` or `foreground`                                                                                 | `background` |
+| `execution.max-parallel`                             | integer, at least 1: the most part agents the execute lead runs at once                                      | `10`         |
+| `hooks.subagent-git`                                 | boolean                                                                                                      | `false`      |
+
+A missing required field, a value of the wrong type or outside its allowed values SHALL be a problem naming the full dotted key and what is allowed. The task that builds the consumer of a key MAY change that key's row through a delta of this spec.
+
+#### Scenario: Unknown key with a suggestion
+
+- **WHEN** `.bdk/settings.yaml` sets `plan.part.max-task: 4`
+- **THEN** `bdk config check` reports `plan.part.max-task` as an unknown key, suggests `plan.part.max-tasks`, and exits 1
+
+#### Scenario: Defaults without a layer value
+
+- **WHEN** no layer sets any `plan.part` key
+- **THEN** `bdk config show plan.part` prints `max-tasks` 5, `max-files` 10 and `max-bytes` 8192, each with origin `default`
+
+#### Scenario: Check timeout
+
+- **WHEN** `.bdk/settings.yaml` gives the `tools.test` item `unit` the field `timeout: 0`
+- **THEN** `bdk config check` reports `tools.test.unit.timeout` and that it must be at least 1, and exits 1
+
+#### Scenario: Browser tool of an E2E entry
+
+- **WHEN** `.bdk/settings.yaml` gives the `tools.e2e` item `web` the field `browser: playwright`, the item `docs` the field `browser: chrome-devtools-mcp`, and the item `admin` the field `browser: chrome-devtools-axi`
+- **THEN** `bdk config check` accepts `tools.e2e.web.browser` and `tools.e2e.docs.browser`, reports `tools.e2e.admin.browser` with the allowed values `playwright` and `chrome-devtools-mcp`, and exits 1
+
+#### Scenario: Browser tool absent
+
+- **WHEN** the `tools.e2e` item `web` has `driver: browser` and no `browser` field
+- **THEN** `bdk config check` exits 0 and `bdk config show tools.e2e.web` prints no `browser` value, which the tester reads as `playwright`
+
+#### Scenario: Verifier budget
+
+- **WHEN** no layer sets `policy.budgets.verifier` and the project layer sets nothing under `policy`
+- **THEN** `bdk config show policy.budgets.verifier` prints 3 with origin `default`, and `policy.budgets.verifier: 0` in a layer makes `bdk config check` report `policy.budgets.verifier` and exit 1
+
+#### Scenario: Wave size limit
+
+- **WHEN** no layer sets `execution.max-parallel`, and later the local layer sets `execution.max-parallel: 0`
+- **THEN** `bdk config show execution.max-parallel` first prints 10 with origin `default`, then `bdk config check` reports `execution.max-parallel` and that it must be at least 1, and exits 1
+
+#### Scenario: Rule id keeps its case
+
+- **WHEN** `bdk config set rules.API-1.enabled false --layer local` runs in a project whose project layer declares `rules: {API-1: {text: "Parse the body."}}`
+- **THEN** the local file holds `rules: {API-1: {enabled: false}}`, and `bdk config show rules.API-1` prints `rules.API-1.text` with origin `project` and `rules.API-1.enabled` with origin `local`
+
+#### Scenario: Text and file both set
+
+- **WHEN** the project layer declares `rules: {API-1: {text: "...", file: docs/api.md}}`
+- **THEN** `bdk config check` reports `rules.API-1` and that a rule holds exactly one of `text` and `file`, and exits 1
+
+#### Scenario: Pack rule given a text
+
+- **WHEN** the project layer declares `rules: {BDK-CQ-1: {text: "Short names are fine."}}`
+- **THEN** `bdk config check` reports `rules.BDK-CQ-1.text` and that a `BDK-` entry takes only `enabled`, `paths` and `stages`, and exits 1
+
+#### Scenario: Knowledge rule without source
+
+- **WHEN** the project layer declares `rules: {PYD-1: {kind: knowledge, verified: 2026-10-01, text: "..."}}`
+- **THEN** `bdk config check` reports `rules.PYD-1.source` as missing and exits 1
+
+#### Scenario: Removed rules.disabled
+
+- **WHEN** the project layer still sets `rules: {disabled: [BDK-DP-2]}`
+- **THEN** `bdk config check` reports a problem under `rules.disabled` and exits 1

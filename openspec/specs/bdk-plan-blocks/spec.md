@@ -31,7 +31,7 @@ Both blocks SHALL take the name of an OpenSpec Change as their argument. Without
 
 ### Requirement: plan-draft writes the parts
 
-`plan-draft` SHALL read the proposal, every spec delta and the design of the Change, and the code they name, before it writes a part. It SHALL write the plan as `openspec/changes/<change>/plan/parts/NN.md`, in the part format of spec `bdk-openspec-schema` ("Plan parts are files with frontmatter"): frontmatter, `## Goal`, `## Acceptance scenarios` and `## Tasks` with the task contract lines `File:`, `Interface:` and `Verified by:`. It SHALL NOT change code, specs, the proposal or the design. A gap of the design SHALL be a choice about behaviour the Change adds or changes; behaviour no requirement of the Change touches SHALL NOT be named as a gap.
+`plan-draft` SHALL read the proposal, every spec delta and the design of the Change, and the code they name, before it writes a part. It SHALL read the rules `bdk rules for --stage plan` selects, without files, and follow them in how it cuts the parts and writes the tasks; a part or task that follows from a rule SHALL name the rule's id. It SHALL write the plan as `openspec/changes/<change>/plan/parts/NN.md`, in the part format of spec `bdk-openspec-schema` ("Plan parts are files with frontmatter"): frontmatter, `## Goal`, `## Acceptance scenarios` and `## Tasks` with the task contract lines `File:`, `Interface:` and `Verified by:`. It SHALL NOT change code, specs, the proposal or the design. A gap of the design SHALL be a choice about behaviour the Change adds or changes; behaviour no requirement of the Change touches SHALL NOT be named as a gap.
 
 - Every scenario of the Change's spec deltas SHALL be named in the acceptance scenarios of exactly one part, as `<capability>` / `Requirement: <name>` / `Scenario: <name>`.
 - Every path, function, command and type a task names as existing SHALL exist in the code as named.
@@ -58,6 +58,11 @@ Both blocks SHALL take the name of an OpenSpec Change as their argument. Without
 
 - **WHEN** the Change adds `ledger export <file>` and no requirement says what `ledger` does with no argument or an unknown subcommand
 - **THEN** the reply names no gap for it, and no part plans or tests it
+
+#### Scenario: Plan rule followed
+
+- **WHEN** the project layer declares a rule `API-DOC-1` for stage `plan` and paths `src/**`, "a part that adds or changes a function exported from a module under `src/` ends with a task that documents it in `docs/api.md`", and the Change adds the exported `toCsv` in `src/csv.js`
+- **THEN** the part that adds `toCsv` holds `docs/api.md` in its `files`, ends with the task that documents `toCsv` there, and names `API-DOC-1`
 
 ### Requirement: Plan shape for short waves
 
@@ -95,7 +100,7 @@ When the last report `.bdk/runs/<change>/plan/verify-N.md` (the highest N) does 
 
 ### Requirement: verify-plan checks the plan against the code
 
-`verify-plan` SHALL read every part, the proposal, the spec deltas, the design, the previous plan report if any, and the code the tasks name, and SHALL run `bdk plan check` on the parts. It SHALL write its report to `.bdk/runs/<change>/plan/verify-N.md`, N being one more than the highest existing N (1 when none), in the body of spec `bdk-verifier`, and SHALL change no other file.
+`verify-plan` SHALL read every part, the proposal, the spec deltas, the design, the previous plan report if any, the code the tasks name, and for each part the rules `bdk rules for --stage plan` selects for the part's `files`, and SHALL run `bdk plan check` on the parts. It SHALL write its report to `.bdk/runs/<change>/plan/verify-N.md`, N being one more than the highest existing N (1 when none), in the body of spec `bdk-verifier`, and SHALL change no other file.
 
 It SHALL put into `Must address` every problem that would make an implementer build the wrong thing, fail or stop:
 
@@ -107,7 +112,8 @@ It SHALL put into `Must address` every problem that would make an implementer bu
 - a part that uses what another part creates without depending on it, directly or through other parts;
 - a part whose implementer would need a fact that only another part states;
 - a `Verified by:` line that names commands by exclusion, or a command that spends money, needs credentials or reaches a shared or external system;
-- a caller of a changed interface whose behaviour changes and that no task covers.
+- a caller of a changed interface whose behaviour changes and that no task covers;
+- a part that breaks a rule `bdk rules for --stage plan --files <file>...` selects for that part's `files`, named by the rule's id.
 
 Every other remark, such as a wave that a different cut would save, code inside a task, or an unclear sentence, SHALL go into `Should consider`.
 
@@ -126,14 +132,19 @@ Every other remark, such as a wave that a different cut would save, code inside 
 - **WHEN** `verify-plan` runs on any plan
 - **THEN** no file under `openspec/` and no code file is created, changed or removed
 
+#### Scenario: Part breaks a plan rule
+
+- **WHEN** the project declares `API-DOC-1` for stage `plan` and paths `src/**`, part `01` adds the exported `toCsv` in `src/csv.js` with no `docs/api.md` task, and part `02` changes only `bin/ledger.js`, `test/cli.test.js` and `package.json`
+- **THEN** the report starts with `Verdict: FAIL`, its `Must address` holds an item naming `API-DOC-1` and part `01`, and no item says part `02` breaks `API-DOC-1`
+
 ### Requirement: Eval cases of the plan blocks
 
-The `bdk` eval suite SHALL hold `block` cases for both blocks on a shared fixture of a configured project with an OpenSpec Change ready to plan: `plan-draft-csv-export` grading the written parts (frontmatter, task contract lines, acceptance scenarios) and the steps (the design read before a part is written) and the reply (the parts and waves); `plan-draft-fix-after-verify` grading that the parts a failed report names are fixed after the report is read; `verify-plan-defects` grading that the report fails and names each planted defect; `verify-plan-sound` grading that a sound plan passes. Each case SHALL also grade that its skill fired. The measured with and without results SHALL be recorded in the Change's design.
+The `bdk` eval suite SHALL hold `block` cases for both blocks on a shared fixture of a configured project with an OpenSpec Change ready to plan: `plan-draft-csv-export` grading the written parts (frontmatter, task contract lines, acceptance scenarios) and the steps (the design read before a part is written) and the reply (the parts and waves); `plan-draft-fix-after-verify` grading that the parts a failed report names are fixed after the report is read; `verify-plan-defects` grading that the report fails and names each planted defect; `verify-plan-sound` grading that a sound plan passes; `plan-draft-rules` grading that the parts follow a project rule of stage `plan` and name its id; `verify-plan-rules` grading that a plan breaking a project rule of stage `plan` fails with an item naming the rule's id. Each case SHALL also grade that its skill fired. The measured with and without results SHALL be recorded in the Change's design.
 
 #### Scenario: Cases load in CI
 
 - **WHEN** `pnpm test` runs the free eval check
-- **THEN** the `plan-draft-*` and `verify-plan-*` cases load with no error at zero cost and their scaffolds exit 0
+- **THEN** the `plan-draft-*` and `verify-plan-*` cases, `plan-draft-rules` and `verify-plan-rules` included, load with no error at zero cost and their scaffolds exit 0
 
 ### Requirement: plan-draft runs in the planner agent
 

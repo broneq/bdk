@@ -36,7 +36,6 @@ What the stages actually do with them:
 |---|---|---|
 | `.bdk/settings.yaml` | yes | `/bdk:setup`, then you |
 | `.bdk/settings.local.yaml` | no (git-ignored) | you |
-| `.bdk/rules/` | yes | you ([rules](/concepts/rules)) |
 | `openspec/config.yaml`, `openspec/schemas/bdk/` | yes | `/bdk:setup` |
 | `openspec/changes/<change>/` | yes, with the Change | propose, design, plan |
 | `openspec/changes/archive/`, `openspec/specs/` | yes | `/bdk:close` (the archive and the merged specs) |

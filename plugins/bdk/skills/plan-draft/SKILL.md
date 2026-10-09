@@ -30,13 +30,15 @@ Done when you know the Change and whether this is a draft or a fix.
 
 ## 2. Read
 
-Read the proposal, every spec delta in full and the design. List every scenario of the spec deltas as `<capability>` / `Requirement: <name>` / `Scenario: <name>`, where `<capability>` is the spec's directory under `specs/`. Then read the code the design names: each module it changes, the functions it calls, the callers of what it changes, the tests beside them, and the test setup (`package.json` scripts or the project's equivalent, the `tools.test` commands above).
+Read the proposal, every spec delta in full and the design, with Read (never `cat` in Bash). List every scenario of the spec deltas as `<capability>` / `Requirement: <name>` / `Scenario: <name>`, where `<capability>` is the spec's directory under `specs/`. Then read the code the design names: each module it changes, the functions it calls, the callers of what it changes, the tests beside them, and the test setup (`package.json` scripts or the project's equivalent, the `tools.test` commands above).
+
+Run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" rules for --stage plan`, without files (the parts do not exist yet), as a Bash command of its own. It prints the plan rules, each under its id, with the `paths` it governs. Follow each rule for the files it governs when you cut the parts and write the tasks.
 
 Every path, function, type and command a task will name as existing comes from a file you read, exactly as written there. A task never guesses a signature.
 
 When the specs and the design leave open a choice that changes what the product does, and the code does not settle it, do not decide it: name it in the reply as a gap of the design, write no part for it, and stop if nothing can be planned without it. A gap is about behaviour this Change adds or changes; behaviour no requirement of the Change touches (an input or a command it does not name) is not a gap: leave it as the code has it and plan nothing for it. Choices inside the design's frame (a file name, a private helper, the order of tasks) are yours; list them in the reply.
 
-Done when every scenario is listed and every symbol you will name is confirmed in the code.
+Done when every scenario is listed, every symbol you will name is confirmed in the code, and you know the plan rules.
 
 ## 3. Cut the parts
 
@@ -70,6 +72,8 @@ Write `openspec/changes/<change>/plan/parts/NN.md`, `NN` from `01` in the order 
   ```
 
 The implementer reads only its part, the specs and the design. Write into each part every fact it needs: the exact signature of what an earlier part provides, the source a file is copied from, a constant, the command that runs its tests. A fact several parts need goes into each of them.
+
+A part or task that exists because of a rule of step 2, or is shaped by one, names the rule's id in its goal or its task line (`(API-DOC-1)`).
 
 `Verified by:` names tests, scenarios or exact commands. Never a set described by exclusion ("every command except ..."), never a command that spends money, needs credentials or reaches a shared or external system.
 

@@ -40,7 +40,9 @@ Note `policy.questions` from the configuration above (`stop` when absent). Text 
 
 Read `proposal.md` and `.bdk/runs/<change>/design/explore.md`. Without the map, read the code the proposal touches yourself (its nouns, their callers one level out, their tests) before anything else. Every claim you later make about the code comes from a file and line you read; the verifier checks each one.
 
-Done when you know what exists, which patterns the project uses, and what is missing.
+Read the files with Read, not with `cat`. Then run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" rules for --stage design`, without files, as a Bash command of its own: it prints the design rules of the BDK pack and of the project, each under its id. Each rule is a constraint on the design. When a rule and the proposal pull apart, the departure is an open decision (step 3).
+
+Done when you know what exists, which patterns the project uses, what is missing, and which rules hold.
 
 ## 3. Find the decisions
 
@@ -48,7 +50,7 @@ List what the Change must decide: each branching technical decision (where the l
 
 For each branching decision, weigh at least two approaches as [approaches](references/approaches.md) describes, and pick a recommendation. When only one is viable, say why the others fail.
 
-Sort each decision: **settled** when the proposal, the code or the project's conventions answer it; **open** when they do not. A data-model change (new or changed fields, tables, migrations) is always open: approval of a design is not approval of a schema.
+Sort each decision: **settled** when the proposal, the code, a rule of step 2 or the project's conventions answer it; **open** when they do not. A data-model change (new or changed fields, tables, migrations) is always open: approval of a design is not approval of a schema.
 
 Done when every decision has a recommendation and is settled or open.
 
@@ -76,7 +78,7 @@ Write one `openspec/changes/<change>/specs/<capability>/spec.md` per capability 
 Get the `design` instruction and template the same way, and write `openspec/changes/<change>/design.md`:
 
 - **Context** checked against the code, with `file:line` for what exists.
-- **Decisions** numbered D1, D2, ...: the choice, the reason, the alternatives with why each lost. Under every decision taken by policy without asking, a line `Decided without the user: <why this answer>`.
+- **Decisions** numbered D1, D2, ...: the choice, the reason, the alternatives with why each lost. A decision that follows from a rule names its id in the reason (`follows IO-1`); one that departs from a rule names the id and the user's agreement. Under every decision taken by policy without asking, a line `Decided without the user: <why this answer>`.
 - **Diagrams**: a Mermaid diagram for each flow or structure that prose leaves ambiguous, edges labelled, small.
 - **Risks / Trade-offs** from the self-critique of [approaches](references/approaches.md): at least a bottleneck, a failure mode or operational risk, a hidden cost, an assumption the user did not confirm.
 - **Open Questions**: only unknowns that change neither the specs, the decisions nor the plan.
