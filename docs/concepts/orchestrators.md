@@ -134,29 +134,36 @@ flowchart TB
   NW -->|"yes, or no wave left"| RES["write R/execute/result.md<br/>Status: done or blocked"]
 ```
 
-Each part of a batch goes through these attempts; the implementers of a batch start in one message, then its conformers:
+Each part of a batch goes through these attempts; the implementers of a batch start in one message, then its conformers. The checks each worker runs are in the boxes; [Where execute runs your checks](#where-execute-runs-your-checks) has the details:
 
 ```mermaid
+%%{init: {"flowchart": {"wrappingWidth": 200}}}%%
 flowchart TB
-  IMP["Agent bdk:implementer<br/>/bdk:implement-part<br/>writes R/execute/part-NN.md<br/>attempts + 1 in state.json"]
-  IMP --> RI{{"part report"}}
-  RI -->|"plan-defect or environment"| PB["part blocked at once"]
-  RI -->|"other, or no report"| RETRY
-  RI -->|"done"| CONF["Agent bdk:conformer<br/>/bdk:conform-part<br/>writes R/execute/conform-NN.md"]
-  CONF -->|"FAIL or no report"| RETRY{{"attempts left?<br/>policy.budgets.part-attempts,<br/>default 3"}}
+  IMP["Agent bdk:implementer<br/>/bdk:implement-part<br/>attempts + 1<br/>in state.json"]
+  IMP --> RED["acceptance tests,<br/>written first<br/>bdk check run NN-red<br/>--kind test<br/>each red for<br/>the right reason"]
+  RED --> BUILD["build the tasks"]
+  BUILD --> PC["part checks<br/>bdk check run NN<br/>test, lint, build<br/>red: fix, run again<br/>3 runs in all"]
+  PC -->|"R/execute/part-NN.md"| RI{{"part report"}}
+  RI -->|"plan-defect or environment"| PB["part blocked"]
+  RI -->|"other: checks still red,<br/>or no report"| RETRY
+  RI -->|"done: checks green"| CONF["Agent bdk:conformer<br/>/bdk:conform-part<br/>fixes what keeps behaviour"]
+  CONF --> CC["conform checks<br/>bdk check run conform-NN<br/>test, lint, build<br/>red after a fix:<br/>that fix undone"]
+  CC -->|"R/execute/conform-NN.md"| RC{{"conform verdict"}}
+  RC -->|"FAIL: a check red, a task<br/>left, or no report"| RETRY{{"attempts left?<br/>policy.budgets.part-attempts,<br/>default 3"}}
   RETRY -->|"yes (the last one on<br/>policy.escalation.model<br/>and .effort)"| IMP
   RETRY -->|"no"| PB
-  CONF -->|"PASS"| COM["lead commits the part,<br/>state.json: done"]
+  RC -->|"PASS"| COM["lead commits the part,<br/>state.json: done"]
 ```
 
 Merging a worktree part into the Change branch:
 
 ```mermaid
+%%{init: {"flowchart": {"wrappingWidth": 200}}}%%
 flowchart TB
   MER["git merge --no-ff bdk/&lt;change&gt;/part-NN"]
-  MER -->|"clean"| MC["remove the worktree<br/>and the part branch"]
-  MER -->|"conflict"| RC["Agent bdk:implementer<br/>/bdk:resolve-conflict<br/>writes R/execute/merge-NN.md"]
-  RC -->|"resolved, no markers"| CM["lead: git add, git commit"] --> MC
+  MER -->|"clean: no check runs"| MC["remove the worktree<br/>and the part branch"]
+  MER -->|"conflict"| RC["Agent bdk:implementer<br/>/bdk:resolve-conflict<br/>resolves, then checks:<br/>bdk check run merge-NN<br/>red: fix, 3 runs in all<br/>writes<br/>R/execute/merge-NN.md"]
+  RC -->|"Status: done,<br/>no markers"| CM["lead: git add, git commit"] --> MC
   RC -->|"failed"| RC2["/bdk:resolve-conflict again<br/>on policy.escalation.model<br/>and .effort"]
   RC2 -->|"resolved"| CM
   RC2 -->|"failed"| AB["git merge --abort<br/>part blocked, worktree kept"]
@@ -186,6 +193,21 @@ sequenceDiagram
   F-->>L: R/execute/conform-NN.md
   L->>L: git add -A, git commit
 ```
+
+### Where execute runs your checks
+
+Every check of the execute stage is a `bdk check run`, which runs your `tools.test`, `tools.lint` and `tools.build` commands (the [`tools`](/reference/bdk/settings#tools) items) and writes their output and the result under `R/checks/`. No agent runs a test, linter or build command itself. Four runs, in this order:
+
+| Run | Who, when | On which files | When it is red |
+|---|---|---|---|
+| `NN-red`<br/>test only | `bdk:implementer`, [`/bdk:implement-part`](/reference/bdk/skills#implement-part) step 4, before any code | the new acceptance tests | expected: each test must fail because the behaviour is missing; a broken test is fixed and run again. No `tools.test` item for these files blocks the part (`environment`) |
+| `NN`<br/>test, lint, build | `bdk:implementer`, step 6, once the tasks are built | the part's `files` | fix and run again, three runs in all; still red, the run ends as a blocker (`other`) and the lead retries the part. No `Status: done` without a green run |
+| `conform-NN`<br/>test, lint, build | `bdk:conformer`, [`/bdk:conform-part`](/reference/bdk/skills#conform-part) step 5, after its fixes | the part's `files` | a fix that broke it is undone; still red, the verdict is `FAIL` and the lead retries the part |
+| `merge-NN`<br/>test, lint, build | `bdk:implementer`, [`/bdk:resolve-conflict`](/reference/bdk/skills#resolve-conflict), only after a merge conflict | the conflicted files and the `files` of each part behind them | fix and run again, three runs in all; still red, one more resolve on `policy.escalation.model`, then the merge is aborted and the part blocked |
+
+**Which files a run covers.** A run on a part's files passes them as `--scope`. An item with a `scoped` command checks only the scope files its `paths` match; an item whose `paths` match none of them is skipped; an item without `scoped` runs its full `command`, on the whole project ([`scoped` and `paths`](/guide/configuration#examples)). A worktree part runs its checks in its own worktree, which holds the Change branch as it was when the wave started plus this part: never the other parts of the same wave.
+
+**What is not checked.** After a wave is merged into the Change branch, nothing runs the checks on the merged result: a clean merge runs none, and `merge-NN` runs only after a conflict, on the files of the parts in it. The first run of every check on the whole project is the first round of [`/bdk:auto-review`](#bdk-auto-review) (`bdk check run round-N --round N`, next to the E2E check), where a red check is a `blocker` finding. A Change you take from `/bdk:execute` straight to a pull request has passed only its part checks.
 
 ## `/bdk:auto-review`
 

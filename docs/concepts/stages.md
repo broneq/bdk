@@ -73,6 +73,8 @@ The parts of a wave run in parallel and the next wave starts when they are merge
 | `/bdk:implement-part` | `bdk:implementer` (sonnet) | the part, its scenarios, the design, the [rules](./rules.md) for its files, your `CLAUDE.md` and `AGENTS.md`, the code each task builds on | acceptance tests first, seen red for the right reason, then the code, then your checks green | files outside the part, code no task asks for, git history (the lead commits) |
 | `/bdk:conform-part` | `bdk:conformer` (sonnet) | the diff, the part, its scenarios, the rules, your project instructions | each changed line against the rules, the instructions and the tasks: the interface as specified, the test that verifies it, the code doing what the requirement says; fixes only what keeps behaviour (a name, a comment, dead code) | bugs and missing features (they need a test and a review), formatting a linter checks |
 
+Your test, lint and build commands run inside each part, not after the stage: the implementer runs the new acceptance tests red before any code and all checks green after it, the conformer runs them again after its fixes, and a merge conflict is checked once resolved. Nothing checks a wave once it is merged; the first check of the whole project is the first round of review. [Where execute runs your checks](./orchestrators.md#where-execute-runs-your-checks) lists each run.
+
 A part whose tasks contradict each other or their scenario is a plan defect: the implementer stops and says so instead of picking a side. The lead agent only composes: it runs the parts in waves, commits, merges and keeps the state, and never writes product code.
 
 ## Review

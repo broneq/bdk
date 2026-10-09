@@ -47,7 +47,7 @@ git switch -c add-csv-export
 /bdk:execute add-csv-export
 ```
 
-One lead agent builds the plan in waves: parts that do not depend on each other run in parallel, each in its own git worktree, each written test-first by `bdk:implementer` and then checked against its scenarios by `bdk:conformer`, which runs your test, lint and build commands. The lead commits each part and merges it into the Change's branch. By default the lead runs in the background and Claude tells you when it is done; `.bdk/runs/add-csv-export/execute/result.md` holds the result.
+One lead agent builds the plan in waves: parts that do not depend on each other run in parallel, each in its own git worktree, each written test-first by `bdk:implementer` and then checked against its scenarios by `bdk:conformer`. Your test, lint and build commands run inside each part: the implementer sees the new acceptance tests fail before writing the code and every check pass after it, on the part's files, and the conformer runs them again after its fixes. A merged wave is not checked again until `/bdk:auto-review` runs every check on the whole project ([where execute runs your checks](/concepts/orchestrators#where-execute-runs-your-checks)). The lead commits each part and merges it into the Change's branch. By default the lead runs in the background and Claude tells you when it is done; `.bdk/runs/add-csv-export/execute/result.md` holds the result.
 
 A part that still fails after `policy.budgets.part-attempts` runs (3, the last one on `policy.escalation.model` and `policy.escalation.effort`) is reported as blocked, with the evidence. Fix the cause, then let BDK retry.
 
