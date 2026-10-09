@@ -58,13 +58,19 @@ The repository holds four plugins, plus the pnpm workspace and toolchain, PR CI 
 
 Every piece of work is a GitHub issue, an OpenSpec Change and a PR into `staging/v3`, in this order.
 
-- **Create.** A new issue always goes onto the board and into the current milestone, unless the user says otherwise: `gh issue create --title "..." --body-file <file> --milestone v3.0 --project "BDK v3"`. For an issue created without them, add both with `gh issue edit N --milestone v3.0 --add-project "BDK v3"`. Name its blockers with "blocked by" links. Set its `Phase` on the board (phase option ids: `gh project field-list 1 --owner broneq --format json -q '.fields[] | select(.name=="Phase") | .options[]'`):
+- **Create.** A new issue always goes onto the board and into the current milestone, unless the user says otherwise: `gh issue create --title "..." --body-file <file> --milestone v3.0 --project "BDK v3"`. For an issue created without them, add both with `gh issue edit N --milestone v3.0 --add-project "BDK v3"`. Analyse its dependencies (**Dependencies** below). Set its `Phase` on the board (phase option ids: `gh project field-list 1 --owner broneq --format json -q '.fields[] | select(.name=="Phase") | .options[]'`):
   ```bash
   ITEM=$(gh project item-list 1 --owner broneq --format json -L 500 -q ".items[] | select(.content.number==N) | .id")
   gh project item-edit --project-id PVT_kwHOAYCCG84Bkk4V --id "$ITEM" --field-id PVTSSF_lAHOAYCCG84Bkk4VzhjU_Ws --single-select-option-id <phase-option-id>
   ```
   The issue body holds the task's scope (Goal, Scope, Input, Acceptance signal, To resolve in the spec, Dependencies).
-- **Pick.** Pick the next task from the open issues of the `v3.0` milestone whose blockers are all closed.
+- **Dependencies.** Analyse the dependencies of every new issue before or right after creating it. Read the open issues of the milestone and the last closed ones (`gh issue list --milestone v3.0 --state open -L 200`, `gh issue list --milestone v3.0 --state closed -L 30`) and look for: work the new issue needs merged first, an open issue that changes the same files or specs in a conflicting way, and open issues that need the new one first. Many issues have none: then the `Dependencies` section says `None.`; it is never left out. Each dependency on an open issue is named in that section and set as a GitHub "blocked by" relation; a closed one is only named. One relation shows on both issues, so set each once, from the new issue (tested with gh 2.101.0):
+  ```bash
+  gh issue create ... --blocked-by 200,201 --blocking 300     # at creation
+  gh issue edit N --add-blocked-by 200 --add-blocking 300     # later; --remove-blocked-by / --remove-blocking undo it
+  gh issue view N --json blockedBy,blocking --jq '{blockedBy: [.blockedBy.nodes[] | "#\(.number) \(.state)"], blocking: [.blocking.nodes[] | "#\(.number) \(.state)"]}'
+  ```
+- **Pick.** Pick the next task from the open issues of the `v3.0` milestone whose blockers are all closed: `gh issue view N --json blockedBy --jq '[.blockedBy.nodes[] | select(.state=="OPEN") | .number]'` prints `[]`.
 - **Start.** Assign yourself (`gh issue edit N --add-assignee @me`) and set its `Status` on the board (https://github.com/users/broneq/projects/1) to In Progress:
   ```bash
   ITEM=$(gh project item-list 1 --owner broneq --format json -L 500 -q ".items[] | select(.content.number==N) | .id")

@@ -20,8 +20,10 @@ context: |
     edit it, and do not repeat its root causes.
   - Task scope: one GitHub issue per task in the v3.0 milestone with Goal,
     Scope, Input, Acceptance signal, "To resolve in the spec" and Dependencies
-    sections, and "blocked by" links, shown on
-    https://github.com/users/broneq/projects/1.
+    sections, shown on https://github.com/users/broneq/projects/1. The
+    Dependencies section names each dependency, and each one on an open issue
+    is a GitHub "blocked by" relation; an issue without dependencies says
+    "None." (CLAUDE.md, SDLC "Dependencies").
 
   This repository runs on the stock spec-driven schema. The BDK OpenSpec
   schema that BDK installs into user projects is product work (#180), not the
