@@ -95,8 +95,9 @@ export async function runChecks(deps: CheckDeps, input: RunInput): Promise<RunOu
   const { root, tools } = toolsOf(deps);
   const scope = scopeOf(input.scope);
 
+  const plan = planChecks(tools, kinds, scope);
   const checks: RunResult["checks"] = [];
-  for (const planned of planChecks(tools, kinds, scope)) {
+  for (const planned of plan.checks) {
     const output = outputPath(runDir, id, planned.kind, planned.tool);
     const outcome = await deps.shell(planned.command, {
       cwd: root,
@@ -134,6 +135,7 @@ export async function runChecks(deps: CheckDeps, input: RunInput): Promise<RunOu
     scope: scope === null ? null : [...scope],
     verdict: verdictOf(checks.map((check) => check.status)),
     checks,
+    skipped: [...plan.skipped],
     findings,
   };
   const file = resultPath(runDir, id);

@@ -1,10 +1,4 @@
-# bdk-cli/check Specification
-
-## Purpose
-
-The `bdk check` command group: `bdk check run` runs the project's configured test, lint and build commands with stdin closed and a timeout per command, leaves each output and the result in the Change's run directory, and appends red checks to a review round's findings log, so no agent runs or records a check itself and a resumed caller reads the result instead of running it again. It never decides what a red check means for the work (spec `bdk-cli`).
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Run the checks
 
@@ -103,15 +97,6 @@ A check SHALL be `pass` when its command exits 0, `timeout` when it was killed a
 - **WHEN** the configuration has no `tools.test`, `tools.lint` or `tools.build` item
 - **THEN** no command runs, the verdict is `none`, the result file is written with no check, and the exit code is 0
 
-### Requirement: Output files
-
-The output of each check SHALL be written to `<run-dir>/checks/<id>/<kind>-<tool>.txt`, where `<tool>` is the entry's `id`, replacing a file of that name. The file SHALL hold the command's output, then, on a line of its own, `exit <code>` for a command that exited, or `timeout <seconds>` for one killed at its timeout.
-
-#### Scenario: Exit line
-
-- **WHEN** the `tools.lint` item `eslint` prints `ok` and exits 0 in a run with id `02`
-- **THEN** `<run-dir>/checks/02/lint-eslint.txt` holds `ok` followed by the line `exit 0`
-
 ### Requirement: Result file
 
 The result SHALL be written to `<run-dir>/checks/<id>.json`, replacing an earlier result of the same id, as one JSON object followed by a newline; `--json` SHALL print the same object. The object SHALL hold:
@@ -138,20 +123,6 @@ A check SHALL hold `kind` (`test`, `lint` or `build`), `tool` (the entry's `id`)
 - **WHEN** `bdk check run <run-dir> 02` runs twice and the second run has a different verdict
 - **THEN** `<run-dir>/checks/02.json` holds the second result only
 
-### Requirement: Red checks as findings
-
-With `--round <n>`, a positive integer, the command SHALL append one `finding` event per check that is not `pass` to `<run-dir>/review/round-<n>/findings.jsonl`, through the findings log of spec `bdk-cli/findings`, creating the file when it is missing. The finding SHALL have `source` `check-run`, `rule` `check/<kind>/<tool>`, `summary` `<kind> <tool> failed with exit <code>` or `<kind> <tool> timed out after <seconds> s`, and `evidence` the path of the check's output file, and no `file` or `line`. A green check SHALL append nothing. Because the finding id comes from the dedupe key, the same red check in a later run of the same round gets the same id.
-
-#### Scenario: Red check appended
-
-- **WHEN** `bdk check run <run-dir> round-2 --round 2` runs and the `tools.lint` item `eslint` exits 1
-- **THEN** `<run-dir>/review/round-2/findings.jsonl` gains one `finding` line with `source` `check-run` and `rule` `check/lint/eslint`, and the result's `findings.ids` holds its id
-
-#### Scenario: All green
-
-- **WHEN** `bdk check run <run-dir> round-2 --round 2` runs and every check passes
-- **THEN** no line is appended and `findings.ids` is empty
-
 ### Requirement: Check run text output
 
 In text mode the command SHALL print one line per check in run order with its status, kind, tool, `scoped` or `full`, and output path; under each check that is not `pass`, its tail, each line indented; one `skip` line per skipped entry with its kind and tool and that no scope file matches its `paths`; then the verdict with the count of red checks, the path of the result file and, with `--round`, the number of findings appended and the log path.
@@ -165,31 +136,3 @@ In text mode the command SHALL print one line per check in run order with its st
 
 - **WHEN** `bdk check run <run-dir> 02 --scope web/src/a.tsx` skips the `tools.test` item `api`
 - **THEN** stdout holds a `skip` line naming `test api` and that no scope file matches its `paths`
-
-### Requirement: Errors of the check command
-
-The command SHALL report these errors and run no command when one applies:
-
-| Code | When | Exit |
-| ---- | ---- | ---- |
-| `usage/invalid-argument` | `<id>` is not kebab-case, a `--kind` value is unknown, `--round` is not a positive integer, or a `--scope` value is empty | 2 |
-| `env/run-dir-missing` | `<run-dir>` is not an existing directory | 3 |
-| `env/not-configured` | the project is not configured (spec `bdk-cli/config`, "Configured project"); the hint names `/bdk:setup` | 3 |
-| `env/config-invalid` | the configuration has a problem; the hint names `bdk config check` | 3 |
-
-A command that is not found by the shell is a check with exit 127, not an error. When `/bin/sh` itself cannot start, the check SHALL also get exit 127, with a line naming the shell in its output file, so the run still writes a complete result.
-
-#### Scenario: Unknown kind
-
-- **WHEN** `bdk check run <run-dir> 02 --kind tests` runs
-- **THEN** the CLI reports `usage/invalid-argument` naming `tests` and the kinds `test`, `lint` and `build`, runs no command, writes no file, and exits 2
-
-#### Scenario: Missing run directory
-
-- **WHEN** `bdk check run .bdk/runs/nope 02` runs and that directory does not exist
-- **THEN** the CLI reports `env/run-dir-missing` naming the directory, runs no command, writes no file, and exits 3
-
-#### Scenario: Not configured
-
-- **WHEN** `bdk check run <run-dir> 02` runs in a project without `.bdk/settings.yaml`
-- **THEN** the CLI reports `env/not-configured` with a hint to run `/bdk:setup`, and exits 3

@@ -155,7 +155,7 @@ describe("keys", () => {
     expect(resolveKey("models.Bad")).toMatchObject({ ok: false, known: [] });
     expect(resolveKey("languages.x")).toMatchObject({ ok: false, at: "languages" });
     expect(knownUnder("")).toContain("tools");
-    expect(knownUnder("tools.test.unit")).toEqual(["command", "scoped", "timeout"]);
+    expect(knownUnder("tools.test.unit")).toEqual(["command", "scoped", "timeout", "paths"]);
   });
 });
 
@@ -264,6 +264,26 @@ describe("validate", () => {
     ]);
     expect(validate([tools(1.5)], suggest).problems.map((problem) => problem.key)).toEqual([
       "tools.build.tsc.timeout",
+    ]);
+  });
+
+  it("accepts check paths as a list of globs and reports an empty list or glob", () => {
+    const tools = (paths: unknown) =>
+      layer("project", { tools: { test: [{ id: "api", command: "pytest", paths }] } });
+    expect(validate([tools(["api/**", "**/*.py"])], suggest).settings?.tools.test).toEqual([
+      { id: "api", command: "pytest", paths: ["api/**", "**/*.py"] },
+    ]);
+    expect(validate([tools([])], suggest).problems).toEqual([
+      expect.objectContaining({
+        key: "tools.test.api.paths",
+        message: expect.stringContaining("at least one glob") as unknown,
+      }) as unknown,
+    ]);
+    expect(validate([tools([""])], suggest).problems.map((problem) => problem.key)).toEqual([
+      "tools.test.api.paths[0]",
+    ]);
+    expect(validate([tools("api/**")], suggest).problems.map((problem) => problem.key)).toEqual([
+      "tools.test.api.paths",
     ]);
   });
 

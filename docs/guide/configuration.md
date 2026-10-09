@@ -57,7 +57,7 @@ tools:
       driver: browser
 ```
 
-`scoped` runs a check on the files a plan part changed instead of the whole project. `{files}` becomes those files, as paths from the project root, and the command runs in the project root.
+`scoped` runs a check on the files a plan part changed instead of the whole project. `{files}` becomes those files, as paths from the project root, and the command runs in the project root. In a repository of several packages, give each item `paths` too, as in the next example.
 
 ### A Python API and a React frontend in one repository
 
@@ -67,13 +67,18 @@ tools:
   test:
     - id: api
       command: uv run pytest api/tests
+      paths: ["api/**"]
     - id: web
       command: pnpm --dir web test
+      paths: ["web/**"]
   lint:
     - id: ruff
       command: uv run ruff check api
+      scoped: uv run ruff check {files}
+      paths: ["api/**/*.py"]
     - id: eslint
       command: pnpm --dir web lint
+      paths: ["web/**"]
   e2e:
     - id: api
       start: uv run uvicorn api.main:app --port 8000
@@ -87,7 +92,9 @@ tools:
       driver: browser
 ```
 
-Every check item runs on every part, and a `scoped` variant gets all files of the part, from both packages. So in a repository of several packages, leave `scoped` out (each item runs its whole command), or point it to a small script of yours that keeps only the files its tool understands ([#275](https://github.com/broneq/bdk/issues/275) adds a filter per item). `languages` lists the packs the rule pack has; for Python, add your own rules under `.bdk/rules/languages/python/` and list `python` ([rules](/concepts/rules)).
+`paths` tells each check item which files are its own, with the globs of [rule paths](/concepts/rules): `*` stays inside one directory, `**` spans any number of them. On a part that changes only `web/src/App.tsx`, `bdk check run --scope` runs the `web` tests and `eslint`, and skips `api` and `ruff`, which own none of the changed files; the result lists them as skipped. On a part that changes `api/app.py`, `ruff` checks only that file, since its `scoped` variant gets just the changed files its `paths` match. An item without `paths` gets every changed file. `paths` matters only to a scoped run: a full run, such as a review round's, runs every item's `command`.
+
+`languages` lists the packs the rule pack has; for Python, add your own rules under `.bdk/rules/languages/python/` and list `python` ([rules](/concepts/rules)).
 
 ### A command-line tool
 

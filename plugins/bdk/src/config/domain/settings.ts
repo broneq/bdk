@@ -34,6 +34,15 @@ const Check = z.strictObject({
     .max(86_400)
     .optional()
     .meta(about("Seconds before `bdk check run` stops the command; 600 when absent.")),
+  paths: z
+    .array(text)
+    .min(1, "must hold at least one glob")
+    .optional()
+    .meta(
+      about(
+        "Globs of the files the command checks, matched like rule paths. On a scoped run the command gets only the changed files they match, and is skipped when none matches; every file when absent.",
+      ),
+    ),
 });
 
 const E2e = z.strictObject({

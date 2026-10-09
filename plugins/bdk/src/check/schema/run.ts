@@ -24,6 +24,7 @@ export const runResult = z.object({
       tail: z.array(z.string()).nullable(),
     }),
   ),
+  skipped: z.array(z.object({ kind: z.enum(KINDS), tool: z.string() })),
   findings: z.object({ log: z.string(), ids: z.array(z.string()) }).nullable(),
 });
 
