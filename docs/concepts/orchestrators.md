@@ -239,6 +239,8 @@ flowchart TB
 
 The budget is `policy.budgets.review-rounds` (default 3); at the last round triage runs with `--last-round`.
 
+The status of `review/result.md` comes from the round files only: `/bdk:auto-review` takes no defect from a worker's reply or from code it read, so a defect counts once a reviewer logs it, and one no log holds neither blocks the stage nor appears in the result or the reply.
+
 On a new start, `/bdk:auto-review` finds its place from the files of the last round: no round or a round without `review.md` runs the round, an undecided finding runs triage, a round without `fixes/index.md` plans the fixes, and an unfinished `fixes/result.md` runs the fix pass again.
 
 Triage policy, which decides in auto mode and is the preselected recommendation in manual mode:
