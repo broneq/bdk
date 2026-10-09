@@ -623,3 +623,10 @@ html.dark,
   border: 1px solid var(--line-default);
   border-radius: var(--radius-sm);
 }
+
+/* The box behind a sequence diagram's message, condition and section texts
+   (`label-backing.ts`), in the colour behind every diagram, so lines pass behind the text. */
+.vp-doc .mermaid .label-backing {
+  fill: var(--bg-page);
+  stroke: none;
+}

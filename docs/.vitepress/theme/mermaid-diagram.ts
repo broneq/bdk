@@ -1,5 +1,6 @@
 import { useData } from "vitepress";
 import { defineComponent, h, nextTick, onMounted, ref, useId, watch } from "vue";
+import { backSequenceLabels } from "./label-backing.ts";
 
 // A diagram shrinks to the page width, but not below this share of its own width: text stays
 // readable and a wide diagram scrolls sideways instead, mostly on phones.
@@ -112,6 +113,11 @@ export default defineComponent({
           const drawing = root.value?.querySelector("svg");
           if (drawing) {
             drawing.style.minWidth = `${String(Math.round(drawing.viewBox.baseVal.width * minScale))}px`;
+            // Mermaid draws sequence texts with no background, so lifelines and frame lines
+            // would run through them; measured in the DOM, so only once the SVG is in it.
+            if (drawing.getAttribute("aria-roledescription") === "sequence") {
+              backSequenceLabels(drawing);
+            }
           }
         }
       } catch (reason) {
