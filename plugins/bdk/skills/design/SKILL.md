@@ -17,9 +17,9 @@ You compose three blocks and apply the gate; you never do a block's work. Do not
 
 The blocks:
 
-- **explore**: start an agent with the Agent tool, `subagent_type: "bdk:explorer"`, prompt `Run the skill bdk:explore with the arguments: <change>`. It writes `.bdk/runs/<change>/design/explore.md`.
+- **explore**: start an agent with the Agent tool, `subagent_type: "bdk:explorer"`, prompt `Run the skill bdk:explore with the arguments: <change>`, and `model` set to `models.explorer` when the configuration above sets it. It writes `.bdk/runs/<change>/design/explore.md`.
 - **design-draft**: call the Skill tool with `bdk:design-draft` and the arguments `<change>` (or `<change> <revision request>` after a gate asking for changes). It runs here, in the main thread, because it may ask the user; it writes the spec deltas and `design.md`, or fixes them when the last report failed.
-- **verify-design**: start an agent with the Agent tool, `subagent_type: "bdk:verifier"`, prompt `Run the skill bdk:verify-design with the arguments: <change>`. It writes the next `.bdk/runs/<change>/design/verify-N.md` and returns its verdict line. Keep the agent ID it returns.
+- **verify-design**: start an agent with the Agent tool, `subagent_type: "bdk:verifier"`, prompt `Run the skill bdk:verify-design with the arguments: <change>`, and `model` set to `models.verifier` when the configuration above sets it. It writes the next `.bdk/runs/<change>/design/verify-N.md` and returns its verdict line. Keep the agent ID it returns.
 
 Before each block, tell the user in one line which block runs and which file it writes, e.g. `Mapping the code: bdk:explorer writes .bdk/runs/add-csv-export/design/explore.md`.
 

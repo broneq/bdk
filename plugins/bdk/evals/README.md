@@ -163,6 +163,12 @@ pnpm --filter @bdk/bdk run eval --trust-plugin --allow-tools Write Edit Bash --c
 pnpm --filter @bdk/bdk run eval --trust-plugin --ablation none --tag orchestrator --allow-tools Write Edit Bash --case 'debug-*'
 ```
 
+The `*-model*` cases check that `models.<role>` reaches the `Agent` call of every stage that starts the role's agent (spec `bdk-cli/config`, "Every agent is a models role"): `design-models-per-role`, `plan-models-verifier` and `close-models-verifier` (orchestrators) and `explore-model-set`, `verify-design-model-set` and `spec-conformance-model-set` (blocks typed in the main thread). Each reuses the fixture of its stage's cases and sets `models.explorer` or `models.verifier` to `sonnet` in the ignored `.bdk/settings.local.yaml`; a `tool_used` grader on `Agent` requires both the `subagent_type` and `"model": "sonnet"` in the call's input, in any order. They ask whether the call carries the model, not whether the block changes the outcome, so one arm and one run are enough. The grants are those of the `close-*` cases, which cover the others (on a Mac, see the `git` entry of "Host limits"):
+
+```bash
+PATH=".git/bdk-eval/bin:$PATH" pnpm --filter @bdk/bdk run eval --ablation none --runs 1 --allow-tools Write Edit "Bash(*/bin/bdk *)" "Bash(openspec *)" "Bash(gh *)" "Bash(git *)" "Bash(npx -y lavish-axi *)" --case '*-model*'
+```
+
 A grader on the order of Bash calls is a `regex` on the trace, not `tool_order`: the free check loads cases with the grants `Write Edit`, under which a `tool_order` naming Bash cannot pass.
 
 `--case` takes one glob; a repeated `--case` keeps only the last.

@@ -55,7 +55,7 @@ flowchart LR
 | `/bdk:commit` | tool | main thread | git commits | diff, commit convention |
 | `/bdk:adr` | tool | main thread | one ADR file | design decision or text |
 
-The model of each role can be overridden with `models.<role>` (`lead`, `verifier`, `implementer`, `conformer`, `reviewer`, `integration-reviewer`, `e2e-tester`, `judge`); the explorer has no role yet, and the verifiers of `/bdk:design` and `/bdk:close` run on their default model whatever `models.verifier` says ([#274](https://github.com/broneq/bdk/issues/274)); see [CLI, configuration and hooks](./cli-config-hooks.md#configuration-bdk-settings-yaml).
+The model of each agent can be overridden with `models.<role>`, where the role is the agent's name (`lead`, `explorer`, `verifier`, `implementer`, `conformer`, `reviewer`, `integration-reviewer`, `e2e-tester`, `judge`); every stage that starts the agent passes it, so `models.verifier` sets the verifier of `/bdk:design`, `/bdk:plan` and `/bdk:close` alike. See [CLI, configuration and hooks](./cli-config-hooks.md#configuration-bdk-settings-yaml).
 
 ## Sources
 

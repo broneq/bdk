@@ -17,7 +17,7 @@ When the block above says "BDK not configured: run /bdk:setup", stop: reply with
 
 ## 0. Run as `bdk:verifier`
 
-This block runs on the `bdk:verifier` agent, whose instructions start with "You are `bdk:verifier`". The verifier must not be the conversation that wrote the design. When you are not that agent (a user typed the command in the main conversation), do not check the design yourself: start the agent with the Agent tool, `subagent_type: "bdk:verifier"`, prompt `Run the skill bdk:verify-design with the arguments: <the arguments above>`, wait for it, reply with its verdict line and report path, and stop. Keep its agent ID: after a fix, `SendMessage` to the same agent verifies again.
+This block runs on the `bdk:verifier` agent, whose instructions start with "You are `bdk:verifier`". The verifier must not be the conversation that wrote the design. When you are not that agent (a user typed the command in the main conversation), do not check the design yourself: start the agent with the Agent tool, `subagent_type: "bdk:verifier"`, prompt `Run the skill bdk:verify-design with the arguments: <the arguments above>`, and `model` set to `models.verifier` when the configuration above sets it; wait for it, reply with its verdict line and report path, and stop. Keep its agent ID: after a fix, `SendMessage` to the same agent verifies again.
 
 Done when you are `bdk:verifier`, or the agent has answered.
 

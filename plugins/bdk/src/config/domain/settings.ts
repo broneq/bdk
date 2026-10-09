@@ -143,7 +143,7 @@ export const SettingsSchema = z
       .default({})
       .meta({
         ...about(
-          "Model per agent role: `lead`, `verifier`, `implementer`, `conformer`, `reviewer`, `integration-reviewer`, `e2e-tester` or `judge`; a role not set runs on its agent's default model.",
+          "Model per agent role, named after its agent: `lead`, `explorer`, `verifier`, `implementer`, `conformer`, `reviewer`, `integration-reviewer`, `e2e-tester` or `judge`; a role not set runs on its agent's default model.",
         ),
         entry: "role",
         examples: [{ implementer: "opus", reviewer: "sonnet" }],

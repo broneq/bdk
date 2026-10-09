@@ -98,7 +98,7 @@ flowchart TB
   end
   subgraph R2[" "]
     direction LR
-    S2["/bdk:design"] --- C2["policy.questions<br/>policy.budgets.verifier<br/>policy.gates.design"]
+    S2["/bdk:design"] --- C2["policy.questions<br/>policy.budgets.verifier<br/>policy.gates.design<br/>models.explorer<br/>models.verifier"]
   end
   subgraph R3[" "]
     direction LR
@@ -114,7 +114,7 @@ flowchart TB
   end
   subgraph R6[" "]
     direction LR
-    S6["/bdk:close"] --- C6["no key: base and<br/>branch come from git"]
+    S6["/bdk:close"] --- C6["models.verifier;<br/>base and branch<br/>come from git"]
   end
   R0 --> R1
   R1 --> R2
@@ -144,7 +144,7 @@ The same as a list, key by key; types, defaults and allowed values are in the [s
 | `plan.part.max-tasks`, `plan.part.max-files`, `plan.part.max-bytes` | `bdk plan check`, `/bdk:plan-draft`, `/bdk:plan-fixes`, `/bdk:diagnose-bug` |
 | `execution.lead` | `/bdk:execute`, `/bdk:auto-review`, `/bdk:pr-review` |
 | `execution.max-parallel` | `/bdk:execute-waves`, `/bdk:review-round`, `/bdk:pr-review-round` |
-| `models.lead`, `models.verifier`, `models.implementer`, `models.conformer`, `models.reviewer`, `models.integration-reviewer`, `models.e2e-tester`, `models.judge` | the `Agent` call that starts that role |
+| `models.lead`, `models.explorer`, `models.verifier`, `models.implementer`, `models.conformer`, `models.reviewer`, `models.integration-reviewer`, `models.e2e-tester`, `models.judge` | the `Agent` call that starts that role |
 | `hooks.subagent-git` | `bdk hooks pre-tool-use`, `bdk hooks session-start` |
 
 ## Hooks
