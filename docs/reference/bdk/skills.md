@@ -220,7 +220,7 @@ Reviews a whole BDK Change top down after its group reviews - every spec scenari
 
 Started by: other BDK skills only. It is not in the `/` menu.
 
-One review round of an OpenSpec Change, run by the bdk:lead agent that /bdk:auto-review starts - records the round scope and groups with bdk git groups (a later round covers only the fix commits), runs one bdk:reviewer per group and bdk check run --at review in parallel, then bdk:e2e-tester and bdk:integration-reviewer, then bdk:judge, and writes round.md next to the review.md of the judge. Not for users: /bdk:auto-review is the command.
+One review round of an OpenSpec Change, run by the bdk:lead agent that /bdk:auto-review starts - records the round scope and groups with bdk git groups (a later round covers only the fix commits), runs one bdk:reviewer per group and bdk check run --at review in parallel, then bdk:e2e-tester (not in a later round whose fixes changed only test files after a passing E2E verdict) and bdk:integration-reviewer, then bdk:judge, and writes round.md next to the review.md of the judge. Not for users: /bdk:auto-review is the command.
 
 ## `/bdk:run` {#run}
 
