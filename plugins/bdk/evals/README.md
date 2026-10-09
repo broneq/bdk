@@ -20,7 +20,9 @@ pnpm --filter @bdk/bdk run eval --allow-tools Write Edit --tag block
 pnpm --filter @bdk/bdk run eval --allow-tools Write Edit --tag orchestrator --ablation none
 ```
 
-The `eval` script builds the plugin, then runs `claude plugin eval . --scaffold` with the Claude Code version pinned in the root `package.json`; every other argument goes to `claude plugin eval` (`--help` lists them). Useful ones: `--model` and `--judge-model` to pin models when comparing runs, `--max-cost-usd` as a ceiling, `-j 4` for parallel runs, `--no-publish` to keep the report local. Results land in `evals/results/<timestamp>/` (ignored by git) with `report.html`.
+The `eval` script builds the plugin, then runs `claude plugin eval . --scaffold` with the Claude Code version pinned in the root `package.json` (through `run.ts`); every other argument goes to `claude plugin eval` (`--help` lists them). Useful ones: `--model` and `--judge-model` to pin models when comparing runs, `--max-cost-usd` as a ceiling, `-j 4` for parallel runs, `--no-publish` to keep the report local. Results land in `evals/results/<timestamp>/` (ignored by git) with `report.html`.
+
+The cases that call OpenSpec (`propose-*`, `design-*`, `plan-*`, `close-*`, `run-*`, `cli-*`, ...) need a global OpenSpec 1.13.2 outside your home directory, the version CI pins: `npm i -g @fission-ai/openspec@1.13.2` with a Node from Homebrew or the system, or a clean `HOME` (see the `openspec` entry of "Host limits"). The script removes every `node_modules/.bin` directory from the `PATH` the run inherits and warns before the run when the `openspec` left on it is missing or lies under your home directory.
 
 Read `WITH`, `W/OUT` and `Δ`: a block whose `Δ` stays near 0 over 3 runs does not change the outcome. `tool_used: Skill` graders are not scored; they show whether the skill fired.
 
@@ -328,6 +330,7 @@ Measured with Claude Code 2.1.292:
   CLAUDE_CODE_SHELL_PREFIX=/Users/Shared/bdk-eval/macos-git-prefix.sh pnpm --filter @bdk/bdk run eval ...
   ```
 
+- **`openspec` from the workspace or the home directory.** The sandbox cannot read files under your home directory; it lets through the directories on `PATH`, but not what a file there points to. `pnpm run` puts `plugins/bdk/node_modules/.bin` first on `PATH`, and its `openspec` is a shim into `node_modules/.pnpm/`, so with a checkout under your home directory every call fails with `Cannot find module .../node_modules/.pnpm/@fission-ai+openspec@1.13.2.../bin/openspec.js` (`propose-from-issue` scored 0.22). The `eval` script removes those directories from `PATH`, so a run finds your global `openspec`; one installed under your home directory (nvm) fails the same way. Install it outside, or run with the clean `HOME` of the Docker entry, under which the sandbox reads your real home directory.
 - **`PATH` leaks from the caller.** A run inherits the `PATH` of the shell that starts it, including the `bin/` of plugins of a Claude Code session the command runs in. Start paid runs from a plain terminal.
 - **Background tasks end 10 minutes after the last turn.** Claude Code 2.1.294 in `claude -p` stops a background agent that still runs 10 minutes after the main thread's last turn ("Background tasks still running 10m after the last turn ...; stopping them"). A review round runs longer, so the `auto-review-*` cases set `execution.lead: foreground` in `.bdk/settings.local.yaml`.
 - **No Artifact tool, no project configuration.** A run cannot publish artifacts and loads no `CLAUDE.md`, `.claude/` or `.mcp.json`; ship what a case needs in the plugin.
