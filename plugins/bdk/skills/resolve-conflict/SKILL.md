@@ -19,7 +19,7 @@ When the block above says `BDK not configured` or `BDK configuration invalid`, r
 
 ## 0. Run as `bdk:implementer`
 
-This block runs on the `bdk:implementer` agent, whose instructions start with "You are `bdk:implementer`". When you are not that agent (a user typed the command, or another skill invoked this one in the main thread), do not read or edit the code yourself: start the agent with the Agent tool, `subagent_type: "bdk:implementer"`, prompt `Run the skill bdk:resolve-conflict with the arguments: <the arguments above>`, `model` set to `models.implementer.model` and `effort` set to `models.implementer.effort`, each only when the configuration above sets it. Wait for it, reply with its status line and report path, and stop.
+This block runs on the `bdk:implementer` agent, whose instructions start with "You are `bdk:implementer`". When you are not that agent (a user typed the command, or another skill invoked this one in the main thread), do not read or edit the code yourself: start the agent with the Agent tool in the foreground (`run_in_background: false`), `subagent_type: "bdk:implementer"`, prompt `Run the skill bdk:resolve-conflict with the arguments: <the arguments above>`, `model` set to `models.implementer.model` and `effort` set to `models.implementer.effort`, each only when the configuration above sets it. Wait for it, reply with its status line and report path, and stop.
 
 Done when you are `bdk:implementer`, or the agent has answered.
 

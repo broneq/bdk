@@ -82,7 +82,7 @@ Start one agent per kept pull request with the Agent tool, all in one message, a
 
 - `subagent_type: "bdk:lead"`;
 - prompt `Run the skill bdk:pr-review-round with the arguments: <number> --run-dir <absolute run directory>`, with ` --verify --since <previous head>` at the end in verify mode (the `head=` of step 2; only ` --verify` when the previous marker has none);
-- `run_in_background: true` when `execution.lead` is `background` (the default); in the foreground when it is `foreground`;
+- `run_in_background: true` when `execution.lead` is `background` (the default); `run_in_background: false` when it is `foreground`;
 - `model` set to `models.lead.model` and `effort` set to `models.lead.effort`, each only when the configuration sets it.
 
 A background lead reports through a notification that arrives by itself: end your turn and wait for them, without polling their files or sleeping. Go on only when every lead has returned.
