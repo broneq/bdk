@@ -3,7 +3,7 @@ description: "/bdk:run #1 #2 where issue 1 is blocked by issue 2: run.json queue
 tags: [orchestrator]
 max_turns: 120
 timeout_seconds: 900
-allowed_tools: [Read, Glob, Grep, Skill, Agent, Write, Edit, Bash]
+allowed_tools: [Read, Glob, Grep, Skill, Agent, SendMessage, ToolSearch, Write, Edit, Bash]
 ---
 
 Work through issues #1 and #2 for me, all the way to pull requests.

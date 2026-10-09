@@ -22,7 +22,7 @@ When the block above says `BDK not configured: run /bdk:setup` or that the confi
 - **Change**: the argument. Without one, take the only directory under `openspec/changes/` other than `archive/`; with none or several, name what you found and stop.
 - **Queue**: when `.bdk/runs/run.json` exists and queues the Change, run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" run status --json` and read the Change's entry. Stage `auto-review`: go on. An earlier stage: stop, naming the stage, its reason and its command (`/bdk:<stage> <change>`). `close` or `done`: reply that the review is done and name `/bdk:close <change>`.
 - **Run directory**: `.bdk/runs/<change>` under the path `git rev-parse --show-toplevel` prints, as an absolute path.
-- **Settings**: `policy.budgets.review-rounds` (default 3), `policy.gates.review`, `execution.lead` (`background` by default) and `models.lead` when set.
+- **Settings**: `policy.budgets.review-rounds` (default 3), `policy.gates.review`, `execution.lead` (`background` by default) and `models.lead.model` and `models.lead.effort` when set.
 
 Done when you hold the Change, the absolute run directory and the settings, or stopped.
 
@@ -51,7 +51,7 @@ Start one agent with the Agent tool:
 - `subagent_type: "bdk:lead"`;
 - prompt `Run the skill bdk:review-round with the arguments: <change> --run-dir <run dir> --round <N>`;
 - `run_in_background: true` when `execution.lead` is `background`; in the foreground when it is `foreground`;
-- `model` `models.lead` when set.
+- `model` `models.lead.model` and `effort` `models.lead.effort`, each when set.
 
 A background lead reports through a notification that arrives by itself: end your turn and wait for it, without polling its files or sleeping, and do nothing else on this Change meanwhile.
 

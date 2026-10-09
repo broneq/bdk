@@ -132,7 +132,7 @@ Judges the findings of a BDK review round - checks each unleveled finding agains
 
 Started by: you, or Claude when your request matches the description below.
 
-Runs the plan stage of an OpenSpec Change - drafts the plan parts with plan-draft, checks them with bdk plan check, and verifies them with verify-plan on bdk:verifier, fixing and verifying again until a report passes or policy.budgets.verifier is spent. Stops on an unfinished design or a gap of the design. Resumes from the run files. Use when a Change has its specs and design and needs a plan, when asked to "plan" a Change, or when /bdk:run reaches the plan stage.
+Runs the plan stage of an OpenSpec Change - drafts the plan parts with plan-draft on bdk:planner, checks them with bdk plan check, and verifies them with verify-plan on bdk:verifier, fixing and verifying again until a report passes or policy.budgets.verifier is spent. Stops on an unfinished design or a gap of the design. Resumes from the run files. Use when a Change has its specs and design and needs a plan, when asked to "plan" a Change, or when /bdk:run reaches the plan stage.
 
 ## `/bdk:plan-draft` {#plan-draft}
 

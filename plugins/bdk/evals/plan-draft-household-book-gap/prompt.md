@@ -3,7 +3,7 @@ description: "plan-draft on the B1-sized Change add-household-book with one prod
 tags: [block]
 max_turns: 200
 timeout_seconds: 2400
-allowed_tools: [Read, Glob, Grep, Skill, Write, Edit, Bash]
+allowed_tools: [Read, Glob, Grep, Skill, Agent, Write, Edit, Bash]
 ---
 
 The add-household-book change has its proposal, specs and design, and the design is approved. Please draft its implementation plan; I will have the draft verified separately.

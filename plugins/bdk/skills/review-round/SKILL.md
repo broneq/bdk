@@ -29,7 +29,7 @@ Done when you are `bdk:lead`.
 - **Change**: the first argument; `openspec/changes/<change>/` must exist, else reply with that and stop.
 - **Run directory**: `--run-dir <path>`, an absolute path. Without it, `.bdk/runs/<change>` under the path `git rev-parse --show-toplevel` prints.
 - **Round**: `--round <N>`; the round directory is `<run dir>/review/round-<N>`, the log `<round dir>/findings.jsonl`.
-- **Settings**: `execution.max-parallel` (default 10) and `models.reviewer`, `models.integration-reviewer`, `models.e2e-tester`, `models.judge` when the configuration sets them.
+- **Settings**: `execution.max-parallel` (default 10) and `models.<role>.model` and `models.<role>.effort` of the roles `reviewer`, `integration-reviewer`, `e2e-tester` and `judge` when the configuration sets them.
 
 When the round directory holds `review.md`, the round is finished: reply with the counts line of `bdk findings list <log>` and the report path, and stop.
 
@@ -54,8 +54,8 @@ Done when `groups.json` exists and you hold its groups.
 
 In one message:
 
-- one Agent call per group other than `integration`: `subagent_type: "bdk:reviewer"`, prompt `Review group <id> of the round <round dir>`, `model` `models.reviewer` when set;
-- one Agent call `subagent_type: "bdk:e2e-tester"`, prompt `Check the Change <change> end to end; the findings log is <round dir>/findings.jsonl`, `model` `models.e2e-tester` when set;
+- one Agent call per group other than `integration`: `subagent_type: "bdk:reviewer"`, prompt `Review group <id> of the round <round dir>`, `model` `models.reviewer.model` and `effort` `models.reviewer.effort`, each when set;
+- one Agent call `subagent_type: "bdk:e2e-tester"`, prompt `Check the Change <change> end to end; the findings log is <round dir>/findings.jsonl`, `model` `models.e2e-tester.model` and `effort` `models.e2e-tester.effort`, each when set;
 - one Bash call: `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" check run <run dir> round-<N> --round <N>`. It exits 1 when a check is red and has then appended the red checks to the log; that is a result, not an error.
 
 Start every Agent call in the foreground: you end when your turn ends, and a background worker would report to nobody. When the agents number more than `execution.max-parallel`, start them in batches of that size, the groups in their order, the E2E tester in the first batch.
@@ -68,13 +68,13 @@ Done when every worker has returned and the check run has ended.
 
 ## 4. Integration
 
-When `groups` holds an `integration` group, start one Agent call: `subagent_type: "bdk:integration-reviewer"`, prompt `Review the Change as a whole for the round <round dir>`, `model` `models.integration-reviewer` when set. It reads what the group reviews found. A failed run is retried once, as in step 3.
+When `groups` holds an `integration` group, start one Agent call: `subagent_type: "bdk:integration-reviewer"`, prompt `Review the Change as a whole for the round <round dir>`, `model` `models.integration-reviewer.model` and `effort` `models.integration-reviewer.effort`, each when set. It reads what the group reviews found. A failed run is retried once, as in step 3.
 
 Done when it has returned, or the round has no integration group.
 
 ## 5. Judge
 
-Start one Agent call: `subagent_type: "bdk:judge"`, prompt `Judge the round <round dir>`, `model` `models.judge` when set. It levels every finding and writes `<round dir>/review.md`. When `review.md` is missing after it returns, start it once more; when it is still missing, write `round.md` (step 6) with the gap and reply that the round has no report.
+Start one Agent call: `subagent_type: "bdk:judge"`, prompt `Judge the round <round dir>`, `model` `models.judge.model` and `effort` `models.judge.effort`, each when set. It levels every finding and writes `<round dir>/review.md`. When `review.md` is missing after it returns, start it once more; when it is still missing, write `round.md` (step 6) with the gap and reply that the round has no report.
 
 Done when `review.md` exists.
 

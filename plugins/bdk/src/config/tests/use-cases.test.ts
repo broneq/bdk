@@ -66,15 +66,15 @@ describe("show", () => {
     const { deps: d } = configured({
       [GLOBAL]: "execution:\n  lead: foreground\n",
       [PROJECT]: "languages: [typescript]\nexecution:\n  lead: background\n",
-      [LOCAL]: "models:\n  implementer: sonnet\n",
+      [LOCAL]: "models:\n  implementer:\n    model: sonnet\n",
     });
     const result = show(d);
     expect(ShowResultSchema.parse(result)).toEqual(result);
     if (result.status !== "ok") throw new Error(result.status);
     const byKey = Object.fromEntries(result.entries.map((entry) => [entry.key, entry]));
     expect(byKey.languages).toEqual({ key: "languages", value: ["typescript"], origin: "project" });
-    expect(byKey["models.implementer"]).toEqual({
-      key: "models.implementer",
+    expect(byKey["models.implementer.model"]).toEqual({
+      key: "models.implementer.model",
       value: "sonnet",
       origin: "local",
     });

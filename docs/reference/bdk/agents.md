@@ -12,6 +12,12 @@ Model: `sonnet` · Tools: `Read`, `Edit`, `Write`, `Bash`, `Grep`, `Glob`, `Skil
 
 Checks the uncommitted diff of one implemented plan part of a BDK Change against the execute rules, the project instructions and the part's tasks, fixes what it can without changing behaviour, and writes the conform report. Started by the execute lead or the conform-part block with a prompt naming the skill bdk:conform-part and its arguments.
 
+## `designer` {#designer}
+
+Model: `inherit` · Tools: `Read`, `Write`, `Edit`, `Bash`, `Grep`, `Glob`, `Skill`
+
+Writes the spec deltas and design.md of one BDK Change, or fixes them after a failed design verification, or revises them on a request. Started by /bdk:design or the design-draft block with a prompt naming the skill bdk:design-draft and its arguments; continue it with SendMessage to hand it the user's answers to its open questions.
+
 ## `e2e-tester` {#e2e-tester}
 
 Model: `sonnet`
@@ -47,6 +53,12 @@ Sets the level of every finding of a BDK review round by the product's behaviour
 Model: `sonnet` · Tools: `Read`, `Write`, `Edit`, `Bash`, `Grep`, `Glob`, `Skill`, `Agent`
 
 Runs one long mechanical stage of BDK (the execute stage of a Change, a fix pass or one review round of a Change, the review of a pull request) in a fresh context - starts the stage's worker agents, commits and merges their work, writes the stage's state and result, and returns one result line. Started by a BDK orchestrator such as /bdk:execute, /bdk:auto-review or /bdk:pr-review with a prompt naming the stage skill (bdk:execute-waves, bdk:review-round, bdk:pr-review-round) and its arguments; continue it with SendMessage after a blocker.
+
+## `planner` {#planner}
+
+Model: `inherit` · Tools: `Read`, `Write`, `Edit`, `Bash`, `Grep`, `Glob`, `Skill`
+
+Writes the plan parts of one BDK Change and checks them with bdk plan check, or fixes them after a failed plan verification. Started by /bdk:plan or the plan-draft block with a prompt naming the skill bdk:plan-draft and its arguments.
 
 ## `reviewer` {#reviewer}
 

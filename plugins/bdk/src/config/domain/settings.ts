@@ -76,6 +76,45 @@ const E2e = z.strictObject({
     ),
 });
 
+/** The agent roles `models` configures; each is the `name` of an agent of the plugin. */
+export const MODEL_ROLES = [
+  "lead",
+  "explorer",
+  "verifier",
+  "implementer",
+  "conformer",
+  "reviewer",
+  "integration-reviewer",
+  "e2e-tester",
+  "judge",
+  "designer",
+  "planner",
+] as const;
+
+/** Claude Code's reasoning effort levels, which the `Agent` tool and agent frontmatter take. */
+export const EFFORTS = ["low", "medium", "high", "xhigh", "max"] as const;
+
+const effort = (description: string) => z.enum(EFFORTS).optional().meta(about(description));
+
+const RoleModel = z
+  .strictObject(
+    {
+      model: text
+        .optional()
+        .meta(
+          about("Model name or alias the agent of this role runs on; its default when absent."),
+        ),
+      effort: effort("Reasoning effort of the agent of this role; the session's when absent."),
+    },
+    {
+      error: (issue) =>
+        issue.code === "invalid_type" && typeof issue.input === "string"
+          ? `must be a mapping with model and effort (${[...(issue.path ?? []), "model"].join(".")}: ${issue.input})`
+          : undefined,
+    },
+  )
+  .meta(about("Model and effort the agent of this role runs with."));
+
 const Step = z.strictObject({
   id: kebab.meta(about("The step of the orchestrator this entry changes.")),
   enabled: z.boolean().optional().meta(about("`false` skips the step.")),
@@ -139,14 +178,20 @@ export const SettingsSchema = z
         examples: [{ disabled: ["BDK-DP-2", "BDK-REACT-10"] }],
       }),
     models: z
-      .record(kebab, text.meta(about("Model name or alias the agent of this role runs on.")))
+      .partialRecord(z.enum(MODEL_ROLES), RoleModel)
       .default({})
       .meta({
         ...about(
-          "Model per agent role, named after its agent: `lead`, `explorer`, `verifier`, `implementer`, `conformer`, `reviewer`, `integration-reviewer`, `e2e-tester` or `judge`; a role not set runs on its agent's default model.",
+          "Model and effort per agent role, each role named after its agent: `lead`, `explorer`, `verifier`, `implementer`, `conformer`, `reviewer`, `integration-reviewer`, `e2e-tester`, `judge`, `designer` or `planner`; a field not set leaves the agent on its default model and the session's effort.",
         ),
         entry: "role",
-        examples: [{ implementer: "opus", reviewer: "sonnet" }],
+        examples: [
+          {
+            implementer: { model: "opus", effort: "high" },
+            reviewer: { model: "sonnet" },
+            planner: { effort: "xhigh" },
+          },
+        ],
       }),
     policy: z
       .strictObject({
@@ -189,6 +234,9 @@ export const SettingsSchema = z
                   "Model the last implementer run of a plan part runs on, within its `policy.budgets.part-attempts`.",
                 ),
               ),
+            effort: effort(
+              "Effort of the last implementer run of a plan part; when absent that run takes `models.implementer.effort`.",
+            ),
           })
           .prefault({})
           .meta(about("What a run does before it gives up on a part.")),

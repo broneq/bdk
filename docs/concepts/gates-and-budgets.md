@@ -17,7 +17,7 @@ With everything on `auto` and `decide-and-record`, `/bdk:run` goes from an inten
 | Budget | Default | Loop it caps | When it is spent |
 |---|---|---|---|
 | `policy.budgets.verifier` | 3 | draft and verify of a design, and of a plan | the stage stops before the gate and names the open points of the last report |
-| `policy.budgets.part-attempts` | 3 | implementer runs of one plan part in one execute run | the part is blocked; the last run uses `policy.escalation.model` (`opus`) |
+| `policy.budgets.part-attempts` | 3 | implementer runs of one plan part in one execute run | the part is blocked; the last run uses `policy.escalation.model` (`opus`) and `policy.escalation.effort` |
 | `policy.budgets.review-rounds` | 3 | review rounds of one auto-review | triage runs with `--last-round`: `should-fix` is deferred, a `blocker` still asks for a fix, and a fix left over ends the review as blocked |
 
 A part that the plan made too large never gets an attempt: `bdk plan check` holds every part to `plan.part.max-tasks` (5), `plan.part.max-files` (10) and `plan.part.max-bytes` (8192), and `/bdk:verify-plan` sends an oversized plan back.

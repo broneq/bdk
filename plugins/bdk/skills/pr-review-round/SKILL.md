@@ -31,7 +31,7 @@ Done when you are `bdk:lead`.
 - **Since** (verify mode): `--since <sha>`, the head commit of the previous review; none without it.
 - **Run directory**: `--run-dir <path>`, an absolute path; without it, `.bdk/runs/pr-<N>` under the path `git rev-parse --show-toplevel` prints.
 - **Brief**: `<run dir>/pr.md`, written by `/bdk:pr-review`. Keep its `Base` branch and `Head commit`. Without the brief, go to step 8 with the blocker `no brief: run /bdk:pr-review <N>`.
-- **Settings** from the configuration above: `execution.max-parallel` (default 10), and `models.reviewer`, `models.integration-reviewer` and `models.judge` when set.
+- **Settings** from the configuration above: `execution.max-parallel` (default 10), and `models.<role>.model` and `models.<role>.effort` of the roles `reviewer`, `integration-reviewer` and `judge` when set.
 - **Previous findings** (verify mode): `<run dir>/previous.json`, written by `/bdk:pr-review --verify`: a list of `{thread, id, level, file, line, summary, evidence}`. Without it, go to step 8 with the blocker `no previous findings: run /bdk:pr-review --verify <N>`.
 - **Round directory**: `<run dir>/review/round-<k>/`, `k` the lowest number whose directory holds no `review.md` (1 when there is none).
 
@@ -86,7 +86,7 @@ Done when `groups.json` exists and you hold the group ids.
 
 ## 6. Run the workers
 
-Every worker gets the same inputs after its own: `--workdir <worktree> --change <change or none> --intent <run dir>/pr.md`. Start each as a foreground `Agent` call; set `model` from `models.<role>` when the configuration sets it.
+Every worker gets the same inputs after its own: `--workdir <worktree> --change <change or none> --intent <run dir>/pr.md`. Start each as a foreground `Agent` call; set `model` from `models.<role>.model` and `effort` from `models.<role>.effort`, each when the configuration sets it.
 
 1. **Reviewers.** One `bdk:reviewer` per group except `integration`, at most `execution.max-parallel` in one message, in group order; a larger round in batches. Prompt: `Review group <id> of the round <round dir> --workdir <worktree> --change <change> --intent <run dir>/pr.md`.
 2. **Integration.** After every reviewer returned, one `bdk:integration-reviewer`. Prompt: `Review the round <round dir> as a whole --workdir <worktree> --change <change> --intent <run dir>/pr.md`.

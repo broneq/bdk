@@ -2,7 +2,7 @@
 name: plan-draft
 description: 'Writes the plan of a BDK Change - plan parts openspec/changes/CHANGE/plan/parts/NN.md with depends-on, isolation, files, acceptance scenarios from the spec deltas and tasks as contracts (File, Interface, Verified by) - cut into few waves and checked with bdk plan check; after a failed plan verification, fixes what its Must address names. Use when a Change has its specs and design and needs an implementation plan, or when plan/verify-N.md failed.'
 argument-hint: "[change name]"
-allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Read Write Edit Glob Grep
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Read Write Edit Glob Grep Agent
 ---
 
 Current BDK configuration of this project:
@@ -14,6 +14,10 @@ Arguments: $ARGUMENTS
 # Plan draft
 
 Write the plan parts of one Change so that one implementer agent per part builds it without coming back, and so that the parts run in as few waves as possible. You write parts only: never code, specs, the proposal or the design. Run `bdk` always as `"${CLAUDE_PLUGIN_ROOT}/bin/bdk"`, each command on its own. Read and search with Read, Glob and Grep.
+
+## 0. Run on the planner
+
+This block runs on the `bdk:planner` agent, whose instructions start with "You are `bdk:planner`". When you are that agent, go to step 1. When you are not (a user typed the command, or another skill invoked this one in the main thread), do not read the design or write a part yourself: start the agent with the Agent tool, `subagent_type: "bdk:planner"`, prompt `Run the skill bdk:plan-draft with the arguments: <the arguments above>`, `model` set to `models.planner.model` and `effort` set to `models.planner.effort`, each only when the configuration above sets it. Wait for it, reply with its reply, and stop.
 
 ## 1. Start
 
@@ -30,7 +34,7 @@ Read the proposal, every spec delta in full and the design. List every scenario 
 
 Every path, function, type and command a task will name as existing comes from a file you read, exactly as written there. A task never guesses a signature.
 
-When the specs and the design leave open a choice that changes what the product does, and the code does not settle it, do not decide it: name it in the reply as a gap of the design, write no part for it, and stop if nothing can be planned without it. Choices inside the design's frame (a file name, a private helper, the order of tasks) are yours; list them in the reply.
+When the specs and the design leave open a choice that changes what the product does, and the code does not settle it, do not decide it: name it in the reply as a gap of the design, write no part for it, and stop if nothing can be planned without it. A gap is about behaviour this Change adds or changes; behaviour no requirement of the Change touches (an input or a command it does not name) is not a gap: leave it as the code has it and plan nothing for it. Choices inside the design's frame (a file name, a private helper, the order of tasks) are yours; list them in the reply.
 
 Done when every scenario is listed and every symbol you will name is confirmed in the code.
 

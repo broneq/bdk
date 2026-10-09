@@ -139,17 +139,26 @@ Rules of the rule pack that no role reads in this project.
 
 Type: mapping of names to values · Default: `{}`
 
-Model per agent role, named after its agent: `lead`, `explorer`, `verifier`, `implementer`, `conformer`, `reviewer`, `integration-reviewer`, `e2e-tester` or `judge`; a role not set runs on its agent's default model.
+Model and effort per agent role, each role named after its agent: `lead`, `explorer`, `verifier`, `implementer`, `conformer`, `reviewer`, `integration-reviewer`, `e2e-tester`, `judge`, `designer` or `planner`; a field not set leaves the agent on its default model and the session's effort.
 
 | Key | Type | Required or default | Description |
 |---|---|---|---|
-| `<role>` | string | Required | Model name or alias the agent of this role runs on. |
+| `<role>` | mapping of the keys below | Required | Model and effort the agent of this role runs with. |
+| `<role>.model` | string |  | Model name or alias the agent of this role runs on; its default when absent. |
+| `<role>.effort` | one of `low`, `medium`, `high`, `xhigh`, `max` |  | Reasoning effort of the agent of this role; the session's when absent. |
 
 ```yaml
 models:
-  # Model name or alias the agent of this role runs on
-  implementer: opus
-  reviewer: sonnet
+  # Model and effort the agent of this role runs with
+  implementer:
+    # Model name or alias the agent of this role runs on
+    model: opus
+    # Reasoning effort of the agent of this role (low | medium | high | xhigh | max)
+    effort: high
+  reviewer:
+    model: sonnet
+  planner:
+    effort: xhigh
 ```
 
 ## `policy` {#policy}
@@ -241,6 +250,12 @@ What a run does before it gives up on a part.
 Type: string · Default: `"opus"`
 
 Model the last implementer run of a plan part runs on, within its `policy.budgets.part-attempts`.
+
+### `policy.escalation.effort` {#policy-escalation-effort}
+
+Type: one of `low`, `medium`, `high`, `xhigh`, `max`
+
+Effort of the last implementer run of a plan part; when absent that run takes `models.implementer.effort`.
 
 ## `plan` {#plan}
 
