@@ -53,6 +53,12 @@ The `triage-*` cases start from the shared fixture `monthly-report-judged.sh`: r
 pnpm --filter @bdk/bdk run eval --allow-tools Write "Bash(*/bin/bdk *)" "Bash(npx -y lavish-axi *)" --case 'triage-*'
 ```
 
+The `cli-*` cases run `/bdk:cli` as the main session would: `cli-config` on `monthly-report.sh`, `cli-findings` on `monthly-report-judged.sh`, `cli-run-state` on `tally-queue.sh` and `cli-route` on `monthly-report.sh`. They need `bdk` and `openspec status`, no `Write`. `cli-findings` reads a file the model can also read raw, so its `Δ` stays near 0 and the case guards against a write; `cli-route` is answered from the session start context, so `skill-fired` may stay 0:
+
+```bash
+pnpm --filter @bdk/bdk run eval --allow-tools "Bash(*/bin/bdk *)" "Bash(openspec status *)" --case 'cli-*'
+```
+
 The `propose-*` cases run `/bdk:propose`, which calls `bdk`, OpenSpec and `gh issue view`. A run has no GitHub credential, so `propose-from-issue` reads its issue through the offline stand-in `fixtures/bin/gh`: its scaffold copies the stand-in to `.git/bdk-eval/bin/gh` and the issue to `.git/bdk-eval/issues/42.json`. A run cannot execute a file outside its workspace, even with that directory on `PATH`, so put the relative directory first:
 
 ```bash

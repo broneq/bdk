@@ -13,7 +13,7 @@ A later layer wins over an earlier one. Lists of items with an `id` (`tools.test
 
 ## Read and change it
 
-The `bdk` command line ships inside the plugin and is on the `PATH` of Claude Code's Bash tool, not of your own terminal: ask Claude to run these commands, for example "run bdk config show policy".
+The `bdk` command line ships inside the plugin and is on the `PATH` of Claude Code's Bash tool, not of your own terminal: ask Claude to run these commands, for example "run bdk config show policy". The skill `/bdk:cli` tells Claude which command answers which question (the configuration, where a run stands, what a review round holds), so you can ask in plain words.
 
 | Command | Does |
 |---|---|
