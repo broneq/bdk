@@ -139,7 +139,7 @@ Rules of the rule pack that no role reads in this project.
 
 Type: mapping of names to values · Default: `{}`
 
-Model per agent role: `lead`, `verifier`, `implementer`, `conformer`, `reviewer`, `integration-reviewer`, `e2e-tester` or `judge`; a role not set runs on its agent's default model.
+Model per agent role, named after its agent: `lead`, `explorer`, `verifier`, `implementer`, `conformer`, `reviewer`, `integration-reviewer`, `e2e-tester` or `judge`; a role not set runs on its agent's default model.
 
 | Key | Type | Required or default | Description |
 |---|---|---|---|

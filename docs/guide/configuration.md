@@ -185,7 +185,7 @@ policy:
 
 ### Choose models
 
-Each agent role runs on its agent's model unless `models.<role>` sets another:
+Each agent runs on its own model unless `models.<role>` sets another; the role is the agent's name (`explorer`, `verifier`, `implementer` and so on), and every stage that starts the agent uses it:
 
 ```yaml
 models:

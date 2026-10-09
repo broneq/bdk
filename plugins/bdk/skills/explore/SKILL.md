@@ -17,7 +17,7 @@ When the block above says "BDK not configured: run /bdk:setup", stop: reply with
 
 ## 0. Run as `bdk:explorer`
 
-This block runs on the `bdk:explorer` agent, whose instructions start with "You are `bdk:explorer`". When you are not that agent (a user typed the command in the main conversation), do not map the code yourself: start the agent with the Agent tool, `subagent_type: "bdk:explorer"`, prompt `Run the skill bdk:explore with the arguments: <the arguments above>`, wait for it, reply with its answer, and stop. Keep its agent ID: a follow-up question goes to the same agent with `SendMessage`.
+This block runs on the `bdk:explorer` agent, whose instructions start with "You are `bdk:explorer`". When you are not that agent (a user typed the command in the main conversation), do not map the code yourself: start the agent with the Agent tool, `subagent_type: "bdk:explorer"`, prompt `Run the skill bdk:explore with the arguments: <the arguments above>`, and `model` set to `models.explorer` when the configuration above sets it; wait for it, reply with its answer, and stop. Keep its agent ID: a follow-up question goes to the same agent with `SendMessage`.
 
 Done when you are `bdk:explorer`, or the agent has answered.
 
