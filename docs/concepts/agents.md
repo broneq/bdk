@@ -25,7 +25,7 @@ flowchart TB
     end
     subgraph S2[" "]
       direction LR
-      L2["lead:<br/>/bdk:review-round"] --> W2["reviewer, sonnet<br/>e2e-tester, sonnet<br/>integration-reviewer, opus<br/>judge, sonnet"]
+      L2["lead:<br/>/bdk:review-round"] --> W2["reviewer, sonnet<br/>verifier, opus<br/>e2e-tester, sonnet<br/>integration-reviewer, opus<br/>judge, sonnet"]
     end
     subgraph S3[" "]
       direction LR
@@ -60,13 +60,13 @@ flowchart TB
 | `/bdk:judge` | verifier | `bdk:judge` (sonnet) | level events, `round-N/review.md` | findings, code, scenarios, cited rules and instructions |
 | `/bdk:triage` | decider | main thread | decision events, `review.md` refresh | judged findings |
 | `/bdk:plan-fixes` | author | main thread | `round-N/fixes/parts/NN.md`, `fixes/index.md` | fix decisions, code |
-| `/bdk:spec-conformance` | verifier | `bdk:verifier` (opus) | `R/close/spec-conformance.md` | spec deltas, main specs, diff, E2E results |
+| `/bdk:spec-conformance` | verifier | `bdk:verifier` (opus) | `R/close/spec-conformance.md`; in a review round (`--round`) `round-N/spec-conformance.md` and finding events | spec deltas, main specs, diff, E2E results (not in a round) |
 | `/bdk:diagnose-run` | verifier (of a finished run) | `bdk:analyst` (sonnet) | `R/diagnostics.md` | run files, host transcripts through `bdk diagnostics report` |
 | `/bdk:diagnose-bug` | author | main thread | fix Change, `R/debug/*.md` | bug report, product, code |
 | `/bdk:commit` | tool | main thread | git commits | diff, commit convention |
 | `/bdk:adr` | tool | main thread | one ADR file | design decision or text |
 
-The model and effort of each agent can be overridden with `models.<role>.model` and `models.<role>.effort`, where the role is the agent's name (`lead`, `explorer`, `designer`, `planner`, `verifier`, `implementer`, `conformer`, `reviewer`, `integration-reviewer`, `e2e-tester`, `judge`, `analyst`); every stage that starts the agent passes them, so `models.verifier` sets the verifier of `/bdk:design`, `/bdk:plan` and `/bdk:close` alike. See [CLI, configuration and hooks](./cli-config-hooks.md#configuration-bdk-settings-yaml).
+The model and effort of each agent can be overridden with `models.<role>.model` and `models.<role>.effort`, where the role is the agent's name (`lead`, `explorer`, `designer`, `planner`, `verifier`, `implementer`, `conformer`, `reviewer`, `integration-reviewer`, `e2e-tester`, `judge`, `analyst`); every stage that starts the agent passes them, so `models.verifier` sets the verifier of `/bdk:design`, `/bdk:plan`, every review round and `/bdk:close` alike. See [CLI, configuration and hooks](./cli-config-hooks.md#configuration-bdk-settings-yaml).
 
 ## Sources
 

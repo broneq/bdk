@@ -62,6 +62,7 @@ A part that still fails after `policy.budgets.part-attempts` runs (3, the last o
 A review round runs in parallel:
 
 - reviewers read the diff, group by group, and an integration reviewer reads it as a whole;
+- a verifier checks that the spec deltas describe what the product does, the same check close runs (`/bdk:spec-conformance`), so a gap between the specs and the product is fixed in the review instead of stopping the close;
 - your test, lint and build commands run;
 - the [E2E check](/concepts/e2e) starts your product and uses every user process the proposal adds or changes as a user would: the main path, its variants and at least one path that tries to break it.
 

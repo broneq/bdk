@@ -26,6 +26,7 @@ describe("Agent call run mode", () => {
       "integration-reviewer",
       "judge",
       "reviewer",
+      "verifier",
     ]);
     expect(leadCalls("pr-review-round")).toEqual(["integration-reviewer", "judge", "reviewer"]);
   });
