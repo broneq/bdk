@@ -179,6 +179,35 @@ describe("eval launcher", () => {
     );
   });
 
+  it("puts the directory of an absolute shell prefix first, once", () => {
+    const path = ["/opt/homebrew/bin", "/usr/bin"].join(delimiter);
+    const prefix = "/Users/Shared/bdk-eval/bin/macos-git-prefix.sh";
+    expect(runPath(path, prefix)).toBe(
+      ["/Users/Shared/bdk-eval/bin", "/opt/homebrew/bin", "/usr/bin"].join(delimiter),
+    );
+    expect(runPath(["/usr/bin", "/Users/Shared/bdk-eval/bin"].join(delimiter), prefix)).toBe(
+      ["/Users/Shared/bdk-eval/bin", "/usr/bin"].join(delimiter),
+    );
+  });
+
+  it("leaves PATH alone for an unset, empty or relative shell prefix", () => {
+    const path = ["/opt/homebrew/bin", "/usr/bin"].join(delimiter);
+    expect(runPath(path, undefined)).toBe(path);
+    expect(runPath(path, "")).toBe(path);
+    expect(runPath(path, "bin/macos-git-prefix.sh")).toBe(path);
+  });
+
+  it("grants what /bdk:execute uses in the README command of the execute-* cases", () => {
+    const readme = readFileSync(join(EVALS, "README.md"), "utf8");
+    const command = readme.split("\n").find((line) => line.includes("--case 'execute-*'"));
+    for (const grant of ["Write", "Edit", "SendMessage", "ToolSearch"]) {
+      expect(command).toMatch(new RegExp(` ${grant}\\b`));
+    }
+    for (const bash of ["*/bin/bdk *", "mkdir -p *", "cd *", "git *"]) {
+      expect(command).toContain(`"Bash(${bash})"`);
+    }
+  });
+
   it("warns when no openspec is on PATH", () => {
     const dir = fresh("no-openspec");
     expect(openspecWarning(join(dir, "empty"), join(dir, "home"))).toMatch(/openspec/);
