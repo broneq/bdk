@@ -1,6 +1,6 @@
 ---
 name: judge
-description: 'Judges the findings of a BDK review round - checks each unleveled finding against the code and sets its level (blocker, should-fix, nice-to-have, not-a-problem) by what the product does, with bdk findings level - then writes the round report with bdk findings report. Use when a review round or a user asks to judge, level, rate or triage the findings of a round, or to finish a review round.'
+description: 'Judges the findings of a BDK review round - checks each unleveled finding against the code and the rule or project instruction it cites, and sets its level (blocker, should-fix, nice-to-have, not-a-problem) by what the product does, with bdk findings level - then writes the round report with bdk findings report. Use when a review round or a user asks to judge, level, rate or triage the findings of a round, or to finish a review round.'
 argument-hint: "[<round-dir>] [--workdir <path>] [--change <path>|none] [--intent <file>]"
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(git diff *) Bash(git show *) Bash(git -C *) Bash(cd *) Read Grep Glob
 ---
@@ -35,15 +35,15 @@ Done when you have the list (it may be empty: go to step 4).
 
 ## 2. Read what the product must do
 
-Read `proposal.md` and the scenarios under `specs/` of the Change: a level depends on whether the product breaks them. Read a rule a finding cites in the rules of `bdk rules for --stage review --files <file>` for its file.
+Read `proposal.md` and the scenarios under `specs/` of the Change: a level depends on whether the product breaks them. Read a rule a finding cites in the rules of `bdk rules for --stage review --files <file>` for its file. A `rule` that is a path (`CLAUDE.md`, `src/AGENTS.md`, `.claude/rules/testing.md`) cites a project instruction: read that file, under `--workdir` when given.
 
-Done when you know the scenarios and the intent.
+Done when you know the scenarios, the intent, and each rule and instruction file a finding cites.
 
 ## 3. Judge each finding
 
 For each finding, once: read the code at its `file` and `line`, and its evidence. Ask:
 
-1. Does the failure scenario hold? Trace the evidence's input through the code. A guard, a type, a caller or a test that already prevents it makes it a false positive.
+1. Does the failure scenario hold? Trace the evidence's input through the code. A guard, a type, a caller or a test that already prevents it makes it a false positive. For a cited instruction, the scenario holds only when the cited file says what the evidence quotes, the file binds the finding's file (the finding's file is under the instruction file's directory, or a `.claude/rules` file's `paths` match it or it has none), and the changed line breaks it.
 2. Which level fits, by the product's behaviour:
 
 | Level | When |
@@ -53,7 +53,7 @@ For each finding, once: read the code at its `file` and `line`, and its evidence
 | `nice-to-have` | An improvement whose absence costs nothing concrete |
 | `not-a-problem` | The failure scenario does not hold; out of the Change's scope; already handled; or it repeats another finding (name that id) |
 
-A rule violation alone is never a `blocker`, however the reviewer worded it: `should-fix` at most. A finding that would be a `blocker` but whose scenario does not hold is `not-a-problem`, not a lower level. "Out of the Change's scope" means code or behaviour the Change does not touch; an improvement to what the Change touches that no scenario asks for is `nice-to-have`.
+A rule or instruction violation alone is never a `blocker`, however the reviewer worded it: `should-fix` at most. A cited instruction the file does not hold, or that does not bind the finding's file, is `not-a-problem`. A finding that would be a `blocker` but whose scenario does not hold is `not-a-problem`, not a lower level. "Out of the Change's scope" means code or behaviour the Change does not touch; an improvement to what the Change touches that no scenario asks for is `nice-to-have`.
 
 Then set it:
 

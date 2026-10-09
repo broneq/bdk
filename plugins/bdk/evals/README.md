@@ -40,7 +40,7 @@ Claude Code refuses every write to `.claude/settings.json` in a run, whatever th
 
 `setup-web-app` and `setup-library` also grade the decision surface setup reports: each puts a `lavish-axi` stub into the workspace's `node_modules`, which `npx -y lavish-axi` runs before any installed one. The stub of `setup-web-app` answers `--version`, so its reply names the Lavish page; the stub of `setup-library` fails, so its reply names `AskUserQuestion`. The `Bash(npx *)` grant covers both.
 
-The review cases (`review-group-*`, `review-integration-*`, `judge-*`) run on the `monthly-report` fixture, a recorded review round of a two-part Change. The blocks read the code and write only through `bdk findings`, so they need `bdk` and read-only `git`, and no `Write` or `Edit`:
+The review cases (`review-group-*`, `review-integration-*`, `judge-*`) run on the `monthly-report` fixture, a recorded review round of a two-part Change. `review-group-instruction` and `judge-instruction` run on `monthly-report-instructions.sh`, the same round with a `CLAUDE.md` on `main` whose testing instruction part 01 breaks: the reviewer must cite it with `--rule CLAUDE.md`, and the judge must level it `should-fix` and a citation of an instruction the file does not hold `not-a-problem`. The blocks read the code and write only through `bdk findings`, so they need `bdk` and read-only `git`, and no `Write` or `Edit`:
 
 ```bash
 pnpm --filter @bdk/bdk run eval --allow-tools "Bash(*/bin/bdk *)" "Bash(git *)" --case 'review-*'

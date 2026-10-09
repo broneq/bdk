@@ -30,14 +30,23 @@ flowchart LR
 |---|---|---|
 | execute | `bdk:implementer` in `/bdk:implement-part` | writes the part's code following them |
 | execute | `bdk:conformer` in `/bdk:conform-part` | checks each changed line against them and fixes what it can without changing behaviour |
-| review | `bdk:reviewer` in `/bdk:review-group` | reports a changed line that breaks one, as a finding that names the rule's id |
+| review | `bdk:reviewer` in `/bdk:review-group` | reports a changed line that breaks one, as a finding that names the rule's id (`bdk findings add --rule`) |
 | review | `bdk:judge` in `/bdk:judge` | reads the rule a finding cites before it sets the level |
 
 A rule file can also name the stages `design` and `plan`, and some pack rules do. No design or plan step asks for rules yet ([#272](https://github.com/broneq/bdk/issues/272)), so today a rule reaches only the execute and review roles above.
 
 A broken rule alone is never a blocker: the judge levels it `should-fix` at most, because a rule is a choice and the product still works. Triage then fixes it, or defers it in the last review round ([findings](./findings.md)).
 
-Rules are not the only instructions the code agents read. `bdk:implementer` and `bdk:conformer` also read your project's `CLAUDE.md`, `AGENTS.md` and `.claude/rules/*.md` on the way to the files they change. The reviewers do not read those instruction files yet ([#273](https://github.com/broneq/bdk/issues/273)): put a convention in a rule when you want a reviewer to report the line that breaks it.
+Rules are not the only instructions the code agents read. Your project's instructions bind the code too: `CLAUDE.md` and `AGENTS.md` in the project root and in each directory on the way to a file, and each `.claude/rules/*.md` whose `paths` match the file (or that has no `paths`).
+
+| Role | What it does with your instructions |
+|---|---|
+| `bdk:implementer` in `/bdk:implement-part` | writes the part's code following the ones on the way to its files |
+| `bdk:conformer` in `/bdk:conform-part` | checks each changed line against them and fixes what it can without changing behaviour |
+| `bdk:reviewer` in `/bdk:review-group` | reports a changed line that breaks one, as a finding that names the instruction file in place of a rule id (`--rule CLAUDE.md`, `--rule .claude/rules/testing.md`) and quotes the instruction |
+| `bdk:judge` in `/bdk:judge` | reads the cited file, checks that it says what the finding quotes and binds the finding's file, then levels it like a broken rule: `should-fix` at most, or `not-a-problem` when the file does not say it |
+
+`bdk:integration-reviewer` does not read them: an instruction binds the lines of a file, and every changed file has a group reviewer that reads it whole. A convention you want checked in every project that uses BDK, or switched off per project, belongs in a rule; one that holds only for your project can stay in your instruction files.
 
 ## How a role's rules are chosen
 
