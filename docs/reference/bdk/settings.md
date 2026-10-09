@@ -57,6 +57,7 @@ Commands that run the project's tests; `bdk check run` runs them, each by its `i
 | `<id>.command` | string | Required | Shell command run from the project root. |
 | `<id>.scoped` | string |  | Variant of the command for a set of files; `{files}` is replaced by the changed files, so a check covers only what a part touched. |
 | `<id>.timeout` | integer, 1 to 86400 |  | Seconds before `bdk check run` stops the command; 600 when absent. |
+| `<id>.paths` | list of strings |  | Globs of the files the command checks, matched like rule paths. On a scoped run the command gets only the changed files they match, and is skipped when none matches; every file when absent. |
 
 ### `tools.lint` {#tools-lint}
 
@@ -70,6 +71,7 @@ Commands that lint the project; `bdk check run` runs them, each by its `id`.
 | `<id>.command` | string | Required | Shell command run from the project root. |
 | `<id>.scoped` | string |  | Variant of the command for a set of files; `{files}` is replaced by the changed files, so a check covers only what a part touched. |
 | `<id>.timeout` | integer, 1 to 86400 |  | Seconds before `bdk check run` stops the command; 600 when absent. |
+| `<id>.paths` | list of strings |  | Globs of the files the command checks, matched like rule paths. On a scoped run the command gets only the changed files they match, and is skipped when none matches; every file when absent. |
 
 ### `tools.build` {#tools-build}
 
@@ -83,6 +85,7 @@ Commands that build the project; `bdk check run` runs them, each by its `id`.
 | `<id>.command` | string | Required | Shell command run from the project root. |
 | `<id>.scoped` | string |  | Variant of the command for a set of files; `{files}` is replaced by the changed files, so a check covers only what a part touched. |
 | `<id>.timeout` | integer, 1 to 86400 |  | Seconds before `bdk check run` stops the command; 600 when absent. |
+| `<id>.paths` | list of strings |  | Globs of the files the command checks, matched like rule paths. On a scoped run the command gets only the changed files they match, and is skipped when none matches; every file when absent. |
 
 ### `tools.e2e` {#tools-e2e}
 

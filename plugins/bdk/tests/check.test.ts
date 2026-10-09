@@ -100,6 +100,43 @@ describe("bdk check run", () => {
     expect(read(`${RUN}/checks/01/lint-stdin.txt`)).toBe("read-eof\nexit 0\n");
   });
 
+  it("runs only the entries whose paths match the scope, each with its files", async () => {
+    settings(`tools:
+  test:
+    - id: api
+      command: echo api-full
+      scoped: "printf 'api[%s]' {files}"
+      paths: ["api/**"]
+    - id: web
+      command: echo web-full
+      scoped: "printf 'web[%s]' {files}"
+      paths: ["web/**"]
+`);
+    const { code, stdout, stderr } = await bdk([
+      "check",
+      "run",
+      RUN,
+      "03",
+      "--scope",
+      "web/src/a.tsx",
+    ]);
+    expect({ code, stderr }).toEqual({ code: 0, stderr: "" });
+    expect(stdout).toBe(
+      [
+        `pass  test web  scoped  ${RUN}/checks/03/test-web.txt`,
+        "skip  test api  no scope file matches its paths",
+        "verdict: pass",
+        `result: ${RUN}/checks/03.json`,
+        "",
+      ].join("\n"),
+    );
+    expect(read(`${RUN}/checks/03/test-web.txt`)).toBe("web[web/src/a.tsx]\nexit 0\n");
+    expect(runResult.parse(JSON.parse(read(`${RUN}/checks/03.json`)))).toMatchObject({
+      checks: [{ tool: "web", command: "printf 'web[%s]' web/src/a.tsx" }],
+      skipped: [{ kind: "test", tool: "api" }],
+    });
+  });
+
   it("reports a red check in text with its tail and exits 1", async () => {
     settings(`tools:
   lint:

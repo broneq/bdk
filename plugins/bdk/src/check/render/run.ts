@@ -1,14 +1,14 @@
 // The text of `bdk check run`, written for a model reading a Bash result: one line per check,
-// the tail of each red one indented under it, then the verdict and where the result is.
+// the tail of each red one indented under it, one line per skipped entry, then the verdict and
+// where the result is.
 
 import type { RunResult } from "../schema/run.ts";
 
 export function renderRun(result: RunResult, resultFile: string): string {
   const lines: string[] = [];
-  const width = (pick: (check: RunResult["checks"][number]) => string): number =>
-    Math.max(0, ...result.checks.map((check) => pick(check).length));
-  const status = width((check) => check.status);
-  const name = width((check) => `${check.kind} ${check.tool}`);
+  const named = [...result.checks, ...result.skipped];
+  const status = Math.max(0, ...result.checks.map((check) => check.status.length));
+  const name = Math.max(0, ...named.map((entry) => `${entry.kind} ${entry.tool}`.length));
   for (const check of result.checks) {
     const scope = check.scoped ? "scoped" : "full  ";
     lines.push(
@@ -16,7 +16,12 @@ export function renderRun(result: RunResult, resultFile: string): string {
     );
     for (const line of check.tail ?? []) lines.push(`    | ${line}`);
   }
-  if (result.checks.length === 0) lines.push("no check configured for this run");
+  for (const entry of result.skipped) {
+    lines.push(
+      `${"skip".padEnd(status)}  ${`${entry.kind} ${entry.tool}`.padEnd(name)}  no scope file matches its paths`,
+    );
+  }
+  if (named.length === 0) lines.push("no check configured for this run");
   const red = result.checks.filter((check) => check.status !== "pass").length;
   const count = result.checks.length;
   lines.push(

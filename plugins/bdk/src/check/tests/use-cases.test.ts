@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { CliError } from "../../shared/cli/index.ts";
+import { renderRun } from "../render/run.ts";
 import { runResult } from "../schema/run.ts";
 import { runChecks } from "../use-cases/run.ts";
 import type { RunInput } from "../use-cases/run.ts";
@@ -94,6 +95,7 @@ describe("runChecks", () => {
           tail: null,
         },
       ],
+      skipped: [],
       findings: null,
     });
     expect(runResult.parse(result)).toEqual(result);
@@ -120,6 +122,53 @@ describe("runChecks", () => {
       "FAIL a.test.ts\n1 failed\nexit 1\n",
     );
     expect(files.data.get(`${ROOT}/${RUN}/checks/02/lint-eslint.txt`)).toBe("timeout 30\n");
+  });
+
+  it("gives each entry only the scope paths its paths match and skips one with none", async () => {
+    const { files, shell, deps } = project(`tools:
+  test:
+    - id: api
+      command: uv run pytest
+      scoped: uv run pytest {files}
+      paths: ["api/**"]
+    - id: web
+      command: pnpm test
+      scoped: pnpm vitest run {files}
+      paths: ["web/**"]
+`);
+    const result = await check(deps, input({ scope: ["web/src/a.tsx"] }));
+    expect(shell.calls.map((call) => call.command)).toEqual(["pnpm vitest run web/src/a.tsx"]);
+    expect(result).toMatchObject({
+      verdict: "pass",
+      checks: [{ kind: "test", tool: "web", scoped: true }],
+      skipped: [{ kind: "test", tool: "api" }],
+    });
+    expect(runResult.parse(result)).toEqual(result);
+    expect(files.data.has(`${ROOT}/${RUN}/checks/02/test-api.txt`)).toBe(false);
+  });
+
+  it("writes verdict none when every entry is skipped", async () => {
+    const { shell, deps } = project(`tools:
+  lint:
+    - id: ruff
+      command: ruff check .
+      paths: ["**/*.py"]
+`);
+    const { result, file } = await runChecks(deps, input({ scope: ["web/src/a.tsx"] }));
+    expect(shell.calls).toEqual([]);
+    expect(result).toMatchObject({
+      verdict: "none",
+      checks: [],
+      skipped: [{ kind: "lint", tool: "ruff" }],
+    });
+    expect(renderRun(result, file)).toBe(
+      [
+        "skip  lint ruff  no scope file matches its paths",
+        "verdict: none",
+        `result: ${RUN}/checks/02.json`,
+        "",
+      ].join("\n"),
+    );
   });
 
   it("runs only the kinds asked for", async () => {

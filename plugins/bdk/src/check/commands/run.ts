@@ -31,7 +31,8 @@ export function runCommand(deps: CheckDeps): Command {
       scope: {
         type: "string",
         multiple: true,
-        description: "A file to check, relative to the project root; runs the scoped variants",
+        description:
+          "A file to check, relative to the project root; runs the scoped variants, each on the files its paths match",
       },
       kind: {
         type: "string",

@@ -58,7 +58,7 @@ Arguments:
   <id>       Kebab-case name of the result, such as a part id or round-2
 
 Flags:
-  --scope <value>  A file to check, relative to the project root; runs the scoped variants (repeatable)
+  --scope <value>  A file to check, relative to the project root; runs the scoped variants, each on the files its paths match (repeatable)
   --kind <value>   Only this kind: test, lint or build; all three when absent (repeatable)
   --round <value>  Append red checks as findings to review/round-<n>/findings.jsonl
   --help, -h       Show help

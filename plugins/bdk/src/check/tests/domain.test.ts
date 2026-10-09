@@ -44,7 +44,7 @@ describe("quote", () => {
 
 describe("planChecks", () => {
   it("runs every full command in kind order test, lint, build without a scope", () => {
-    expect(planChecks(TOOLS, undefined, null)).toEqual([
+    expect(planChecks(TOOLS, undefined, null).checks).toEqual([
       {
         kind: "test",
         tool: "unit",
@@ -59,7 +59,7 @@ describe("planChecks", () => {
   });
 
   it("fills every {files} of a scoped variant and runs the full command of an entry without one", () => {
-    const planned = planChecks(TOOLS, undefined, ["src/a b.ts", "src/c.ts"]);
+    const planned = planChecks(TOOLS, undefined, ["src/a b.ts", "src/c.ts"]).checks;
     expect(planned.map((check) => [check.command, check.scoped])).toEqual([
       ["vitest run 'src/a b.ts' src/c.ts", true],
       ["playwright test", false],
@@ -69,19 +69,99 @@ describe("planChecks", () => {
   });
 
   it("puts a path holding $ patterns into the command literally", () => {
-    const [unit] = planChecks(TOOLS, ["test"], ["src/a$&.ts", "src/b$'.ts"]);
+    const [unit] = planChecks(TOOLS, ["test"], ["src/a$&.ts", "src/b$'.ts"]).checks;
     expect(unit?.command).toBe("vitest run 'src/a$&.ts' 'src/b$'\\''.ts'");
   });
 
   it("keeps only the kinds asked for, still in kind order", () => {
-    expect(planChecks(TOOLS, ["build", "lint"], null).map((check) => check.kind)).toEqual([
+    expect(planChecks(TOOLS, ["build", "lint"], null).checks.map((check) => check.kind)).toEqual([
       "lint",
       "build",
     ]);
   });
 
   it("plans nothing when no entry is configured", () => {
-    expect(planChecks({ test: [], lint: [], build: [] }, undefined, null)).toEqual([]);
+    expect(planChecks({ test: [], lint: [], build: [] }, undefined, null)).toEqual({
+      checks: [],
+      skipped: [],
+    });
+  });
+});
+
+// Two packages: a Python API and a React frontend (issue #275).
+const MONOREPO: Tools = {
+  test: [
+    { id: "api", command: "uv run pytest", scoped: "uv run pytest {files}", paths: ["api/**"] },
+    { id: "web", command: "pnpm test", scoped: "pnpm vitest run {files}", paths: ["web/**"] },
+  ],
+  lint: [{ id: "ruff", command: "uv run ruff check .", paths: ["**/*.py"] }],
+  build: [{ id: "tsc", command: "tsc -b" }],
+};
+
+const commands = (plan: ReturnType<typeof planChecks>) =>
+  plan.checks.map((check) => [check.tool, check.command, check.scoped]);
+
+describe("planChecks with paths", () => {
+  it("gives each entry only the scope paths its paths match and skips one with none", () => {
+    const plan = planChecks(MONOREPO, ["test"], ["web/src/a.tsx"]);
+    expect(commands(plan)).toEqual([["web", "pnpm vitest run web/src/a.tsx", true]]);
+    expect(plan.skipped).toEqual([{ kind: "test", tool: "api" }]);
+  });
+
+  it("matches a path with a leading ./ and puts it into the command as given", () => {
+    const scope = scopeOf(["web/src/a.tsx", "api/app.py", "./api/tests/test_app.py"]);
+    const plan = planChecks(MONOREPO, ["test"], scope);
+    expect(commands(plan)).toEqual([
+      ["api", "uv run pytest ./api/tests/test_app.py api/app.py", true],
+      ["web", "pnpm vitest run web/src/a.tsx", true],
+    ]);
+    expect(plan.skipped).toEqual([]);
+  });
+
+  it("matches dot files and lets * stay inside one directory", () => {
+    const tools: Tools = {
+      test: [],
+      lint: [
+        { id: "top", command: "x", scoped: "x {files}", paths: ["*.py"] },
+        { id: "dot", command: "y", scoped: "y {files}", paths: ["**/.env*"] },
+      ],
+      build: [],
+    };
+    const plan = planChecks(tools, undefined, ["api/app.py", "web/.env.local"]);
+    expect(commands(plan)).toEqual([["dot", "y web/.env.local", true]]);
+    expect(plan.skipped).toEqual([{ kind: "lint", tool: "top" }]);
+  });
+
+  it("runs the full command of an entry with paths and no scoped variant only when a path matches", () => {
+    expect(commands(planChecks(MONOREPO, ["lint"], ["api/app.py"]))).toEqual([
+      ["ruff", "uv run ruff check .", false],
+    ]);
+    expect(planChecks(MONOREPO, ["lint"], ["web/src/a.tsx"])).toEqual({
+      checks: [],
+      skipped: [{ kind: "lint", tool: "ruff" }],
+    });
+  });
+
+  it("skips every entry whose paths match no scope path, in run order", () => {
+    expect(planChecks(MONOREPO, ["test", "lint"], ["docs/README.md"])).toEqual({
+      checks: [],
+      skipped: [
+        { kind: "test", tool: "api" },
+        { kind: "test", tool: "web" },
+        { kind: "lint", tool: "ruff" },
+      ],
+    });
+  });
+
+  it("reads no paths without a scope", () => {
+    const plan = planChecks(MONOREPO, undefined, null);
+    expect(commands(plan)).toEqual([
+      ["api", "uv run pytest", false],
+      ["web", "pnpm test", false],
+      ["ruff", "uv run ruff check .", false],
+      ["tsc", "tsc -b", false],
+    ]);
+    expect(plan.skipped).toEqual([]);
   });
 });
 

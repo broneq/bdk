@@ -69,7 +69,7 @@ Run them before any code of the tasks:
 "${CLAUDE_PLUGIN_ROOT}/bin/bdk" check run <run-dir> <part-id>-red --kind test --scope <test file> --scope <test file>
 ```
 
-Read the output file of each red check. Each test must fail because the behaviour is missing (a missing export, a wrong value), not because the test is broken (a syntax error, a wrong import path, a typo in the fixture). Fix a broken test and run again. A verdict `none` means no `tools.test` is configured: go to step 7 with `Kind: environment` and the line `no tools.test entry; add one with /bdk:setup`.
+Read the output file of each red check. Each test must fail because the behaviour is missing (a missing export, a wrong value), not because the test is broken (a syntax error, a wrong import path, a typo in the fixture). Fix a broken test and run again. A verdict `none` means no `tools.test` item runs on these files (none is configured, or the `paths` of each skip them): go to step 7 with `Kind: environment` and the line `no tools.test entry for these files; add one with /bdk:setup`.
 
 Done when every acceptance scenario has a test seen red for the right reason.
 

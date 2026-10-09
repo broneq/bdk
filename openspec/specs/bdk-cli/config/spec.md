@@ -58,7 +58,7 @@ The configuration SHALL accept exactly these keys; any other key at any level SH
 
 | Key                                                  | Type                                                                                                         | Default      |
 | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------ |
-| `tools.test`, `tools.lint`, `tools.build`            | items by `id`: `command` (string, required), `scoped` (string holding `{files}`, optional), `timeout` (integer seconds, 1 to 86400, optional; `bdk check run` uses 600 when absent) | `[]`         |
+| `tools.test`, `tools.lint`, `tools.build`            | items by `id`: `command` (string, required), `scoped` (string holding `{files}`, optional), `timeout` (integer seconds, 1 to 86400, optional; `bdk check run` uses 600 when absent), `paths` (non-empty list of non-empty globs, optional; with `--scope`, `bdk check run` gives the item only the scope paths they match) | `[]`         |
 | `tools.e2e`                                          | items by `id`: `start` (command), `ready` (URL or command), `driver` (`cli`, `http`, `browser`), `env` (map of variable name to string, optional), `browser` (`playwright` or `chrome-devtools-mcp`, optional; read only for `driver: browser`, where an absent field means `playwright`); all but `env` and `browser` required | `[]`         |
 | `languages`                                          | list of kebab-case names                                                                                     | `[]`         |
 | `rules.disabled`                                     | list of rule names                                                                                           | `[]`         |
@@ -90,6 +90,11 @@ A missing required field, a value of the wrong type or outside its allowed value
 
 - **WHEN** `.bdk/settings.yaml` gives the `tools.test` item `unit` the field `timeout: 0`
 - **THEN** `bdk config check` reports `tools.test.unit.timeout` and that it must be at least 1, and exits 1
+
+#### Scenario: Check paths
+
+- **WHEN** `.bdk/settings.yaml` gives the `tools.test` item `api` the field `paths: ["api/**"]` and the `tools.lint` item `ruff` the field `paths: []`
+- **THEN** `bdk config check` accepts `tools.test.api.paths`, reports `tools.lint.ruff.paths` and that it must hold at least one glob, and exits 1
 
 #### Scenario: Browser tool of an E2E entry
 
