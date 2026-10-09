@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { lstatSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative, sep } from "node:path";
-import type { LoadedTarget } from "./config.ts";
+import { type LoadedTarget, targetDir } from "./config.ts";
 import { parseDocument } from "./document.ts";
 import type { Document } from "./index.ts";
 
@@ -20,11 +20,11 @@ export function discover(root: string, targets: LoadedTarget[]): Discovery {
   const containers = new Set(
     targets
       .filter((t) => t.kind === "skills")
-      .flatMap((t) => t.dirs.map((d) => toPosix(relative(root, join(root, d))))),
+      .flatMap((t) => t.dirs.map((d) => toPosix(relative(root, targetDir(root, d))))),
   );
   for (const target of targets) {
     for (const dir of target.dirs) {
-      const base = join(root, dir);
+      const base = targetDir(root, dir);
       if (target.kind === "agents") {
         for (const entry of sorted(base)) {
           if (entry.isFile() && entry.name.endsWith(".md")) {
