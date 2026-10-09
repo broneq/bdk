@@ -17,7 +17,8 @@ flowchart TB
   S5 --> S6["permission allow rules<br/>.claude/settings.json"]
   S6 --> S7["openspec init, bdk openspec install,<br/>the project schema, or schema: bdk"]
   S7 --> S8["gitignore .bdk/runs/<br/>and settings.local.yaml"]
-  S8 --> S9["bdk config show, npx -y lavish-axi --version,<br/>report with the decision surface"]
+  S8 --> S9["Playwright for a browser item,<br/>when you agreed in the questions"]
+  S9 --> S10["bdk config show, npx -y lavish-axi --version,<br/>report with the decision surface"]
 ```
 
 A re-run keeps every value a layer sets and fills only what is missing; an argument such as "add the e2e entry" limits the run to that change.
@@ -131,8 +132,10 @@ flowchart TB
   W3 --> W4["a work directory per part<br/>main checkout: shared, or alone<br/>in its wave with no worktree yet<br/>else: R/worktrees/NN"]
   W4 --> W5["run the parts in batches<br/>of execution.max-parallel<br/>(next diagram)"]
   W5 --> W6["merge the done parts that ran<br/>in worktrees, in part order<br/>(git merge --no-ff)"]
-  W6 --> WC["wave check<br/>bdk check run wave-N<br/>--at wave --changed base<br/>red: /bdk:resolve-conflict --wave,<br/>lead commits the repair"]
-  WC --> NW{{"a part or the<br/>wave blocked?"}}
+  W6 --> PB{{"a part of<br/>the wave blocked?"}}
+  PB -->|"no"| WC["wave check<br/>bdk check run wave-N<br/>--at wave --changed base<br/>red: /bdk:resolve-conflict --wave,<br/>lead commits the repair"]
+  PB -->|"yes: no wave check"| RES
+  WC --> NW{{"wave check<br/>blocked?"}}
   NW -->|"no, waves left"| W3
   NW -->|"yes, or no wave left"| RES["write R/execute/result.md<br/>Status: done or blocked"]
 ```
@@ -368,10 +371,29 @@ flowchart TB
   G3 --> G4["Skill /bdk:execute<br/>reproduction test red,<br/>fix, green, conform"]
   G4 -->|"done"| G5["Skill /bdk:auto-review"]
   G4 -->|"blocked"| G6
-  G5 --> G6["write R/debug/result.md<br/>next: /bdk:close"]
+  G5 -->|"stops for triage,<br/>no review/result.md"| GR["stop: /bdk:debug &lt;change&gt;<br/>continues once the<br/>findings are decided"]
+  G5 -->|"review/result.md"| G6["write R/debug/result.md<br/>next: /bdk:close"]
 ```
+
+## `/bdk:diagnose-run`
+
+A block you type after a run, not a stage: it reads how a run went and writes a report, and changes nothing else. The transcripts it reads are large, so its step 0 hands the work to one `bdk:analyst` and waits for it.
+
+```mermaid
+flowchart TB
+  D0["/bdk:diagnose-run<br/>main thread, step 0"] --> D1["Agent bdk:analyst, sonnet<br/>foreground, models.analyst"]
+  D1 --> D2{{"which run?<br/>the change, a session id,<br/>run.json current, or<br/>the only run directory"}}
+  D2 -->|"several,<br/>none named"| DS["stop: name them,<br/>write nothing"]
+  D2 -->|"found"| D3["bdk diagnostics report<br/>sessions, stages, agents:<br/>wall time, tokens, cost share,<br/>waste leads, cited"]
+  D3 -->|"counts, or exit 3:<br/>no transcripts"| D4["read the run files<br/>results, verify reports,<br/>state.json, checks/"]
+  D4 --> D5["judge each waste lead<br/>against its transcript lines:<br/>waste, or not waste"]
+  D5 --> D6["write R/diagnostics.md<br/>a citation per claim"]
+  D6 --> D7["reply: wall, cost,<br/>waste findings, path"]
+```
+
+Every number in the report comes from `bdk diagnostics report`; the analyst never counts transcripts itself, and a cost it cannot cite is written as `unknown`. Without transcripts (exit 3) the report is written from the run files alone and says under `## Missing data` where the command looked. A session that names no Change gets `.bdk/runs/diagnostics/<session-id>.md`. Run it again at any time: the report is replaced.
 
 ## Sources
 
-- `plugins/bdk/skills/{setup,propose,design,plan,execute,execute-waves,implement-part,conform-part,resolve-conflict,auto-review,review-round,triage,plan-fixes,close,pr-review,pr-review-round,debug,diagnose-bug}/SKILL.md`
+- `plugins/bdk/skills/{setup,propose,design,plan,execute,execute-waves,implement-part,conform-part,resolve-conflict,auto-review,review-round,triage,plan-fixes,close,pr-review,pr-review-round,debug,diagnose-bug,diagnose-run}/SKILL.md`
 - `plugins/bdk/agents/*.md`

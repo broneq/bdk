@@ -57,7 +57,7 @@ rules:
     - Code tasks are test-first - the failing test is its own step before the implementation step.
     - A skill is built or rewritten with /skill-creator, and its eval case is its own step before the skill text. A CLI helper, hook or workflow is added only for a problem an eval or a measurement showed; the task names that problem.
     - A skill is tried in a separate test project started with `claude --plugin-dir`, never inside this repository.
-    - A Change that changes what a BDK user sees (a skill, agent, hook, `bdk` command, settings key, or the flow between them) has a task group "Docs" before the last one, naming each docs/guide/ or docs/concepts/ page it updates and running `pnpm docs:reference`. A Change with no user-visible change has no Docs group and says why in the proposal's Impact.
+    - A Change that changes what a BDK user sees (a skill, agent, hook, `bdk` command, settings key, or the flow between them) has a task group "Docs" before the last one, naming each docs/guide/ or docs/concepts/ page it updates, each diagram on them it redraws (a step, exit, command, settings key, file or agent added, removed or reordered in a flow redraws every diagram that draws that flow, not only its tables and prose), and running `pnpm docs:reference`. A Change with no user-visible change has no Docs group and says why in the proposal's Impact.
     - The last task group checks the Acceptance signal end to end, then runs every check CI runs (.github/workflows/), `openspec validate <change> --strict` and `openspec validate --specs --strict`.
 
 operations:

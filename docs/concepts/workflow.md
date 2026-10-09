@@ -64,19 +64,23 @@ Points where the user decides, and the setting that skips them:
 
 ```mermaid
 flowchart TB
-  A["/bdk:run<br/>[intent | #issue ...]"] --> Q{{"arguments?<br/>run.json?"}}
-  Q -->|"none, run.json<br/>exists"| NEXT
-  Q -->|"given, a queue<br/>is unfinished"| STOP1["stop: show the queue"]
-  Q -->|"given"| BUILD["build the queue<br/>gh issue view, blocked-by<br/>write run.json"]
+  A["/bdk:run<br/>[intent | #issue ...]"] --> ARGS{{"arguments?"}}
+  ARGS -->|"none"| RJ{{"run.json?"}}
+  RJ -->|"no"| ASK["stop: ask what to run,<br/>write nothing"]
+  RJ -->|"yes"| NEXT
+  ARGS -->|"given"| UNF{{"a queue<br/>unfinished?"}}
+  UNF -->|"yes"| STOP1["stop: show the queue"]
+  UNF -->|"no"| BUILD["build the queue<br/>gh issue view, blocked-by<br/>write run.json"]
   BUILD --> NEXT
   NEXT{{"next Change<br/>not done?"}}
   NEXT -->|"none left"| FINAL["final report:<br/>PRs and decisions"]
-  NEXT -->|"its branch exists"| SW["git switch"]
+  NEXT -->|"its branch<br/>exists"| CLEAN
   NEXT -->|"no branch"| BLK{{"blockers in<br/>the queue merged?"}}
   BLK -->|"no"| WAIT["the Change waits"] --> NEXT
-  BLK -->|"yes"| NEW["new branch<br/>from origin/base"]
+  BLK -->|"yes"| CLEAN{{"on its branch,<br/>or a clean tree?"}}
+  CLEAN -->|"no"| STOP3["stop: name the<br/>uncommitted files"]
+  CLEAN -->|"yes"| SW["git switch, or a new<br/>branch from origin/base"]
   SW --> ST
-  NEW --> ST
   ST["bdk run status --json<br/>stage of this Change"]
   ST -->|"done"| NEXT
   ST -->|"a stage"| CALL["Skill /bdk:&lt;stage&gt;"]
@@ -86,6 +90,7 @@ flowchart TB
 ```
 
 - A Change is done when `R/close/pr.md` exists. A blocker counts as merged only when `gh pr view` of its pull request says `MERGED`; a blocker outside the queue never makes a Change wait.
+- `/bdk:run` never carries one Change's files onto another branch: before it switches, uncommitted files stop the run, naming them and the branch they are on.
 - The stage stays `design` while `R/design/gate.md` is not approved, whatever `bdk run status` says.
 - Before `execute`, `/bdk:run` commits the uncommitted Change files with `/bdk:commit`: the execute lead builds only on a clean tree.
 - A stage stops the run when it waits for the user: a gate or a question, a blocked part, a spent budget, a failing `/bdk:spec-conformance` report, a failed push.

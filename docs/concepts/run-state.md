@@ -121,19 +121,31 @@ sequenceDiagram
   participant F as conformer
   participant R as files in R
   L->>R: read C/plan/parts, state.json
-  L->>R: write state.json (attempts)
-  L->>I: part NN
-  I->>R: checks/NN-red.json, checks/NN.json
-  I->>R: execute/part-NN.md
-  L->>F: part NN
-  F->>R: read execute/part-NN.md
-  F->>R: checks/conform-NN.json
-  F->>R: execute/conform-NN.md
-  L->>R: read part-NN.md, conform-NN.md
-  L->>R: write state.json (done or blocked)
-  opt merge conflict
-    L->>I: /bdk:resolve-conflict NN
-    I->>R: execute/merge-NN.md
+  loop each wave N, until one is blocked
+    L->>R: write state.json<br/>(wave N base)
+    L->>R: write state.json (attempts)
+    L->>I: part NN
+    I->>R: checks/NN-red.json, checks/NN.json
+    I->>R: execute/part-NN.md
+    L->>F: part NN
+    F->>R: read execute/part-NN.md
+    F->>R: checks/conform-NN.json
+    F->>R: execute/conform-NN.md
+    L->>R: read part-NN.md, conform-NN.md
+    L->>R: write state.json<br/>(part done or blocked)
+    opt merge conflict
+      L->>I: /bdk:resolve-conflict NN
+      I->>R: execute/merge-NN.md
+    end
+    opt no part of the wave blocked
+      L->>R: bdk check run wave-N:<br/>checks/wave-N.json
+      opt red wave check
+        L->>I: /bdk:resolve-conflict<br/>--wave N
+        I->>R: execute/wave-N.md
+        L->>L: commit the repair
+      end
+      L->>R: write state.json<br/>(wave done or blocked)
+    end
   end
   L->>R: write execute/result.md
   Note over L,R: bdk run status reads state.json
@@ -184,7 +196,7 @@ flowchart TB
   R1{{"proposal.md?"}}
   R1 -->|"yes"| R2{{"design.md and last<br/>design/verify-N.md PASS?"}}
   R2 -->|"yes"| R3{{"plan parts and last<br/>plan/verify-N.md PASS?"}}
-  R3 -->|"yes"| R4{{"every part done<br/>in state.json?"}}
+  R3 -->|"yes"| R4{{"every part and<br/>every wave done<br/>in state.json?"}}
   R4 -->|"yes"| R5{{"review round with report,<br/>no undecided blocker,<br/>no fix decision<br/>in the last round?"}}
   R5 -->|"yes"| R6{{"/bdk:spec-conformance<br/>PASS, archived,<br/>close/pr.md?"}}
   R6 -->|"yes"| S7["done"]
