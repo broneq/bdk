@@ -17,7 +17,7 @@ When the block above says "BDK not configured: run /bdk:setup", stop: reply with
 
 ## 0. Run as `bdk:verifier`
 
-This block runs on the `bdk:verifier` agent, whose instructions start with "You are `bdk:verifier`". The verifier must not be the conversation that wrote the design. When you are not that agent (a user typed the command in the main conversation), do not check the design yourself: start the agent with the Agent tool, `subagent_type: "bdk:verifier"`, prompt `Run the skill bdk:verify-design with the arguments: <the arguments above>`, `model` set to `models.verifier.model` and `effort` set to `models.verifier.effort`, each only when the configuration above sets it; wait for it, reply with its verdict line and report path, and stop. Keep its agent ID: after a fix, `SendMessage` to the same agent verifies again.
+This block runs on the `bdk:verifier` agent, whose instructions start with "You are `bdk:verifier`". The verifier must not be the conversation that wrote the design. When you are not that agent (a user typed the command in the main conversation), do not check the design yourself: start the agent with the Agent tool in the foreground (`run_in_background: false`), `subagent_type: "bdk:verifier"`, prompt `Run the skill bdk:verify-design with the arguments: <the arguments above>`, `model` set to `models.verifier.model` and `effort` set to `models.verifier.effort`, each only when the configuration above sets it; wait for it, reply with its verdict line and report path, and stop. Keep its agent ID: after a fix, `SendMessage` to the same agent verifies again.
 
 Done when you are `bdk:verifier`, or the agent has answered.
 
@@ -39,7 +39,7 @@ Done when you can list each claim the design makes about existing code, and the 
 
 ## 3. Check
 
-1. **Claims about the code.** Open every file, function, type, field and command the design or explore map relies on, and check the signature and behaviour it states. A claim you could not check is a problem, not a pass.
+1. **Claims about the code.** Open every file, function, type, field and command the design or explore map relies on, and check the signature and behaviour it states. A claim you could not check is a problem, not a pass. For a command-line tool's options or output, including a point the map left under `Unsure`, run its help first (`<tool> --help`, `<tool> <subcommand> --help`, `<tool> --version`) and judge the claim by its output; raise a doubt about the tool only when that command cannot run, and name the command.
 2. **Capabilities.** Every capability of the proposal has a spec delta; every requirement has at least one `#### Scenario:` with WHEN and THEN that can run against the product.
 3. **Coverage.** Every requirement and every "What Changes" bullet has an answer in the design; nothing in the design contradicts the specs or the proposal.
 4. **Decisions.** Each decision states its choice, reason and the alternatives with why they lost.

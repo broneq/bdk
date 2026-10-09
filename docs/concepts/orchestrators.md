@@ -15,7 +15,7 @@ flowchart TB
   S3 --> S4["write .bdk/settings.yaml"]
   S4 --> S5["bdk config check until exit 0"]
   S5 --> S6["permission allow rules<br/>.claude/settings.json"]
-  S6 --> S7["openspec init, bdk openspec install,<br/>schema: bdk"]
+  S6 --> S7["openspec init, bdk openspec install,<br/>the project schema, or schema: bdk"]
   S7 --> S8["gitignore .bdk/runs/ and settings.local.yaml"]
   S8 --> S9["bdk config show, npx -y lavish-axi --version,<br/>report with the decision surface"]
 ```
@@ -29,7 +29,7 @@ flowchart TB
   P1{{"configured?"}} --> P2["input: gh issue view, or the intent text"]
   P2 --> P3["openspec list --specs<br/>read the touched main specs"]
   P3 --> P4(["open questions<br/>policy.questions"])
-  P4 --> P5["openspec new change &lt;name&gt; --schema bdk"]
+  P4 --> P5["name by the naming rule of openspec/config.yaml<br/>openspec new change &lt;name&gt; --schema bdk"]
   P5 --> P6["openspec instructions proposal<br/>write C/proposal.md"]
   P6 --> P7["openspec status, report<br/>next: /bdk:design"]
 ```
@@ -53,6 +53,14 @@ flowchart TB
   GATE -->|"request changes"| REV["/bdk:design-draft with<br/>the request"] --> VER
   GATE -->|"auto, or approve"| GF["R/design/gate.md<br/>Gate: approved"]
 ```
+
+Every block runs in the foreground: `/bdk:design` waits for each one before the next step.
+
+Questions come in rounds, at most three. The designer writes the round's Lavish page, opens it and hands back; `/bdk:design` waits on the page (`lavish-axi poll`) and passes your answers to the same designer. A note on the page that asks for something new opens a decision for the next round; an answered decision is never asked again. When you stop the wait (for a summary, say), the answers you give on the page stay queued, and `/bdk:design <change>` picks them up. Without Lavish the questions come through `AskUserQuestion`, or in the reply.
+
+An answer that adds or drops a capability changes `proposal.md` too: the designer owns that edit and records it in `design.md` as `Scope changed by the user:`. An answer against the issue's acceptance signal or a project rule (`CLAUDE.md`, `.claude/rules/`, the rules of `openspec/config.yaml`) is asked once more, quoting the rule; when you keep it, `design.md` records a `Deviation:` line, which the gate and the report name so you update the issue. BDK does not edit the issue.
+
+The manual gate ends on exactly one question: approve, or say what to change.
 
 The verifier budget is `policy.budgets.verifier` (default 3) passes per run. On a new start, `/bdk:design` skips every step whose file exists:
 
