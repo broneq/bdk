@@ -12,8 +12,8 @@
 | **Agent** | A subagent a block runs on, such as `bdk:verifier`, with its own model and tools ([agents](./agents.md)). |
 | **Lead** | The `bdk:lead` agent that runs a long stage (execute, a review round) in the background and is the only one that commits and merges. |
 | **Author and checker** | A block that writes (a design, code) and a separate block that checks it on a fresh context; the author never checks its own work ([what each stage checks](./stages.md)). |
-| **Plan part** | A slice of the work one agent builds alone: its files, the scenarios it makes true, its tasks (`plan/parts/NN.md`). |
-| **Wave** | Parts with no dependency between them, built in parallel; the next wave starts when one is merged. |
+| **Plan part** | A slice of the work one agent builds alone: its files, the scenarios it makes true, its tasks (`plan/parts/NN.md`); [how a plan is cut](./stages.md#how-a-plan-is-cut). |
+| **Wave** | Parts with no dependency between them, built in parallel; the next wave starts when one is merged. Waves follow from each part's `depends-on`. |
 | **Gate** | A point where a stage waits for your approval: the design gate and the fix gate of `/bdk:debug` ([gates and budgets](./gates-and-budgets.md)). |
 | **Budget** | The most passes or retries a loop may take, so a run always ends. |
 | **Review round** | One pass of reviewers, checks, the E2E tester and the judge over the Change, or over the fixes of the round before. |

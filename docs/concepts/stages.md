@@ -36,6 +36,36 @@ A design fails verification for: a false claim about the code, a requirement wit
 
 The plan cuts the work so that one agent builds a part without coming back, and so that independent parts run in parallel. Each part carries every fact it needs, because its implementer reads only the part, the specs and the design. A task never guesses a signature: every path and function it names comes from a file the planner read. Parts are held to `plan.part.max-tasks`, `plan.part.max-files` and `plan.part.max-bytes`.
 
+### How a plan is cut
+
+A plan is a directory of part files, `openspec/changes/<change>/plan/parts/01.md`, `02.md`, ... Each part is a slice of the work that one implementer builds alone, and its frontmatter says how it fits with the others:
+
+| Key | What it means |
+|---|---|
+| `id` | The file stem, quoted: `"02"` for `02.md`. |
+| `depends-on` | The parts whose output this part uses, such as `["01"]`; `[]` when none. The part starts only after they are merged. |
+| `isolation` | `worktree`: the part is built in its own git worktree, in parallel with the other parts of its wave. `shared`: the part changes state outside its files that a parallel part could change too (a lockfile, generated code, a migration sequence), so it is built in the main checkout, alone in its wave. |
+| `files` | Every file the part creates or changes, tests included, as exact repository-relative paths. |
+
+**Waves** follow from `depends-on` alone. A part with no dependency is in wave 1; any other part is one wave after its latest dependency. For example, with `02` and `03` depending on `01`, and `04` on `02`:
+
+| Wave | Parts | Why |
+|---|---|---|
+| 1 | `01` | no dependency |
+| 2 | `02`, `03` | both depend on `01` only |
+| 3 | `04` | depends on `02`, which is in wave 2 |
+
+The parts of a wave run in parallel and the next wave starts when they are merged, so the number of waves, not the number of parts, decides how long the build takes. The planner aims at the fewest waves the dependencies allow: `depends-on` lists only what a part really uses, and two parts of one wave never list the same file, so they never conflict when merged.
+
+**When you review a plan**, read each part file for:
+
+- `## Goal`: what works after the part, in one or two sentences.
+- `## Acceptance scenarios`: the spec scenarios the part makes true. Each scenario of the deltas belongs to exactly one part.
+- `## Tasks`: numbered contracts, each with the `File` it changes, the `Interface` it adds or changes, and what verifies it (`Verified by`). A task names real paths and signatures; it holds no code.
+- The frontmatter: does `depends-on` name only parts whose output this one needs, and is `shared` kept for parts that really change state outside their files? Every extra edge and every shared part adds a wave.
+
+`bdk plan check <dir>` prints the waves, a row per part with its size against the limits, and the problems it finds. What each problem means and what to do about it: [the problems of `bdk plan check`](/reference/bdk/cli#plan-check-problems).
+
 ## Execute
 
 | Block | Agent | Works from | Produces or checks | Leaves alone |

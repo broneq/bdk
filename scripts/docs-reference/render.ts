@@ -312,6 +312,27 @@ function sectionExample(section: SettingDoc, all: readonly SettingDoc[]): string
   return `\`\`\`yaml\n${document.toString()}\`\`\``;
 }
 
+/** The problems of `bdk plan check`, each with what it means and what to do. */
+function planProblems(model: Model): string[] {
+  return [
+    "#### Problems {#plan-check-problems}",
+    "Each line under `problems:` starts with the kind of the problem (`check` in `--json`), then the part ids it concerns and a message. The kinds, in the order the command lists them:",
+    [
+      "| Problem | What it means | What to do |",
+      "|---|---|---|",
+      ...model.planProblems.map(
+        (problem) =>
+          `| ${code(problem.check)} | ${cellText(problem.meaning)} | ${cellText(problem.fix)} |`,
+      ),
+    ].join("\n"),
+  ];
+}
+
+/** Sections a command entry of the CLI page carries below its help, by command path. */
+const COMMAND_SECTIONS: Readonly<Record<string, (model: Model) => string[]>> = {
+  "plan check": planProblems,
+};
+
 function splitPages(plugin: PluginDoc, model: Model): [string, string][] {
   const dir = `plugins/${plugin.name}`;
   return [
@@ -357,6 +378,7 @@ function splitPages(plugin: PluginDoc, model: Model): [string, string][] {
               return [
                 `### ${code(`bdk ${path}`)} {#${kebab(path)}}`,
                 `\`\`\`text\n${commandHelp(path, command)}\`\`\``,
+                ...(COMMAND_SECTIONS[path]?.(model) ?? []),
               ].join("\n\n");
             }),
           ]),
