@@ -551,4 +551,123 @@ describe("offline gh stand-in", () => {
     expect(status).toBe(1);
     expect(stderr).toContain("HTTP 404");
   });
+
+  const THREADS_QUERY =
+    "query($owner:String!,$repo:String!,$pr:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$pr){reviews(last:100){nodes{id body state url author{login} commit{oid}}} reviewThreads(first:100){nodes{id isResolved isOutdated path line originalLine comments(first:1){nodes{author{login} body url}}}}}}}";
+  const RESOLVE = "mutation($t:ID!){resolveReviewThread(input:{threadId:$t}){thread{isResolved}}}";
+
+  function threads(dir: string) {
+    const { status, stdout, stderr } = gh(
+      dir,
+      "api",
+      "graphql",
+      "-f",
+      `query=${THREADS_QUERY}`,
+      "-F",
+      "owner=bdk-eval",
+      "-F",
+      "repo=repo",
+      "-F",
+      "pr=7",
+    );
+    expect(stderr).toBe("");
+    expect(status).toBe(0);
+    return (JSON.parse(stdout) as { data: { repository: { pullRequest: PullRequestNode } } }).data
+      .repository.pullRequest;
+  }
+
+  interface PullRequestNode {
+    reviews: { nodes: Record<string, unknown>[] };
+    reviewThreads: {
+      nodes: {
+        id: string;
+        isResolved: boolean;
+        path: string;
+        line: number;
+        comments: { nodes: { body: string }[] };
+      }[];
+    };
+  }
+
+  const REVIEWED = {
+    commit_id: PR.headRefOid,
+    event: "REQUEST_CHANGES",
+    body: "## BDK review",
+    comments: [
+      { path: "src/parse.js", line: 13, side: "RIGHT", body: "**[blocker]** parse" },
+      { path: "src/report.js", line: 12, side: "RIGHT", body: "**[blocker]** report" },
+    ],
+  };
+
+  it("answers the reviews and review threads of recorded reviews", () => {
+    const dir = prWorkspace();
+    postReview(dir, REVIEWED);
+    const pr = threads(dir);
+    expect(pr.reviews.nodes).toEqual([
+      {
+        id: "PRR_7_1",
+        body: "## BDK review",
+        state: "CHANGES_REQUESTED",
+        url: "https://github.com/bdk-eval/repo/pull/7#pullrequestreview-1",
+        author: { login: "bdk-eval-user" },
+        commit: { oid: PR.headRefOid },
+      },
+    ]);
+    expect(pr.reviewThreads.nodes).toEqual([
+      {
+        id: "PRRT_7_1_1",
+        isResolved: false,
+        isOutdated: false,
+        path: "src/parse.js",
+        line: 13,
+        originalLine: 13,
+        comments: {
+          nodes: [
+            {
+              author: { login: "bdk-eval-user" },
+              body: "**[blocker]** parse",
+              url: "https://github.com/bdk-eval/repo/pull/7#discussion_r7_1_1",
+            },
+          ],
+        },
+      },
+      expect.objectContaining({ id: "PRRT_7_1_2", path: "src/report.js", line: 12 }),
+    ]);
+  });
+
+  it("resolves a thread and shows it resolved", () => {
+    const dir = prWorkspace();
+    postReview(dir, REVIEWED);
+    const { status, stdout } = gh(
+      dir,
+      "api",
+      "graphql",
+      "-f",
+      `query=${RESOLVE}`,
+      "-F",
+      "t=PRRT_7_1_1",
+    );
+    expect(status).toBe(0);
+    expect(JSON.parse(stdout)).toEqual({
+      data: { resolveReviewThread: { thread: { isResolved: true } } },
+    });
+    const resolved = join(dir, ".git", "bdk-eval", "resolved.json");
+    expect(JSON.parse(readFileSync(resolved, "utf8"))).toEqual(["PRRT_7_1_1"]);
+    expect(threads(dir).reviewThreads.nodes.map((thread) => thread.isResolved)).toEqual([
+      true,
+      false,
+    ]);
+  });
+
+  it("refuses an unknown thread and any other query", () => {
+    const dir = prWorkspace();
+    postReview(dir, REVIEWED);
+    const unknown = gh(dir, "api", "graphql", "-f", `query=${RESOLVE}`, "-F", "t=PRRT_7_9_1");
+    expect(unknown.status).toBe(1);
+    expect(unknown.stderr).toContain("PRRT_7_9_1");
+    expect(existsSync(join(dir, ".git", "bdk-eval", "resolved.json"))).toBe(false);
+    const other = gh(dir, "api", "graphql", "-f", "query={ viewer { login } }");
+    expect(other.status).toBe(1);
+    expect(other.stderr).toContain("offline gh stand-in");
+  });
 });

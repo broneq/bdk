@@ -46,6 +46,31 @@ Reviewed `{head commit, 7 characters}` against `{base}`{, with the OpenSpec Chan
 - On the user's own pull request the event is `COMMENT`; the verdict line still states the verdict.
 - A blocking finding stays under "Blocking" whatever verdict the user chose, so the record shows what was found.
 
+## Verify summary
+
+The body of a verify review (`--verify`). It has no inline comments: the threads of the previous review already sit on their lines.
+
+```markdown
+## BDK review: verification
+
+Checked the previous review ({previous review URL}, `{previous head commit, 7 characters}`) at `{head commit, 7 characters}`: {fixed count} fixed, {left count} left.
+
+**Verdict: {Request changes | Approve}**{override note}
+
+**Left**
+- `{path}:{line}` - **[{level now}]** {summary}. {judge's reason}
+
+**Fixed**
+- `{path}:{line}` - {summary}. {judge's reason}{ (thread resolved) when it has a thread}
+
+The commits since `{previous head commit, 7 characters}` were checked only against these findings; a full review of the pull request is `/bdk:pr-review {number}`.
+
+<!-- bdk-pr-review v3 kind=verify-summary verdict={approve | request-changes} head={full head commit} -->
+```
+
+- `{override note}`: as in "Summary".
+- A left `blocker` stays under "Left" whatever verdict the user chose.
+
 ## Review payload
 
 Written to `<round dir>/review.json` and posted with `gh api repos/{owner}/{repo}/pulls/{number}/reviews -X POST --input <round dir>/review.json`:
@@ -60,5 +85,7 @@ Written to `<round dir>/review.json` and posted with `gh api repos/{owner}/{repo
   ]
 }
 ```
+
+A verify review has `"comments": []`.
 
 `event`: `REQUEST_CHANGES` for request changes, `APPROVE` for approve, `COMMENT` for a comment or the user's own pull request. `line` is a line of the head version inside a hunk of the diff.

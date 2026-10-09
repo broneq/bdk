@@ -280,7 +280,7 @@ sequenceDiagram
   M->>G: gh pr view
   M->>M: write pr-7/pr.md (brief)
   M-)L: Agent: /bdk:pr-review-round
-  L->>G: git fetch pull/7/head
+  L->>G: git ls-remote, git fetch pull/7/head
   L->>L: detached worktree,<br/>find the Change, bdk git groups
   L->>W: reviewers, integration, judge
   W-->>L: findings.jsonl, report.md
@@ -293,6 +293,34 @@ sequenceDiagram
 ```
 
 The workers get `--workdir`, `--change` (or `none`) and `--intent pr.md`. The question is skipped under `policy.questions: decide-and-record` or when the request says to post without asking; on your own pull request the review is posted as `COMMENT`.
+
+Several pull requests (`/bdk:pr-review 7 8`) start one lead each in one message, at most `execution.max-parallel`; the reviews are shown when every lead has returned, and one question covers all of them. A lead checks the head with `git ls-remote` and fetches without `FETCH_HEAD`, so leads in one repository do not read each other's head.
+
+`--verify` re-checks your previous review instead of reviewing again:
+
+```mermaid
+%%{init: {"sequence": {"actorMargin": 12, "width": 96, "noteMargin": 6, "wrap": true}}}%%
+sequenceDiagram
+  actor U as user
+  participant M as /bdk:pr-review
+  participant L as bdk:lead
+  participant J as bdk:judge
+  participant G as GitHub
+  U->>M: /bdk:pr-review --verify 7
+  M->>G: gh api graphql (reviews, threads)
+  M->>M: write pr-7/previous.json<br/>(your open blocker and should-fix findings)
+  M-)L: Agent: /bdk:pr-review-round --verify
+  L->>L: worktree at the new head,<br/>bdk findings add each previous finding
+  L->>J: judge the round
+  J-->>L: levels, report.md
+  L--)M: Status line
+  M->>U: fixed (not-a-problem) and left findings
+  U-->>M: post, other verdict,<br/>comment only, or skip
+  M->>G: gh api POST review.json (no inline comments)
+  M->>G: resolveReviewThread for each fixed finding
+```
+
+A finding the judge now levels `not-a-problem` is fixed; any other level is left, and a left `blocker` requests changes. Only threads you opened are resolved, and only after the review is posted. The commits since the previous review are checked only against its findings; `/bdk:pr-review 7` reviews the whole pull request again.
 
 ## `/bdk:debug`
 

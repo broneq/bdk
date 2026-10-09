@@ -4,8 +4,9 @@
 // request. This script answers `gh issue view <ref>` from .git/bdk-eval/issues/<n>.json, written
 // by the case scaffold, `gh pr create` / `gh pr view <head|number|url>` from
 // .git/bdk-eval/prs/<n>.json, `gh repo view` and `gh api user` with fixed answers, and records
-// `gh api repos/<o>/<r>/pulls/<n>/reviews -X POST --input <file>` in .git/bdk-eval/reviews/, and
-// never reaches the network. A run cannot execute files outside its workspace, so the
+// `gh api repos/<o>/<r>/pulls/<n>/reviews -X POST --input <file>` in .git/bdk-eval/reviews/,
+// answers `gh api graphql` for the reviews and review threads of those recorded reviews and
+// records `resolveReviewThread` in .git/bdk-eval/resolved.json, and never reaches the network. A run cannot execute files outside its workspace, so the
 // scaffold copies this script to .git/bdk-eval/bin/gh and the eval command puts that relative
 // directory first on PATH (evals/README.md).
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -187,17 +188,135 @@ const REVIEW_STATES = {
   COMMENT: "COMMENTED",
 };
 
+const LOGIN = "bdk-eval-user";
+
+/** The recorded reviews of pull request `number`, in order: `{ k, review }`. */
+function recordedReviews(number) {
+  const dir = join(store, "reviews");
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir)
+    .map((name) => new RegExp(`^${number}-(\\d+)\\.json$`).exec(name))
+    .filter((match) => match !== null)
+    .map((match) => ({
+      k: Number(match[1]),
+      review: JSON.parse(readFileSync(join(dir, match[0]), "utf8")),
+    }))
+    .sort((a, b) => a.k - b.k);
+}
+
+const RESOLVED = join(store, "resolved.json");
+
+function resolvedThreads() {
+  return existsSync(RESOLVED) ? JSON.parse(readFileSync(RESOLVED, "utf8")) : [];
+}
+
+/** The review threads of pull request `number`: one per inline comment of each recorded review. */
+function reviewThreads(number) {
+  const resolved = resolvedThreads();
+  const url = `https://github.com/bdk-eval/repo/pull/${number}`;
+  return recordedReviews(number).flatMap(({ k, review }) =>
+    (review.comments ?? []).map((comment, index) => {
+      const id = `PRRT_${number}_${k}_${index + 1}`;
+      return {
+        id,
+        isResolved: resolved.includes(id),
+        isOutdated: false,
+        path: comment.path,
+        line: comment.line,
+        originalLine: comment.line,
+        comments: {
+          nodes: [
+            {
+              author: { login: LOGIN },
+              body: comment.body,
+              url: `${url}#discussion_r${number}_${k}_${index + 1}`,
+            },
+          ],
+        },
+      };
+    }),
+  );
+}
+
+/**
+ * `gh api graphql`: the reviews and review threads of a pull request (a query naming
+ * reviewThreads, variable `pr` or `number`) and the resolveReviewThread mutation (variable `t`
+ * or `threadId`), from the recorded reviews.
+ */
+function graphql(rest) {
+  const variables = {};
+  for (let i = 0; i < rest.length; i += 1) {
+    const flag = rest[i];
+    if (!["-f", "-F", "--raw-field", "--field"].includes(flag)) {
+      fail(`offline gh stand-in: unsupported argument ${flag} of gh api graphql`);
+    }
+    const field = rest[(i += 1)] ?? "";
+    const eq = field.indexOf("=");
+    if (eq < 1) fail(`offline gh stand-in: a field needs <name>=<value>, not "${field}"`);
+    variables[field.slice(0, eq)] = field.slice(eq + 1);
+  }
+  const query = variables.query ?? "";
+  if (/\bresolveReviewThread\b/.test(query)) {
+    const thread = variables.t ?? variables.threadId;
+    const number = /^PRRT_(\d+)_/.exec(thread ?? "")?.[1];
+    if (number === undefined || !reviewThreads(number).some((node) => node.id === thread)) {
+      fail(`GraphQL: Could not resolve to a node with the global id of '${thread ?? ""}'`);
+    }
+    const resolved = resolvedThreads();
+    if (!resolved.includes(thread)) resolved.push(thread);
+    writeFileSync(RESOLVED, `${JSON.stringify(resolved, null, 2)}\n`);
+    process.stdout.write(
+      `${JSON.stringify({ data: { resolveReviewThread: { thread: { isResolved: true } } } })}\n`,
+    );
+    return;
+  }
+  if (!/\breviewThreads\b/.test(query)) {
+    fail(
+      "offline gh stand-in: only a reviewThreads query and the resolveReviewThread mutation are available from gh api graphql in eval runs",
+    );
+  }
+  const number = Number(variables.pr ?? variables.number);
+  const pr = pullRequests().find((candidate) => candidate.number === number);
+  if (pr === undefined) {
+    fail(`GraphQL: Could not resolve to a PullRequest with the number of ${number}.`);
+  }
+  const reviews = recordedReviews(number).map(({ k, review }) => ({
+    id: `PRR_${number}_${k}`,
+    body: review.body,
+    state: REVIEW_STATES[review.event],
+    url: `${pr.url}#pullrequestreview-${k}`,
+    author: { login: LOGIN },
+    commit: { oid: review.commit_id ?? pr.headRefOid ?? null },
+  }));
+  process.stdout.write(
+    `${JSON.stringify({
+      data: {
+        repository: {
+          pullRequest: {
+            reviews: { nodes: reviews },
+            reviewThreads: { nodes: reviewThreads(number) },
+          },
+        },
+      },
+    })}\n`,
+  );
+}
+
 function api(rest) {
+  if (rest[0] === "graphql") {
+    graphql(rest.slice(1));
+    return;
+  }
   const { flags, positional } = parse(rest, ["--input", "--method"], { "-X": "--method" });
   const endpoint = positional[0] ?? "";
   if (endpoint === "user" && flags["--method"] === undefined) {
-    process.stdout.write(`${JSON.stringify({ login: "bdk-eval-user" })}\n`);
+    process.stdout.write(`${JSON.stringify({ login: LOGIN })}\n`);
     return;
   }
   const review = /^\/?repos\/[^/]+\/[^/]+\/pulls\/(\d+)\/reviews$/.exec(endpoint);
   if (review === null || flags["--method"]?.toUpperCase() !== "POST" || !flags["--input"]) {
     fail(
-      `offline gh stand-in: only "gh api user" and "gh api repos/<owner>/<repo>/pulls/<n>/reviews -X POST --input <file>" are available in eval runs, not "gh api ${rest.join(" ")}"`,
+      `offline gh stand-in: only "gh api user", "gh api graphql" and "gh api repos/<owner>/<repo>/pulls/<n>/reviews -X POST --input <file>" are available in eval runs, not "gh api ${rest.join(" ")}"`,
     );
   }
   const number = Number(review[1]);

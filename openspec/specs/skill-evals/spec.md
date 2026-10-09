@@ -78,6 +78,7 @@ It SHALL also answer pull requests from the directory `.git/bdk-eval/prs/`:
 - `gh repo view [--json <fields>]` SHALL print the repository `bdk-eval/repo` (`nameWithOwner`, `url` `https://github.com/bdk-eval/repo`, `defaultBranchRef` `{"name": "main"}`).
 - `gh api user` SHALL print `{"login": "bdk-eval-user"}`.
 - `gh api repos/<owner>/<repo>/pulls/<n>/reviews -X POST --input <file>` (`--method POST` too) SHALL, for an existing pull request `<n>`, copy the JSON of `<file>` to the next file `.git/bdk-eval/reviews/<n>-<k>.json` (`k` from 1) and print `{"id": <k>, "html_url": "https://github.com/bdk-eval/repo/pull/<n>#pullrequestreview-<k>", "state": <state of the event>}`. Input that is not JSON, or has no `event` or no `body`, SHALL exit 1 with a message holding `HTTP 422`, as gh does, and a pull request without a file SHALL exit 1 with a message holding `HTTP 404`.
+- `gh api graphql -f query=<query> [-f|-F <name>=<value>]...` SHALL, for a query naming `reviewThreads`, print `{"data":{"repository":{"pullRequest":{...}}}}` for the pull request of the variable `pr` (or `number`), holding `reviews.nodes` (one per recorded review `<n>-<k>.json`: `id`, `body`, `state`, `url`, `author.login` `bdk-eval-user`, `commit.oid`) and `reviewThreads.nodes` (one per inline comment of each recorded review, in order: `id` `PRRT_<n>_<k>_<i>`, `isResolved`, `isOutdated` false, `path`, `line`, `originalLine`, and `comments.nodes` with that comment's `body`, `url` and `author.login`). For a mutation naming `resolveReviewThread` it SHALL add the thread of the variable `t` (or `threadId`) to the list `.git/bdk-eval/resolved.json` and print `{"data":{"resolveReviewThread":{"thread":{"isResolved":true}}}}`; an unknown thread SHALL exit 1. Any other query SHALL exit 1 naming the stand-in.
 
 Every other command SHALL exit 1 naming the stand-in, and it SHALL never reach the network. A case that uses the stand-in SHALL, from its scaffold, write its issue files and copy the stand-in to `.git/bdk-eval/bin/gh` of the workspace, because a run cannot execute a file outside its workspace; `plugins/bdk/evals/README.md` SHALL show the run command that puts the relative directory `.git/bdk-eval/bin` first on `PATH`.
 
@@ -115,6 +116,16 @@ Every other command SHALL exit 1 naming the stand-in, and it SHALL never reach t
 
 - **WHEN** `gh api repos/bdk-eval/repo/pulls/7/reviews -X POST --input review.json` runs with a `review.json` holding `event` `REQUEST_CHANGES` and a `body`
 - **THEN** `.git/bdk-eval/reviews/7-1.json` holds the JSON of `review.json`, stdout names the review id 1 and the state `CHANGES_REQUESTED`, and the exit code is 0
+
+#### Scenario: Review threads of recorded reviews
+
+- **WHEN** review `7-1.json` with two inline comments was recorded and `gh api graphql -f query=<a reviewThreads query> -F owner=bdk-eval -F repo=repo -F pr=7` runs the stand-in
+- **THEN** stdout holds one review node with the review's body and two unresolved thread nodes `PRRT_7_1_1` and `PRRT_7_1_2` with the comments' paths, lines and bodies
+
+#### Scenario: Thread resolved
+
+- **WHEN** `gh api graphql -f query=<a resolveReviewThread mutation> -F t=PRRT_7_1_1` runs after that
+- **THEN** `.git/bdk-eval/resolved.json` lists `PRRT_7_1_1`, and the next reviewThreads query shows that thread with `isResolved` true and the other unresolved
 
 ### Requirement: No paid evals in CI, free checks of the suite
 
