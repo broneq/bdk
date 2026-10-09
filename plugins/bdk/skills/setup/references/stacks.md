@@ -53,6 +53,17 @@ A workspace with several packages lists every language it uses once.
 
 `<pm>` is `pnpm`, `yarn`, `bunx` or `npx`, after the lockfile. `tsc`, `mypy` on a package, `go`, `cargo`, `mvn`, `gradle` and `dotnet` take no file list: no `scoped`.
 
+## Paths in a repository of several packages
+
+`paths` (globs, `*` stays in one directory, `**` spans directories) tells `bdk check run --scope` which changed files an item owns. Write it on an item only when its command covers a part of the repository. Leave it out when the item covers the whole repository: a single-package repository, or one root command that runs every package (`pnpm -r test`). A root config change then still reaches the item.
+
+| Layout | Test and build item | Lint item |
+|---|---|---|
+| Package in its own directory (`api/`, `web/`, `packages/ui/`) | `<dir>/**` | `<dir>/**/*.<ext>` for each extension its tool reads; `<dir>/**` for a tool that reads every file |
+| Packages share the root (a Python app and a TypeScript app side by side) | `**/*.<ext>` of the item's language | `**/*.<ext>` |
+
+Extensions: `pytest`, `ruff`, `mypy`: `py`; `vitest`, `jest`, `eslint`, `biome`, `tsc`: `ts`, `tsx`, `js`, `jsx` (only those the package uses); `go`: `go`; `cargo`: `rs`. A package that is a directory is the directory of its manifest (`api/pyproject.toml` gives `api`). Write the globs as a YAML list (`paths: ["api/**"]`). The `command` and `scoped` run from the project root, so give a package's commands its directory (`uv run --project api pytest`, `pnpm --dir web test`).
+
 ## v2 projects
 
 BDK 2 kept `.bdk/settings.json`. Read it as hints and confirm each against the project files:
