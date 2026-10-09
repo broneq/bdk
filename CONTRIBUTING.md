@@ -28,4 +28,4 @@ claude --plugin-dir ~/projects/bdk/plugins/<name>
 
 ## Evals
 
-Skills are measured with `claude plugin eval`, locally only, because every run is paid. How to run the suite and write a case: [`plugins/bdk/evals/README.md`](plugins/bdk/evals/README.md).
+Skills are measured with `claude plugin eval`, locally only, because every run is paid. How to run the suite and write a case: [`plugins/bdk/evals/README.md`](plugins/bdk/evals/README.md). PR CI loads every case of every plugin's `evals/` for free, at a cost ceiling of zero, and runs each case's scaffold (`tests/eval-suites.test.ts`); a plugin that adds its first case lists the tools its eval README grants in that test.
