@@ -1,16 +1,15 @@
 .vp-doc .mermaid {
   margin: 16px 0;
   overflow-x: auto;
-  text-align: center;
 }
 
+/* The SVG is a block box, so auto margins centre a diagram narrower than the frame. One held
+   wider than the frame by its min-width gets zero margins instead: it starts at the left edge and
+   scrolls, its left edge reachable. */
 .vp-doc .mermaid svg {
   max-width: 100%;
   height: auto;
-}
-
-.vp-doc .mermaid-source {
-  text-align: left;
+  margin-inline: auto;
 }
 
 .vp-doc .mermaid-error {
