@@ -196,7 +196,7 @@ const start = (tree: Tree, payload: unknown, ...flags: string[]) =>
 const SESSION = { session_id: "s", cwd: ROOT, hook_event_name: "SessionStart", source: "startup" };
 
 describe("bdk hooks session-start", () => {
-  it("gives a configured project a short context and the user nothing", async () => {
+  it("gives a configured project the BDK process and the user nothing", async () => {
     const { code, stdout, stderr } = await start(CONFIGURED, SESSION);
     expect([code, stderr]).toEqual([0, ""]);
     const output = JSON.parse(stdout) as {
@@ -206,18 +206,51 @@ describe("bdk hooks session-start", () => {
     expect(output.systemMessage).toBeUndefined();
     expect(output.hookSpecificOutput.hookEventName).toBe("SessionStart");
     const context = output.hookSpecificOutput.additionalContext;
+    expect(context.split("\n").length).toBeLessThanOrEqual(6);
     expect(context).toContain("BDK");
     expect(context).toContain(ROOT);
-    expect(context).toContain("bdk config show");
-    expect(context).not.toContain("subagent-git");
-    expect(context.split("\n").length).toBeLessThanOrEqual(6);
+    const stages = ["propose", "design", "plan", "execute", "auto-review", "close"];
+    const positions = stages.map((stage) => context.indexOf(`/bdk:${stage}`));
+    expect(positions.every((position) => position >= 0)).toBe(true);
+    expect([...positions].sort((a, b) => a - b)).toEqual(positions);
+    for (const command of ["/bdk:run", "/bdk:debug", "/bdk:pr-review"])
+      expect(context).toContain(command);
+    expect(context).toMatch(/run the same command again/);
+    expect(context).toMatch(/small edit .* directly, without a Change/);
   });
 
-  it("names the guard when hooks.subagent-git is on", async () => {
-    const { stdout } = await start(GUARDED, SESSION, "--json");
-    const result = sessionStartResult.parse(JSON.parse(stdout));
-    expect(result.context).toContain("subagents other than bdk:lead may not change git history");
-    expect(result.context?.split("\n").length).toBeLessThanOrEqual(6);
+  it("names no bdk CLI command in the context", async () => {
+    const { stdout } = await start(CONFIGURED, SESSION, "--json");
+    const context = sessionStartResult.parse(JSON.parse(stdout)).context;
+    expect(context).not.toContain("bdk config show");
+    expect(context).not.toContain("bdk --help");
+  });
+
+  it("gives the same context with hooks.subagent-git on", async () => {
+    const plain = sessionStartResult.parse(
+      JSON.parse((await start(CONFIGURED, SESSION, "--json")).stdout),
+    );
+    const guarded = sessionStartResult.parse(
+      JSON.parse((await start(GUARDED, SESSION, "--json")).stdout),
+    );
+    expect(guarded.context).toBe(plain.context);
+    expect(guarded.context).not.toContain("hooks.subagent-git");
+  });
+
+  it("gives the same context whatever the run state", async () => {
+    const plain = await start(CONFIGURED, SESSION, "--json");
+    const busy = await start(
+      {
+        ...CONFIGURED,
+        [`${ROOT}/.bdk/runs/run.json`]:
+          '{"version":1,"mode":"interactive","queue":[{"change":"v3-12-foo"}],"current":"v3-12-foo"}',
+        [`${ROOT}/openspec/changes/v3-12-foo/proposal.md`]: "# Proposal\n",
+      },
+      SESSION,
+      "--json",
+    );
+    expect(busy.stdout).toBe(plain.stdout);
+    expect(busy.touched.some((path) => path.includes(".bdk/runs"))).toBe(false);
   });
 
   it("shows one warning and injects nothing without a configuration", async () => {
