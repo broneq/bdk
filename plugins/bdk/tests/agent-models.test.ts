@@ -1,9 +1,10 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { readdirSync } from "node:fs";
 import { basename, join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { describeSettings } from "../src/config/domain/describe.ts";
 import { MODEL_ROLES, SettingsSchema } from "../src/config/domain/settings.ts";
+import { skillAgentCalls } from "./skill-agent-calls.ts";
 
 // Spec `bdk-cli/config`, "Every agent is a models role": every agent of the plugin is a role of
 // `models`, the `models` description names it, and every skill that starts the agent passes
@@ -11,8 +12,6 @@ import { MODEL_ROLES, SettingsSchema } from "../src/config/domain/settings.ts";
 // does not name it silently runs the agent on its default model.
 
 const PLUGIN = join(import.meta.dirname, "..");
-// `subagent_type: "bdk:verifier"` as a skill text writes an Agent call.
-const AGENT_CALL = /subagent_type: "bdk:([a-z0-9-]+)"/g;
 
 const agents = readdirSync(join(PLUGIN, "agents"))
   .filter((name) => name.endsWith(".md"))
@@ -27,16 +26,9 @@ const roles = [...modelsDescription.matchAll(/`([a-z0-9-]+)`/g)]
 
 /** `<skill>: <agent>` for every paragraph that starts an agent without naming its role. */
 function callsWithoutRole(): string[] {
-  const skills = join(PLUGIN, "skills");
-  return readdirSync(skills).flatMap((skill) => {
-    const text = readFileSync(join(skills, skill, "SKILL.md"), "utf8");
-    return text.split(/\n\s*\n/).flatMap((paragraph) =>
-      [...paragraph.matchAll(AGENT_CALL)]
-        .map((match) => match[1] ?? "")
-        .filter((agent) => !paragraph.includes(`models.${agent}`))
-        .map((agent) => `${skill}: ${agent}`),
-    );
-  });
+  return skillAgentCalls()
+    .filter(({ agent, paragraph }) => !paragraph.includes(`models.${agent}`))
+    .map(({ skill, agent }) => `${skill}: ${agent}`);
 }
 
 describe("models roles", () => {
