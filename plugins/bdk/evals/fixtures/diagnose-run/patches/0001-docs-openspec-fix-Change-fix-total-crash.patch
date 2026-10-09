@@ -1,0 +1,155 @@
+From 1e180f6581b1c25128a3316e14d283b58ed009d8 Mon Sep 17 00:00:00 2001
+From: BDK eval <eval@example.invalid>
+Date: Fri, 9 Oct 2026 14:47:30 +0200
+Subject: [PATCH 1/2] docs(openspec): fix Change fix-total-crash
+
+Diagnosed `tally total` crash after `tally add 5`: `add` stores the text
+argument, so `total` sums strings. The Change holds the proposal, the spec
+delta with the reproduction as a scenario, the design and one plan part.
+---
+ .../changes/fix-total-crash/.openspec.yaml    |  2 ++
+ openspec/changes/fix-total-crash/design.md    | 31 +++++++++++++++++++
+ .../changes/fix-total-crash/plan/parts/01.md  | 25 +++++++++++++++
+ openspec/changes/fix-total-crash/proposal.md  | 26 ++++++++++++++++
+ .../fix-total-crash/specs/tally/spec.md       | 17 ++++++++++
+ 5 files changed, 101 insertions(+)
+ create mode 100644 openspec/changes/fix-total-crash/.openspec.yaml
+ create mode 100644 openspec/changes/fix-total-crash/design.md
+ create mode 100644 openspec/changes/fix-total-crash/plan/parts/01.md
+ create mode 100644 openspec/changes/fix-total-crash/proposal.md
+ create mode 100644 openspec/changes/fix-total-crash/specs/tally/spec.md
+
+diff --git a/openspec/changes/fix-total-crash/.openspec.yaml b/openspec/changes/fix-total-crash/.openspec.yaml
+new file mode 100644
+index 0000000..c87b4e9
+--- /dev/null
++++ b/openspec/changes/fix-total-crash/.openspec.yaml
+@@ -0,0 +1,2 @@
++schema: bdk
++created: 2026-10-09
+diff --git a/openspec/changes/fix-total-crash/design.md b/openspec/changes/fix-total-crash/design.md
+new file mode 100644
+index 0000000..77c8e99
+--- /dev/null
++++ b/openspec/changes/fix-total-crash/design.md
+@@ -0,0 +1,31 @@
++# Design
++
++## Context
++
++Reproduction (`.bdk/runs/fix-total-crash/debug/reproduction.md`), way in tools.e2e cli: in an empty directory `tally add 5` prints `Added 5.00` and exits 0, then `tally total` exits 1 with `TypeError: total.toFixed is not a function` at bin/tally.js:20. Expected `Total: 5.00` per spec tally, Requirement: Total. See proposal.md for why.
++
++## Goals / Non-Goals
++
++**Goals:**
++
++- `ledger.json` holds numbers, so `total` sums numbers.
++
++**Non-Goals:**
++
++- Migrating or tolerating ledgers already written with text entries.
++
++## Decisions
++
++### D1. Root cause: `add` stores the text argument
++
++bin/tally.js:16 `entries.push(value)` pushes `value`, the raw argv string, though `parseAmount(value)` already returned the number `amount` at line 14. `ledger.json` holds `["5"]`. At bin/tally.js:19 `total` runs `reduce((sum, amount) => sum + amount, 0)`: `0 + "5"` is the string `"05"`, so `total` is a string and `total.toFixed` at line 20 throws. The empty ledger works because the initial `0` stays a number.
++
++### D2. Fix: push the parsed `amount`
++
++Change line 16 to `entries.push(amount)`. Alternatives: coerce in `total` (`Number(amount)`) loses to the fix at the source, since it leaves bad data on disk and hides the next reader's bug; coerce in `load()` likewise, and it would also mask invalid entries. Both could be added later to read old ledgers (out of scope).
++
++Call sites: `add` (line 14 to 18) is the only writer of `ledger.json`; `total` (line 19) is the only reader besides `add`'s own `load()`, and it gets numbers as it expects. `parseAmount` in src/parse.js is unchanged. The `Added` output already uses `amount`.
++
++## Risks / Trade-offs
++
++- [A ledger.json written before the fix holds text entries and `total` still fails on it] -> out of scope; deleting the file or a later Change that reads old entries.
+diff --git a/openspec/changes/fix-total-crash/plan/parts/01.md b/openspec/changes/fix-total-crash/plan/parts/01.md
+new file mode 100644
+index 0000000..6efd6b7
+--- /dev/null
++++ b/openspec/changes/fix-total-crash/plan/parts/01.md
+@@ -0,0 +1,25 @@
++---
++id: "01"
++depends-on: []
++isolation: shared
++files:
++  - bin/tally.js
++  - test/tally.test.js
++---
++
++# Part 01: Fix of fix-total-crash
++
++## Goal
++
++`tally total` prints the sum after amounts were added.
++
++## Acceptance scenarios
++
++- `tally` / Requirement: Total / Scenario: Total after an add
++
++## Tasks
++
++1. Store the parsed amount in `add` instead of the text it was given
++   - File: bin/tally.js, test/tally.test.js
++   - Interface: none
++   - Verified by: tally / Requirement: Total / Scenario: Total after an add; a test in test/tally.test.js that runs `tally add 5` then `tally total` in a scratch directory and expects `Total: 5.00`, exit 0
+diff --git a/openspec/changes/fix-total-crash/proposal.md b/openspec/changes/fix-total-crash/proposal.md
+new file mode 100644
+index 0000000..3c2d830
+--- /dev/null
++++ b/openspec/changes/fix-total-crash/proposal.md
+@@ -0,0 +1,26 @@
++# Proposal
++
++## Why
++
++After `tally add 5`, `tally total` crashes with `TypeError: total.toFixed is not a function` instead of printing `Total: 5.00`. `add` stores the argument text in `ledger.json`, so `total` concatenates strings. Reproduction: `.bdk/runs/fix-total-crash/debug/reproduction.md`.
++
++## What Changes
++
++- `add` stores the parsed number, not the text it was given.
++- A test runs `tally add 5` then `tally total` and expects `Total: 5.00`.
++
++## Capabilities
++
++### New Capabilities
++
++### Modified Capabilities
++
++- `tally`: Requirement Total gains the scenario Total after an add.
++
++## Out of scope
++
++Ledgers already written with text entries (`["5"]`) are not migrated.
++
++## Impact
++
++`bin/tally.js` (`add`), `test/tally.test.js` (new). The `ledger.json` format holds numbers.
+diff --git a/openspec/changes/fix-total-crash/specs/tally/spec.md b/openspec/changes/fix-total-crash/specs/tally/spec.md
+new file mode 100644
+index 0000000..87c0542
+--- /dev/null
++++ b/openspec/changes/fix-total-crash/specs/tally/spec.md
+@@ -0,0 +1,17 @@
++# Spec Delta
++
++## MODIFIED Requirements
++
++### Requirement: Total
++
++`tally total` SHALL print the sum of the amounts added in the current directory as `Total: <sum with two decimals>` and exit 0.
++
++#### Scenario: Empty ledger
++
++- **WHEN** no amount was added in a directory
++- **THEN** `tally total` in that directory prints `Total: 0.00` and exits 0
++
++#### Scenario: Total after an add
++
++- **WHEN** `tally add 5` runs in a directory, then `tally total` runs in the same directory
++- **THEN** `tally total` prints `Total: 5.00` and exits 0
+-- 
+2.54.0 (Apple Git-157)
+

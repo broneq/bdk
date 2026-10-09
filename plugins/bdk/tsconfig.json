@@ -1,4 +1,11 @@
 {
   "extends": "../../tsconfig.json",
-  "include": ["src/**/*.ts", "tests/**/*.ts", "build.ts", "evals/run.ts", "eslint.architecture.ts"]
+  "include": [
+    "src/**/*.ts",
+    "tests/**/*.ts",
+    "build.ts",
+    "evals/run.ts",
+    "evals/fixtures/**/*.ts",
+    "eslint.architecture.ts"
+  ]
 }

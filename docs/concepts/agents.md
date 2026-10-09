@@ -16,6 +16,7 @@ flowchart LR
   O -->|"Agent"| DES["designer, session model"]
   O -->|"Agent"| PLN["planner, session model"]
   O -->|"Agent"| VER["verifier, opus"]
+  O -->|"Agent"| ANA["analyst, sonnet"]
   O -->|"Agent, background"| EW["lead: /bdk:execute-waves"]
   O -->|"Agent, background"| RR["lead: /bdk:review-round"]
   O -->|"Agent, background"| PRR["lead: /bdk:pr-review-round"]
@@ -53,11 +54,12 @@ flowchart LR
 | `/bdk:triage` | decider | main thread | decision events, `review.md` refresh | judged findings |
 | `/bdk:plan-fixes` | author | main thread | `round-N/fixes/parts/NN.md`, `fixes/index.md` | fix decisions, code |
 | `/bdk:spec-conformance` | verifier | `bdk:verifier` (opus) | `R/close/spec-conformance.md` | spec deltas, main specs, diff, E2E results |
+| `/bdk:diagnose-run` | verifier (of a finished run) | `bdk:analyst` (sonnet) | `R/diagnostics.md` | run files, host transcripts through `bdk diagnostics report` |
 | `/bdk:diagnose-bug` | author | main thread | fix Change, `R/debug/*.md` | bug report, product, code |
 | `/bdk:commit` | tool | main thread | git commits | diff, commit convention |
 | `/bdk:adr` | tool | main thread | one ADR file | design decision or text |
 
-The model and effort of each agent can be overridden with `models.<role>.model` and `models.<role>.effort`, where the role is the agent's name (`lead`, `explorer`, `designer`, `planner`, `verifier`, `implementer`, `conformer`, `reviewer`, `integration-reviewer`, `e2e-tester`, `judge`); every stage that starts the agent passes them, so `models.verifier` sets the verifier of `/bdk:design`, `/bdk:plan` and `/bdk:close` alike. See [CLI, configuration and hooks](./cli-config-hooks.md#configuration-bdk-settings-yaml).
+The model and effort of each agent can be overridden with `models.<role>.model` and `models.<role>.effort`, where the role is the agent's name (`lead`, `explorer`, `designer`, `planner`, `verifier`, `implementer`, `conformer`, `reviewer`, `integration-reviewer`, `e2e-tester`, `judge`, `analyst`); every stage that starts the agent passes them, so `models.verifier` sets the verifier of `/bdk:design`, `/bdk:plan` and `/bdk:close` alike. See [CLI, configuration and hooks](./cli-config-hooks.md#configuration-bdk-settings-yaml).
 
 ## Sources
 

@@ -20,3 +20,6 @@ openspec/changes/archive/
 .claude/worktrees/
 # Copied unchanged from the design system (docs/.vitepress/theme/design-system/README.md).
 docs/.vitepress/theme/design-system/
+# A recorded run, kept line for line: transcript and run-file citations name its lines.
+plugins/bdk/evals/fixtures/diagnose-run/runs/
+plugins/bdk/evals/fixtures/diagnose-run/transcripts/
