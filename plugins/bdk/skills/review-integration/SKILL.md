@@ -27,7 +27,7 @@ A caller that reviews code outside the working directory (`/bdk:pr-review` revie
 
 ## 1. Find the round
 
-With a round directory in the arguments or the request (`.bdk/runs/<change>/review/round-<N>/`), use it. Otherwise use the manual round: `.bdk/runs/manual/review/round-<N>/`, `N` the lowest number whose directory holds no `report.md`; when it holds no `groups.json`, record it with `bdk git groups <base> --rounds .bdk/runs/manual/review --record <round-dir>` (add `--plan openspec/changes/<change>/plan/parts` when `openspec/changes/` holds exactly one Change besides `archive/`; `<base>` is the `--base` given, else the branch `git symbolic-ref --short refs/remotes/origin/HEAD` names, else `main`).
+With a round directory in the arguments or the request (`.bdk/runs/<change>/review/round-<N>/`), use it. Otherwise use the manual round: `.bdk/runs/manual/review/round-<N>/`, `N` the lowest number whose directory holds no `review.md`; when it holds no `groups.json`, record it with `bdk git groups <base> --rounds .bdk/runs/manual/review --record <round-dir>` (add `--plan openspec/changes/<change>/plan/parts` when `openspec/changes/` holds exactly one Change besides `archive/`; `<base>` is the `--base` given, else the branch `git symbolic-ref --short refs/remotes/origin/HEAD` names, else `main`).
 
 Read `groups.json`: `range`, `anchor` and the `integration` group's files. An `anchor` of `kind` `round` makes this a fix round: it reviews only the fixes made since round `anchor.round`. The log is `<round-dir>/findings.jsonl`; run `bdk findings list <log>` and keep what the group reviews found, so you do not repeat it. The Change is `openspec/changes/<change>/`, `<change>` being the directory under `.bdk/runs/`.
 

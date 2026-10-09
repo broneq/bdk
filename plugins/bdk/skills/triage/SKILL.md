@@ -19,7 +19,7 @@ If the block above says "BDK not configured: run /bdk:setup", stop and reply wit
 
 ## 1. Find the round
 
-With a round directory in the arguments or the request (`.bdk/runs/<change>/review/round-<N>/`), use it. With a Change name, use the highest `.bdk/runs/<change>/review/round-<N>/` that holds `report.md`. Otherwise use the highest `.bdk/runs/manual/review/round-<N>/` that holds `report.md`. The log is `<round-dir>/findings.jsonl`.
+With a round directory in the arguments or the request (`.bdk/runs/<change>/review/round-<N>/`), use it. With a Change name, use the highest `.bdk/runs/<change>/review/round-<N>/` that holds `review.md`. Otherwise use the highest `.bdk/runs/manual/review/round-<N>/` that holds `review.md`. The log is `<round-dir>/findings.jsonl`.
 
 Run `bdk findings list <log>`. When its counts show an unleveled finding, decide nothing: reply with the unleveled ids and that the round needs the judge (`/bdk:judge <round-dir>`) first, and stop.
 
@@ -76,7 +76,7 @@ Done when every answered finding has a decision.
 
 ## 4. Refresh the report
 
-Run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" findings report <log>`. It rewrites `report.md` with the decisions and prints the counts.
+Run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" findings report <log>`. It rewrites `review.md` with the decisions and prints the counts.
 
 Done when the counts line shows no undecided finding, or only the ones the user left open.
 

@@ -414,7 +414,7 @@ sequenceDiagram
   L->>I: review-integration (reads the group results)
   I-->>L: findings appended
   L->>J: judge every finding
-  J-->>L: review/round-N/report.md
+  J-->>L: review/round-N/review.md
 ```
 
 From draft 1: integration after the groups, the judge, a report for the user. New: a later round covers only the scope of the fixes (B1 ran full rounds 3 and 4 for one or two minor entries), and E2E runs in every round.
@@ -448,7 +448,7 @@ Run state and run artifacts live in `.bdk/runs/`, outside git.
 | `<change>/plan/verify-N.md` | verifier | `plan-draft`, resume |
 | `<change>/execute/part-NN.md`, `execute/conform-NN.md` | implementer, conformer | lead, resume |
 | `<change>/checks/<id>.json` | `bdk check run` | implementer, review |
-| `<change>/review/round-N/findings.jsonl`, `report.md` | reviewers, judge, triage | fixes, next round, PR |
+| `<change>/review/round-N/findings.jsonl`, `review.md` | reviewers, judge, triage | fixes, next round, PR |
 | `<change>/e2e/<scenario>.md` | e2e-tester | review, close |
 
 **Resume.** After a break or a compaction, a stage reads `run.json`, `state.json`, `openspec status` and its own directory, and starts at the first missing file. Example: `design/verify-2.md` says FAIL and there is no `verify-3.md`, so the design is fixed and verified again. The number of review rounds is the number of `round-N` directories; turns and time come from transcripts.
@@ -464,7 +464,7 @@ In v3.0 `/bdk:run` drives itself: its skill text runs the stages in order and, a
 | 3 | no `plan/parts/`, or the last `plan/verify-N.md` is not PASS | plan |
 | 4 | a part not done in `state.json` | execute |
 | 5 | no `review/round-N/` yet | auto-review, first round |
-| 6 | a round directory without `report.md` (the round crashed) | auto-review, that round again |
+| 6 | a round directory without `review.md` (the round crashed) | auto-review, that round again |
 | 7 | blockers in the last report without a decision | auto-review, triage |
 | 8 | `fix` decisions in the last round that no later round covers | auto-review, fixes then a round on their scope |
 | 9 | no spec-conformance report, or the Change not archived, or no PR | close, from its first missing step |

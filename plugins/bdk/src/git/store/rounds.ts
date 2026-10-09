@@ -7,9 +7,9 @@ import type { Files } from "../../shared/fs/index.ts";
 import { roundNumbers } from "../domain/range.ts";
 
 export const RECORD = "groups.json";
-const REPORT = "report.md";
+const REPORT = "review.md";
 
-/** The last round whose directory holds `report.md`, with the text of its record if any. */
+/** The last round whose directory holds `review.md`, with the text of its record if any. */
 export function lastFinishedRound(
   files: Files,
   dir: string,

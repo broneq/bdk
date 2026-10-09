@@ -448,7 +448,7 @@ describe("bdk findings help", () => {
 });
 
 describe("bdk findings report", () => {
-  const REPORT = `${DIR}/report.md`;
+  const REPORT = `${DIR}/review.md`;
 
   async function judged(): Promise<{ files: MemoryFiles; idB: string }> {
     const files = new MemoryFiles();
@@ -475,7 +475,7 @@ describe("bdk findings report", () => {
     return { files, idB };
   }
 
-  it("writes report.md next to the log with every section", async () => {
+  it("writes review.md next to the log with every section", async () => {
     const { files, idB } = await judged();
     expect(await bdk(files, "findings", "report", LOG)).toEqual({
       code: 0,

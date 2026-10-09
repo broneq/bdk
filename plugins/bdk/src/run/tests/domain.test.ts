@@ -125,7 +125,7 @@ describe("derive: the resume table", () => {
     });
   });
 
-  it("row 6: a round without report.md, the lowest one", () => {
+  it("row 6: a round without review.md, the lowest one", () => {
     expect(
       at({
         rounds: [
@@ -139,7 +139,7 @@ describe("derive: the resume table", () => {
       step: "repeat-round",
       row: 6,
       round: 2,
-      reason: "review/round-2/ has no report.md",
+      reason: "review/round-2/ has no review.md",
     });
   });
 

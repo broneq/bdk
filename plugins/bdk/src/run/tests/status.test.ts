@@ -43,13 +43,13 @@ function finished(change: string): Tree {
       version: 1,
       parts: { "01": { status: "done", attempts: 1 }, "02": { status: "done", attempts: 2 } },
     }),
-    [`${dir}/review/round-1/report.md`]: "report",
+    [`${dir}/review/round-1/review.md`]: "report",
     [`${dir}/review/round-1/findings.jsonl`]: [
       finding("f-000000000001"),
       JSON.stringify({ type: "level", id: "f-000000000001", level: "blocker" }),
       JSON.stringify({ type: "decision", id: "f-000000000001", decision: "fix" }),
     ].join("\n"),
-    [`${dir}/review/round-2/report.md`]: "report",
+    [`${dir}/review/round-2/review.md`]: "report",
     [`${dir}/review/round-2/findings.jsonl`]: finding("f-000000000002"),
     [`${dir}/close/spec-conformance.md`]: "Verdict: PASS",
     [`${dir}/close/pr.md`]: "https://github.com/o/r/pull/1",
@@ -185,8 +185,8 @@ describe("bdk run status: the resume table from files", () => {
     });
   });
 
-  it("row 6: a round without report.md", async () => {
-    expect(await stageOf(tree(C, ["round-2/report.md"]))).toMatchObject({
+  it("row 6: a round without review.md", async () => {
+    expect(await stageOf(tree(C, ["round-2/review.md"]))).toMatchObject({
       stage: "auto-review",
       step: "repeat-round",
       row: 6,

@@ -31,7 +31,7 @@ Done when you hold the Change, the absolute run directory and the settings, or s
 Glob `<run dir>/review/round-*/` and take the highest `N`; the last round is `<run dir>/review/round-<N>/`, its log `findings.jsonl`. Go to the first step that applies:
 
 1. No round: `N` = 1; step 3.
-2. The last round has no `report.md`: step 3 for that round (a crashed round runs again).
+2. The last round has no `review.md`: step 3 for that round (a crashed round runs again).
 3. `bdk findings list <log>` counts an undecided finding: step 4.
 4. `bdk findings list <log> --decision fix` lists nothing: step 8, `Status: done`.
 5. A `fix` decision and `N` at or above the budget: step 8, `Status: blocked` (budget spent).
@@ -44,7 +44,7 @@ Done when you know the round and the step.
 
 ## 3. Run the round
 
-Tell the user in one line what runs, e.g. `Review round 2 (fix scope of round 1): bdk:lead writes .bdk/runs/add-csv-export/review/round-2/report.md`.
+Tell the user in one line what runs, e.g. `Review round 2 (fix scope of round 1): bdk:lead writes .bdk/runs/add-csv-export/review/round-2/review.md`.
 
 Start one agent with the Agent tool:
 
@@ -55,7 +55,7 @@ Start one agent with the Agent tool:
 
 A background lead reports through a notification that arrives by itself: end your turn and wait for it, without polling its files or sleeping, and do nothing else on this Change meanwhile.
 
-When the lead has returned, `<round dir>/report.md` must exist; otherwise go to step 8 with `Status: blocked`, the lead's last message, and `/bdk:auto-review <change>` to run the round again. Read `<round dir>/round.md` for gaps. Then go to step 4.
+When the lead has returned, `<round dir>/review.md` must exist; otherwise go to step 8 with `Status: blocked`, the lead's last message, and `/bdk:auto-review <change>` to run the round again. Read `<round dir>/round.md` for gaps. Then go to step 4.
 
 Done when the round has its report.
 

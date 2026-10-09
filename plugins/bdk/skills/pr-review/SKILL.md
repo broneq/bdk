@@ -21,11 +21,18 @@ The mode is `verify` with `--verify` (it applies to every pull request of the ca
 
 When the block above says `BDK not configured: run /bdk:setup` or that the configuration is invalid, stop: start nothing and reply with that line.
 
+<<<<<<< HEAD
 1. **Pull requests**: each argument that is a URL or a number; without one, the pull request of the current branch. For each run `gh pr view <argument> --json number,url,title,state,isDraft,author,body,baseRefName,headRefName,headRefOid,closingIssuesReferences` (no argument: leave it out). No pull request: say so. `state` not `OPEN`: say it is not open.
 2. **Repository**: `gh repo view --json nameWithOwner`, once. A pull request whose URL names another `<owner>/<repo>` stops with: run the review in a checkout of that repository.
 3. **User**: `gh api user`, once; keep its `login`.
 4. **Run directory**: `.bdk/runs/pr-<number>` under the path `git rev-parse --show-toplevel` prints, as an absolute path.
-5. **Finished round**: when `<run dir>/result.md` starts with `Status: done`, its `Mode` is this call's mode, its `Head commit` is the pull request's `headRefOid`, and its round holds `report.md` but no `posted.md`, that round is already judged: this pull request skips steps 3 and 4 (in verify mode it still runs step 2, for the previous review's URL and head).
+5. **Finished round**: when `<run dir>/result.md` starts with `Status: done`, its `Mode` is this call's mode, its `Head commit` is the pull request's `headRefOid`, and its round holds `review.md` but no `posted.md`, that round is already judged: this pull request skips steps 3 and 4 (in verify mode it still runs step 2, for the previous review's URL and head).
+=======
+1. **Pull request**: the argument, a URL or a number; without one, the pull request of the current branch. Run `gh pr view <argument> --json number,url,title,state,isDraft,author,body,baseRefName,headRefName,headRefOid,closingIssuesReferences` (no argument: leave it out). No pull request: say so and stop. `state` not `OPEN`: say it is not open and stop.
+2. **Repository**: `gh repo view --json nameWithOwner`. When it is not the `<owner>/<repo>` of the pull request's URL, stop and say to run the review in a checkout of that repository.
+3. **Run directory**: `.bdk/runs/pr-<number>` under the path `git rev-parse --show-toplevel` prints, as an absolute path.
+4. **Finished round**: when `<run dir>/result.md` starts with `Status: done`, its `Head commit` is the pull request's `headRefOid`, and its round holds `review.md` but no `posted.md`, that round is already reviewed: go to step 4.
+>>>>>>> f6c0a331 (feat(bdk)!: rename the review round record to review.md)
 
 Done when each pull request is kept or stopped with its reason, and you know which reuse a finished round.
 

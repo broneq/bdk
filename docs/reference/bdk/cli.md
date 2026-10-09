@@ -171,7 +171,7 @@ Commands:
   level   Append the level of a finding; the latest level counts
   decide  Append the decision on a finding; the latest decision counts
   list    Fold the log: findings with their latest level and decision, and counts
-  report  Write the folded log as report.md next to it, the round report
+  report  Write the folded log as review.md next to it, the round report
 
 Flags:
   --help, -h  Show help
@@ -289,7 +289,7 @@ Exit codes:
 ```text
 Usage: bdk findings report <log> [flags]
 
-Write the folded log as report.md next to it, the round report
+Write the folded log as review.md next to it, the round report
 
 Arguments:
   <log>  The findings log, e.g. .bdk/runs/<change>/review/round-<N>/findings.jsonl
@@ -336,7 +336,7 @@ Arguments:
   <base>  The branch the work merges into; the first round starts at its merge base
 
 Flags:
-  --rounds <value>  The run's review/ directory; start after the last round-<N>/ holding report.md and groups.json
+  --rounds <value>  The run's review/ directory; start after the last round-<N>/ holding review.md and groups.json
   --help, -h        Show help
   --version         Print the bdk version
   --json            Print the result as one JSON document
@@ -359,7 +359,7 @@ Arguments:
   <base>  The branch the work merges into; the first round starts at its merge base
 
 Flags:
-  --rounds <value>     The run's review/ directory; start after the last round-<N>/ holding report.md and groups.json
+  --rounds <value>     The run's review/ directory; start after the last round-<N>/ holding review.md and groups.json
   --plan <value>       The Change's plan/parts/ directory; group by part instead of by module
   --max-files <value>  The file target of a group (default 30); a third above it is tolerated
   --record <value>     Also write the result to <dir>/groups.json, the record later rounds start from

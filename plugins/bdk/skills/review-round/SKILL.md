@@ -1,6 +1,6 @@
 ---
 name: review-round
-description: 'One review round of an OpenSpec Change, run by the bdk:lead agent that /bdk:auto-review starts - records the round scope and groups with bdk git groups (a later round covers only the fix commits), runs one bdk:reviewer per group, the bdk:e2e-tester and bdk check run in parallel, then bdk:integration-reviewer, then bdk:judge, and writes round.md next to the judge report.md. Not for users: /bdk:auto-review is the command.'
+description: 'One review round of an OpenSpec Change, run by the bdk:lead agent that /bdk:auto-review starts - records the round scope and groups with bdk git groups (a later round covers only the fix commits), runs one bdk:reviewer per group, the bdk:e2e-tester and bdk check run in parallel, then bdk:integration-reviewer, then bdk:judge, and writes round.md next to the review.md of the judge. Not for users: /bdk:auto-review is the command.'
 argument-hint: "<change> --run-dir <absolute path> --round <N>"
 user-invocable: false
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(git symbolic-ref *) Bash(git rev-parse *) Read Write Glob Agent
@@ -31,7 +31,7 @@ Done when you are `bdk:lead`.
 - **Round**: `--round <N>`; the round directory is `<run dir>/review/round-<N>`, the log `<round dir>/findings.jsonl`.
 - **Settings**: `execution.max-parallel` (default 10) and `models.reviewer`, `models.integration-reviewer`, `models.e2e-tester`, `models.judge` when the configuration sets them.
 
-When the round directory holds `report.md`, the round is finished: reply with the counts line of `bdk findings list <log>` and the report path, and stop.
+When the round directory holds `review.md`, the round is finished: reply with the counts line of `bdk findings list <log>` and the report path, and stop.
 
 Done when you hold the Change, the run directory and the round directory.
 
@@ -74,9 +74,9 @@ Done when it has returned, or the round has no integration group.
 
 ## 5. Judge
 
-Start one Agent call: `subagent_type: "bdk:judge"`, prompt `Judge the round <round dir>`, `model` `models.judge` when set. It levels every finding and writes `<round dir>/report.md`. When `report.md` is missing after it returns, start it once more; when it is still missing, write `round.md` (step 6) with the gap and reply that the round has no report.
+Start one Agent call: `subagent_type: "bdk:judge"`, prompt `Judge the round <round dir>`, `model` `models.judge` when set. It levels every finding and writes `<round dir>/review.md`. When `review.md` is missing after it returns, start it once more; when it is still missing, write `round.md` (step 6) with the gap and reply that the round has no report.
 
-Done when `report.md` exists.
+Done when `review.md` exists.
 
 ## 6. Write the round file
 
@@ -84,7 +84,7 @@ Write `<round dir>/round.md`, replacing an earlier one:
 
 ```markdown
 Round: 2
-Report: report.md
+Report: review.md
 
 ## Scope
 - anchor: round 1 (a1b2c3d)
@@ -112,4 +112,4 @@ Done when `round.md` exists.
 
 ## 7. Reply
 
-Reply with two lines: the counts line of `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" findings list <log>` and the path of `report.md`.
+Reply with two lines: the counts line of `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" findings list <log>` and the path of `review.md`.

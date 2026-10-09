@@ -45,7 +45,7 @@ openspec/specs/<capability>/spec.md   main specs: openspec archive merges the de
     review/round-N/groups.json        bdk git groups --record
     review/round-N/findings.jsonl     reviewers, e2e, checks, judge, triage
     review/round-N/e2e/               /bdk:e2e-check in the round
-    review/round-N/report.md          bdk findings report (judge, triage)
+    review/round-N/review.md          bdk findings report (judge, triage)
     review/round-N/round.md           /bdk:review-round lead
     review/round-N/fixes/parts/NN.md  /bdk:plan-fixes
     review/round-N/fixes/index.md     /bdk:plan-fixes
@@ -57,7 +57,7 @@ openspec/specs/<capability>/spec.md   main specs: openspec archive merges the de
     debug/reproduction.md, diagnosis.md, scratch/   /bdk:diagnose-bug
     debug/gate.md, result.md          /bdk:debug
   pr-<N>/                             /bdk:pr-review
-    pr.md, previous.json (--verify), result.md, worktree/, review/round-k/{groups.json, previous.json, findings.jsonl, report.md, review.json, posted.md}
+    pr.md, previous.json (--verify), result.md, worktree/, review/round-k/{groups.json, previous.json, findings.jsonl, review.md, review.json, posted.md}
 ```
 
 ## Who reads each file later, and why
@@ -77,7 +77,7 @@ openspec/specs/<capability>/spec.md   main specs: openspec archive merges the de
 | `review/round-N/e2e/` (`e2e/` when run alone): `<scenario>.md`, screenshots and video, `verdict.md` | `bdk:e2e-tester` | the review round, `/bdk:spec-conformance`, `/bdk:close` (the verdict goes into the PR body) | the evidence of each scenario on the running product | spec conformance has no E2E evidence |
 | `review/round-N/groups.json` | `bdk git groups` | the round's reviewers, and the next round, which reviews only the commits after this round's head | the reviewed range and its groups | the next round falls back to the whole branch |
 | `review/round-N/findings.jsonl` | reviewers, E2E, red checks, judge, triage (append only) | `bdk run status`, `/bdk:auto-review`, `/bdk:plan-fixes` | the [findings](./findings.md), their levels and decisions | the round has no findings |
-| `review/round-N/report.md` | `bdk findings report` | `bdk run status`, `/bdk:auto-review` | marks the round finished | the round counts as unfinished and runs again |
+| `review/round-N/review.md` | `bdk findings report` | `bdk run status`, `/bdk:auto-review` | marks the round finished | the round counts as unfinished and runs again |
 | `review/round-N/fixes/` | `/bdk:plan-fixes`, then the execute lead | `/bdk:auto-review`, the next round's grouping | the fix parts and their build | the fixes are planned again |
 | `review/result.md` | `/bdk:auto-review` only | `/bdk:run` (decisions for the final report), `/bdk:debug`, `/bdk:close` (deferred findings in the PR) | the review's outcome | the final report loses the review's decisions |
 | `close/spec-conformance.md` | `bdk:verifier` (replaced per pass) | `bdk run status`, `/bdk:close` | the check that the specs match the product before the archive | the check runs again |
@@ -149,7 +149,7 @@ flowchart LR
   J["/bdk:judge"] -->|"level"| F
   T["/bdk:triage"] -->|"decide"| F
   F[("round-N/<br/>findings.jsonl")]
-  F -->|"report"| REP[("round-N/<br/>report.md")]
+  F -->|"report"| REP[("round-N/<br/>review.md")]
   F -->|"list --decision fix"| PF["/bdk:plan-fixes"]
   F -.->|"fold"| ST["bdk run status"]
 ```
@@ -205,7 +205,7 @@ flowchart TB
 | A stage stopped for your decision, or after a break | Run the same command again (`/bdk:design <change>`, `/bdk:execute <change>`, ...) or `/bdk:run`: it starts at the first missing file. |
 | A part is blocked | Read `## Blockers` in `execute/result.md` and the part's `execute/part-NN.md`. Fix the cause (a plan defect: `/bdk:plan <change>`; a missing tool: install it), then run `/bdk:execute <change>`: each part gets a fresh attempt budget per run. |
 | You changed the design by hand after it was approved | Run `/bdk:design <change>`: a new verification is written, and the gate asks again because its `Report:` no longer names the last report. |
-| You want a review round again from scratch | Delete `review/round-N/report.md` of the last round, or the whole round directory, and run `/bdk:auto-review <change>`. |
+| You want a review round again from scratch | Delete `review/round-N/review.md` of the last round, or the whole round directory, and run `/bdk:auto-review <change>`. |
 | `/bdk:run` was given a new queue while one is unfinished | It refuses and shows the queue: finish it with `/bdk:run`, or delete `run.json` to drop it. |
 | A worktree of a blocked part is in the way | Leave it until the part is done: the lead reuses the work in it and removes it after the merge. |
 

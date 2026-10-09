@@ -144,7 +144,7 @@ describe("rounds", () => {
       ]),
     );
     const h1 = first.head;
-    writeFileSync(join(review, "round-1", "report.md"), "# Round 1\n");
+    writeFileSync(join(review, "round-1", "review.md"), "# Round 1\n");
     commit("fix", "src/mail/send.ts");
     // A second round that crashed: a record, no report.
     await json(["git", "groups", "main", "--rounds", review, "--record", join(review, "round-2")]);
@@ -160,7 +160,7 @@ describe("rounds", () => {
     commit("work", "src/a.ts");
     const review = join(root, "review");
     await json(["git", "groups", "main", "--record", join(review, "round-1")]);
-    writeFileSync(join(review, "round-1", "report.md"), "");
+    writeFileSync(join(review, "round-1", "review.md"), "");
     sh(["commit", "-q", "--amend", "-m", "work, amended"]);
     const result = scopeSchema.parse(await json(["git", "scope", "main", "--rounds", review]));
     expect(result.anchor.kind).toBe("base");

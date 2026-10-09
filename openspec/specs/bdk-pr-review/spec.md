@@ -36,7 +36,11 @@ The `bdk` plugin SHALL ship the skills `pr-review` (`skills/pr-review/`, the use
 
 ### Requirement: Review round of a pull request
 
-`pr-review-round` SHALL check the pull request's head with `git ls-remote origin refs/pull/<number>/head` and stop with `Status: blocked` when it is not the head commit of the brief. It SHALL fetch the head and the base branch from `origin` without writing `FETCH_HEAD` (`git fetch --no-write-fetch-head origin pull/<number>/head <base>`), and SHALL run a fetch that failed on a lock once more, so that leads of several pull requests can run in one repository at once. It SHALL review the head in a detached git worktree `<run dir>/worktree`, made fresh for every run, and SHALL leave the user's checkout, branch and index unchanged. The round directory SHALL be `<run dir>/review/round-<N>/` with the lowest `N` whose directory holds no `report.md`, and every review round SHALL review the whole pull request, from the merge base of the head and the base branch.
+<<<<<<< HEAD
+`pr-review-round` SHALL check the pull request's head with `git ls-remote origin refs/pull/<number>/head` and stop with `Status: blocked` when it is not the head commit of the brief. It SHALL fetch the head and the base branch from `origin` without writing `FETCH_HEAD` (`git fetch --no-write-fetch-head origin pull/<number>/head <base>`), and SHALL run a fetch that failed on a lock once more, so that leads of several pull requests can run in one repository at once. It SHALL review the head in a detached git worktree `<run dir>/worktree`, made fresh for every run, and SHALL leave the user's checkout, branch and index unchanged. The round directory SHALL be `<run dir>/review/round-<N>/` with the lowest `N` whose directory holds no `review.md`, and every review round SHALL review the whole pull request, from the merge base of the head and the base branch.
+=======
+`pr-review-round` SHALL fetch the pull request's head (`pull/<number>/head`) and its base branch from `origin`, and SHALL stop with `Status: blocked` when the fetched head is not the head commit of the brief. It SHALL review the head in a detached git worktree `<run dir>/worktree`, made fresh for every run, and SHALL leave the user's checkout, branch and index unchanged. The round directory SHALL be `<run dir>/review/round-<N>/` with the lowest `N` whose directory holds no `review.md`, and every round SHALL review the whole pull request, from the merge base of the head and the base branch.
+>>>>>>> f6c0a331 (feat(bdk)!: rename the review round record to review.md)
 
 The Change of the pull request SHALL be the one directory under `openspec/changes/` (archived or not) holding a `proposal.md` that the range adds or changes; with none or several, the review SHALL have no Change. In a review round the lead SHALL record the groups with `bdk git groups origin/<base> --record <round dir>`, run in the worktree, adding `--plan <change>/plan/parts` when the Change has plan parts. It SHALL then start one `bdk:reviewer` per group except `integration`, at most `execution.max-parallel` at once as foreground `Agent` calls in one message; then one `bdk:integration-reviewer`; then one `bdk:judge`; each with the round directory, `--workdir <worktree>`, `--change <change>|none` and `--intent <run dir>/pr.md`, and `model` set from `models.<role>` when the configuration sets it. It SHALL run no check and no E2E.
 
@@ -45,7 +49,7 @@ After the judge, the lead SHALL remove the worktree and write `<run dir>/result.
 #### Scenario: Two-part Change as a pull request
 
 - **WHEN** the lead runs on pull request 7, whose head carries the Change `monthly-report` with plan parts `01` and `02`
-- **THEN** `round-1/groups.json` holds the groups `p01`, `p02`, `unplanned` and `integration`, three `bdk:reviewer` agents start in one message before the integration reviewer, the judge writes `round-1/report.md`, and `result.md` starts with `Status: done`
+- **THEN** `round-1/groups.json` holds the groups `p01`, `p02`, `unplanned` and `integration`, three `bdk:reviewer` agents start in one message before the integration reviewer, the judge writes `round-1/review.md`, and `result.md` starts with `Status: done`
 
 #### Scenario: User's checkout untouched
 
@@ -113,7 +117,8 @@ It SHALL also hold `pr-review-verify` on the fixture `monthly-report-pr-reviewed
 #### Scenario: Fixture pull request reviewed
 
 - **WHEN** `pr-review-post` runs with the plugin
-- **THEN** `.git/bdk-eval/reviews/7-1.json` holds the event `REQUEST_CHANGES` and inline comments on `src/parse.js` and on the report code, and `.bdk/runs/pr-7/review/round-1/report.md` exists
+<<<<<<< HEAD
+- **THEN** `.git/bdk-eval/reviews/7-1.json` holds the event `REQUEST_CHANGES` and inline comments on `src/parse.js` and on the report code, and `.bdk/runs/pr-7/review/round-1/review.md` exists
 
 #### Scenario: Fixed blocker verified
 
@@ -147,3 +152,6 @@ The main thread SHALL render one review from the verify template: the fixed and 
 
 - **WHEN** a verify review is computed and the user chooses not to post it
 - **THEN** no review is posted and no thread is resolved
+=======
+- **THEN** `.git/bdk-eval/reviews/7-1.json` holds the event `REQUEST_CHANGES` and inline comments on `src/parse.js` and on the report code, and `.bdk/runs/pr-7/review/round-1/review.md` exists
+>>>>>>> f6c0a331 (feat(bdk)!: rename the review round record to review.md)

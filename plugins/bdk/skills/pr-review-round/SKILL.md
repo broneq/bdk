@@ -31,8 +31,12 @@ Done when you are `bdk:lead`.
 - **Run directory**: `--run-dir <path>`, an absolute path; without it, `.bdk/runs/pr-<N>` under the path `git rev-parse --show-toplevel` prints.
 - **Brief**: `<run dir>/pr.md`, written by `/bdk:pr-review`. Keep its `Base` branch and `Head commit`. Without the brief, go to step 7 with the blocker `no brief: run /bdk:pr-review <N>`.
 - **Settings** from the configuration above: `execution.max-parallel` (default 10), and `models.reviewer`, `models.integration-reviewer` and `models.judge` when set.
+<<<<<<< HEAD
 - **Previous findings** (verify mode): `<run dir>/previous.json`, written by `/bdk:pr-review --verify`: a list of `{thread, id, level, file, line, summary, evidence}`. Without it, go to step 7 with the blocker `no previous findings: run /bdk:pr-review --verify <N>`.
-- **Round directory**: `<run dir>/review/round-<k>/`, `k` the lowest number whose directory holds no `report.md` (1 when there is none).
+- **Round directory**: `<run dir>/review/round-<k>/`, `k` the lowest number whose directory holds no `review.md` (1 when there is none).
+=======
+- **Round directory**: `<run dir>/review/round-<k>/`, `k` the lowest number whose directory holds no `review.md` (1 when there is none).
+>>>>>>> f6c0a331 (feat(bdk)!: rename the review round record to review.md)
 
 Done when you hold the number, the run directory, the base, the head commit and the round directory.
 
@@ -77,9 +81,9 @@ Every worker gets the same inputs after its own: `--workdir <worktree> --change 
 2. **Integration.** After every reviewer returned, one `bdk:integration-reviewer`. Prompt: `Review the round <round dir> as a whole --workdir <worktree> --change <change> --intent <run dir>/pr.md`.
 3. **Judge.** After it, one `bdk:judge`. Prompt: `Judge the round <round dir> --workdir <worktree> --change <change> --intent <run dir>/pr.md`.
 
-After the judge, `<round dir>/report.md` must exist. When it does not, start the judge once more; a second miss goes to step 7 with the blocker `judge wrote no report`.
+After the judge, `<round dir>/review.md` must exist. When it does not, start the judge once more; a second miss goes to step 7 with the blocker `judge wrote no report`.
 
-Done when `report.md` exists.
+Done when `review.md` exists.
 
 ## 5b. Verify mode: re-check the previous findings
 
@@ -93,11 +97,11 @@ No groups and no reviewers: the judge decides, at the current head, whether each
 
    Keep the id it prints.
 2. Write `<round dir>/previous.json`: the same list, each entry with `"finding": "<that id>"` added.
-3. Start one `bdk:judge` as in step 5.3 (the same prompt and inputs), and check `report.md` the same way.
+3. Start one `bdk:judge` as in step 5.3 (the same prompt and inputs), and check `review.md` the same way.
 
 `not-a-problem` means the finding is fixed; any other level means it is left. You do not interpret the levels: the main conversation does.
 
-Done when `report.md` exists and `<round dir>/previous.json` names a finding id for every entry.
+Done when `review.md` exists and `<round dir>/previous.json` names a finding id for every entry.
 
 ## 6. Remove the worktree
 
@@ -124,9 +128,14 @@ Status: done
 - None.
 ```
 
-- `Status: done` when the round has its `report.md`, or when the range had no changes (then `Report: No changes to review.`); else `Status: blocked`, with each reason under `## Blockers` and the command that unblocks it.
+<<<<<<< HEAD
+- `Status: done` when the round has its `review.md`, or when the range had no changes (then `Report: No changes to review.`); else `Status: blocked`, with each reason under `## Blockers` and the command that unblocks it.
 - `Mode:` is `review` or `verify`.
-- `Report:` is the counts line of `report.md` (its second non-empty line).
+- `Report:` is the counts line of `review.md` (its second non-empty line).
+=======
+- `Status: done` when the round has its `review.md`, or when the range had no changes (then `Report: No changes to review.`); else `Status: blocked`, with each reason under `## Blockers` and the command that unblocks it.
+- `Report:` is the counts line of `review.md` (its second non-empty line).
+>>>>>>> f6c0a331 (feat(bdk)!: rename the review round record to review.md)
 - On a blocker, remove the worktree first when you made it.
 
 Done when the result exists and its first line is the status.

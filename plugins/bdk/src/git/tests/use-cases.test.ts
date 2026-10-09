@@ -108,7 +108,7 @@ describe("scope", () => {
   it("starts after the last finished round and ignores a crashed one", () => {
     const script = { ...happy(ROUND), [`merge-base --is-ancestor ${ROUND} ${HEAD}`]: "" };
     const tree = {
-      "/repo/run/review/round-1/report.md": "",
+      "/repo/run/review/round-1/review.md": "",
       "/repo/run/review/round-1/groups.json": JSON.stringify({ head: ROUND }),
       "/repo/run/review/round-2/groups.json": JSON.stringify({ head: HEAD }),
     };
@@ -136,7 +136,7 @@ describe("scope", () => {
     ],
   ])("falls back to the merge base for %s", (_, record, why) => {
     const script = { ...happy(), [`merge-base --is-ancestor ${ROUND} ${HEAD}`]: 1 };
-    const tree = { "/r/round-3/report.md": "# Report", ...record };
+    const tree = { "/r/round-3/review.md": "# Report", ...record };
     const { anchor } = scope(deps(script, tree), { base: "main", rounds: "/r" });
     expect(anchor).toMatchObject({ kind: "base", sha: MERGE_BASE });
     expect(anchor.fallback).toMatch(why);
@@ -145,7 +145,7 @@ describe("scope", () => {
   it("falls back when the recorded head names no commit", () => {
     const script = { ...happy(), [`merge-base --is-ancestor ${ROUND} ${HEAD}`]: 128 };
     const tree = {
-      "/r/round-1/report.md": "",
+      "/r/round-1/review.md": "",
       "/r/round-1/groups.json": JSON.stringify({ head: ROUND }),
     };
     expect(scope(deps(script, tree), { base: "main", rounds: "/r" }).anchor.fallback).toMatch(

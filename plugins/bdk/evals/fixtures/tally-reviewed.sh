@@ -25,7 +25,7 @@ cp "$here/bin/gh" .git/bdk-eval/bin/gh
 runs=.bdk/runs/add-total
 mkdir -p "$runs/review/round-1/e2e"
 : > "$runs/review/round-1/findings.jsonl"
-cat > "$runs/review/round-1/report.md" <<'MD'
+cat > "$runs/review/round-1/review.md" <<'MD'
 # Review round 1: add-total
 
 No blockers. 0 findings.

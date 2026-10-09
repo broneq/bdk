@@ -19,7 +19,7 @@ When the block above says `BDK not configured` or `BDK configuration invalid`, w
 
 ## 1. Find the round
 
-- With a round directory in the arguments or the request (`.bdk/runs/<change>/review/round-<N>/`), use it. With a Change name, use the highest `.bdk/runs/<change>/review/round-<N>/` that holds `report.md`. The Change is `<change>`, the directory under `.bdk/runs/`.
+- With a round directory in the arguments or the request (`.bdk/runs/<change>/review/round-<N>/`), use it. With a Change name, use the highest `.bdk/runs/<change>/review/round-<N>/` that holds `review.md`. The Change is `<change>`, the directory under `.bdk/runs/`.
 - The log is `<round-dir>/findings.jsonl`. Run `bdk findings list <log> --json`. When a finding has no level or no decision, write nothing: reply that the round needs the judge or triage first, naming the ids, and stop.
 - Run `bdk findings list <log> --decision fix --json`. These are the findings to plan. With none, write `fixes/index.md` with `- None.` under both sections and go to step 6.
 - The fixes directory is `<round-dir>/fixes/`. When it holds `index.md` already, the round is planned: reply with its path and stop, unless the user asks to plan again.

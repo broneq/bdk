@@ -64,7 +64,7 @@ For a Change `<change>` the command SHALL read these files, and only these:
 
 - The OpenSpec Change directory: `openspec/changes/<change>/` when it exists, otherwise the archived `openspec/changes/archive/<YYYY-MM-DD>-<change>/` with the latest date. The Change is archived when only the archived directory exists.
 - In the OpenSpec Change directory: `proposal.md`, `design.md`, and the plan parts `plan/parts/NN.md`, whose two-digit file stem is the part id.
-- In `.bdk/runs/<change>/`: `state.json`; `design/verify-N.md` and `plan/verify-N.md`, where the last report is the one with the highest number N, a positive integer written without leading zeros (other names are ignored); the round directories `review/round-N/`, each with `report.md` and `findings.jsonl`; and `close/spec-conformance.md` and `close/pr.md`.
+- In `.bdk/runs/<change>/`: `state.json`; `design/verify-N.md` and `plan/verify-N.md`, where the last report is the one with the highest number N, a positive integer written without leading zeros (other names are ignored); the round directories `review/round-N/`, each with `review.md` and `findings.jsonl`; and `close/spec-conformance.md` and `close/pr.md`.
 
 A verify report and `close/spec-conformance.md` SHALL pass when the first verdict line in it reads `Verdict: PASS`, matched without regard to case and to Markdown emphasis or heading marks around the word `Verdict` and the value; a report whose first verdict line reads `Verdict: FAIL`, or that has no verdict line, does not pass. `close/pr.md` SHALL mean that the pull request of the Change was opened.
 
@@ -108,7 +108,7 @@ The command SHALL derive the open stage of every queued Change by checking these
 | 3 | no plan part, or no `plan/verify-N.md`, or the last one does not pass | `plan` | - |
 | 4 | a part, from `plan/parts/` or from `state.json`, whose status is not `done` | `execute` | - |
 | 5 | no `review/round-N/` directory | `auto-review` | `first-round` |
-| 6 | a round directory without `report.md`; the lowest such round is reported | `auto-review` | `repeat-round` |
+| 6 | a round directory without `review.md`; the lowest such round is reported | `auto-review` | `repeat-round` |
 | 7 | a finding of the last round whose latest level is `blocker` and that has no decision | `auto-review` | `triage` |
 | 8 | a finding of the last round whose latest decision is `fix` | `auto-review` | `fix` |
 | 9 | `close/spec-conformance.md` missing or not passing; else the Change not archived; else no `close/pr.md` | `close` | `spec-conformance`, `archive` or `pr` |
@@ -152,7 +152,7 @@ When no row matches, the stage SHALL be `done`. For each Change the result SHALL
 
 #### Scenario: Row 6 - crashed round
 
-- **WHEN** `review/round-1/` holds `report.md` and `review/round-2/` does not
+- **WHEN** `review/round-1/` holds `review.md` and `review/round-2/` does not
 - **THEN** its stage is `auto-review`, step `repeat-round`, row 6, round 2
 
 #### Scenario: Row 7 - blocker without a decision

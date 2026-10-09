@@ -185,7 +185,7 @@ Rounds and fix passes each run in a fresh `bdk:lead`; triage and fix planning ru
 
 ```mermaid
 flowchart TB
-  RND["/bdk:review-round N<br/>Agent bdk:lead"] -->|"round-N/report.md"| TRI
+  RND["/bdk:review-round N<br/>Agent bdk:lead"] -->|"round-N/review.md"| TRI
   TRI(["/bdk:triage<br/>Skill, main thread<br/>policy.gates.review"])
   TRI -->|"a finding left undecided"| WAITU["stop until<br/>the user decides"]
   TRI --> FIX{{"a fix decision?"}}
@@ -201,7 +201,7 @@ flowchart TB
 
 The budget is `policy.budgets.review-rounds` (default 3); at the last round triage runs with `--last-round`.
 
-On a new start, `/bdk:auto-review` finds its place from the files of the last round: no round or a round without `report.md` runs the round, an undecided finding runs triage, a round without `fixes/index.md` plans the fixes, and an unfinished `fixes/result.md` runs the fix pass again.
+On a new start, `/bdk:auto-review` finds its place from the files of the last round: no round or a round without `review.md` runs the round, an undecided finding runs triage, a round without `fixes/index.md` plans the fixes, and an unfinished `fixes/result.md` runs the fix pass again.
 
 Triage policy, which decides in auto mode and is the preselected recommendation in manual mode:
 
@@ -239,7 +239,7 @@ sequenceDiagram
   I->>B: bdk findings add
   L->>J: /bdk:judge
   J->>B: bdk findings level, bdk findings report
-  B-->>L: round-N/report.md
+  B-->>L: round-N/review.md
   L->>L: write round-N/round.md
 ```
 
@@ -283,7 +283,7 @@ sequenceDiagram
   L->>G: git ls-remote, git fetch pull/7/head
   L->>L: detached worktree,<br/>find the Change, bdk git groups
   L->>W: reviewers, integration, judge
-  W-->>L: findings.jsonl, report.md
+  W-->>L: findings.jsonl, review.md
   L->>L: remove worktree, result.md
   L--)M: Status line
   M->>U: verdict and every finding to post
@@ -312,7 +312,7 @@ sequenceDiagram
   M-)L: Agent: /bdk:pr-review-round --verify
   L->>L: worktree at the new head,<br/>bdk findings add each previous finding
   L->>J: judge the round
-  J-->>L: levels, report.md
+  J-->>L: levels, review.md
   L--)M: Status line
   M->>U: fixed (not-a-problem) and left findings
   U-->>M: post, other verdict,<br/>comment only, or skip

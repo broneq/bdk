@@ -54,7 +54,7 @@ Findings decided `fix` become fix parts (`/bdk:plan-fixes`), built by the execut
 
 ## Read them yourself
 
-Each round keeps its findings in `.bdk/runs/<change>/review/round-N/`: `findings.jsonl` is the event log every role appends to ([run state](./run-state.md#review-the-findings-event-log)), and `report.md` is the judged round, written by `bdk findings report`. `bdk findings list <log>` prints the current view, and filters such as `--level blocker` narrow it.
+Each round keeps its findings in `.bdk/runs/<change>/review/round-N/`: `findings.jsonl` is the event log every role appends to ([run state](./run-state.md#review-the-findings-event-log)), and `review.md` is the judged round, written by `bdk findings report`. `bdk findings list <log>` prints the current view, and filters such as `--level blocker` narrow it.
 
 ## Sources
 

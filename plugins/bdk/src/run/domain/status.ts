@@ -150,7 +150,7 @@ export function derive(change: ChangeSnapshot): Derived {
   const crashed = change.rounds.find((round) => !round.report);
   if (crashed !== undefined) {
     const dir = `review/round-${String(crashed.n)}/`;
-    return stage("auto-review", 6, `${dir} has no report.md`, "repeat-round", crashed.n);
+    return stage("auto-review", 6, `${dir} has no review.md`, "repeat-round", crashed.n);
   }
   const dir = `review/round-${String(last.n)}`;
   if (change.lastRound.blockers > 0) {
