@@ -1,6 +1,6 @@
 ---
 name: review-round
-description: 'One review round of an OpenSpec Change, run by the bdk:lead agent that /bdk:auto-review starts - records the round scope and groups with bdk git groups (a later round covers only the fix commits), runs one bdk:reviewer per group and bdk check run --at review in parallel, then bdk:e2e-tester (not in a later round whose fixes changed only test files after a passing E2E verdict) and bdk:integration-reviewer, then bdk:judge, and writes round.md next to the review.md of the judge. Not for users: /bdk:auto-review is the command.'
+description: 'One review round of an OpenSpec Change, run by the bdk:lead agent that /bdk:auto-review starts - records the round scope and groups with bdk git groups (a later round covers only the fix commits), runs one bdk:reviewer per group and bdk check run --at review in parallel, then bdk:integration-reviewer and bdk:e2e-tester together (no E2E tester in a later round whose fixes changed only test files after a passing E2E verdict), then bdk:judge, and writes round.md next to the review.md of the judge. Not for users: /bdk:auto-review is the command.'
 argument-hint: "<change> --run-dir <absolute path> --round <N>"
 user-invocable: false
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(git symbolic-ref *) Bash(git rev-parse *) Read Write Glob Agent
@@ -14,7 +14,7 @@ Arguments: $ARGUMENTS
 
 # Review round
 
-Run one review round of a Change: its scope, the group reviews and the checks in parallel, then the E2E check and the integration review, then the judge. You compose; the workers review. You never review, level, decide or fix anything yourself, and you add no finding. Run each command on its own, without `;`, `&&` or pipes; run `bdk` as `"${CLAUDE_PLUGIN_ROOT}/bin/bdk"`.
+Run one review round of a Change: its scope, the group reviews and the checks in parallel, then the integration review and the E2E check together, then the judge. You compose; the workers review. You never review, level, decide or fix anything yourself, and you add no finding. Run each command on its own, without `;`, `&&` or pipes; run `bdk` as `"${CLAUDE_PLUGIN_ROOT}/bin/bdk"`.
 
 When the block above says `BDK not configured` or `BDK configuration invalid`, reply with that line and stop. If it shows the command instead of its output, run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" config show` first.
 
@@ -65,7 +65,7 @@ A worker that returns an error or an empty reply is started once more with the s
 
 Done when every reviewer has returned and the check run has ended.
 
-## 4. E2E and integration
+## 4. Integration and E2E
 
 First decide whether the round **carries the E2E verdict over**. It does only when all three hold:
 
@@ -75,10 +75,12 @@ First decide whether the round **carries the E2E verdict over**. It does only wh
 
 Then the fixes since that verdict changed only tests, so the product is the one it checked: start no E2E tester and write no `<round dir>/e2e/`; `/bdk:close` and `/bdk:spec-conformance` keep reading that verdict. In every other case (round 1, any other changed path, no earlier verdict, `FAIL` or `BLOCKED`) the E2E check runs.
 
-Only after step 3 has ended, so the project's suites and the started product never compete for the same machine, start in one message:
+As soon as step 3 has ended, start in one message:
 
-- unless the round carries the verdict over, one Agent call `subagent_type: "bdk:e2e-tester"`, `run_in_background: false`, prompt `Check the Change <change> end to end; the findings log is <round dir>/findings.jsonl`, `model` `models.e2e-tester.model` and `effort` `models.e2e-tester.effort`, each when set;
-- when `groups` holds an `integration` group, one Agent call `subagent_type: "bdk:integration-reviewer"`, `run_in_background: false`, prompt `Review the Change as a whole for the round <round dir>`, `model` `models.integration-reviewer.model` and `effort` `models.integration-reviewer.effort`, each when set. It reads what the group reviews found.
+- when `groups` holds an `integration` group, one Agent call `subagent_type: "bdk:integration-reviewer"`, `run_in_background: false`, prompt `Review the Change as a whole for the round <round dir>`, `model` `models.integration-reviewer.model` and `effort` `models.integration-reviewer.effort`, each when set. It reads what the group reviews found, not the E2E verdict;
+- unless the round carries the verdict over, one Agent call `subagent_type: "bdk:e2e-tester"`, `run_in_background: false`, prompt `Check the Change <change> end to end; the findings log is <round dir>/findings.jsonl`, `model` `models.e2e-tester.model` and `effort` `models.e2e-tester.effort`, each when set.
+
+Both go into the same message, so neither waits for the other: never start the integration reviewer after the E2E tester has returned, nor the E2E tester after the integration reviewer. The E2E tester starts only after the check run of step 3 has ended, so the project's suites and the started product never compete for the same machine.
 
 A failed run is retried once, as in step 3. A round with no group still runs the E2E check unless it carries the verdict over.
 
