@@ -44,7 +44,7 @@ A plan is a directory of part files, `openspec/changes/<change>/plan/parts/01.md
 |---|---|
 | `id` | The file stem, quoted: `"02"` for `02.md`. |
 | `depends-on` | The parts whose output this part uses, such as `["01"]`; `[]` when none. The part starts only after they are merged. |
-| `isolation` | `worktree`: the part is built in its own git worktree, in parallel with the other parts of its wave. `shared`: the part changes state outside its files that a parallel part could change too (a lockfile, generated code, a migration sequence), so it is built in the main checkout, alone in its wave. |
+| `isolation` | `worktree`: the part is built in its own git worktree, in parallel with the other parts of its wave; when it is the only part of its wave left to build, it is built in the main checkout instead, since there is nothing to isolate it from. `shared`: the part changes state outside its files that a parallel part could change too (a lockfile, generated code, a migration sequence), so it is built in the main checkout, alone in its wave. |
 | `files` | Every file the part creates or changes, tests included, as exact repository-relative paths. |
 
 **Waves** follow from `depends-on` alone. A part with no dependency is in wave 1; any other part is one wave after its latest dependency. For example, with `02` and `03` depending on `01`, and `04` on `02`:

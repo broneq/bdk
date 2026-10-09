@@ -1,6 +1,6 @@
 ---
 name: execute-waves
-description: 'The execute stage of an OpenSpec Change, run by the bdk:lead agent that /bdk:execute starts (and /bdk:auto-review for the fix parts of a review round) - takes the waves of the plan parts from bdk plan check, runs each part through implement-part and conform-part in parallel batches (worktree parts in their own git worktrees), retries and escalates within the budget, commits each part, merges the worktrees in part order with resolve-conflict on a conflict, and writes state.json and execute/result.md. Not for users: /bdk:execute is the command.'
+description: 'The execute stage of an OpenSpec Change, run by the bdk:lead agent that /bdk:execute starts (and /bdk:auto-review for the fix parts of a review round) - takes the waves of the plan parts from bdk plan check, runs each part through implement-part and conform-part in parallel batches (parts that share a wave in their own git worktrees, a part alone in its wave in the main checkout), retries and escalates within the budget, commits each part, merges the worktrees in part order with resolve-conflict on a conflict, and writes state.json and execute/result.md. Not for users: /bdk:execute is the command.'
 argument-hint: "<change> --run-dir <absolute path> [--parts <absolute dir>]"
 user-invocable: false
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(mkdir -p *) Bash(git *) Read Write Grep Glob Agent
@@ -51,22 +51,27 @@ Run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" plan check <parts dir> --json`. It exits 1 
 - A part with `wave: null`, or a problem `shared-not-alone`: the order of the work is unknown or unsafe. Start nothing, change nothing, and go to step 8 with the blocker naming the problems and `/bdk:plan <change>`.
 - Any other problem (`max-tasks`, `max-files`, `max-bytes`, `overlap`): note it for `Decisions taken without the user` and go on. An `overlap` means the parts' merge may conflict; step 6 handles that.
 
-Each part's `isolation` is `worktree` or `shared`. Done when you hold the waves in order, with each part's isolation.
+Each part's `isolation` is `worktree` or `shared`. Where a part of a wave runs:
+
+- **Main checkout**, with no `--workdir`: a `shared` part; and a part that is the only part of its wave not `done` in the state, unless its worktree directory `<run dir>/worktrees/<id>` or its branch `bdk/<change>/part-<id>` (`git branch --list bdk/<change>/part-<id>`) exists. A worktree isolates parts that run at the same time; a part alone in its wave has nothing to be isolated from, and the main checkout keeps the project's installed dependencies and warm tool caches. Count per wave, never per batch of step 5: the parts of one wave stay apart until each is committed.
+- **Worktree**, `<run dir>/worktrees/<id>`: every other part. An existing worktree or part branch holds the part's earlier work, so it wins even when the part is now alone.
+
+Never change a part file's `isolation`: the plan is the planner's. Done when you hold the waves in order and where each part runs.
 
 ## 3. Branch and tree
 
-1. `git status --porcelain` must print nothing (ignored files never show). When it lists paths, stop at step 8 with the blocker `uncommitted changes: <paths>; commit or stash them, then run /bdk:execute again`.
+1. `git status --porcelain` must print nothing (ignored files never show), with one exception: the earlier work of the part that runs next in the main checkout. Take the first wave that holds a part not `done`; when a part of it runs in the main checkout (step 2), the state records at least one attempt of that part, and every listed path is one of that part's `files`, the paths are that part's work from an earlier run: keep them, and its implementer continues from them. Otherwise, when it lists paths, stop at step 8 with the blocker `uncommitted changes: <paths>; commit or stash them, then run /bdk:execute again`.
 2. The base branch: `git symbolic-ref --short refs/remotes/origin/HEAD` without its `origin/` prefix; else `main`. When `git branch --show-current` prints the base or nothing, run `git switch -c <change>`; when that branch exists already, stop at step 8 naming it. The Change's commits never land on the base.
 3. A part that the state marks `done` whose branch `bdk/<change>/part-<id>` still exists (`git branch --list bdk/<change>/part-<id>`) was not merged before a break: merge it now as step 6 says.
 
-Write the state. Done when you are on the Change's branch with a clean tree and nothing done is left unmerged.
+Write the state. Done when you are on the Change's branch with a clean tree (or one holding only the kept earlier work) and nothing done is left unmerged.
 
 ## 4. Prepare the wave
 
 Take the first wave that holds a part not `done`; when there is none, go to step 8. Its parts not `done` are this wave's parts, in ascending order. Each part gets a fresh budget in this run: `policy.budgets.part-attempts` implementer runs.
 
-- A `shared` part runs in the main checkout, with no `--workdir`.
-- A `worktree` part runs in `<run dir>/worktrees/<id>` on the branch `bdk/<change>/part-<id>`. When that directory exists, reuse it: it holds the part's earlier work. Otherwise, when the branch exists, run `git worktree add <run dir>/worktrees/<id> bdk/<change>/part-<id>`; else `git worktree add <run dir>/worktrees/<id> -b bdk/<change>/part-<id>`, which branches from the Change branch as it is now.
+- A part that runs in the main checkout (step 2) needs nothing.
+- A part that runs in a worktree runs in `<run dir>/worktrees/<id>` on the branch `bdk/<change>/part-<id>`. When that directory exists, reuse it: it holds the part's earlier work. Otherwise, when the branch exists, run `git worktree add <run dir>/worktrees/<id> bdk/<change>/part-<id>`; else `git worktree add <run dir>/worktrees/<id> -b bdk/<change>/part-<id>`, which branches from the Change branch as it is now.
 
 Done when every part of the wave has its work directory.
 
@@ -75,28 +80,28 @@ Done when every part of the wave has its work directory.
 Split the wave's parts into batches of at most `execution.max-parallel`, in ascending order. For each batch, repeat until every part of the batch is `done` or `blocked`:
 
 1. **Implement.** For each part of the batch that needs an implementer run (every part at first; later the parts to retry), add 1 to its `attempts` and write the state. Then start, in one message, one foreground Agent call per part:
-   - `subagent_type: "bdk:implementer"`, prompt `Run the skill bdk:implement-part with the arguments: <change> <id> --run-dir <run dir>`, plus ` --workdir <run dir>/worktrees/<id>` for a worktree part;
+   - `subagent_type: "bdk:implementer"`, prompt `Run the skill bdk:implement-part with the arguments: <change> <id> --run-dir <run dir>`, plus ` --workdir <run dir>/worktrees/<id>` for a part that runs in a worktree;
    - `model`: `policy.escalation.model` when this is the part's last run within this run's budget; else `models.implementer.model` when set; else no `model`.
    - `effort`: on the part's last run, `policy.escalation.effort` when set, else `models.implementer.effort` when set; on an earlier run, `models.implementer.effort` when set; else no `effort`.
 2. **Read** each part's `<run dir>/execute/part-<id>.md`, its first line and, for a blocker, its `## Blocker` section:
    - `Status: done`: the part goes to conform.
    - `Status: blocker` with `Kind: plan-defect` or `Kind: environment`: mark the part `blocked` at once, with the kind and the evidence as `reason`. A retry cannot fix a plan or install a tool.
    - `Status: blocker` with `Kind: other`, or no report: retry the part while its budget lasts; when spent, mark it `blocked` with the last reason.
-3. **Conform.** Start, in one message, one foreground Agent call per part that goes to conform: `subagent_type: "bdk:conformer"`, prompt `Run the skill bdk:conform-part with the arguments: <change> <id> --run-dir <run dir>` (plus ` --workdir <run dir>/worktrees/<id>` for a worktree part), and `model` `models.conformer.model` and `effort` `models.conformer.effort`, each when set.
+3. **Conform.** Start, in one message, one foreground Agent call per part that goes to conform: `subagent_type: "bdk:conformer"`, prompt `Run the skill bdk:conform-part with the arguments: <change> <id> --run-dir <run dir>` (plus ` --workdir <run dir>/worktrees/<id>` for a part that runs in a worktree), and `model` `models.conformer.model` and `effort` `models.conformer.effort`, each when set.
 4. **Read** each `<run dir>/execute/conform-<id>.md`:
    - `Verdict: PASS`: commit the part (below), then mark it `done`.
    - `Verdict: FAIL`, or no report: retry the part while its budget lasts (the implementer reads the failed report); when spent, mark it `blocked` with the `Left` items naming tasks, or the red check, as `reason`.
 5. Write the state.
 
-**Commit a part** when its conform passed. Read `git log --oneline -10` and follow its message style (Conventional Commits when the log uses them); the message names the part, e.g. `feat(export): CSV text (part 01)`. For a worktree part: `git -C <run dir>/worktrees/<id> add -A`, then `git -C <run dir>/worktrees/<id> commit -m "<message>"`. For a shared part: `git add -A`, then `git commit -m "<message>"`.
+**Commit a part** when its conform passed. Read `git log --oneline -10` and follow its message style (Conventional Commits when the log uses them); the message names the part, e.g. `feat(export): CSV text (part 01)`. For a part in a worktree: `git -C <run dir>/worktrees/<id> add -A`, then `git -C <run dir>/worktrees/<id> commit -m "<message>"`. For a part in the main checkout: `git add -A`, then `git commit -m "<message>"`; the commit lands on the Change branch, and there is nothing to merge.
 
-A worker never commits; when a report says it did, or `git status --porcelain` of the main checkout lists paths after a wave of worktree parts, a worker wrote outside its work directory: merge nothing, and stop at step 8 with the blocker naming the paths.
+A worker never commits; when a report says it did, or `git status --porcelain` of the main checkout lists paths after a wave whose parts all ran in worktrees, a worker wrote outside its work directory: merge nothing, and stop at step 8 with the blocker naming the paths.
 
 Done when every part of the wave is `done` or `blocked`, its state written.
 
 ## 6. Merge the wave
 
-For each `done` worktree part of the wave, in ascending order:
+For each `done` part of the wave that ran in a worktree, in ascending order (a wave run in the main checkout has nothing to merge):
 
 1. `git merge --no-ff --no-edit bdk/<change>/part-<id>`.
 2. When it succeeds: `git worktree remove <run dir>/worktrees/<id>`, then `git branch -d bdk/<change>/part-<id>`.
@@ -126,7 +131,7 @@ Status: blocked
 ## Parts
 - 01: done, 1 attempt; execute/conform-01.md PASS; merged
 - 02: done, 2 attempts (the second on opus); execute/conform-02.md PASS; merged after execute/merge-02.md
-- 03: blocked, 1 attempt; execute/part-03.md
+- 03: blocked, 1 attempt; execute/part-03.md; ran in the main checkout, its work left uncommitted there
 
 ## Blockers
 - 03: plan-defect - task 2 stores minutes, Scenario: Show duration expects seconds. Fix the plan: /bdk:plan add-timer, then /bdk:execute add-timer.
@@ -135,8 +140,9 @@ Status: blocked
 - plan check: overlap 01,02 on src/routes.js in wave 1; merged in part order.
 ```
 
-- `Status: done` only when every part of the plan is `done` and merged; else `Status: blocked`.
-- Each blocker names the command that unblocks it: `/bdk:plan <change>` for a plan defect, a conflict or a plan problem; `/bdk:setup` for an environment blocker; for checks that stay red, the report to read and `/bdk:execute <change>` to retry. A blocked worktree part also names its worktree, which stays for the next run.
+- A done part that ran in the main checkout ends its line with `ran in the main checkout, committed on <change>` instead of `merged`.
+- `Status: done` only when every part of the plan is `done` and on the Change branch (merged, or committed there from the main checkout); else `Status: blocked`.
+- Each blocker names the command that unblocks it: `/bdk:plan <change>` for a plan defect, a conflict or a plan problem; `/bdk:setup` for an environment blocker; for checks that stay red, the report to read and `/bdk:execute <change>` to retry. A blocked part names where its work stays for the next run: its worktree, or the main checkout, where its uncommitted files are its work (step 3).
 - Under `Decisions taken without the user`: plan problems that did not stop the stage, escalations, merge resolutions.
 - An empty section holds `- None.`
 

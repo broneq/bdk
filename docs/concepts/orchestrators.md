@@ -124,15 +124,17 @@ Inside the lead, waves run in order and the parts of a wave run in parallel batc
 flowchart TB
   W0["bdk plan check parts --json<br/>waves and isolation"] --> W1{{"wave: null, or<br/>shared-not-alone?"}}
   W1 -->|"yes"| BL0["blocked: fix the plan"]
-  W1 -->|"no"| W2["clean tree, Change branch,<br/>merge parts left unmerged by a break"]
+  W1 -->|"no"| W2["clean tree (or the earlier work<br/>of the next main-checkout part),<br/>Change branch, merge parts<br/>left unmerged by a break"]
   W2 --> W3["take the next wave<br/>with a part not done"]
-  W3 --> W4["a work directory per part<br/>shared: the main checkout<br/>worktree: R/worktrees/NN"]
+  W3 --> W4["a work directory per part<br/>main checkout: shared, or alone<br/>in its wave with no worktree yet<br/>else: R/worktrees/NN"]
   W4 --> W5["run the parts in batches<br/>of execution.max-parallel<br/>(next diagram)"]
-  W5 --> W6["merge the done worktree parts<br/>in part order (git merge --no-ff)"]
+  W5 --> W6["merge the done parts that ran<br/>in worktrees, in part order<br/>(git merge --no-ff)"]
   W6 --> NW{{"a part of the<br/>wave blocked?"}}
   NW -->|"no, waves left"| W3
   NW -->|"yes, or no wave left"| RES["write R/execute/result.md<br/>Status: done or blocked"]
 ```
+
+A worktree isolates parts that run at the same time, so only a wave with two or more parts to run uses them. A part that is the only one not done in its wave runs in the main checkout, whatever its `isolation` says: no checkout to make, the project's installed dependencies and warm tool caches, and its commit lands on the Change branch with no merge commit. A part whose worktree or `bdk/<change>/part-NN` branch is left from an earlier run keeps running there, so its earlier work is kept. A part that ran in the main checkout and did not finish leaves its files uncommitted there; the next `/bdk:execute` continues from them, and stops only on changes outside that part's `files`.
 
 Each part of a batch goes through these attempts; the implementers of a batch start in one message, then its conformers. The checks each worker runs are in the boxes; [Where execute runs your checks](#where-execute-runs-your-checks) has the details:
 
@@ -155,7 +157,7 @@ flowchart TB
   RC -->|"PASS"| COM["lead commits the part,<br/>state.json: done"]
 ```
 
-Merging a worktree part into the Change branch:
+Merging a part that ran in a worktree into the Change branch:
 
 ```mermaid
 %%{init: {"flowchart": {"wrappingWidth": 200}}}%%
@@ -205,7 +207,7 @@ Every check of the execute stage is a `bdk check run`, which runs your `tools.te
 | `conform-NN`<br/>test, lint, build | `bdk:conformer`, [`/bdk:conform-part`](/reference/bdk/skills#conform-part) step 5, after its fixes | the part's `files` | a fix that broke it is undone; still red, the verdict is `FAIL` and the lead retries the part |
 | `merge-NN`<br/>test, lint, build | `bdk:implementer`, [`/bdk:resolve-conflict`](/reference/bdk/skills#resolve-conflict), only after a merge conflict | the conflicted files and the `files` of each part behind them | fix and run again, three runs in all; still red, one more resolve on `policy.escalation.model`, then the merge is aborted and the part blocked |
 
-**Which files a run covers.** A run on a part's files passes them as `--scope`. An item with a `scoped` command checks only the scope files its `paths` match; an item whose `paths` match none of them is skipped; an item without `scoped` runs its full `command`, on the whole project ([`scoped` and `paths`](/guide/configuration#examples)). A worktree part runs its checks in its own worktree, which holds the Change branch as it was when the wave started plus this part: never the other parts of the same wave.
+**Which files a run covers.** A run on a part's files passes them as `--scope`. An item with a `scoped` command checks only the scope files its `paths` match; an item whose `paths` match none of them is skipped; an item without `scoped` runs its full `command`, on the whole project ([`scoped` and `paths`](/guide/configuration#examples)). A part that runs in a worktree runs its checks there, on the Change branch as it was when the wave started plus this part: never the other parts of the same wave. A part alone in its wave runs them in the main checkout, on the Change branch plus this part.
 
 **What is not checked.** After a wave is merged into the Change branch, nothing runs the checks on the merged result: a clean merge runs none, and `merge-NN` runs only after a conflict, on the files of the parts in it. The first run of every check on the whole project is the first round of [`/bdk:auto-review`](#bdk-auto-review) (`bdk check run round-N --round N`, next to the E2E check), where a red check is a `blocker` finding. A Change you take from `/bdk:execute` straight to a pull request has passed only its part checks.
 
