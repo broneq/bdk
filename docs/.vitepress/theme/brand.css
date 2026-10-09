@@ -484,9 +484,14 @@ html.dark,
   color: var(--accent-text);
 }
 
-/* Tables: hairline rows under a strong top rule, mono heads, no stripes. */
+/* Tables: hairline rows under a strong top rule, mono heads, no stripes. The rule sits on the
+   first row's cells, not the table: VitePress makes the table a full-width block so it can
+   scroll, and a narrow table's rows end before that box does. */
 .vp-doc table {
   border-collapse: collapse;
+}
+
+.vp-doc table > :first-child > tr:first-child > :is(th, td) {
   border-top: 2px solid var(--line-strong);
 }
 
