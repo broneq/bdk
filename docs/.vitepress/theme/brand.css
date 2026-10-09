@@ -624,6 +624,15 @@ html.dark,
   border-radius: var(--radius-sm);
 }
 
+/* Mermaid gives an edge label a 200 px max-width (`createText` without a width) and then wraps it
+   at a space of its own choosing. Without the cap a label breaks only at its author's <br/>, like
+   a node label (`flowchart.wrappingWidth`). Mermaid measures a label inside this frame, before it
+   moves it under its `.edgeLabel` group, so the rule matches every label and the layout makes
+   room. `docs:diagram-fit` fails on a label drawn on more lines than its source has. */
+.vp-doc .mermaid foreignObject > div {
+  max-width: none !important;
+}
+
 /* The box behind a sequence diagram's message, condition and section texts
    (`label-backing.ts`), in the colour behind every diagram, so lines pass behind the text. */
 .vp-doc .mermaid .label-backing {

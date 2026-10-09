@@ -260,7 +260,7 @@ sequenceDiagram
   participant I as integration<br/>reviewer
   participant J as judge
   L->>L: bdk git groups<br/>--record round-N:<br/>groups.json
-  par batches of execution.max-parallel
+  par batches of<br/>execution.max-parallel
     L->>R: /bdk:review-group<br/>per group
     R->>R: bdk findings add
   and

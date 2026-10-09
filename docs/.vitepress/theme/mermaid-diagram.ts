@@ -94,12 +94,14 @@ export default defineComponent({
           // Wrapping off: a label line wider than the wrapping width breaks at any hyphen that
           // fits (`/bdk:implement-` / `part`), so a label breaks only at its author's <br/>. The
           // mermaid blocks test keeps those lines short and the width the same for every page.
+          // Edge labels ignore this width; `brand.css` lifts their 200 px cap.
           flowchart: { wrappingWidth: 10000 },
           // Sequence wrapping cuts a word wider than its box into pieces with a hyphen of its
           // own (`/bdk:pr-rev-` / `iew`); off, a text breaks only at <br/>. The tighter layout
           // (Mermaid's defaults: 150 px boxes, 50 px gaps and side margins) lets a diagram of
           // four or five lifelines fit the content column. The same test rejects a block that
-          // sets its own configuration.
+          // sets its own configuration. A block label (`alt`, `loop`, ...) wider than its block
+          // is still broken by Mermaid whatever `wrap` says; `docs:diagram-fit` fails on it.
           sequence: {
             wrap: false,
             width: 96,

@@ -161,7 +161,7 @@ sequenceDiagram
   Note over H,C: SessionStart, every session
   H->>B: bdk hooks session-start
   B->>C: load from the session cwd
-  alt not configured or invalid
+  alt not configured<br/>or invalid
     B-->>H: one warning, no context
   else configured
     B-->>H: five lines: the project root,<br/>stages, /bdk:run, resume,<br/>direct small edits
