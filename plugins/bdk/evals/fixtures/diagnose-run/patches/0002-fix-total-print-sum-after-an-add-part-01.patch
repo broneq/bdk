@@ -1,0 +1,55 @@
+From eab99573eda346cff8e51e24db5c31e97baae753 Mon Sep 17 00:00:00 2001
+From: BDK eval <eval@example.invalid>
+Date: Fri, 9 Oct 2026 14:48:53 +0200
+Subject: [PATCH 2/2] fix(total): print sum after an add (part 01)
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+---
+ bin/tally.js       |  2 +-
+ test/tally.test.js | 21 +++++++++++++++++++++
+ 2 files changed, 22 insertions(+), 1 deletion(-)
+ create mode 100644 test/tally.test.js
+
+diff --git a/bin/tally.js b/bin/tally.js
+index deebcc3..c333829 100755
+--- a/bin/tally.js
++++ b/bin/tally.js
+@@ -12,7 +12,7 @@ function load() {
+ if (command === "add") {
+   const amount = parseAmount(value);
+   const entries = load();
+-  entries.push(value);
++  entries.push(amount);
+   writeFileSync(FILE, JSON.stringify(entries));
+   console.log(`Added ${amount.toFixed(2)}`);
+ } else if (command === "total") {
+diff --git a/test/tally.test.js b/test/tally.test.js
+new file mode 100644
+index 0000000..e709451
+--- /dev/null
++++ b/test/tally.test.js
+@@ -0,0 +1,21 @@
++import { test } from "node:test";
++import assert from "node:assert/strict";
++import { mkdtempSync } from "node:fs";
++import { tmpdir } from "node:os";
++import { join, resolve } from "node:path";
++import { spawnSync } from "node:child_process";
++
++const BIN = resolve("bin/tally.js");
++
++function tally(cwd, ...args) {
++  return spawnSync(process.execPath, [BIN, ...args], { cwd, encoding: "utf8" });
++}
++
++// tally / Requirement: Total / Scenario: Total after an add
++test("total after an add prints the sum", () => {
++  const dir = mkdtempSync(join(tmpdir(), "tally-"));
++  assert.equal(tally(dir, "add", "5").status, 0);
++  const result = tally(dir, "total");
++  assert.equal(result.status, 0);
++  assert.equal(result.stdout.trim(), "Total: 5.00");
++});
+-- 
+2.54.0 (Apple Git-157)
+

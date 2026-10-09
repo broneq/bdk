@@ -286,7 +286,7 @@ The settings schema SHALL hold a one-sentence description for every key of the S
 
 ### Requirement: Every agent is a models role
 
-Every agent the `bdk` plugin ships (`plugins/bdk/agents/<name>.md`) SHALL be a role of `models`, named by the agent's file name: `lead`, `explorer`, `verifier`, `implementer`, `conformer`, `reviewer`, `integration-reviewer`, `e2e-tester`, `judge`, `designer` and `planner`; the schema SHALL accept exactly these roles. The description of `models` in the settings schema SHALL name every one of them. Every skill of the plugin that starts one of these agents SHALL set the `Agent` call's `model` to `models.<agent>.model` and its `effort` to `models.<agent>.effort`, each only when the configuration sets it, and leave the field out when it does not, so the agent runs on the model of its frontmatter (the session's model for `model: inherit`) and at the session's effort level; the only exception SHALL be the last implementer run of a plan part and the second `resolve-conflict` run, which run on `policy.escalation.model` and `policy.escalation.effort` (spec `bdk-execute`). A workspace test SHALL fail and name the agent when an agent file is not a role of the `models` description or of the schema, and SHALL fail and name the skill when a paragraph of a `SKILL.md` that starts `subagent_type: "bdk:<agent>"` does not name `models.<agent>`.
+Every agent the `bdk` plugin ships (`plugins/bdk/agents/<name>.md`) SHALL be a role of `models`, named by the agent's file name: `lead`, `explorer`, `verifier`, `implementer`, `conformer`, `reviewer`, `integration-reviewer`, `e2e-tester`, `judge`, `designer`, `planner` and `analyst`; the schema SHALL accept exactly these roles. The description of `models` in the settings schema SHALL name every one of them. Every skill of the plugin that starts one of these agents SHALL set the `Agent` call's `model` to `models.<agent>.model` and its `effort` to `models.<agent>.effort`, each only when the configuration sets it, and leave the field out when it does not, so the agent runs on the model of its frontmatter (the session's model for `model: inherit`) and at the session's effort level; the only exception SHALL be the last implementer run of a plan part and the second `resolve-conflict` run, which run on `policy.escalation.model` and `policy.escalation.effort` (spec `bdk-execute`). A workspace test SHALL fail and name the agent when an agent file is not a role of the `models` description or of the schema, and SHALL fail and name the skill when a paragraph of a `SKILL.md` that starts `subagent_type: "bdk:<agent>"` does not name `models.<agent>`.
 
 #### Scenario: Verifier model in every stage
 
@@ -322,3 +322,8 @@ Every agent the `bdk` plugin ships (`plugins/bdk/agents/<name>.md`) SHALL be a r
 
 - **WHEN** a skill starts `subagent_type: "bdk:verifier"` in a paragraph that does not name `models.verifier`
 - **THEN** `pnpm check` fails and names that skill
+
+#### Scenario: Analyst model
+
+- **WHEN** the configuration sets `models.analyst.model: opus` and a user types `/bdk:diagnose-run add-total`
+- **THEN** the `Agent` call that starts `bdk:analyst` has `model` `opus`

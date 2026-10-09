@@ -56,6 +56,7 @@ openspec/specs/<capability>/spec.md   main specs: openspec archive merges the de
     close/pr-body.md, pr.md           /bdk:close
     debug/reproduction.md, diagnosis.md, scratch/   /bdk:diagnose-bug
     debug/gate.md, result.md          /bdk:debug
+    diagnostics.md                    /bdk:diagnose-run (after the run)
   pr-<N>/                             /bdk:pr-review
     pr.md, previous.json (--verify), result.md, worktree/, review/round-k/{groups.json, previous.json, findings.jsonl, review.md, review.json, posted.md}
 ```
@@ -82,6 +83,7 @@ openspec/specs/<capability>/spec.md   main specs: openspec archive merges the de
 | `review/result.md` | `/bdk:auto-review` only | `/bdk:run` (decisions for the final report), `/bdk:debug`, `/bdk:close` (deferred findings in the PR) | the review's outcome | the final report loses the review's decisions |
 | `close/spec-conformance.md` | `bdk:verifier` (replaced per pass) | `bdk run status`, `/bdk:close` | the check that the specs match the product before the archive | the check runs again |
 | `close/pr.md` | `/bdk:close`, last | `bdk run status` (the Change is done), `/bdk:run` (done; a blocker merged) | the pull request's URL, base and branch | the Change is not done; `/bdk:close` finds the open PR again |
+| `diagnostics.md` | `bdk:analyst` (replaced per run of `/bdk:diagnose-run`) | you | where the run's time and cost went, and its waste, each cited | nothing reads it; run `/bdk:diagnose-run` again |
 
 Once a Change's pull request is merged and no `/bdk:run` queue still holds it, nothing reads its directory any more: keep it as the record of why, or delete it.
 

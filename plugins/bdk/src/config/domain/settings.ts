@@ -89,6 +89,7 @@ export const MODEL_ROLES = [
   "judge",
   "designer",
   "planner",
+  "analyst",
 ] as const;
 
 /** Claude Code's reasoning effort levels, which the `Agent` tool and agent frontmatter take. */
@@ -315,7 +316,7 @@ export const SettingsSchema = z
       .default({})
       .meta({
         ...about(
-          "Model and effort per agent role, each role named after its agent: `lead`, `explorer`, `verifier`, `implementer`, `conformer`, `reviewer`, `integration-reviewer`, `e2e-tester`, `judge`, `designer` or `planner`; a field not set leaves the agent on its default model and the session's effort.",
+          "Model and effort per agent role, each role named after its agent: `lead`, `explorer`, `verifier`, `implementer`, `conformer`, `reviewer`, `integration-reviewer`, `e2e-tester`, `judge`, `designer`, `planner` or `analyst`; a field not set leaves the agent on its default model and the session's effort.",
         ),
         entry: "role",
         examples: [

@@ -160,7 +160,7 @@ rules:
 
 Type: mapping of names to values · Default: `{}`
 
-Model and effort per agent role, each role named after its agent: `lead`, `explorer`, `verifier`, `implementer`, `conformer`, `reviewer`, `integration-reviewer`, `e2e-tester`, `judge`, `designer` or `planner`; a field not set leaves the agent on its default model and the session's effort.
+Model and effort per agent role, each role named after its agent: `lead`, `explorer`, `verifier`, `implementer`, `conformer`, `reviewer`, `integration-reviewer`, `e2e-tester`, `judge`, `designer`, `planner` or `analyst`; a field not set leaves the agent on its default model and the session's effort.
 
 | Key | Type | Required or default | Description |
 |---|---|---|---|

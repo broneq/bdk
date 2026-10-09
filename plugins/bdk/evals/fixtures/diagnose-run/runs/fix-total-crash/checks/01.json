@@ -1,0 +1,1 @@
+{"version":1,"id":"01","scope":["bin/tally.js","test/tally.test.js"],"verdict":"pass","checks":[{"kind":"test","tool":"node-test","command":"npm test","scoped":false,"status":"pass","exit":0,"timeout":600,"output":"/work/tally/.bdk/runs/fix-total-crash/checks/01/test-node-test.txt","tail":null}],"skipped":[],"findings":null}

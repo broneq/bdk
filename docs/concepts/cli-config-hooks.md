@@ -38,6 +38,7 @@ Which skill calls which command. Every skill that reads the configuration also r
 | `bdk findings decide` | `/bdk:triage` |
 | `bdk findings list` | `/bdk:judge`, `/bdk:triage`, `/bdk:plan-fixes`, `/bdk:auto-review`, `/bdk:review-round`, `/bdk:pr-review`, `/bdk:review-group`, `/bdk:review-integration`, `/bdk:implement-part` and `/bdk:conform-part` (fix parts) |
 | `bdk findings report` | `/bdk:judge`, `/bdk:triage` |
+| `bdk diagnostics report` | `/bdk:diagnose-run` |
 | `bdk hooks session-start`, `bdk hooks pre-tool-use` | `hooks/hooks.json` only |
 
 The same calls along the stages (a stage box stands for its orchestrator and every block it runs; dashed boxes are `bdk` commands):
@@ -144,7 +145,7 @@ The same as a list, key by key; types, defaults and allowed values are in the [s
 | `plan.part.max-tasks`, `plan.part.max-files`, `plan.part.max-bytes` | `bdk plan check`, `/bdk:plan-draft`, `/bdk:plan-fixes`, `/bdk:diagnose-bug` |
 | `execution.lead` | `/bdk:execute`, `/bdk:auto-review`, `/bdk:pr-review` |
 | `execution.max-parallel` | `/bdk:execute-waves`, `/bdk:review-round`, `/bdk:pr-review-round` |
-| `models.<role>.model`, `models.<role>.effort` for the roles `lead`, `explorer`, `designer`, `planner`, `verifier`, `implementer`, `conformer`, `reviewer`, `integration-reviewer`, `e2e-tester`, `judge` | the `Agent` call that starts that role (`model` and `effort`) |
+| `models.<role>.model`, `models.<role>.effort` for the roles `lead`, `explorer`, `designer`, `planner`, `verifier`, `implementer`, `conformer`, `reviewer`, `integration-reviewer`, `e2e-tester`, `judge`, `analyst` | the `Agent` call that starts that role (`model` and `effort`) |
 | `hooks.subagent-git` | `bdk hooks pre-tool-use` |
 
 ## Hooks

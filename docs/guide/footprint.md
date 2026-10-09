@@ -16,6 +16,8 @@ What drives the spend:
 
 [Configuration](./configuration.md#spend-less-or-check-more) has a cheaper and a more thorough profile.
 
+To see where one of your runs spent its time and money, run [`/bdk:diagnose-run`](./diagnostics.md) after it.
+
 BDK is worth its cost on a change with behaviour to specify and check. A typo, a version bump or a one-line fix you can see whole is faster done directly.
 
 ## What it may do without asking

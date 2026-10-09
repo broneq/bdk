@@ -10,15 +10,16 @@ The plugin ships the `bdk` command line; its skills run it. Each block is what t
 Usage: bdk <group> [<verb>] [arguments] [flags]
 
 Command groups:
-  check     Run the project's test, lint and build commands
-  config    Show, check and set the BDK configuration
-  findings  Record findings, levels and decisions of a review round; list them folded; write the report
-  git       Review scope and reviewer groups of a branch
-  hooks     Hook commands of the bdk plugin (SessionStart, PreToolUse)
-  openspec  The BDK OpenSpec schema in a project
-  plan      Check the plan parts of a Change
-  rules     The rules a role reads for its stage and files
-  run       State of an autopilot run
+  check        Run the project's test, lint and build commands
+  config       Show, check and set the BDK configuration
+  diagnostics  Count a run from the host transcripts: time, tokens, cost share and waste
+  findings     Record findings, levels and decisions of a review round; list them folded; write the report
+  git          Review scope and reviewer groups of a branch
+  hooks        Hook commands of the bdk plugin (SessionStart, PreToolUse)
+  openspec     The BDK OpenSpec schema in a project
+  plan         Check the plan parts of a Change
+  rules        The rules a role reads for its stage and files
+  run          State of an autopilot run
 
 Flags:
   --help, -h  Show help
@@ -151,6 +152,48 @@ Flags:
   --help, -h       Show help
   --version        Print the bdk version
   --json           Print the result as one JSON document
+
+Exit codes:
+  0  success
+  2  usage error
+  3  environment error
+  4  internal error
+```
+
+## `bdk diagnostics` {#diagnostics}
+
+```text
+Usage: bdk diagnostics <verb> [arguments] [flags]
+
+Count a run from the host transcripts: time, tokens, cost share and waste
+
+Commands:
+  report  Count the sessions of a Change from the host transcripts: stages, agents, tokens, cost share, waste findings
+
+Flags:
+  --help, -h  Show help
+  --version   Print the bdk version
+  --json      Print the result as one JSON document
+
+Run bdk diagnostics <verb> --help for the arguments and flags of a command.
+```
+
+### `bdk diagnostics report` {#diagnostics-report}
+
+```text
+Usage: bdk diagnostics report [<change>] [flags]
+
+Count the sessions of a Change from the host transcripts: stages, agents, tokens, cost share, waste findings
+
+Arguments:
+  <change>  The Change whose sessions to count: every session naming .bdk/runs/<change>/ or openspec/changes/<change>
+
+Flags:
+  --session <value>      Count this session id too (repeatable)
+  --transcripts <value>  The transcripts directory; default $CLAUDE_CONFIG_DIR/projects/<project key> (~/.claude when unset)
+  --help, -h             Show help
+  --version              Print the bdk version
+  --json                 Print the result as one JSON document
 
 Exit codes:
   0  success

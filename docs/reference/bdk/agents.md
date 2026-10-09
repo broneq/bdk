@@ -6,6 +6,12 @@
 
 The skills of the plugin start these agents; you do not start them yourself.
 
+## `analyst` {#analyst}
+
+Model: `sonnet` · Tools: `Read`, `Grep`, `Glob`, `Bash`, `Write`, `Skill`
+
+Analyses how a finished BDK run went - stages, agents, time, tokens, cost and waste - from the run files of a Change and the host transcripts of its sessions, and writes one cited diagnostics report. Started by the skill bdk:diagnose-run with a prompt naming that skill and its arguments; continue it with SendMessage to ask a follow-up question about the same run.
+
 ## `conformer` {#conformer}
 
 Model: `sonnet` · Tools: `Read`, `Edit`, `Write`, `Bash`, `Grep`, `Glob`, `Skill`
