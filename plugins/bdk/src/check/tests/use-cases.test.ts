@@ -140,6 +140,24 @@ describe("runChecks", () => {
     expect(files.data.get(`${ROOT}/${RUN}/checks/02/lint-eslint.txt`)).toBe("timeout 30\n");
   });
 
+  it("says under a cut tail that the output file holds the rest, and nothing under a whole one", async () => {
+    const long = Array.from({ length: 57 }, (_, n) => `line ${String(n + 1)}`).join("\n");
+    const { deps } = project(SETTINGS, {
+      "vitest run src/a.ts": { output: long, outcome: { kind: "exit", code: 1 } },
+      "eslint .": { output: "a.ts:1 no-var", outcome: { kind: "exit", code: 1 } },
+    });
+    const { result, file } = await runChecks(deps, input({ scope: ["src/a.ts"] }));
+    const text = renderRun(result, file).split("\n");
+    const tail = Array.from({ length: 20 }, (_, n) => `    | line ${String(n + 38)}`);
+    expect(text.slice(1, 23)).toEqual([
+      ...tail,
+      "    (last 20 lines; the whole output is in the file above)",
+      `fail  lint eslint  full    ${RUN}/checks/02/lint-eslint.txt`,
+    ]);
+    expect(text[23]).toBe("    | a.ts:1 no-var");
+    expect(text[24]).toBe("verdict: fail (2 of 2 red)");
+  });
+
   it("gives each entry only the scope paths its paths match and skips one with none", async () => {
     const { files, shell, deps } = project(`tools:
   test:
