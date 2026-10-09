@@ -18,7 +18,7 @@ You compose the plan blocks; you never do a block's work. Do not write, fix or c
 The blocks:
 
 - **plan-draft**: start an agent with the Agent tool in the foreground (`run_in_background: false`), `subagent_type: "bdk:planner"`, prompt `Run the skill bdk:plan-draft with the arguments: <change>`, `model` set to `models.planner.model` and `effort` set to `models.planner.effort`, each only when the configuration above sets it. Start a new planner each time this block runs. It writes the parts `openspec/changes/<change>/plan/parts/NN.md`, or fixes them when the last report failed, and runs `bdk plan check` itself.
-- **check**: run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" plan check openspec/changes/<change>/plan/parts`, on its own. It prints the waves, and the problems under `problems:` with exit 1; exit 3 is an environment problem.
+- **check**: run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" plan check openspec/changes/<change>/plan/parts` as the whole Bash command: nothing before or after it, no `cd`, `;`, `&&`, `|` or `echo`. The permission rule allows `bdk` only on its own, so a compound call can be denied and a denied call stops the stage; the exit code comes back in the tool result anyway. It prints the waves, and the problems under `problems:` with exit 1; exit 3 is an environment problem.
 - **verify-plan**: start an agent with the Agent tool in the foreground (`run_in_background: false`), `subagent_type: "bdk:verifier"`, prompt `Run the skill bdk:verify-plan for the Change <change>.`, `model` set to `models.verifier.model` and `effort` set to `models.verifier.effort`, each only when the configuration above sets it. It writes the next `.bdk/runs/<change>/plan/verify-N.md` and returns its verdict line. Keep the agent ID it returns.
 
 Before each block, tell the user in one line which block runs and which file it writes, e.g. `Drafting the plan: bdk:planner writes openspec/changes/add-csv-export/plan/parts/`, `Checking the plan: bdk:verifier writes .bdk/runs/add-csv-export/plan/verify-1.md`.
@@ -77,7 +77,7 @@ Count the verifier passes you start in this run; at most `policy.budgets.verifie
 
 1. When the last report says `Verdict: FAIL` (row 3, or a failed pass of this loop): run **plan-draft** with `<change>`; it fixes the report's `Must address` items. When its reply names a gap of the design, stop as in step 3. Then run step 4 and come back.
 2. Verify: the first pass of this run starts the **verify-plan** agent. A later pass continues the same agent with `SendMessage` (load it first with `ToolSearch` query `select:SendMessage` when it is listed only by name): `Verify the plan of <change> again: plan-draft fixed it.` Without the agent's ID or the tool, start a new **verify-plan** agent instead; the report numbers and open IDs come from the files either way.
-3. Tell the user the verdict line and the report path.
+3. Tell the user the verdict line and the report path. When the agent returns no verdict line (a command it needs was denied or failed, and it wrote no report), stop: run no further block, and pass its message on.
 4. `Verdict: PASS`: go to step 6. `Verdict: FAIL` with budget left: back to 1. `Verdict: FAIL` with the budget spent: stop, and run no further **plan-draft**. Report the last report's path, its open `Must address` IDs, and that `/bdk:plan <change>` continues with a new budget.
 
 Done when the last report passes, or you stopped on a spent budget.

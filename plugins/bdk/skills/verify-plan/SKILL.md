@@ -32,7 +32,7 @@ Done when you know the Change and your report path.
 
 ## 2. Read
 
-Read every part, the proposal, every spec delta and the design. List every scenario of the spec deltas as `<capability>` / `Requirement: <name>` / `Scenario: <name>`. Run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" plan check openspec/changes/<change>/plan/parts` and keep its output: waves and problems.
+Read every part, the proposal, every spec delta and the design. List every scenario of the spec deltas as `<capability>` / `Requirement: <name>` / `Scenario: <name>`. Run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" plan check openspec/changes/<change>/plan/parts` as a Bash command of its own and keep its output: waves and problems.
 
 For each part, run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" rules for --stage plan --files <file> --files <file> ...` with the part's `files`, one `--files` per path, as a Bash command of its own, and keep the rules it prints for that part. A rule another part's files select does not hold for this part.
 
