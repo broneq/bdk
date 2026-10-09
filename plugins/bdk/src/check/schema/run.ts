@@ -3,12 +3,14 @@
 
 import { z } from "zod";
 
-import { KINDS } from "../domain/plan.ts";
+import { KINDS, POINTS } from "../domain/plan.ts";
 import { STATUSES, VERDICTS } from "../domain/verdict.ts";
 
 export const runResult = z.object({
-  version: z.literal(1),
+  version: z.literal(2),
   id: z.string(),
+  at: z.enum(POINTS).nullable(),
+  changed: z.string().nullable(),
   scope: z.array(z.string()).nullable(),
   verdict: z.enum(VERDICTS),
   checks: z.array(
@@ -24,7 +26,9 @@ export const runResult = z.object({
       tail: z.array(z.string()).nullable(),
     }),
   ),
-  skipped: z.array(z.object({ kind: z.enum(KINDS), tool: z.string() })),
+  skipped: z.array(
+    z.object({ kind: z.enum(KINDS), tool: z.string(), reason: z.enum(["paths", "no-files"]) }),
+  ),
   findings: z.object({ log: z.string(), ids: z.array(z.string()) }).nullable(),
 });
 

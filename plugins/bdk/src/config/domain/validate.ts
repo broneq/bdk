@@ -77,6 +77,13 @@ function problemAt(layers: readonly Layer[], key: string, message: string): Prob
   };
 }
 
+/** Keys a release removed, with the rewrite the message names (spec `bdk-cli/config`). */
+function removedKey(key: string): string | undefined {
+  return /^tools\.(test|lint|build)\.[^.]+\.scoped$/.test(key)
+    ? "scoped was removed: put {files} into the command of a second item that runs at part (when: [part])"
+    : undefined;
+}
+
 function issueProblems(
   issue: core.$ZodIssue,
   merged: unknown,
@@ -91,7 +98,8 @@ function issueProblems(
       const full = parent === "" ? name : `${parent}.${name}`;
       const hint =
         near === undefined ? "" : `; did you mean ${parent === "" ? near : `${parent}.${near}`}?`;
-      return problemAt(layers, full, `unknown key${hint}`);
+      const removed = removedKey(full);
+      return problemAt(layers, full, removed ?? `unknown key${hint}`);
     });
   }
   if (issue.code === "invalid_key") {

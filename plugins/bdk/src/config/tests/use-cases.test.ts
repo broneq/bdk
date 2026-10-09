@@ -193,14 +193,14 @@ describe("set", () => {
     const { deps: d, fs } = configured({
       [PROJECT]: "tools:\n  test:\n    - id: unit\n      command: pnpm test\n",
     });
-    set(d, "tools.test.unit.scoped", "pnpm vitest {files}", "local");
+    set(d, "tools.test.unit.when", "[part]", "local");
     expect(fs.data.get(LOCAL)).toBe(
-      "tools:\n  test:\n    - id: unit\n      scoped: pnpm vitest {files}\n",
+      "tools:\n  test:\n    - id: unit\n      when:\n        - part\n",
     );
     expect(loadConfig(d)).toMatchObject({
       status: "ok",
       settings: {
-        tools: { test: [{ id: "unit", command: "pnpm test", scoped: "pnpm vitest {files}" }] },
+        tools: { test: [{ id: "unit", command: "pnpm test", when: ["part"] }] },
       },
     });
     set(d, "tools.test.unit.command", "vitest run");
@@ -226,7 +226,7 @@ describe("set", () => {
     expect(invalid.code).toBe("usage/invalid-value");
     expect(invalid.message).toMatch(/policy\.gates\.review/);
     expect(invalid.message).toMatch(/manual/);
-    expect(usage(() => set(d, "tools.test.new.scoped", "x {files}")).message).toMatch(
+    expect(usage(() => set(d, "tools.test.new.when", "[part]")).message).toMatch(
       /tools\.test\.new\.command: required, missing/,
     );
     expect(usage(() => set(d, "languages", "[a, b")).code).toBe("usage/invalid-value");

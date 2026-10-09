@@ -11,7 +11,7 @@ export interface SettingDoc {
   /** Dotted key; `<id>` stands for an item's id, `<role>`-style names for a record key. */
   readonly key: string;
   readonly type: SettingType;
-  /** Allowed values of an enum. */
+  /** Allowed values of an enum, or of the enum elements of a list. */
   readonly values?: readonly string[];
   /** Bounds of an integer. */
   readonly min?: number;
@@ -92,6 +92,15 @@ function typeOf(node: z.ZodType): SettingType {
   return "string";
 }
 
+/** The element type of a list, with the values of an enum element. */
+function listOf(element: z.ZodType): Pick<SettingDoc, "of" | "values"> {
+  const { node } = unwrap(element);
+  return {
+    of: typeOf(node),
+    ...(node instanceof z.ZodEnum ? { values: node.options.map(String) } : {}),
+  };
+}
+
 function walk(key: string, schema: z.ZodType, out: SettingDoc[]): void {
   const at = unwrap(schema);
   const { node } = at;
@@ -110,9 +119,7 @@ function walk(key: string, schema: z.ZodType, out: SettingDoc[]): void {
     node.maxValue < Number.MAX_SAFE_INTEGER
       ? { max: node.maxValue }
       : {}),
-    ...(type === "list" && node instanceof z.ZodArray
-      ? { of: typeOf(unwrap(node.element as z.ZodType).node) }
-      : {}),
+    ...(type === "list" && node instanceof z.ZodArray ? listOf(node.element as z.ZodType) : {}),
     ...("default" in at ? { default: at.default } : {}),
     required: !at.hasDefault && !at.optional,
     description: at.meta.description ?? "",

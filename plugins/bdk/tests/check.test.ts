@@ -1,4 +1,5 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -7,6 +8,7 @@ import { checkGroup } from "../src/check/index.ts";
 import { runResult } from "../src/check/schema/run.ts";
 import { run } from "../src/shared/cli/index.ts";
 import { files } from "../src/shared/fs/index.ts";
+import { git } from "../src/shared/git/index.ts";
 import { shell } from "../src/shared/shell/index.ts";
 
 // Spec `bdk-cli/check` end to end: the frame, the slice, the config and findings slices, and the
@@ -45,7 +47,14 @@ async function bdk(
     version: "0.0.0",
     nodeVersion: process.versions.node,
     groups: [
-      checkGroup({ files, cwd, home: project, env: {}, shell: (line, opts) => shell(line, opts) }),
+      checkGroup({
+        files,
+        cwd,
+        home: project,
+        env: {},
+        shell: (line, opts) => shell(line, opts),
+        git: (at, gitArgs) => git(at, gitArgs),
+      }),
     ],
     stdout: (text) => (stdout += text),
     stderr: (text) => (stderr += text),
@@ -56,8 +65,7 @@ async function bdk(
 const LIST_ARGS = `tools:
   test:
     - id: args
-      command: echo full
-      scoped: "printf '[%s]' {files}"
+      command: "printf '[%s]' {files}"
   lint:
     - id: stdin
       command: "cat; echo read-eof"
@@ -104,12 +112,10 @@ describe("bdk check run", () => {
     settings(`tools:
   test:
     - id: api
-      command: echo api-full
-      scoped: "printf 'api[%s]' {files}"
+      command: "printf 'api[%s]' {files}"
       paths: ["api/**"]
     - id: web
-      command: echo web-full
-      scoped: "printf 'web[%s]' {files}"
+      command: "printf 'web[%s]' {files}"
       paths: ["web/**"]
 `);
     const { code, stdout, stderr } = await bdk([
@@ -124,7 +130,7 @@ describe("bdk check run", () => {
     expect(stdout).toBe(
       [
         `pass  test web  scoped  ${RUN}/checks/03/test-web.txt`,
-        "skip  test api  no scope file matches its paths",
+        "skip  test api  no changed file matches its paths",
         "verdict: pass",
         `result: ${RUN}/checks/03.json`,
         "",
@@ -133,7 +139,80 @@ describe("bdk check run", () => {
     expect(read(`${RUN}/checks/03/test-web.txt`)).toBe("web[web/src/a.tsx]\nexit 0\n");
     expect(runResult.parse(JSON.parse(read(`${RUN}/checks/03.json`)))).toMatchObject({
       checks: [{ tool: "web", command: "printf 'web[%s]' web/src/a.tsx" }],
-      skipped: [{ kind: "test", tool: "api" }],
+      skipped: [{ kind: "test", tool: "api", reason: "paths" }],
+    });
+  });
+
+  it("runs the part items on the files changed against a revision, in a real repository", async () => {
+    settings(`tools:
+  test:
+    - id: changed
+      command: "printf '[%s]' {files}"
+      when: [part]
+    - id: suite
+      command: echo suite
+      when: [wave, review]
+`);
+    const sh = (...args: string[]) =>
+      execFileSync("git", args, { cwd: project, stdio: ["ignore", "pipe", "pipe"] });
+    writeFileSync(join(project, ".gitignore"), "dist/\n.bdk/\n");
+    mkdirSync(join(project, "src"));
+    writeFileSync(join(project, "src", "a.ts"), "a\n");
+    writeFileSync(join(project, "src", "old.ts"), "old\n");
+    sh("init", "-q");
+    sh("add", ".");
+    sh("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "base");
+    writeFileSync(join(project, "src", "a.ts"), "a2\n");
+    unlinkSync(join(project, "src", "old.ts"));
+    writeFileSync(join(project, "src", "c.ts"), "c\n");
+    sh("add", "src/c.ts");
+    mkdirSync(join(project, "test"));
+    writeFileSync(join(project, "test", "a.test.ts"), "t\n");
+    mkdirSync(join(project, "dist"));
+    writeFileSync(join(project, "dist", "a.js"), "x\n");
+
+    const part = await bdk(["check", "run", RUN, "01", "--at", "part", "--changed", "HEAD"]);
+    expect(part).toMatchObject({ code: 0, stderr: "" });
+    expect(part.stdout.split("\n")[0]).toBe("at part, changed against HEAD");
+    expect(read(`${RUN}/checks/01/test-changed.txt`)).toBe(
+      "[src/a.ts][src/c.ts][test/a.test.ts]\nexit 0\n",
+    );
+    expect(runResult.parse(JSON.parse(read(`${RUN}/checks/01.json`)))).toMatchObject({
+      version: 2,
+      at: "part",
+      changed: "HEAD",
+      checks: [{ tool: "changed" }],
+      skipped: [],
+    });
+
+    const wave = await bdk(["check", "run", RUN, "wave-1", "--at", "wave", "--changed", "HEAD"]);
+    expect(wave.code).toBe(0);
+    expect(runResult.parse(JSON.parse(read(`${RUN}/checks/wave-1.json`))).checks).toMatchObject([
+      { tool: "suite", command: "echo suite", scoped: false },
+    ]);
+
+    const unknown = await bdk(["check", "run", RUN, "02", "--changed", "no-such-branch", "--json"]);
+    expect(unknown.code).toBe(2);
+    expect(JSON.parse(unknown.stdout)).toMatchObject({
+      error: {
+        code: "usage/invalid-argument",
+        message: expect.stringContaining("no-such-branch") as unknown,
+      },
+    });
+  });
+
+  it("refuses --changed outside a git work tree and an unknown point", async () => {
+    settings(LIST_ARGS);
+    const outside = await bdk(["check", "run", RUN, "01", "--changed", "HEAD", "--json"]);
+    expect(outside.code).toBe(3);
+    expect(JSON.parse(outside.stdout)).toMatchObject({ error: { code: "env/not-a-repo" } });
+    const point = await bdk(["check", "run", RUN, "01", "--at", "merge", "--json"]);
+    expect(point.code).toBe(2);
+    expect(JSON.parse(point.stdout)).toMatchObject({
+      error: {
+        code: "usage/invalid-argument",
+        message: expect.stringContaining("part, wave") as unknown,
+      },
     });
   });
 
