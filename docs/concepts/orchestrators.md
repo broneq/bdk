@@ -149,7 +149,7 @@ Each part of a batch goes through these attempts; the implementers of a batch st
 ```mermaid
 flowchart TB
   IMP["Agent bdk:implementer<br/>/bdk:implement-part<br/>attempts + 1<br/>in state.json"]
-  IMP --> RED["acceptance tests,<br/>written first<br/>bdk check run NN-red<br/>--at part --kind test<br/>each red for<br/>the right reason"]
+  IMP --> RED["acceptance tests,<br/>written first<br/>bdk check run NN-red<br/>--at part --kind test<br/>each red for<br/>the right reason,<br/>green if marked<br/>behaviour present"]
   RED --> BUILD["build the tasks"]
   BUILD --> PC["part checks<br/>bdk check run NN<br/>--at part --changed HEAD<br/>red: fix, run again<br/>3 runs in all"]
   PC -->|"R/execute/part-NN.md"| RI{{"part report"}}

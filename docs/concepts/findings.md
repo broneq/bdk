@@ -50,7 +50,7 @@ With `policy.gates.review: manual` (the default) BDK asks you about every findin
 
 ## After the decisions
 
-Findings decided `fix` become fix parts (`/bdk:plan-fixes`), built by the execute lead like any plan part. The next round reviews only those fix commits, so a round never re-reviews what was already accepted. The review ends when a round has no `fix` decision; with a `fix` left after `policy.budgets.review-rounds` rounds it ends as blocked.
+Findings decided `fix` become fix parts (`/bdk:plan-fixes`), built by the execute lead like any plan part. A finding that only asks for a missing test of something the code already does becomes a part that adds the test, with its scenario marked ` (behaviour present)`, so the implementer expects the test to pass at once instead of failing first. The next round reviews only those fix commits, so a round never re-reviews what was already accepted. The review ends when a round has no `fix` decision; with a `fix` left after `policy.budgets.review-rounds` rounds it ends as blocked.
 
 ## Read them yourself
 

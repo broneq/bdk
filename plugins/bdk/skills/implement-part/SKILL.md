@@ -71,7 +71,12 @@ Run them before any code of the tasks:
 
 `--at part` runs only the test items meant for a part (`when` holds `part`, or no `when`), so a whole suite kept for the wave or the review does not run here. See each acceptance test fail: the lines printed under a red check are only its last 20, and when they do not show every acceptance test failing (`(last 20 lines; ...)` under them says they are cut), read the output file with Read and find each test's own failure there. Each test must fail because the behaviour is missing (a missing export, a wrong value), not because the test is broken (a syntax error, a wrong import path, a typo in the fixture). Fix a broken test and run again. A test whose failure you did not read is not seen red: run the red check again, never infer it. A verdict `none` means no `tools.test` item runs at `part` on these files (none is configured for that point, or the `paths` of each skip them): go to step 7 with `Kind: environment` and the line `no tools.test item runs at part on these files; add one with /bdk:setup`.
 
-Done when every acceptance scenario has a test you saw fail, red for the right reason.
+A scenario the part lists with the suffix ` (behaviour present)` is the exception: its author traced the code and found the behaviour already there, so the part only adds the missing test, and that test must **pass** in this run. Run the red check for it all the same, with the other acceptance tests: its passing run is the only evidence that the behaviour is present, and your report line claims it. Find the test's own pass in the output, as you would a failure. The part and the code must agree; when they do not, the plan is wrong, and a retry cannot change that: stop and go to step 7 with `Kind: plan-defect`, having written no code:
+
+- The test of an unmarked scenario passes, and it encodes the WHEN and THEN (re-read it first: a test that asserts the wrong thing passes too, and is yours to fix). The behaviour is present while the part asks for it. Proposal: mark the scenario ` (behaviour present)`.
+- The test of a marked scenario fails because the behaviour is missing (not because the test is broken). The part says the behaviour is there and no task builds it. Proposal: drop the marker and add a task that fixes the code.
+
+Done when every acceptance scenario has a test you saw fail, red for the right reason, or, for a scenario marked ` (behaviour present)`, a test you saw pass.
 
 ## 5. Build the tasks
 
@@ -124,8 +129,8 @@ With `Status: blocker`, add before `## Decisions taken without the user`:
 - Proposal: change task 2 to store seconds.
 ```
 
-- `Status: done` only when every acceptance scenario has a test with `red seen; green seen` and the last part check passed.
-- Each `## Acceptance tests` line ends exactly `; red seen; green seen`, with nothing between or after; anything to say about a test goes under `## Decisions taken without the user`.
+- `Status: done` only when every acceptance scenario has its test line and the last part check passed.
+- Each `## Acceptance tests` line ends exactly `; red seen; green seen`, or, for a scenario the part marks ` (behaviour present)`, exactly `; green at first run (behaviour present); green seen`, with nothing between or after; anything to say about a test goes under `## Decisions taken without the user`.
 - `Kind` is `plan-defect` (the part is wrong), `environment` (a tool or configuration is missing) or `other` (checks stay red).
 - An empty section holds `- None.` A blocker found before any edit lists `- None.` under `Changed files`.
 

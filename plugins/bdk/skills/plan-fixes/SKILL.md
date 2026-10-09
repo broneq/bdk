@@ -32,9 +32,11 @@ Read the Change: `openspec/changes/<change>/proposal.md`, every `specs/**/spec.m
 
 For each finding, read the code at its `file` and `line` and trace its evidence: find the cause, the lines a fix changes, and the test file that covers that code (Grep for the function's name in the tests). A finding from `check` names a red check: read its output file under `.bdk/runs/<change>/checks/` to find the failing test and the code behind it. A finding without a file (an E2E start failure, a crash outside every scenario) needs its cause found from the evidence.
 
+A finding that asks for a test ("scenario X has no test") needs one more answer: does the code already do the scenario's THEN? Trace the scenario's WHEN through the code to the output it gives. When it does, the fix only adds a test of **present behaviour**: that test passes at its first run, and the implementer must know it, because every other acceptance test has to fail before any code. When it does not, the finding is a broken behaviour like any other.
+
 A finding is **not plannable** when its fix needs a spec or design change (the scenario it breaks contradicts another scenario or the design), or when the code does not show its cause. Note it with the reason; do not plan around it.
 
-Done when every finding has its cause, the files a fix touches (code and test), and its scenario if it breaks one, or a reason it is not plannable.
+Done when every finding has its cause, the files a fix touches (code and test), its scenario if it breaks one or asks for its test (and whether that behaviour is present), or a reason it is not plannable.
 
 ## 3. Cut the parts
 
@@ -83,8 +85,8 @@ A duration of 90 seconds prints as `1:30`, and the formatter uses descriptive na
 ```
 
 - One task per finding; its first line starts `Fix <finding id>:` and says what changes.
-- `## Acceptance scenarios`: each scenario a finding breaks. Without one, write `- None.`
-- `Verified by:` for a broken behaviour names a test that reproduces the finding's failure scenario with its exact input and expected result, so the implementer sees it red first; for a fix that keeps behaviour (a rename, a rule), the existing tests that must stay green. Never a command that spends money, needs credentials or reaches an external system.
+- `## Acceptance scenarios`: each scenario a finding breaks, and each scenario a finding asks a test for. A scenario whose behaviour is present (step 2) ends with ` (behaviour present)`: `` - `tally` / Requirement: Total / Scenario: Empty ledger (behaviour present) ``. The implementer then expects its test to pass at the first run; without the suffix it stops, since a test that cannot fail proves nothing about a fix. Without any scenario, write `- None.`
+- `Verified by:` for a broken behaviour names a test that reproduces the finding's failure scenario with its exact input and expected result, so the implementer sees it red first; for a test of present behaviour, the scenario and a test with its exact input and expected result, ending `; it passes at its first run, the behaviour is present`, and the task changes no code; for a fix that keeps behaviour (a rename, a rule), the existing tests that must stay green. Never a command that spends money, needs credentials or reaches an external system.
 - `files` lists every file the tasks change, tests included, as exact repository-relative paths.
 
 Done when every plannable finding has its task.
