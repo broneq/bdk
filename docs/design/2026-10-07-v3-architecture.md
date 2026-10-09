@@ -305,15 +305,15 @@ sequenceDiagram
   M->>M: Skill plan
   M-)L: execute (background)
   L--)M: summary or blocker
-  loop until no blockers, max policy.budgets.review-fix
+  loop until no blockers,<br/>max policy.budgets.review-fix
     M-)L: review-round (background)
     L--)M: round report
     M->>M: triage (Lavish or policy auto)
     M-)L: execute fixes of blockers only
   end
-  M->>M: Skill close: spec-conformance, archive, commit, PR
+  M->>M: Skill close: spec-conformance,<br/>archive, commit, PR
   M->>M: next Change in run.json, if any
-  M->>H: PRs and every decision taken without the user
+  M->>H: PRs and every decision<br/>taken without the user
 ```
 
 With several Changes, each Change gets its own branch from the base branch and its own PR; Changes are not stacked ([D9](./2026-10-07-v3-skills-decisions.md#d9-no-stacked-prs)).
@@ -356,7 +356,7 @@ sequenceDiagram
   loop until PASS, max policy.budgets.verifier
     O->>V: check the plan against the code
     V-->>O: plan/verify-N.md
-    O->>A: fix per must_address, split oversized parts
+    O->>A: fix per must_address,<br/>split oversized parts
   end
 ```
 
@@ -373,17 +373,17 @@ sequenceDiagram
   L->>I: part NN and its stage rules
   I->>C: part checks
   I-->>L: execute/part-NN.md (done or blocker)
-  L->>F: part diff against rules, instructions, tasks
+  L->>F: part diff against<br/>rules, instructions, tasks
   F->>C: part checks
   F-->>L: execute/conform-NN.md
-  L->>L: state.json: part NN done (conform passed)
+  L->>L: state.json: part NN done<br/>(conform passed)
   alt red checks or blocker
-    L->>I: retry, then a stronger model (policy.escalation)
+    L->>I: retry, then a stronger model<br/>(policy.escalation)
   end
   L->>L: commit the part in its worktree
-  L->>L: after the wave: merge part worktrees in part order
+  L->>L: after the wave: merge part<br/>worktrees in part order
   alt merge conflict
-    L->>I: edit the conflicted files of the later part, then its checks
+    L->>I: edit the conflicted files<br/>of the later part, then its checks
     L->>L: commit the merge
   end
 ```
@@ -400,7 +400,7 @@ sequenceDiagram
   participant E as e2e-tester
   participant I as integration reviewer
   participant J as judge
-  L->>C: bdk git groups (scope: since the last round)
+  L->>C: bdk git groups<br/>(scope: since the last round)
   C-->>L: file groups
   par in parallel
     L->>R: review-group
@@ -411,7 +411,7 @@ sequenceDiagram
     L->>E: e2e-check per scenario
     E-->>L: findings appended
   end
-  L->>I: review-integration (reads the group results)
+  L->>I: review-integration<br/>(reads the group results)
   I-->>L: findings appended
   L->>J: judge every finding
   J-->>L: review/round-N/review.md

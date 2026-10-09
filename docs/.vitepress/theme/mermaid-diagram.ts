@@ -93,6 +93,10 @@ export default defineComponent({
           // fits (`/bdk:implement-` / `part`), so a label breaks only at its author's <br/>. The
           // mermaid blocks test keeps those lines short and the width the same for every page.
           flowchart: { wrappingWidth: 10000 },
+          // Sequence wrapping cuts a word wider than its box into pieces with a hyphen of its
+          // own (`/bdk:pr-rev-` / `iew`); off, a text breaks only at <br/>. The same test
+          // rejects a block that turns it back on.
+          sequence: { wrap: false },
         });
         // render() draws a syntax error as a diagram of its own; parse() throws it instead, so
         // the reader gets the error with the source.
