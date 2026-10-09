@@ -75,7 +75,9 @@ The parts of a wave run in parallel and the next wave starts when they are merge
 
 Your test, lint and build commands run inside each part, not after the stage: the implementer runs the new acceptance tests red before any code and all checks green after it, the conformer runs them again after its fixes, and a merge conflict is checked once resolved. Nothing checks a wave once it is merged; the first check of the whole project is the first round of review. [Where execute runs your checks](./orchestrators.md#where-execute-runs-your-checks) lists each run.
 
-A part whose tasks contradict each other or their scenario is a plan defect: the implementer stops and says so instead of picking a side. The lead agent only composes: it runs the parts in waves, commits, merges and keeps the state, and never writes product code.
+A part whose tasks contradict each other or their scenario is a plan defect: the implementer stops and says so instead of picking a side.
+
+One acceptance test is not seen red: the test of a scenario the part marks ` (behaviour present)`. `/bdk:plan-fixes` marks a scenario so when a review finding asks for its missing test and the code already does it; the implementer expects that test to pass at its first run and reports `green at first run (behaviour present)`. When the part and the code disagree (an unmarked test passes before any code, or a marked one fails), that is a plan defect too. The lead agent only composes: it runs the parts in waves, commits, merges and keeps the state, and never writes product code.
 
 ## Review
 
