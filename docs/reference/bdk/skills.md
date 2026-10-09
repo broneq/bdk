@@ -22,6 +22,14 @@ Started by: you, or Claude when your request matches the description below.
 
 Runs the review stage of an OpenSpec Change - review rounds in a bdk:lead (group reviews, checks, E2E, integration, judge), triage of the findings, fix parts and a fix pass through the execute lead, then a next round on the fix scope only - until a round leaves nothing to fix or the round budget is spent, and writes review/result.md. Resumes from the round files. Use when a Change is built and should be reviewed, when asked to "review" a Change or its branch until it is clean, or when /bdk:run reaches the review stage.
 
+## `/bdk:cli` {#cli}
+
+`/bdk:cli`
+
+Started by: you, or Claude when your request matches the description below.
+
+Answers questions about the state of a BDK project with the bdk command line - the resolved configuration and where a value comes from, where an autopilot run stands, the findings of a review round, plan part limits, check results, the rules for a stage - and routes work to the right /bdk:* skill. Use when asked to show a BDK setting, why a run or review stopped, what a round holds, or which bdk command does something.
+
 ## `/bdk:close` {#close}
 
 `/bdk:close [change-name] [--base <branch>]`

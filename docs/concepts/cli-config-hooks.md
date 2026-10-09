@@ -20,7 +20,7 @@ flowchart LR
   openspec
 ```
 
-Which skill calls which command. Every skill that reads the configuration also runs `bdk config show` in its `!` block; `/bdk:commit` and `/bdk:adr` read none. What each command does and its options are in the [CLI reference](/reference/bdk/cli).
+Which skill calls which command. Every skill that reads the configuration also runs `bdk config show` in its `!` block; `/bdk:commit` and `/bdk:adr` read none. What each command does and its options are in the [CLI reference](/reference/bdk/cli). The main session reaches the read commands through `/bdk:cli`, a thin skill that maps a question to the command and sends work to the stage skill; a test (`scripts/cli-skill.test.ts`) fails when a command is added, renamed or removed without the skill following.
 
 | Command | Called by |
 |---|---|
