@@ -18,9 +18,12 @@ The result SHALL name `base` (the argument), `anchor` (`kind`, `sha`, and `round
 - `files`: changed text files present at `HEAD`;
 - `binary`: changed files that git counts as binary and that are present at `HEAD`; they belong to no group;
 - `deleted`: files present at the anchor and absent at `HEAD`;
-- `dirty`: tracked files whose working tree or index differs from `HEAD`, so the caller can commit them first; they do not change the range.
+- `dirty`: tracked files whose working tree or index differs from `HEAD`, so the caller can commit them first; they do not change the range;
+- `tests`: the paths of `files`, `binary` and `deleted` that are test files (Requirement: Test files of a range).
 
 Paths SHALL be byte-exact (no quoting of unusual characters) and sorted by code unit. The same repository state and the same arguments SHALL give a byte-identical result.
+
+The result SHALL also name `testsOnly`: `true` when every path of `files`, `binary` and `deleted` is in `tests`, also when all three are empty; `false` otherwise. `dirty` SHALL NOT count towards it. The text output SHALL list the test files.
 
 #### Scenario: First round reviews from the merge base
 
@@ -45,7 +48,17 @@ Paths SHALL be byte-exact (no quoting of unusual characters) and sorted by code 
 #### Scenario: Nothing to review
 
 - **WHEN** the anchor equals `HEAD`
-- **THEN** the exit code is 0 and `files`, `binary` and `deleted` are empty
+- **THEN** the exit code is 0, `files`, `binary`, `deleted` and `tests` are empty, and `testsOnly` is `true`
+
+#### Scenario: Fix range of test files only
+
+- **WHEN** the range since round 1 changes `test/cli.test.js` and deletes `src/__tests__/old.js`, and `bdk git scope main --rounds <dir> --json` runs
+- **THEN** `tests` is `["src/__tests__/old.js", "test/cli.test.js"]` and `testsOnly` is `true`
+
+#### Scenario: Fix range with a product file
+
+- **WHEN** the range changes `src/parse.js` and `src/parse.test.js`
+- **THEN** `tests` is `["src/parse.test.js"]` and `testsOnly` is `false`
 
 ### Requirement: Round record
 
@@ -151,3 +164,17 @@ The record of a finished round SHALL never be an error: a missing or invalid rec
 
 - **WHEN** `--plan <dir>` holds `03.md` whose frontmatter `files` is a string
 - **THEN** the exit code is 3, the error code is `env/plan-invalid`, and the message names `03.md`
+
+### Requirement: Test files of a range
+
+A path SHALL be a test file when one of its directory segments is `test`, `tests`, `__tests__`, `__mocks__`, `__snapshots__` or `testdata`, or when its file name matches `*.test.*`, `*.spec.*`, `*_test.*`, `*_spec.*`, `test_*.py` or `conftest.py`, or `*Test.<ext>` or `*Tests.<ext>` with `<ext>` one of `java`, `kt`, `scala`, `groovy`, `cs`, `php` and `swift`. Matching SHALL be case-sensitive and SHALL read only the path, never the file. No other path SHALL be a test file: a directory named `spec`, `fixtures` or `e2e`, a documentation file or a configuration file is not one.
+
+#### Scenario: Conventions of several languages
+
+- **WHEN** the range changes `pkg/parse_test.go`, `tests/test_cli.py`, `src/App.spec.tsx`, `app/src/test/java/LedgerTest.java` and `src/latest.js`
+- **THEN** `tests` holds the first four paths and not `src/latest.js`
+
+#### Scenario: Look-alike names are not tests
+
+- **WHEN** the range changes `src/commands/test.ts`, `spec/openapi.yaml`, `src/Latest.java` and `docs/testing.md`
+- **THEN** `tests` is empty and `testsOnly` is `false`
