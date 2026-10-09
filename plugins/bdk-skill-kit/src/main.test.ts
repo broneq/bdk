@@ -1,6 +1,6 @@
 import { spawn, spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { chmodSync, readFileSync } from "node:fs";
+import { join, relative, sep } from "node:path";
 import { describe, expect, it } from "vitest";
 import { main } from "./main.ts";
 import { skill, tree } from "./test-helpers.ts";
@@ -181,6 +181,26 @@ describe("main", () => {
     expect((await cli(root, ["skills/alpha"])).code).toBe(0);
   });
 
+  it("checks an absolute skills dir named by a config outside the project", async () => {
+    const skills = join(tree({ "skills/beta/SKILL.md": skill("beta", "", "BAD\n") }), "skills");
+    const scratch = tree({
+      "check.config.mjs": `import t from "./t.mjs"; export default { targets: [{ kind: "skills", dirs: [${JSON.stringify(skills)}] }], plugins: [t] };`,
+      "t.mjs": rulePlugin,
+    });
+    const out = await cli(tree({}), ["--config", join(scratch, "check.config.mjs"), "--json"]);
+    expect(out.stderr).toBe("");
+    expect(out.code).toBe(1);
+    const parsed = JSON.parse(out.stdout) as { findings: { rule: string; file: string }[] };
+    expect(parsed.findings.map((f) => [f.rule, f.file])).toEqual([
+      [
+        "t/bad-word",
+        relative(scratch, join(skills, "beta", "SKILL.md"))
+          .split(sep)
+          .join("/"),
+      ],
+    ]);
+  });
+
   it("applies the portable profile to every skills target with --portable", async () => {
     const root = tree({
       "skill-check.config.mjs": `export default { targets: [{ kind: "skills", dirs: ["skills"] }], plugins: [{ name: "p", rules: [
@@ -190,6 +210,76 @@ describe("main", () => {
     const out = await cli(root, ["--portable", "--json"]);
     const parsed = JSON.parse(out.stdout) as { findings: { message: string }[] };
     expect(parsed.findings.map((f) => f.message)).toEqual(["portable"]);
+  });
+});
+
+describe("internal errors", () => {
+  function throwing(body: string, method = "check"): string {
+    return tree({
+      "skill-check.config.mjs": `export default { targets: [{ kind: "skills", dirs: ["skills"] }], plugins: [{ name: "t", rules: [
+        { id: "boom", kinds: ["skills"], defaultSeverity: "error", ${method}() { ${body} } } ] }] };`,
+      "skills/alpha/SKILL.md": skill("alpha"),
+    });
+  }
+
+  it("exits 3 with one line naming the rule and the file when a rule throws", async () => {
+    const out = await cli(throwing(`throw new Error("boom");`), []);
+    expect(out).toEqual({
+      code: 3,
+      stdout: "",
+      stderr: "skill-check: internal error: rule t/boom failed on skills/alpha/SKILL.md: boom\n",
+    });
+  });
+
+  it("names the project check when checkProject throws", async () => {
+    const out = await cli(throwing(`throw new Error("boom");`, "checkProject"), []);
+    expect(out).toEqual({
+      code: 3,
+      stdout: "",
+      stderr: "skill-check: internal error: rule t/boom failed in the project check: boom\n",
+    });
+  });
+
+  it("prints a thrown value that is not an Error as text", async () => {
+    const out = await cli(throwing(`throw "plain text";`), []);
+    expect(out.code).toBe(3);
+    expect(out.stderr).toBe(
+      "skill-check: internal error: rule t/boom failed on skills/alpha/SKILL.md: plain text\n",
+    );
+  });
+
+  it.skipIf(process.platform === "win32" || process.getuid?.() === 0)(
+    "exits 3 with one line when discovery fails",
+    async () => {
+      const root = project();
+      chmodSync(join(root, "skills", "alpha"), 0o000);
+      try {
+        const out = await cli(root, []);
+        expect(out.code).toBe(3);
+        expect(out.stdout).toBe("");
+        expect(out.stderr).toMatch(/^skill-check: internal error: EACCES[^\n]*\n$/);
+      } finally {
+        chmodSync(join(root, "skills", "alpha"), 0o755);
+      }
+    },
+  );
+
+  it("adds the stack and its cause when SKILL_CHECK_DEBUG is set", async () => {
+    const out = await cli(throwing(`throw new Error("boom");`), [], { SKILL_CHECK_DEBUG: "1" });
+    expect(out.code).toBe(3);
+    const [line, ...rest] = out.stderr.split("\n");
+    expect(line).toBe(
+      "skill-check: internal error: rule t/boom failed on skills/alpha/SKILL.md: boom",
+    );
+    const stack = rest.join("\n");
+    expect(stack).toMatch(/\n\s+at /);
+    expect(stack).toContain("[cause]: Error: boom");
+  });
+
+  it("lists exit 3 and SKILL_CHECK_DEBUG in --help", async () => {
+    const out = await cli(project(), ["--help"]);
+    expect(out.stdout).toMatch(/^ {2}3 {2}internal error/m);
+    expect(out.stdout).toContain("SKILL_CHECK_DEBUG");
   });
 });
 
@@ -222,5 +312,20 @@ export default defineConfig({ targets: [{ kind: "skills", dirs: ["skills"] }] })
     const code = await new Promise<number | null>((done) => child.on("close", done));
     expect(stderr).toBe("");
     expect(code).toBe(0);
+  });
+
+  it("exits 3 with one stderr line and no stack when a rule throws", () => {
+    const root = tree({
+      "skill-check.config.mjs": `export default { targets: [{ kind: "skills", dirs: ["skills"] }], plugins: [{ name: "t", rules: [
+        { id: "boom", kinds: ["skills"], defaultSeverity: "error", check() { throw new Error("boom"); } } ] }] };`,
+      "skills/alpha/SKILL.md": skill("alpha"),
+    });
+    const env = { ...process.env, SKILL_CHECK_DEBUG: "" };
+    const run = spawnSync(process.execPath, [bin], { cwd: root, encoding: "utf8", env });
+    expect(run.status).toBe(3);
+    expect(run.stdout).toBe("");
+    expect(run.stderr).toBe(
+      "skill-check: internal error: rule t/boom failed on skills/alpha/SKILL.md: boom\n",
+    );
   });
 });

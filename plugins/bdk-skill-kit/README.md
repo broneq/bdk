@@ -55,6 +55,8 @@ export default defineConfig({
 });
 ```
 
+A `dirs` entry is relative to the config file or absolute, so a config kept outside a project can name that project's skills by their absolute path; findings then name files relative to the config file.
+
 A skills dir may sit inside another one, for example `dirs: ["skills", "skills/roles"]`: the outer scan then treats `skills/roles` as a container of skills, not as a skill directory without `SKILL.md`.
 
 A target is a plugin's by default. On agents that means `hooks`, `mcpServers`, `permissionMode` and `initialPrompt`, which plugin agents ignore, are reported; `plugin: false` admits them for agents under `.claude/agents/`. On skills, `plugin: false` makes `name-format` report the names Claude Code reserves outside a plugin, `synced` and `anthropic-skills`.
@@ -108,7 +110,7 @@ const noTodo = defineRule({
 export default definePlugin({ name: "acme", rules: [noTodo] });
 ```
 
-List the plugin in the config with `plugins: [acme]`. A rule with `checkProject` instead of `check` runs once over every document of its kinds. A rule that takes options can declare `validateOptions(options)`, returning what is wrong with them or `undefined`; the loader calls it for every enabled rule, so a bad setting exits 2 instead of failing mid-run.
+List the plugin in the config with `plugins: [acme]`. A rule with `checkProject` instead of `check` runs once over every document of its kinds. A rule that takes options can declare `validateOptions(options)`, returning what is wrong with them or `undefined`; the loader calls it for every enabled rule, so a bad setting exits 2 instead of failing mid-run. A rule that throws stops the run with exit 3 and one line, `skill-check: internal error: rule acme/<id> failed on <file>: <message>`; set `SKILL_CHECK_DEBUG=1` to print the stack trace as well.
 
 ## Testing rules
 

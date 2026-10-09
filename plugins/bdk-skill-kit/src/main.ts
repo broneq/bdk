@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { relative, resolve } from "node:path";
-import { parseArgs } from "node:util";
+import { inspect, parseArgs } from "node:util";
 import { applyBaseline, entriesOf, readBaseline, writeBaseline } from "./baseline.ts";
 import { ConfigError, loadConfig } from "./config.ts";
 import { exitCode, formatHuman, formatJson } from "./report.ts";
@@ -49,6 +49,12 @@ Exit codes:
   0  no error finding remains (warnings allowed unless --strict)
   1  an error finding or a stale baseline entry remains, or a warning under --strict
   2  usage or configuration error; the reason is on stderr
+  3  internal error: discovery, a rule or skill-check itself failed; the reason
+     is on stderr
+
+Environment:
+  SKILL_CHECK_DEBUG   When not empty, an internal error also prints its stack
+                      trace
 `;
 
 export async function main(argv: string[], io: Io): Promise<number> {
@@ -59,7 +65,9 @@ export async function main(argv: string[], io: Io): Promise<number> {
       io.stderr(`skill-check: ${(error as Error).message}\n`);
       return 2;
     }
-    throw error;
+    io.stderr(`skill-check: internal error: ${messageOf(error)}\n`);
+    if (io.env.SKILL_CHECK_DEBUG) io.stderr(`${inspect(error)}\n`);
+    return 3;
   }
 }
 
@@ -167,6 +175,10 @@ async function run(argv: string[], io: Io): Promise<number> {
     values.json ? formatJson(outcome) : formatHuman(outcome, Boolean(io.env.GITHUB_ACTIONS)),
   );
   return exitCode(outcome.findings, values.strict);
+}
+
+function messageOf(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 function isArgError(error: unknown): boolean {

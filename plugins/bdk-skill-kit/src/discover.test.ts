@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { rmSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadConfig } from "./config.ts";
 import { discover } from "./discover.ts";
@@ -77,6 +77,26 @@ describe("discover", () => {
     const { docs, strays } = discover(root, (await loadConfig(root)).targets);
     expect(strays).toEqual([]);
     expect(docs.map((d) => d.dir)).toEqual(["skills/demo", "skills/roles/verifier"]);
+  });
+
+  it("scans an absolute dir outside the config root, nested ones as containers", async () => {
+    const skills = join(
+      tree({
+        "skills/demo/SKILL.md": skill("demo"),
+        "skills/roles/verifier/SKILL.md": skill("verifier"),
+      }),
+      "skills",
+    );
+    const dirs = JSON.stringify([skills, join(skills, "roles")]);
+    const root = tree({
+      "skill-check.config.mjs": `export default { targets: [{ kind: "skills", dirs: ${dirs} }] };`,
+    });
+    const { docs, strays } = discover(root, (await loadConfig(root)).targets);
+    expect(strays).toEqual([]);
+    expect(docs.map((d) => resolve(root, d.dir))).toEqual([
+      join(skills, "demo"),
+      join(skills, "roles", "verifier"),
+    ]);
   });
 
   it("still reports a nested directory that no target names", async () => {

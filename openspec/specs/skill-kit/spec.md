@@ -51,13 +51,14 @@ Every kit release SHALL be a tag `bdk-skill-kit--v<version>`, cut by release-ple
 
 ### Requirement: Invocation and exit codes
 
-`skill-check [paths...] [--config <file>] [--portable] [--json] [--strict] [--baseline <file>] [--baseline-init] [--baseline-prune]` SHALL load the config (`skill-check.config.ts`, `.mjs` or `.js` in the working directory unless `--config` is given), check every target, and exit with one of three codes:
+`skill-check [paths...] [--config <file>] [--portable] [--json] [--strict] [--baseline <file>] [--baseline-init] [--baseline-prune]` SHALL load the config (`skill-check.config.ts`, `.mjs` or `.js` in the working directory unless `--config` is given), check every target, and exit with one of four codes:
 
 - 0 when no error-severity finding remains after the baseline;
 - 1 when an error-severity finding remains, when a baseline entry is stale, or, under `--strict`, when a warning remains;
-- 2 on a usage or configuration error, with the reason on stderr as `skill-check: <reason>` and no findings printed.
+- 2 on a usage or configuration error, with the reason on stderr as `skill-check: <reason>` and no findings printed;
+- 3 on any other error (an internal error: discovery, a rule or the checker itself failed), with one line on stderr as `skill-check: internal error: <message>` and no findings printed. When a rule threw, the message SHALL name the rule ID and the file it was checking (or say it was a project check). The stack trace SHALL NOT be printed unless the environment variable `SKILL_CHECK_DEBUG` is set to a non-empty value; then it SHALL follow that line on stderr.
 
-Path arguments narrow per-file rules to those skill directories or agent files. Project rules always see every target. `--list-rules` SHALL print the rule IDs that the config enables for at least one target, `--version` the kit version, and `--help` the usage text, which is the only usage reference.
+Path arguments narrow per-file rules to those skill directories or agent files. Project rules always see every target. `--list-rules` SHALL print the rule IDs that the config enables for at least one target, `--version` the kit version, and `--help` the usage text, which is the only usage reference and SHALL list every exit code and `SKILL_CHECK_DEBUG`.
 
 `--explain <rule>` SHALL load the config, resolve the rule ID among the generic rules and the rules of the config's plugins, and print to stdout the rule's ID, the kinds it applies to and its default severity, then its explanation, and exit 0. An unknown rule ID SHALL be a usage error (exit 2) that names the ID. A rule without an explanation SHALL print the ID line and a line saying that the rule has no explanation.
 
@@ -96,6 +97,26 @@ Path arguments narrow per-file rules to those skill directories or agent files. 
 - **WHEN** `skill-check --explain nope` runs
 - **THEN** the exit code is 2 and stderr names `nope`
 
+#### Scenario: a rule throws
+
+- **WHEN** the config loads a plugin whose rule `t/boom` throws a plain `Error("boom")` while checking `skills/alpha/SKILL.md`
+- **THEN** the exit code is 3, stdout is empty, and stderr is the single line `skill-check: internal error: rule t/boom failed on skills/alpha/SKILL.md: boom` with no stack trace
+
+#### Scenario: discovery fails
+
+- **WHEN** discovery fails with an unexpected file system error
+- **THEN** the exit code is 3, stderr is one `skill-check: internal error:` line holding the error's message, and no stack trace is printed
+
+#### Scenario: stack trace on request
+
+- **WHEN** a rule throws and `SKILL_CHECK_DEBUG=1` is set
+- **THEN** the exit code is 3 and stderr holds the `skill-check: internal error:` line followed by the stack trace
+
+#### Scenario: help lists every exit code
+
+- **WHEN** `skill-check --help` runs
+- **THEN** stdout lists the exit codes 0, 1, 2 and 3 and names `SKILL_CHECK_DEBUG`
+
 ### Requirement: Output formats
 
 Every finding SHALL carry a rule ID, a severity (`error` or `warning`), a file path relative to the config root, a 1-based line, a message and a line-independent fingerprint.
@@ -119,6 +140,7 @@ Every finding SHALL carry a rule ID, a severity (`error` or `warning`), a file p
 
 The config SHALL declare targets. Each target SHALL have a kind, a list of directories, a profile and a name:
 
+- a directory is resolved against the config root, so a relative directory is relative to the config file and an absolute one is used as written; config validation and discovery resolve it the same way;
 - kind `skills` scans `<dir>/<name>/SKILL.md`, matching the file name in any letter case so that `skill-file-name` can report a wrong case;
 - a subdirectory of a `skills` dir that is itself a `skills` dir of any target is a container of skills, not a skill directory, so the outer scan skips it;
 - kind `agents` scans `<dir>/*.md`;
@@ -152,6 +174,11 @@ The config SHALL also declare the plugins to load, per-rule settings, per-target
 
 - **WHEN** the config declares a `skills` target with `plugin: false`
 - **THEN** the target resolves with `plugin` false and every document of that target sees it on `doc.target`
+
+#### Scenario: absolute target directory
+
+- **WHEN** a config outside the project declares a `skills` target whose `dirs` entry is an absolute path to a skills directory
+- **THEN** `skill-check --config <that file>` checks the skills in that directory and prints its findings, with no stack trace
 
 ### Requirement: Rule API
 
