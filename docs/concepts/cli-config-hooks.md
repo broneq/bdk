@@ -16,6 +16,7 @@ flowchart LR
   plan --> config
   rules --> config
   run --> findings
+  diagnostics
   git
   openspec
 ```
@@ -51,7 +52,7 @@ flowchart TB
   end
   subgraph R1[" "]
     direction LR
-    S1["/bdk:design,<br/>/bdk:plan"] --- C1["bdk plan check"]
+    S1["/bdk:design,<br/>/bdk:plan"] --- C1["bdk rules for,<br/>bdk plan check"]
   end
   subgraph R2[" "]
     direction LR
@@ -103,15 +104,15 @@ flowchart TB
   end
   subgraph R3[" "]
     direction LR
-    S3["/bdk:plan"] --- C3["policy.budgets.verifier<br/>plan.part.max-tasks<br/>plan.part.max-files<br/>plan.part.max-bytes<br/>languages, rules<br/>models.planner<br/>models.verifier"]
+    S3["/bdk:plan"] --- C3["policy.budgets.verifier<br/>plan.part.max-tasks<br/>plan.part.max-files<br/>plan.part.max-bytes<br/>tools.test<br/>languages, rules<br/>models.planner<br/>models.verifier"]
   end
   subgraph R4[" "]
     direction LR
-    S4["/bdk:execute"] --- C4["execution.lead<br/>execution.max-parallel<br/>policy.budgets.part-attempts<br/>policy.escalation.model<br/>policy.escalation.effort<br/>tools.test, tools.lint, tools.build<br/>languages, rules<br/>models.implementer<br/>models.conformer<br/>policy.questions (retry)"]
+    S4["/bdk:execute"] --- C4["execution.lead<br/>models.lead<br/>execution.max-parallel<br/>policy.budgets.part-attempts<br/>policy.escalation.model<br/>policy.escalation.effort<br/>tools.test, tools.lint, tools.build<br/>languages, rules<br/>models.implementer<br/>models.conformer<br/>policy.questions (retry)"]
   end
   subgraph R5[" "]
     direction LR
-    S5["/bdk:auto-review"] --- C5["policy.gates.review<br/>policy.budgets.review-rounds<br/>tools.e2e, tools.test,<br/>tools.lint, tools.build<br/>models.reviewer, models.judge,<br/>models.integration-reviewer,<br/>models.e2e-tester"]
+    S5["/bdk:auto-review"] --- C5["policy.gates.review<br/>policy.budgets.review-rounds<br/>execution.lead, models.lead<br/>execution.max-parallel<br/>tools.e2e, tools.test,<br/>tools.lint, tools.build<br/>languages, rules<br/>models.reviewer, models.judge,<br/>models.integration-reviewer,<br/>models.e2e-tester<br/>fix pass:<br/>plan.part.max-tasks<br/>plan.part.max-files<br/>plan.part.max-bytes<br/>policy.budgets.part-attempts<br/>policy.escalation.model<br/>policy.escalation.effort<br/>models.implementer<br/>models.conformer"]
   end
   subgraph R6[" "]
     direction LR
@@ -163,14 +164,14 @@ sequenceDiagram
   alt not configured or invalid
     B-->>H: one warning, no context
   else configured
-    B-->>H: the BDK process in five fixed lines:<br/>stages, /bdk:run, resume,<br/>direct small edits
+    B-->>H: five lines: the project root,<br/>stages, /bdk:run, resume,<br/>direct small edits
   end
   Note over H,C: PreToolUse, every Bash call
   H->>B: bdk hooks pre-tool-use
   B-->>H: allow or deny
 ```
 
-In a configured project the session start context tells the main session how work is done there, before any skill runs: work with behaviour to specify goes through the stages `/bdk:propose`, `/bdk:design`, `/bdk:plan`, `/bdk:execute`, `/bdk:auto-review` and `/bdk:close`; `/bdk:run` carries it to a pull request, `/bdk:debug` fixes a bug that needs diagnosis and `/bdk:pr-review` reviews a pull request; a stage that stopped continues when its command runs again; a small edit you can see whole is done directly. The text is the same in every project and reads neither the settings nor the run state. How to use the `bdk` CLI itself is not in it.
+In a configured project the session start context tells the main session how work is done there, before any skill runs: work with behaviour to specify goes through the stages `/bdk:propose`, `/bdk:design`, `/bdk:plan`, `/bdk:execute`, `/bdk:auto-review` and `/bdk:close`; `/bdk:run` carries it to a pull request, `/bdk:debug` fixes a bug that needs diagnosis and `/bdk:pr-review` reviews a pull request; a stage that stopped continues when its command runs again; a small edit you can see whole is done directly. Its first line names the project root; the four lines after it are the same in every project, and the text reads neither the settings nor the run state. How to use the `bdk` CLI itself is not in it.
 
 The `PreToolUse` guard denies only when all four hold, checked cheapest first so most calls never touch the file system:
 

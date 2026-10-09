@@ -6,13 +6,15 @@ Notation in the diagrams: see the [glossary](./glossary.md#notation-in-the-diagr
 
 ## Who starts whom
 
-The main thread (an orchestrator) starts leads and single agents; a lead starts workers as foreground `Agent` calls. Every `Agent` call a BDK skill makes names its run mode: `run_in_background: false` for an agent the caller waits for, so the host never starts a worker in the background and a lead never waits on one by polling; only a lead started under `execution.lead: background` gets `run_in_background: true`. A block that runs in the main thread is called with the `Skill` tool.
+The main thread (an orchestrator, or a block a user typed) starts leads and single agents; a lead starts workers as foreground `Agent` calls. Every `Agent` call a BDK skill makes names its run mode: `run_in_background: false` for an agent the caller waits for, so the host never starts a worker in the background and a lead never waits on one by polling; only a lead started under `execution.lead: background` gets `run_in_background: true`. A block that runs in the main thread is called with the `Skill` tool.
 
 ```mermaid
 flowchart TB
   O["orchestrators<br/>(main thread)"]
   O -->|"Skill"| MB["main-thread blocks"]
-  O -->|"Agent"| AG["explorer, haiku<br/>designer, session model<br/>planner, session model<br/>verifier, opus<br/>analyst, sonnet"]
+  O -->|"Agent"| AG["explorer, haiku<br/>designer, session model<br/>planner, session model<br/>verifier, opus"]
+  D["/bdk:diagnose-run<br/>(main thread, step 0)"]
+  D -->|"Agent"| AN["analyst, sonnet"]
   O -->|"Agent, background"| LEADS
   AG ~~~ LEADS
   subgraph LEADS["leads"]
@@ -36,7 +38,7 @@ flowchart TB
   style S3 fill:transparent,stroke:transparent
 ```
 
-`bdk:reviewer`, `bdk:integration-reviewer`, `bdk:judge` and `bdk:e2e-tester` have their skill preloaded through the `skills:` frontmatter; the other agents call the skill their prompt names with the `Skill` tool. Every block skill that is typed by a user in the main thread starts its own agent instead of doing the work (its step 0), so the author never checks its own work.
+`bdk:reviewer`, `bdk:integration-reviewer`, `bdk:judge` and `bdk:e2e-tester` have their skill preloaded through the `skills:` frontmatter; the other agents call the skill their prompt names with the `Skill` tool. A block with an agent of its own (`/bdk:explore`, `/bdk:design-draft`, `/bdk:verify-design`, `/bdk:plan-draft`, `/bdk:verify-plan`, `/bdk:implement-part`, `/bdk:conform-part`, `/bdk:resolve-conflict`, `/bdk:spec-conformance`, `/bdk:diagnose-run`) starts that agent when it runs in the main thread, instead of doing the work (its step 0), so the author never checks its own work. `/bdk:diagnose-run` has no orchestrator: you type it, and its step 0 starts `bdk:analyst`. `/bdk:review-group`, `/bdk:review-integration`, `/bdk:judge` and `/bdk:e2e-check` have no step 0: in a round the lead starts their agents, and typed by a user they run in the main thread, like the main-thread blocks of the table below.
 
 ## Roles
 
