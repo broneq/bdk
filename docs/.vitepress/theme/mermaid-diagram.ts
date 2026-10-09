@@ -89,6 +89,10 @@ export default defineComponent({
           securityLevel: "strict",
           theme: "base",
           themeVariables: brandVariables(),
+          // Wrapping off: a label line wider than the wrapping width breaks at any hyphen that
+          // fits (`/bdk:implement-` / `part`), so a label breaks only at its author's <br/>. The
+          // mermaid blocks test keeps those lines short and the width the same for every page.
+          flowchart: { wrappingWidth: 10000 },
         });
         // render() draws a syntax error as a diagram of its own; parse() throws it instead, so
         // the reader gets the error with the source.
