@@ -13,7 +13,7 @@ Run the checker from the project root after you add or change a skill or an agen
 node ${CLAUDE_PLUGIN_ROOT}/dist/skill-check.mjs --json
 ```
 
-Exit 0 means clean. Exit 1 means findings: each one names a rule ID, a file and a line. Exit 2 means the config or the arguments are wrong; the reason is on stderr.
+Exit 0 means clean. Exit 1 means findings: each one names a rule ID, a file and a line. Exit 2 means the config or the arguments are wrong; the reason is on stderr. Exit 3 means skill-check or one of its rules failed before the check finished; stderr names it, and it is not a finding in the skill.
 
 Fix a finding in the file it names. Run the command with `--explain <rule>` in place of `--json` to read what that rule asks for, why, and how to fix it.
 

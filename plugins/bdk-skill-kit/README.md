@@ -110,7 +110,7 @@ const noTodo = defineRule({
 export default definePlugin({ name: "acme", rules: [noTodo] });
 ```
 
-List the plugin in the config with `plugins: [acme]`. A rule with `checkProject` instead of `check` runs once over every document of its kinds. A rule that takes options can declare `validateOptions(options)`, returning what is wrong with them or `undefined`; the loader calls it for every enabled rule, so a bad setting exits 2 instead of failing mid-run.
+List the plugin in the config with `plugins: [acme]`. A rule with `checkProject` instead of `check` runs once over every document of its kinds. A rule that takes options can declare `validateOptions(options)`, returning what is wrong with them or `undefined`; the loader calls it for every enabled rule, so a bad setting exits 2 instead of failing mid-run. A rule that throws stops the run with exit 3 and one line, `skill-check: internal error: rule acme/<id> failed on <file>: <message>`; set `SKILL_CHECK_DEBUG=1` to print the stack trace as well.
 
 ## Testing rules
 
