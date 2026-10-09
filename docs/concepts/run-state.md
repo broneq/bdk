@@ -38,6 +38,7 @@ openspec/specs/<capability>/spec.md   main specs: openspec archive merges the de
     execute/part-NN.md                /bdk:implement-part
     execute/conform-NN.md             /bdk:conform-part
     execute/merge-NN.md               /bdk:resolve-conflict
+    execute/wave-N.md                 /bdk:resolve-conflict --wave
     execute/result.md                 execute lead
     worktrees/NN/                     execute lead (git worktree per part)
     checks/<id>.json, checks/<id>/    bdk check run
@@ -66,15 +67,16 @@ openspec/specs/<capability>/spec.md   main specs: openspec archive merges the de
 | File | Written by | Read later by | Why it exists | If you delete it |
 |---|---|---|---|---|
 | `run.json` | `/bdk:run` only | `/bdk:run` to continue the queue, `bdk run status`, `/bdk:execute`, `/bdk:auto-review` and `/bdk:close` to check the queued stage | the queue and its current Change | `/bdk:run` without arguments asks what to run; the stages skip their queue check |
-| `state.json` | the execute lead only | the lead on a restart, `bdk run status` | each part's status (`pending`, `done`, `blocked`) and attempts | every part counts as pending again, so the next `/bdk:execute` builds the done parts again too |
+| `state.json` | the execute lead only | the lead on a restart, `bdk run status` | each part's status (`pending`, `done`, `blocked`) and attempts, and each started wave's base commit and wave check status | every part counts as pending again, so the next `/bdk:execute` builds the done parts again too |
 | `design/explore.md` | `/bdk:explore` | `/bdk:design-draft`, `/bdk:verify-design` | the code map the design is grounded in | not regenerated once `design.md` exists; the drafter reads the code itself |
 | `design/verify-N.md`, `plan/verify-N.md` | `bdk:verifier` (a new number per pass) | `bdk run status` (the last one's `Verdict:` line), the drafter (a `FAIL` puts it in fix mode), `/bdk:plan` (needs the last design report to pass) | the check's verdict with evidence; their count is the `policy.budgets.verifier` budget | the previous report becomes the last one |
 | `design/gate.md` | `/bdk:design` only, on approval | `/bdk:design` (nothing left to run), `/bdk:run` (the design is approved) | the record of who approved which verified design | the gate is asked again |
 | `execute/part-NN.md` | `bdk:implementer` | the lead, `/bdk:conform-part`, the implementer's retry | what was built, the checks, a blocker with its evidence | the conformer refuses the part; a retry starts without the hint |
 | `execute/conform-NN.md` | `bdk:conformer` | the lead (commits only on `PASS`), the implementer's retry | the gate before a part's commit | the part is conformed again |
+| `execute/wave-N.md` | `bdk:implementer` repairing a red wave check | the lead (commits the repair only on `Status: done`), `/bdk:execute` (a wave blocker) | what two parts broke together and how it was repaired | the lead runs the wave check again on the next `/bdk:execute` |
 | `execute/result.md` | the execute lead | `/bdk:execute`, `/bdk:debug` | the stage's outcome and its blockers | `/bdk:execute` resumes from `state.json` |
 | `worktrees/NN/` | the execute lead | the lead on a restart (it reuses the work in it) | an isolated checkout per part of a wave with two or more parts to run (a part alone in its wave runs in the main checkout); removed after the merge, kept for a blocked part | the part's earlier work in it is lost |
-| `checks/<id>.json`, `checks/<id>/` | `bdk check run` | implementers (the output of a red check), `/bdk:plan-fixes`, the round summary | the record of every test, lint and build run, with its output | nothing reads it to decide |
+| `checks/<id>.json`, `checks/<id>/` | `bdk check run` | implementers (the output of a red check), `/bdk:plan-fixes`, the round summary | the record of every test, lint and build run, with its check point, the revision it compared against, and its output | nothing reads it to decide |
 | `review/round-N/e2e/` (`e2e/` when run alone): `<scenario>.md`, screenshots and video, `verdict.md` | `bdk:e2e-tester` | the review round, `/bdk:spec-conformance`, `/bdk:close` (the verdict goes into the PR body) | the evidence of each scenario on the running product | spec conformance has no E2E evidence |
 | `review/round-N/groups.json` | `bdk git groups` | the round's reviewers, and the next round, which reviews only the commits after this round's head | the reviewed range and its groups | the next round falls back to the whole branch |
 | `review/round-N/findings.jsonl` | reviewers, E2E, red checks, judge, triage (append only) | `bdk run status`, `/bdk:auto-review`, `/bdk:plan-fixes` | the [findings](./findings.md), their levels and decisions | the round has no findings |

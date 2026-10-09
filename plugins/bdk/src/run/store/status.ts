@@ -7,7 +7,7 @@ import { z } from "zod";
 import { CliError } from "../../shared/cli/index.ts";
 import type { Entry, Files } from "../../shared/fs/index.ts";
 import { mergeParts, MODES, PART_STATUSES, passes } from "../domain/status.ts";
-import type { ChangeSnapshot, Mode, Part, Report, Round } from "../domain/status.ts";
+import type { ChangeSnapshot, Mode, Part, Report, Round, Wave } from "../domain/status.ts";
 
 export const RUNS_DIR = ".bdk/runs";
 const CHANGES_DIR = "openspec/changes";
@@ -45,6 +45,16 @@ const stateFile = z.object({
       reason: z.string().optional(),
     }),
   ),
+  waves: z
+    .record(
+      z.string().regex(/^[1-9]\d*$/, "a wave number is a decimal integer from 1"),
+      z.object({
+        base: z.string().min(1),
+        status: z.enum(PART_STATUSES),
+        reason: z.string().optional(),
+      }),
+    )
+    .optional(),
 });
 
 export interface QueueEntry {
@@ -144,15 +154,16 @@ function changeFiles(files: Files, cwd: string, change: string): ChangeFiles {
 
   const stateName = join(runDir, "state.json");
   const stateText = files.readText(join(cwd, stateName));
-  const states: Part[] =
-    stateText === undefined
-      ? []
-      : Object.entries(parse(stateFile, stateName, stateText).parts).map(([id, part]) => ({
-          id,
-          status: part.status,
-          attempts: part.attempts,
-          reason: part.reason ?? null,
-        }));
+  const state = stateText === undefined ? undefined : parse(stateFile, stateName, stateText);
+  const states: Part[] = Object.entries(state?.parts ?? {}).map(([id, part]) => ({
+    id,
+    status: part.status,
+    attempts: part.attempts,
+    reason: part.reason ?? null,
+  }));
+  const waves: Wave[] = Object.entries(state?.waves ?? {})
+    .map(([n, wave]) => ({ n: Number(n), status: wave.status }))
+    .sort((a, b) => a.n - b.n);
 
   const reviewDir = at("review");
   const rounds: Round[] = numbered(files.list(reviewDir), /^round-([1-9]\d*)$/, true).map((n) => ({
@@ -180,6 +191,7 @@ function changeFiles(files: Files, cwd: string, change: string): ChangeFiles {
     designVerify: lastReport(files, at("design")),
     planVerify: lastReport(files, at("plan")),
     parts: mergeParts(planIds, states),
+    waves,
     rounds,
     lastLog,
     specConformance: conformance === undefined ? undefined : passes(conformance),

@@ -22,13 +22,29 @@ tools:
       id: vitest
       # Shell command run from the project root
       command: pnpm test
-      # Variant of the command for a set of files
-      scoped: pnpm vitest run {files}
+      # Check points the command runs at: `part` after each plan part, `wave` after each wave of execute, `review` in each review round
+      when:
+        - wave
+        - review
+    - id: vitest-related
+      command: pnpm vitest related --run {files}
+      when:
+        - part
+      # Globs of the files the command checks, matched like rule paths. The command gets only the changed files they match, and is skipped when files changed and none matches
+      paths:
+        - src/**/*.ts
   # Commands that lint the project
   lint:
     - id: eslint
       command: pnpm lint
-      scoped: pnpm eslint {files}
+      when:
+        - review
+    - id: eslint-changed
+      command: pnpm eslint {files}
+      when:
+        - part
+      paths:
+        - "**/*.ts"
   # Commands that build the project
   build:
     - id: vite
@@ -54,10 +70,10 @@ Commands that run the project's tests; `bdk check run` runs them, each by its `i
 | Key | Type | Required or default | Description |
 |---|---|---|---|
 | `<id>.id` | string | Required | Names the command; other layers and `bdk config set` address it by this id. |
-| `<id>.command` | string | Required | Shell command run from the project root. |
-| `<id>.scoped` | string |  | Variant of the command for a set of files; `{files}` is replaced by the changed files, so a check covers only what a part touched. |
+| `<id>.command` | string | Required | Shell command run from the project root. A `{files}` in it is replaced by the changed files, and the command is skipped when there are none. |
+| `<id>.when` | list of `part`, `wave`, `review` |  | Check points the command runs at: `part` after each plan part, `wave` after each wave of execute, `review` in each review round; every point when absent. |
 | `<id>.timeout` | integer, 1 to 86400 |  | Seconds before `bdk check run` stops the command; 600 when absent. |
-| `<id>.paths` | list of strings |  | Globs of the files the command checks, matched like rule paths. On a scoped run the command gets only the changed files they match, and is skipped when none matches; every file when absent. |
+| `<id>.paths` | list of strings |  | Globs of the files the command checks, matched like rule paths. The command gets only the changed files they match, and is skipped when files changed and none matches; every file when absent. |
 
 ### `tools.lint` {#tools-lint}
 
@@ -68,10 +84,10 @@ Commands that lint the project; `bdk check run` runs them, each by its `id`.
 | Key | Type | Required or default | Description |
 |---|---|---|---|
 | `<id>.id` | string | Required | Names the command; other layers and `bdk config set` address it by this id. |
-| `<id>.command` | string | Required | Shell command run from the project root. |
-| `<id>.scoped` | string |  | Variant of the command for a set of files; `{files}` is replaced by the changed files, so a check covers only what a part touched. |
+| `<id>.command` | string | Required | Shell command run from the project root. A `{files}` in it is replaced by the changed files, and the command is skipped when there are none. |
+| `<id>.when` | list of `part`, `wave`, `review` |  | Check points the command runs at: `part` after each plan part, `wave` after each wave of execute, `review` in each review round; every point when absent. |
 | `<id>.timeout` | integer, 1 to 86400 |  | Seconds before `bdk check run` stops the command; 600 when absent. |
-| `<id>.paths` | list of strings |  | Globs of the files the command checks, matched like rule paths. On a scoped run the command gets only the changed files they match, and is skipped when none matches; every file when absent. |
+| `<id>.paths` | list of strings |  | Globs of the files the command checks, matched like rule paths. The command gets only the changed files they match, and is skipped when files changed and none matches; every file when absent. |
 
 ### `tools.build` {#tools-build}
 
@@ -82,10 +98,10 @@ Commands that build the project; `bdk check run` runs them, each by its `id`.
 | Key | Type | Required or default | Description |
 |---|---|---|---|
 | `<id>.id` | string | Required | Names the command; other layers and `bdk config set` address it by this id. |
-| `<id>.command` | string | Required | Shell command run from the project root. |
-| `<id>.scoped` | string |  | Variant of the command for a set of files; `{files}` is replaced by the changed files, so a check covers only what a part touched. |
+| `<id>.command` | string | Required | Shell command run from the project root. A `{files}` in it is replaced by the changed files, and the command is skipped when there are none. |
+| `<id>.when` | list of `part`, `wave`, `review` |  | Check points the command runs at: `part` after each plan part, `wave` after each wave of execute, `review` in each review round; every point when absent. |
 | `<id>.timeout` | integer, 1 to 86400 |  | Seconds before `bdk check run` stops the command; 600 when absent. |
-| `<id>.paths` | list of strings |  | Globs of the files the command checks, matched like rule paths. On a scoped run the command gets only the changed files they match, and is skipped when none matches; every file when absent. |
+| `<id>.paths` | list of strings |  | Globs of the files the command checks, matched like rule paths. The command gets only the changed files they match, and is skipped when files changed and none matches; every file when absent. |
 
 ### `tools.e2e` {#tools-e2e}
 
@@ -128,7 +144,7 @@ The project's own rules and changes to the rules of the BDK rule pack, each by i
 | `<id>.file` | string |  | Markdown file holding the rule text, relative to the project root (to the directory of the global settings file in the global layer); a leading `---` frontmatter block is skipped. |
 | `<id>.kind` | one of `house`, `knowledge` |  | `house` (a choice among valid alternatives, the default) or `knowledge` (a fact about a library, language or tool). |
 | `<id>.paths` | list of strings |  | Globs, relative to the project root, of the files the rule governs; `["**"]` when absent. |
-| `<id>.stages` | list of enums |  | Stages whose roles read the rule, among `design`, `plan`, `execute` and `review`; `[execute, review]` when absent. |
+| `<id>.stages` | list of `design`, `plan`, `execute`, `review` |  | Stages whose roles read the rule, among `design`, `plan`, `execute` and `review`; `[execute, review]` when absent. |
 | `<id>.source` | string |  | Where the fact of a `knowledge` rule is documented. |
 | `<id>.verified` | string |  | The date (`YYYY-MM-DD`) the fact of a `knowledge` rule was last checked. |
 | `<id>.enabled` | boolean |  | `false` switches the rule off, so no role reads it; `true` when absent. |

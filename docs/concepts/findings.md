@@ -4,7 +4,7 @@ A finding is one problem a review round found: a place, a summary, the evidence,
 
 ```mermaid
 flowchart LR
-  F["found<br/>reviewers, integration reviewer,<br/>E2E check, red checks"] --> J["judged<br/>/bdk:judge sets a level"]
+  F["found<br/>reviewers,<br/>integration reviewer,<br/>E2E check, red checks"] --> J["judged<br/>/bdk:judge sets a level"]
   J --> D(["decided<br/>/bdk:triage: you, or<br/>policy.gates.review auto"])
   D -->|"fix"| X["fix part, built,<br/>reviewed next round"]
   D -->|"accept"| A["closed: not a problem<br/>or accepted as is"]

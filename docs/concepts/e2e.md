@@ -4,7 +4,7 @@ Code review and tests show that the code is sound. They do not show that the pro
 
 ## When it runs
 
-- In every review round of `/bdk:auto-review`, next to the reviewers and your checks. A broken scenario becomes a finding, usually a `blocker` ([findings](./findings.md)).
+- In every review round of `/bdk:auto-review`, after the reviewers and your checks of the `review` point have ended, so your suites and the started product never compete for the same ports or browsers. A broken scenario becomes a finding, usually a `blocker` ([findings](./findings.md)).
 - `/bdk:diagnose-bug` in `/bdk:debug` starts the product the same way, through a `tools.e2e` item, to reproduce a bug before any fix.
 - On its own: `/bdk:e2e-check <change>`.
 

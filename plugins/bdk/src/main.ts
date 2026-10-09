@@ -28,7 +28,11 @@ declare const __BDK_VERSION__: string;
 const deps = { files, cwd: process.cwd(), home: homedir(), env: process.env };
 
 const GROUPS: readonly Group[] = [
-  checkGroup({ ...deps, shell: (command, options) => shell(command, options) }),
+  checkGroup({
+    ...deps,
+    shell: (command, options) => shell(command, options),
+    git: (cwd, args) => git(cwd, args),
+  }),
   configGroup(deps),
   findingsGroup({ files }),
   runGroup(deps),

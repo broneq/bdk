@@ -484,9 +484,14 @@ html.dark,
   color: var(--accent-text);
 }
 
-/* Tables: hairline rows under a strong top rule, mono heads, no stripes. */
+/* Tables: hairline rows under a strong top rule, mono heads, no stripes. The rule sits on the
+   first row's cells, not the table: VitePress makes the table a full-width block so it can
+   scroll, and a narrow table's rows end before that box does. */
 .vp-doc table {
   border-collapse: collapse;
+}
+
+.vp-doc table > :first-child > tr:first-child > :is(th, td) {
   border-top: 2px solid var(--line-strong);
 }
 
@@ -602,9 +607,13 @@ html.dark,
   color: var(--fg-default);
 }
 
-/* ---------- Diagrams: hairline frame, no shadows on the shapes ---------- */
+/* ---------- Diagrams: hairline frame, no shadows ---------- */
 
-.vp-doc .mermaid svg :is(rect, polygon, path, circle, ellipse) {
+/* Mermaid draws its theme's drop shadow as a CSS filter on node shapes and on groups such as a
+   stadium node's `outer-path`, and moves it between elements across versions; every element is
+   reset, so no list of shapes can miss one. */
+.vp-doc .mermaid svg,
+.vp-doc .mermaid svg * {
   filter: none !important;
 }
 

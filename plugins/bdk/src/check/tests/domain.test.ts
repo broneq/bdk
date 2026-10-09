@@ -1,17 +1,18 @@
 import { describe, expect, it } from "vitest";
 
-import { DEFAULT_TIMEOUT, planChecks, quote, scopeOf } from "../domain/plan.ts";
-import type { Tools } from "../domain/plan.ts";
+import { DEFAULT_TIMEOUT, nulPaths, planChecks, quote, scopeOf } from "../domain/plan.ts";
+import type { Kind, Point, Tools } from "../domain/plan.ts";
 import { finding, statusOf, tailOf, trailer, verdictOf } from "../domain/verdict.ts";
 
 // Pure rules of spec `bdk-cli/check`, "Run the checks", "Output files", "Red checks as findings".
 
 const TOOLS: Tools = {
   test: [
-    { id: "unit", command: "vitest run", scoped: "vitest run {files}" },
-    { id: "e2e", command: "playwright test", timeout: 900 },
+    { id: "unit", command: "vitest run {files}", when: ["part"] },
+    { id: "suite", command: "vitest run", when: ["wave", "review"] },
+    { id: "e2e", command: "playwright test", timeout: 900, when: ["review"] },
   ],
-  lint: [{ id: "eslint", command: "eslint .", scoped: "eslint {files} && tsc --noEmit {files}" }],
+  lint: [{ id: "eslint", command: "eslint {files} && tsc --noEmit {files}" }],
   build: [{ id: "tsc", command: "tsc -b", timeout: 120 }],
 };
 
@@ -42,126 +43,150 @@ describe("quote", () => {
   });
 });
 
+const plan = (
+  tools: Tools,
+  options: { kinds?: readonly Kind[]; at?: Point; files?: readonly string[] | null } = {},
+) => planChecks(tools, { kinds: options.kinds, at: options.at, files: options.files ?? null });
+
+const commands = (planned: ReturnType<typeof planChecks>) =>
+  planned.checks.map((check) => [check.tool, check.command, check.scoped]);
+
 describe("planChecks", () => {
-  it("runs every full command in kind order test, lint, build without a scope", () => {
-    expect(planChecks(TOOLS, undefined, null).checks).toEqual([
+  it("runs every command without {files} in kind order and skips {files} ones without files", () => {
+    const planned = plan(TOOLS);
+    expect(planned.checks).toEqual([
       {
         kind: "test",
-        tool: "unit",
+        tool: "suite",
         command: "vitest run",
         scoped: false,
         timeout: DEFAULT_TIMEOUT,
       },
       { kind: "test", tool: "e2e", command: "playwright test", scoped: false, timeout: 900 },
-      { kind: "lint", tool: "eslint", command: "eslint .", scoped: false, timeout: 600 },
       { kind: "build", tool: "tsc", command: "tsc -b", scoped: false, timeout: 120 },
+    ]);
+    expect(planned.skipped).toEqual([
+      { kind: "test", tool: "unit", reason: "no-files" },
+      { kind: "lint", tool: "eslint", reason: "no-files" },
     ]);
   });
 
-  it("fills every {files} of a scoped variant and runs the full command of an entry without one", () => {
-    const planned = planChecks(TOOLS, undefined, ["src/a b.ts", "src/c.ts"]).checks;
-    expect(planned.map((check) => [check.command, check.scoped])).toEqual([
-      ["vitest run 'src/a b.ts' src/c.ts", true],
-      ["playwright test", false],
-      ["eslint 'src/a b.ts' src/c.ts && tsc --noEmit 'src/a b.ts' src/c.ts", true],
-      ["tsc -b", false],
+  it("fills every {files} of a command and runs a command without one as written", () => {
+    expect(commands(plan(TOOLS, { files: ["src/a b.ts", "src/c.ts"] }))).toEqual([
+      ["unit", "vitest run 'src/a b.ts' src/c.ts", true],
+      ["suite", "vitest run", false],
+      ["e2e", "playwright test", false],
+      ["eslint", "eslint 'src/a b.ts' src/c.ts && tsc --noEmit 'src/a b.ts' src/c.ts", true],
+      ["tsc", "tsc -b", false],
     ]);
+  });
+
+  it("selects the entries of one point and those without when, leaving the rest unlisted", () => {
+    const part = plan(TOOLS, { at: "part", files: ["src/a.ts"] });
+    expect(commands(part).map(([tool]) => tool)).toEqual(["unit", "eslint", "tsc"]);
+    expect(part.skipped).toEqual([]);
+    const wave = plan(TOOLS, { at: "wave", files: ["src/a.ts"] });
+    expect(commands(wave).map(([tool]) => tool)).toEqual(["suite", "eslint", "tsc"]);
+    const review = plan(TOOLS, { at: "review" });
+    expect(commands(review).map(([tool]) => tool)).toEqual(["suite", "e2e", "tsc"]);
+    expect(review.skipped).toEqual([{ kind: "lint", tool: "eslint", reason: "no-files" }]);
   });
 
   it("puts a path holding $ patterns into the command literally", () => {
-    const [unit] = planChecks(TOOLS, ["test"], ["src/a$&.ts", "src/b$'.ts"]).checks;
+    const [unit] = plan(TOOLS, { kinds: ["test"], files: ["src/a$&.ts", "src/b$'.ts"] }).checks;
     expect(unit?.command).toBe("vitest run 'src/a$&.ts' 'src/b$'\\''.ts'");
   });
 
   it("keeps only the kinds asked for, still in kind order", () => {
-    expect(planChecks(TOOLS, ["build", "lint"], null).checks.map((check) => check.kind)).toEqual([
-      "lint",
-      "build",
-    ]);
+    expect(
+      plan(TOOLS, { kinds: ["build", "lint"], files: ["a"] }).checks.map((c) => c.kind),
+    ).toEqual(["lint", "build"]);
   });
 
   it("plans nothing when no entry is configured", () => {
-    expect(planChecks({ test: [], lint: [], build: [] }, undefined, null)).toEqual({
-      checks: [],
-      skipped: [],
-    });
+    expect(plan({ test: [], lint: [], build: [] })).toEqual({ checks: [], skipped: [] });
   });
 });
 
 // Two packages: a Python API and a React frontend (issue #275).
 const MONOREPO: Tools = {
   test: [
-    { id: "api", command: "uv run pytest", scoped: "uv run pytest {files}", paths: ["api/**"] },
-    { id: "web", command: "pnpm test", scoped: "pnpm vitest run {files}", paths: ["web/**"] },
+    { id: "api", command: "uv run pytest {files}", paths: ["api/**"] },
+    { id: "web", command: "pnpm vitest run {files}", paths: ["web/**"] },
   ],
   lint: [{ id: "ruff", command: "uv run ruff check .", paths: ["**/*.py"] }],
   build: [{ id: "tsc", command: "tsc -b" }],
 };
 
-const commands = (plan: ReturnType<typeof planChecks>) =>
-  plan.checks.map((check) => [check.tool, check.command, check.scoped]);
-
 describe("planChecks with paths", () => {
-  it("gives each entry only the scope paths its paths match and skips one with none", () => {
-    const plan = planChecks(MONOREPO, ["test"], ["web/src/a.tsx"]);
-    expect(commands(plan)).toEqual([["web", "pnpm vitest run web/src/a.tsx", true]]);
-    expect(plan.skipped).toEqual([{ kind: "test", tool: "api" }]);
+  it("gives each entry only the files its paths match and skips one with none", () => {
+    const planned = plan(MONOREPO, { kinds: ["test"], files: ["web/src/a.tsx"] });
+    expect(commands(planned)).toEqual([["web", "pnpm vitest run web/src/a.tsx", true]]);
+    expect(planned.skipped).toEqual([{ kind: "test", tool: "api", reason: "paths" }]);
   });
 
   it("matches a path with a leading ./ and puts it into the command as given", () => {
-    const scope = scopeOf(["web/src/a.tsx", "api/app.py", "./api/tests/test_app.py"]);
-    const plan = planChecks(MONOREPO, ["test"], scope);
-    expect(commands(plan)).toEqual([
+    const files = scopeOf(["web/src/a.tsx", "api/app.py", "./api/tests/test_app.py"]);
+    const planned = plan(MONOREPO, { kinds: ["test"], files });
+    expect(commands(planned)).toEqual([
       ["api", "uv run pytest ./api/tests/test_app.py api/app.py", true],
       ["web", "pnpm vitest run web/src/a.tsx", true],
     ]);
-    expect(plan.skipped).toEqual([]);
+    expect(planned.skipped).toEqual([]);
   });
 
   it("matches dot files and lets * stay inside one directory", () => {
     const tools: Tools = {
       test: [],
       lint: [
-        { id: "top", command: "x", scoped: "x {files}", paths: ["*.py"] },
-        { id: "dot", command: "y", scoped: "y {files}", paths: ["**/.env*"] },
+        { id: "top", command: "x {files}", paths: ["*.py"] },
+        { id: "dot", command: "y {files}", paths: ["**/.env*"] },
       ],
       build: [],
     };
-    const plan = planChecks(tools, undefined, ["api/app.py", "web/.env.local"]);
-    expect(commands(plan)).toEqual([["dot", "y web/.env.local", true]]);
-    expect(plan.skipped).toEqual([{ kind: "lint", tool: "top" }]);
+    const planned = plan(tools, { files: ["api/app.py", "web/.env.local"] });
+    expect(commands(planned)).toEqual([["dot", "y web/.env.local", true]]);
+    expect(planned.skipped).toEqual([{ kind: "lint", tool: "top", reason: "paths" }]);
   });
 
-  it("runs the full command of an entry with paths and no scoped variant only when a path matches", () => {
-    expect(commands(planChecks(MONOREPO, ["lint"], ["api/app.py"]))).toEqual([
+  it("runs a whole command with paths only when a file matches", () => {
+    expect(commands(plan(MONOREPO, { kinds: ["lint"], files: ["api/app.py"] }))).toEqual([
       ["ruff", "uv run ruff check .", false],
     ]);
-    expect(planChecks(MONOREPO, ["lint"], ["web/src/a.tsx"])).toEqual({
+    expect(plan(MONOREPO, { kinds: ["lint"], files: ["web/src/a.tsx"] })).toEqual({
       checks: [],
-      skipped: [{ kind: "lint", tool: "ruff" }],
+      skipped: [{ kind: "lint", tool: "ruff", reason: "paths" }],
     });
   });
 
-  it("skips every entry whose paths match no scope path, in run order", () => {
-    expect(planChecks(MONOREPO, ["test", "lint"], ["docs/README.md"])).toEqual({
+  it("skips every entry whose paths match no file, in run order", () => {
+    expect(plan(MONOREPO, { kinds: ["test", "lint"], files: ["docs/README.md"] })).toEqual({
       checks: [],
       skipped: [
-        { kind: "test", tool: "api" },
-        { kind: "test", tool: "web" },
-        { kind: "lint", tool: "ruff" },
+        { kind: "test", tool: "api", reason: "paths" },
+        { kind: "test", tool: "web", reason: "paths" },
+        { kind: "lint", tool: "ruff", reason: "paths" },
       ],
     });
   });
 
-  it("reads no paths without a scope", () => {
-    const plan = planChecks(MONOREPO, undefined, null);
-    expect(commands(plan)).toEqual([
-      ["api", "uv run pytest", false],
-      ["web", "pnpm test", false],
+  it("runs a whole command with paths when the run has no files", () => {
+    const planned = plan(MONOREPO);
+    expect(commands(planned)).toEqual([
       ["ruff", "uv run ruff check .", false],
       ["tsc", "tsc -b", false],
     ]);
-    expect(plan.skipped).toEqual([]);
+    expect(planned.skipped).toEqual([
+      { kind: "test", tool: "api", reason: "no-files" },
+      { kind: "test", tool: "web", reason: "no-files" },
+    ]);
+  });
+});
+
+describe("changed files", () => {
+  it("reads NUL-separated git paths and drops empty ones", () => {
+    expect(nulPaths("src/a.ts\0src/it's a.ts\0")).toEqual(["src/a.ts", "src/it's a.ts"]);
+    expect(nulPaths("")).toEqual([]);
   });
 });
 

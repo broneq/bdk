@@ -42,6 +42,8 @@ pnpm --filter @bdk/bdk run eval --allow-tools Write Edit "Bash(*/bin/bdk *)" "Ba
 
 Claude Code refuses every write to `.claude/settings.json` in a run, whatever the grants, so the cases grade the permission rules from the reply, where setup lists them for the user.
 
+`setup-scoped-rewrite` starts from a configured project whose `tools.test` item holds the removed `scoped` field and a comment: setup must rewrite it into the whole command at `wave` and a `{files}` item at `part`, and keep the comment.
+
 `setup-existing-openspec` starts from a v2 project already on OpenSpec `spec-driven`: setup cannot ask in a run, so it must keep the schema line and its `context:`, and its reply must name the removed v2 `/.bdk/` ignore rule. `setup-claude-plugin` is a Claude Code plugin with a `bin/` launcher and grades the `plugin` E2E item that validates it.
 
 `setup-web-app` and `setup-library` also grade the decision surface setup reports: each puts a `lavish-axi` stub into the workspace's `node_modules`, which `npx -y lavish-axi` runs before any installed one. The stub of `setup-web-app` answers `--version`, so its reply names the Lavish page; the stub of `setup-library` fails, so its reply names `AskUserQuestion`. The `Bash(npx *)` grant covers both.
@@ -114,17 +116,21 @@ The `implement-part-*` and `conform-part-*` cases start from the shared fixtures
 pnpm --filter @bdk/bdk run eval --allow-tools Write Edit "Bash(*/bin/bdk *)" "Bash(mkdir -p *)" "Bash(cd *)" "Bash(git *)" --case '*-part-*'
 ```
 
-The `resolve-conflict-*` case starts from the shared fixture `ledger-totals-planned.sh` (the Change `add-totals`: two `worktree` parts in one wave that both add a function at the end of `src/ledger.js`) with both parts committed on their branches, part 01 merged and the merge of part 02 stopped on the conflict. The block runs in a `bdk:implementer` agent, reads the merge with `git`, runs the checks through `bdk check run` and leaves the merge open:
+`resolve-conflict-two-functions` starts from the shared fixture `ledger-totals-planned.sh` (the Change `add-totals`: two `worktree` parts in one wave that both add a function at the end of `src/ledger.js`) with both parts committed on their branches, part 01 merged and the merge of part 02 stopped on the conflict. The block runs in a `bdk:implementer` agent, reads the merge with `git`, runs the checks through `bdk check run` and leaves the merge open:
 
 ```bash
 pnpm --filter @bdk/bdk run eval --allow-tools Write Edit "Bash(*/bin/bdk *)" "Bash(mkdir -p *)" "Bash(git *)" --case 'resolve-conflict-*'
 ```
+
+`resolve-conflict-wave` starts from `ledger-dated-merged.sh` (the Change `dated-entries`: part 01 makes `balance()` reject an entry without a date, part 02 adds a summary whose test builds undated entries; both green alone, committed on `dated-entries`, with a red `checks/wave-1.json`) and grades the wave repair: the summary test dated, part 01's rule kept, `execute/wave-1.md` written, the checks green and nothing committed.
 
 The `execute-*` cases are the orchestrator cases of `/bdk:execute` (one arm), on the same fixture. One `bdk:lead` agent runs the parts in git worktrees under `.bdk/runs/add-totals/worktrees/`, starts `bdk:implementer` and `bdk:conformer` agents (sonnet) that work there through `cd <worktree> && ...`, commits, merges and runs `resolve-conflict`; `execute-plan-defect` makes task 1 of part 02 contradict its scenario. `execute-single-part-wave` starts from `ledger-totals-three-parts.sh`, which adds part 03 depending on both, so the waves are `1: 01 02` and `2: 03`: it grades worktrees for 01 and 02 only and part 03 committed on `add-totals` with no merge of a part-03 branch. `execute-resume-worktree` and `execute-resume-main-checkout` start from `ledger-totals-two-merged.sh` (01 and 02 built on `add-totals`) and leave part 03's test in a worktree from a broken run, or uncommitted in the main checkout after a blocked attempt: the first grades that the worktree is reused and merged, the second that the lead does not stop on the uncommitted test and builds 03 in the main checkout. The fixtures set a local git identity for the lead's commits (on a Mac, see the `git` entry of "Host limits"):
 
 ```bash
 pnpm --filter @bdk/bdk run eval --ablation none --tag orchestrator --allow-tools Write Edit SendMessage ToolSearch "Bash(*/bin/bdk *)" "Bash(mkdir -p *)" "Bash(cd *)" "Bash(git *)" --case 'execute-*'
 ```
+
+`execute-wave-check` starts from `ledger-dated-merged.sh` without its wave check result: both parts done and committed, wave 1 `pending`, as a run that ended before its wave check leaves it. It grades that the lead resumes at the wave check, repairs the wave, commits the repair, records wave 1 `done` in `state.json` and lists it under `## Waves` in `execute/result.md`. It does not start from `ledger-dated-planned.sh`: there the implementer of part 02 may read part 01's rule in the Change and date its test, so the wave check passes the first time and the repair is not reached.
 
 Recorded 2026-10-09 with Claude Code 2.1.292 (one run each, `-j 3`, with the `git` entry of "Host limits"): every `execute-*` case 1.00, each starting one `bdk:lead` and its workers, 369 s, $4.44 in total.
 

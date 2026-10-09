@@ -102,7 +102,9 @@ function settingType(doc: SettingDoc): string {
     case "items":
       return "list of items, each with an `id`; layers merge items by `id`";
     case "list":
-      return `list of ${doc.of ?? "string"}s`;
+      return doc.of === "enum" && doc.values !== undefined
+        ? `list of ${doc.values.map(code).join(", ")}`
+        : `list of ${doc.of ?? "string"}s`;
     case "map":
       return "mapping of names to values";
     case "enum":

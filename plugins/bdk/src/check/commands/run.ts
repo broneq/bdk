@@ -1,4 +1,4 @@
-// `bdk check run <run-dir> <id> [--scope <path>]... [--kind <kind>]... [--round <n>]`
+// `bdk check run <run-dir> <id> [--at <point>] [--changed <ref>] [--scope <path>]... [--kind <kind>]... [--round <n>]`
 // (spec `bdk-cli/check`, "Run the checks").
 
 import type { Command, Input } from "../../shared/cli/index.ts";
@@ -28,11 +28,21 @@ export function runCommand(deps: CheckDeps): Command {
       },
     ],
     flags: {
+      at: {
+        type: "string",
+        description:
+          "Check point: part, wave or review; runs only the items whose when holds it, and items without when",
+      },
+      changed: {
+        type: "string",
+        description:
+          "A git revision; adds the files changed against it (and untracked files) to the run's files",
+      },
       scope: {
         type: "string",
         multiple: true,
         description:
-          "A file to check, relative to the project root; runs the scoped variants, each on the files its paths match",
+          "A file to check, relative to the project root; a {files} command gets the files its paths match",
       },
       kind: {
         type: "string",
@@ -52,6 +62,8 @@ export function runCommand(deps: CheckDeps): Command {
         runDir,
         id,
         scope: list(flags.scope),
+        at: typeof flags.at === "string" ? flags.at : undefined,
+        changed: typeof flags.changed === "string" ? flags.changed : undefined,
         kinds: list(flags.kind),
         round: typeof flags.round === "string" ? flags.round : undefined,
       });

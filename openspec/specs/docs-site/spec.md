@@ -47,7 +47,7 @@ The site SHALL have a home page and a navigation bar. Its sidebar SHALL hold, in
 - **THEN** `pnpm check` fails and names `docs/concepts/<slug>.md`
 
 ### Requirement: Mermaid diagrams render as diagrams
-A fenced code block with the language `mermaid` in a site page SHALL render as a diagram, in both the light and the dark theme, and SHALL re-render when the reader switches the theme.
+A fenced code block with the language `mermaid` in a site page SHALL render as a diagram, in both the light and the dark theme, and SHALL re-render when the reader switches the theme. A flowchart label SHALL break into lines only where its author wrote a line break (`<br/>`), never inside a word, whatever the label's length. No element of a drawn diagram SHALL draw a shadow or a glow, whatever the node's shape, in either theme.
 
 #### Scenario: Diagram in a design document
 - **WHEN** a reader opens the v3 architecture design page on the site
@@ -56,6 +56,14 @@ A fenced code block with the language `mermaid` in a site page SHALL render as a
 #### Scenario: Theme switch
 - **WHEN** a reader switches the site from the light to the dark theme on a page with a diagram
 - **THEN** the diagram is drawn again with the dark theme
+
+#### Scenario: Hyphenated name in a flowchart label
+- **WHEN** a reader opens `docs/concepts/orchestrators.md` on the site, in the light or the dark theme, at desktop or phone width
+- **THEN** a node label such as `Agent bdk:implementer<br/>/bdk:implement-part` shows `/bdk:implement-part` on one line, and no flowchart label on the page is split inside a word
+
+#### Scenario: Stadium node draws flat
+- **WHEN** a reader opens `docs/concepts/findings.md` on the site, in the light or the dark theme
+- **THEN** the stadium node "decided" draws flat like the box nodes next to it, with no shadow and no glow around it
 
 ### Requirement: Links into the archive point to GitHub
 The `docs/v3-draft1/` archive SHALL stay out of the site. A relative link from a site page to a file in the archive SHALL point to that file on GitHub, `https://github.com/broneq/bdk/blob/main/docs/v3-draft1/<path>`, keeping any `#anchor`. A relative link to an archive file that does not exist SHALL fail the site build and name the page and the link.
@@ -135,8 +143,19 @@ The Reference section SHALL hold one section per plugin under `plugins/` (`bdk`,
 - **WHEN** a pull request adds a `mermaid` block with a syntax error to a Concepts page
 - **THEN** `pnpm check` fails and names the page and the block's line
 
+### Requirement: Flowchart label lines stay short
+`pnpm check` SHALL fail when a flowchart in a site page has a label line (node, edge or subgraph label, split at `<br/>`, HTML entities counted as one character) longer than 40 characters, and SHALL name the page, the block's line and the label line. It SHALL also fail when a `mermaid` block in a site page sets `wrappingWidth` itself, and SHALL name the page and the block's line.
+
+#### Scenario: Long label line
+- **WHEN** a pull request adds a flowchart node `A["writes R/debug/reproduction.md and R/debug/diagnosis.md"]` to a Concepts page
+- **THEN** `pnpm check` fails and names the page, the block's line and the label line
+
+#### Scenario: Per-diagram wrapping width
+- **WHEN** a pull request adds `%%{init: {"flowchart": {"wrappingWidth": 200}}}%%` to a `mermaid` block of a Concepts page
+- **THEN** `pnpm check` fails and names the page and the block's line
+
 ### Requirement: The site follows the Broniszewski design system
-The site SHALL take its colors, type, spacing, radii and component styles from the Broniszewski design system (https://github.com/broneq/design-system), from an unchanged copy of its tokens in the repository that names the design system commit it came from, in the light and the dark theme. It SHALL self-host its fonts and SHALL NOT load fonts, styles or scripts from another host. The dark theme the site applies SHALL equal the design system's dark theme, and `pnpm check` SHALL fail when they differ. A page's first heading "<title> - <summary>" SHALL show as the title ending with the brand's blue period, followed by the summary as the page's lead, and the browser tab SHALL show the title.
+The site SHALL take its colors, type, spacing, radii and component styles from the Broniszewski design system (https://github.com/broneq/design-system), from an unchanged copy of its tokens in the repository that names the design system commit it came from, in the light and the dark theme. It SHALL self-host its fonts and SHALL NOT load fonts, styles or scripts from another host. The dark theme the site applies SHALL equal the design system's dark theme, and `pnpm check` SHALL fail when they differ. A page's first heading "<title> - <summary>" SHALL show as the title ending with the brand's blue period, followed by the summary as the page's lead, and the browser tab SHALL show the title. A table's strong top rule SHALL be exactly as wide as its rows, whether the table is narrower than the content column or scrolls.
 
 #### Scenario: Dark theme drift
 - **WHEN** an update of the copied tokens changes a value of the design system's dark theme and the site's dark theme is left as it was
@@ -149,6 +168,14 @@ The site SHALL take its colors, type, spacing, radii and component styles from t
 #### Scenario: Page header
 - **WHEN** a reader opens `docs/guide/install.md` on the site, whose first heading reads "Install - add the BDK marketplace and the plugins you want"
 - **THEN** the page shows "Install" ending with the blue period, the summary below it as the lead, and the browser tab reads "Install | BDK"
+
+#### Scenario: Narrow table
+- **WHEN** a reader opens the wave table of `docs/concepts/stages.md` ("How a plan is cut"), which is narrower than the content column, in the light or the dark theme
+- **THEN** its top rule ends where its row lines end
+
+#### Scenario: Wide table
+- **WHEN** a reader opens a table wider than the content column, such as the table of `docs/reference/bdk/rules.md`, and scrolls it
+- **THEN** its top rule spans the full width of its rows and scrolls with them
 
 ### Requirement: One site for the current release
 The site SHALL document one version of BDK: the version on `main`, which is the released one. It SHALL NOT keep pages per version. The Guide SHALL link to the `v2.7.0` README for users of BDK v2.
@@ -176,12 +203,15 @@ The Concepts SHALL explain how a plan is cut: what a part, `depends-on`, a wave 
 - **THEN** they reach the section of `docs/concepts/stages.md` that explains parts, waves, `depends-on` and `isolation`, and links to the problems of `bdk plan check` in the Reference
 
 ### Requirement: The Concepts show where execute runs the checks
-The Concepts page of the orchestrators SHALL show, in the execute diagrams, every run of `bdk check run` in the execute stage: the red acceptance tests and the part checks of `/bdk:implement-part`, the checks of `/bdk:conform-part`, and the checks of `/bdk:resolve-conflict` after a conflicted merge. Its text SHALL say which files a scoped check covers and that the merged result of a wave is not checked before the first round of `/bdk:auto-review`. The execute stage of the Concepts and of the Guide SHALL link to it.
+
+The Concepts page of the orchestrators SHALL show, in the execute diagrams, every run of `bdk check run` in the execute stage: the red acceptance tests and the part checks of `/bdk:implement-part`, the checks of `/bdk:conform-part`, the checks of `/bdk:resolve-conflict` after a conflicted merge, and the wave check of the execute lead with its repair. Its text SHALL say which files a check on changed files covers, which check point each run uses, and that the checks of the `review` point run only in `/bdk:auto-review`. The execute stage of the Concepts and of the Guide SHALL link to it.
 
 #### Scenario: Where the tests of a part run
+
 - **WHEN** a reader of the execute stage in `docs/guide/workflow.md` follows its link about the checks
-- **THEN** they reach the part of `docs/concepts/orchestrators.md` that names each check run of the execute stage, who runs it, on which files, and what happens when it is red
+- **THEN** they reach the part of `docs/concepts/orchestrators.md` that names each check run of the execute stage, who runs it, at which point, on which files, and what happens when it is red
 
 #### Scenario: What execute does not check
+
 - **WHEN** a reader looks for what runs the checks on a wave merged into the Change branch
-- **THEN** the page says that nothing does before `/bdk:auto-review`, whose first round runs every check on the whole project
+- **THEN** the page says that the execute lead runs the checks of the `wave` point on the files changed since the wave's base, repairs a red wave with `/bdk:resolve-conflict --wave`, and leaves the `review` point to `/bdk:auto-review`

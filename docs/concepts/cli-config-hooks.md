@@ -30,7 +30,7 @@ Which skill calls which command. Every skill that reads the configuration also r
 | `bdk run status` | `/bdk:run`, `/bdk:execute`, `/bdk:auto-review`, `/bdk:close` |
 | `bdk plan check` | `/bdk:plan`, `/bdk:plan-draft`, `/bdk:verify-plan`, `/bdk:plan-fixes`, `/bdk:diagnose-bug`, `/bdk:execute-waves` |
 | `bdk rules for` | `/bdk:design-draft`, `/bdk:verify-design` (stage `design`); `/bdk:plan-draft`, `/bdk:verify-plan` (stage `plan`); `/bdk:implement-part`, `/bdk:conform-part` (stage `execute`); `/bdk:review-group`, `/bdk:judge` (stage `review`) |
-| `bdk check run` | `/bdk:implement-part`, `/bdk:conform-part`, `/bdk:resolve-conflict`, `/bdk:review-round` |
+| `bdk check run` | `/bdk:implement-part`, `/bdk:conform-part`, `/bdk:resolve-conflict`, `/bdk:execute-waves` (the wave check), `/bdk:review-round` |
 | `bdk git groups` | `/bdk:review-round`, `/bdk:pr-review-round`; `/bdk:review-group` and `/bdk:review-integration` for a manual round |
 | `bdk git scope` | no skill (`bdk git groups` uses the same range logic) |
 | `bdk findings add` | `/bdk:review-group`, `/bdk:review-integration`, `/bdk:e2e-check` |
@@ -81,8 +81,8 @@ Three layers merge, later over earlier; arrays of items merge by `id`. `bdk conf
 flowchart TB
   D["defaults (the zod schema)"] --> G["global: ~/.config/bdk/settings.yaml"]
   G --> P["project: .bdk/settings.yaml (committed)"]
-  P --> L["local: .bdk/settings.local.yaml (ignored)"]
-  L --> SHOW["bdk config show, in the ! block of every skill"]
+  P --> L["local: .bdk/settings.local.yaml<br/>(ignored)"]
+  L --> SHOW["bdk config show,<br/>in the ! block of every skill"]
 ```
 
 Which key steers which stage (dashed boxes hold the keys a stage reads, its blocks included):
@@ -132,7 +132,7 @@ The same as a list, key by key; types, defaults and allowed values are in the [s
 
 | Key | Read by |
 |---|---|
-| `tools.test`, `tools.lint`, `tools.build` | `bdk check run` (in `/bdk:implement-part`, `/bdk:conform-part`, `/bdk:resolve-conflict`, `/bdk:review-round`); `/bdk:setup` writes them |
+| `tools.test`, `tools.lint`, `tools.build` | `bdk check run` (in `/bdk:implement-part`, `/bdk:conform-part`, `/bdk:resolve-conflict`, `/bdk:execute-waves`, `/bdk:review-round`, each at its check point); `/bdk:setup` writes them |
 | `tools.e2e` | `/bdk:e2e-check`, `/bdk:diagnose-bug`; `/bdk:setup` writes it |
 | `languages`, `rules` | `bdk rules for` (in the design, plan, execute and review blocks above) |
 | `policy.gates.design` | `/bdk:design` (design gate), `/bdk:debug` (fix gate) |

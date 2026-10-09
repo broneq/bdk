@@ -66,10 +66,10 @@ For each acceptance scenario, write a test that encodes its WHEN and its THEN, i
 Run them before any code of the tasks:
 
 ```
-"${CLAUDE_PLUGIN_ROOT}/bin/bdk" check run <run-dir> <part-id>-red --kind test --scope <test file> --scope <test file>
+"${CLAUDE_PLUGIN_ROOT}/bin/bdk" check run <run-dir> <part-id>-red --at part --kind test --scope <test file> --scope <test file>
 ```
 
-Read the output file of each red check. Each test must fail because the behaviour is missing (a missing export, a wrong value), not because the test is broken (a syntax error, a wrong import path, a typo in the fixture). Fix a broken test and run again. A verdict `none` means no `tools.test` item runs on these files (none is configured, or the `paths` of each skip them): go to step 7 with `Kind: environment` and the line `no tools.test entry for these files; add one with /bdk:setup`.
+`--at part` runs only the test items meant for a part (`when` holds `part`, or no `when`), so a whole suite kept for the wave or the review does not run here. Read the output file of each red check. Each test must fail because the behaviour is missing (a missing export, a wrong value), not because the test is broken (a syntax error, a wrong import path, a typo in the fixture). Fix a broken test and run again. A verdict `none` means no `tools.test` item runs at `part` on these files (none is configured for that point, or the `paths` of each skip them): go to step 7 with `Kind: environment` and the line `no tools.test item runs at part on these files; add one with /bdk:setup`.
 
 Done when every acceptance scenario has a test seen red for the right reason.
 
@@ -84,14 +84,14 @@ Done when every task is built.
 ## 6. Run the part checks
 
 ```
-"${CLAUDE_PLUGIN_ROOT}/bin/bdk" check run <run-dir> <part-id> --scope <file> --scope <file> ...
+"${CLAUDE_PLUGIN_ROOT}/bin/bdk" check run <run-dir> <part-id> --at part --changed HEAD
 ```
 
-with every path of `files`. On `fail`, read the output file of each red check, fix the cause in the part's files, and run again: three runs in all. A verdict still `fail` after the third run is a blocker of `Kind: other`, with the output path as evidence. A tool that cannot run at all (command not found) is `Kind: environment`.
+It runs the items of the `part` point on the files you changed (against `HEAD`, untracked files included); with `--workdir`, run it as `cd <workdir> && "${CLAUDE_PLUGIN_ROOT}/bin/bdk" check run <run-dir> <part-id> --at part --changed HEAD`, so git reads the worktree. On `fail`, read the output file of each red check, fix the cause in the part's files, and run again: three runs in all. A verdict still `fail` after the third run is a blocker of `Kind: other`, with the output path as evidence. A tool that cannot run at all (command not found) is `Kind: environment`.
 
 Never run a test, linter or build command yourself, and never one that installs, spends money or reaches the network.
 
-Done when the verdict is `pass` (or `none`, stated in the report), or you have a blocker.
+Done when the verdict is `pass` (or `none`: no item runs at `part` on these files, stated in the report), or you have a blocker.
 
 ## 7. Write the report
 

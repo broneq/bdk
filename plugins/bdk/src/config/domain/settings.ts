@@ -14,17 +14,30 @@ const count = (fallback: number, description: string) =>
 /** The user-facing text of a key; the settings Reference is generated from it. */
 const about = (description: string) => ({ description });
 
+/** The check points of `bdk check run --at` (spec `bdk-cli/check`). */
+export const CHECK_POINTS = ["part", "wave", "review"] as const;
+
 const Check = z.strictObject({
   id: kebab.meta(
     about("Names the command; other layers and `bdk config set` address it by this id."),
   ),
-  command: text.meta(about("Shell command run from the project root.")),
-  scoped: text
-    .includes("{files}", { message: "must contain {files}" })
+  command: text.meta(
+    about(
+      "Shell command run from the project root. A `{files}` in it is replaced by the changed files, and the command is skipped when there are none.",
+    ),
+  ),
+  when: z
+    .array(
+      z.enum(CHECK_POINTS, {
+        error: () => `must be one of ${CHECK_POINTS.join(", ")}`,
+      }),
+    )
+    .min(1, "must hold at least one point")
+    .refine((points) => new Set(points).size === points.length, "must not repeat a point")
     .optional()
     .meta(
       about(
-        "Variant of the command for a set of files; `{files}` is replaced by the changed files, so a check covers only what a part touched.",
+        "Check points the command runs at: `part` after each plan part, `wave` after each wave of execute, `review` in each review round; every point when absent.",
       ),
     ),
   /** Seconds, at most a day (a longer timer overflows); `bdk check run` defaults it. */
@@ -40,7 +53,7 @@ const Check = z.strictObject({
     .optional()
     .meta(
       about(
-        "Globs of the files the command checks, matched like rule paths. On a scoped run the command gets only the changed files they match, and is skipped when none matches; every file when absent.",
+        "Globs of the files the command checks, matched like rule paths. The command gets only the changed files they match, and is skipped when files changed and none matches; every file when absent.",
       ),
     ),
 });
@@ -270,8 +283,24 @@ export const SettingsSchema = z
         ...about("The project's commands, which `/bdk:setup` detects."),
         examples: [
           {
-            test: [{ id: "vitest", command: "pnpm test", scoped: "pnpm vitest run {files}" }],
-            lint: [{ id: "eslint", command: "pnpm lint", scoped: "pnpm eslint {files}" }],
+            test: [
+              { id: "vitest", command: "pnpm test", when: ["wave", "review"] },
+              {
+                id: "vitest-related",
+                command: "pnpm vitest related --run {files}",
+                when: ["part"],
+                paths: ["src/**/*.ts"],
+              },
+            ],
+            lint: [
+              { id: "eslint", command: "pnpm lint", when: ["review"] },
+              {
+                id: "eslint-changed",
+                command: "pnpm eslint {files}",
+                when: ["part"],
+                paths: ["**/*.ts"],
+              },
+            ],
             build: [{ id: "vite", command: "pnpm build" }],
             e2e: [
               { id: "web", start: "pnpm dev", ready: "http://localhost:5173", driver: "browser" },

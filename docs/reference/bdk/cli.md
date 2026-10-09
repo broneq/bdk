@@ -59,12 +59,14 @@ Arguments:
   <id>       Kebab-case name of the result, such as a part id or round-2
 
 Flags:
-  --scope <value>  A file to check, relative to the project root; runs the scoped variants, each on the files its paths match (repeatable)
-  --kind <value>   Only this kind: test, lint or build; all three when absent (repeatable)
-  --round <value>  Append red checks as findings to review/round-<n>/findings.jsonl
-  --help, -h       Show help
-  --version        Print the bdk version
-  --json           Print the result as one JSON document
+  --at <value>       Check point: part, wave or review; runs only the items whose when holds it, and items without when
+  --changed <value>  A git revision; adds the files changed against it (and untracked files) to the run's files
+  --scope <value>    A file to check, relative to the project root; a {files} command gets the files its paths match (repeatable)
+  --kind <value>     Only this kind: test, lint or build; all three when absent (repeatable)
+  --round <value>    Append red checks as findings to review/round-<n>/findings.jsonl
+  --help, -h         Show help
+  --version          Print the bdk version
+  --json             Print the result as one JSON document
 
 Exit codes:
   0  success
