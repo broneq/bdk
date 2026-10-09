@@ -1,6 +1,6 @@
 ---
 name: debug
-description: 'Fixes a reported bug end to end - diagnose-bug reproduces it on the product and writes a one-part fix Change, a gate (policy.gates.design) approves the fix, commit puts the Change on its branch, /bdk:execute builds it test-first (the reproduction test red, the fix, green, conform), and /bdk:auto-review reviews the fix Change; writes debug/result.md under .bdk/runs and resumes from the files. Use when the user reports a bug, an error message, a traceback, steps to reproduce or unexpected behaviour and wants it fixed, or asks to debug something.'
+description: 'Fixes a reported bug end to end - diagnose-bug reproduces it on the product and writes a one-part fix Change, a gate (policy.gates.design) approves the fix, commit puts the Change on its branch, /bdk:execute builds it test-first (the reproduction test red, the fix, green, conform), and /bdk:auto-review reviews the fix Change; writes debug/result.md under .bdk/runs and resumes from the files. Use when the user reports a bug, an error message, a traceback, steps to reproduce or unexpected behaviour and wants it fixed, or asks to debug something - also when the fix may turn out to be one line: a reported symptom is diagnosed and fixed with a test, not edited directly.'
 argument-hint: "[<bug report> | <issue> | <change>]"
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(git status *) Bash(git symbolic-ref *) Bash(git rev-parse *) Bash(git branch *) Bash(git switch *) Bash(git log *) Read Write Glob Grep Skill Agent SendMessage ToolSearch AskUserQuestion
 ---
@@ -21,6 +21,8 @@ The blocks and stages, each invoked with the Skill tool and followed to its end:
 - **commit** `only openspec/changes/<change>/: the fix Change <change>`.
 - **execute** `<change>`: a `bdk:lead` builds the part (the reproduction test seen red, the fix, the test green, conform) and commits it; writes `execute/result.md`.
 - **auto-review** `<change>`: review rounds of the fix Change, triage, fixes; writes `review/result.md`.
+
+**A block's end is not the run's end.** `diagnose-bug` and `commit` end with their own reply, written for a user who ran them alone. Inside `/bdk:debug` that reply ends the block only: give it in a line or two at most, and go on with the next step in the same turn. Stop only where this skill says to stop.
 
 `execute` and `auto-review` may start their lead in the background and end the turn; their result arrives as a notification. When it has arrived and the stage has replied, come back here and go on with the next step: the files say where you are.
 
@@ -54,9 +56,9 @@ A step whose file exists never runs again. Done when you know the step.
 
 ## 3. Diagnose
 
-Run **diagnose-bug** with the report (and `--name <change>` when given). It may ask the user for a missing symptom; then stop as well, and `/bdk:debug` continues once answered. Read the first lines of `R/debug/diagnosis.md` (the Change is its `Change:` line, or the name `diagnose-bug` reported):
+Run **diagnose-bug** with the report (and `--name <change>` when given). It may ask the user for a missing symptom; then stop as well, and `/bdk:debug` continues once answered. When it has replied, read the first lines of `R/debug/diagnosis.md` (the Change is its `Change:` line, or the name `diagnose-bug` reported) in the same turn:
 
-- `Status: ready`: step 4.
+- `Status: ready`: step 4, without ending your turn.
 - `Status: not-reproduced`: stop. Reply that the bug did not reproduce, what was run (`debug/reproduction.md`), and what would help; nothing was changed.
 - `Status: too-large`: stop. Reply with the root cause and that the fix Change holds the proposal, the spec delta and `design.md` but needs the pipeline: `/bdk:design <change>`, then `/bdk:plan`, `/bdk:execute`, `/bdk:auto-review`.
 - `Status: blocked` or no file: stop with its reason and `/bdk:debug <change>` to retry once the cause is known.

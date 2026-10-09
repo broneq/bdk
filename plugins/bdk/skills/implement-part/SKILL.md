@@ -69,9 +69,9 @@ Run them before any code of the tasks:
 "${CLAUDE_PLUGIN_ROOT}/bin/bdk" check run <run-dir> <part-id>-red --at part --kind test --scope <test file> --scope <test file>
 ```
 
-`--at part` runs only the test items meant for a part (`when` holds `part`, or no `when`), so a whole suite kept for the wave or the review does not run here. Read the output file of each red check. Each test must fail because the behaviour is missing (a missing export, a wrong value), not because the test is broken (a syntax error, a wrong import path, a typo in the fixture). Fix a broken test and run again. A verdict `none` means no `tools.test` item runs at `part` on these files (none is configured for that point, or the `paths` of each skip them): go to step 7 with `Kind: environment` and the line `no tools.test item runs at part on these files; add one with /bdk:setup`.
+`--at part` runs only the test items meant for a part (`when` holds `part`, or no `when`), so a whole suite kept for the wave or the review does not run here. See each acceptance test fail: the lines printed under a red check are only its last 20, and when they do not show every acceptance test failing (`(last 20 lines; ...)` under them says they are cut), read the output file with Read and find each test's own failure there. Each test must fail because the behaviour is missing (a missing export, a wrong value), not because the test is broken (a syntax error, a wrong import path, a typo in the fixture). Fix a broken test and run again. A test whose failure you did not read is not seen red: run the red check again, never infer it. A verdict `none` means no `tools.test` item runs at `part` on these files (none is configured for that point, or the `paths` of each skip them): go to step 7 with `Kind: environment` and the line `no tools.test item runs at part on these files; add one with /bdk:setup`.
 
-Done when every acceptance scenario has a test seen red for the right reason.
+Done when every acceptance scenario has a test you saw fail, red for the right reason.
 
 ## 5. Build the tasks
 
@@ -125,6 +125,7 @@ With `Status: blocker`, add before `## Decisions taken without the user`:
 ```
 
 - `Status: done` only when every acceptance scenario has a test with `red seen; green seen` and the last part check passed.
+- Each `## Acceptance tests` line ends exactly `; red seen; green seen`, with nothing between or after; anything to say about a test goes under `## Decisions taken without the user`.
 - `Kind` is `plan-defect` (the part is wrong), `environment` (a tool or configuration is missing) or `other` (checks stay red).
 - An empty section holds `- None.` A blocker found before any edit lists `- None.` under `Changed files`.
 

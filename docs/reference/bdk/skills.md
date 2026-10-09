@@ -60,7 +60,7 @@ Checks the uncommitted diff of one implemented plan part of an OpenSpec Change o
 
 Started by: you, or Claude when your request matches the description below.
 
-Fixes a reported bug end to end - diagnose-bug reproduces it on the product and writes a one-part fix Change, a gate (policy.gates.design) approves the fix, commit puts the Change on its branch, /bdk:execute builds it test-first (the reproduction test red, the fix, green, conform), and /bdk:auto-review reviews the fix Change; writes debug/result.md under .bdk/runs and resumes from the files. Use when the user reports a bug, an error message, a traceback, steps to reproduce or unexpected behaviour and wants it fixed, or asks to debug something.
+Fixes a reported bug end to end - diagnose-bug reproduces it on the product and writes a one-part fix Change, a gate (policy.gates.design) approves the fix, commit puts the Change on its branch, /bdk:execute builds it test-first (the reproduction test red, the fix, green, conform), and /bdk:auto-review reviews the fix Change; writes debug/result.md under .bdk/runs and resumes from the files. Use when the user reports a bug, an error message, a traceback, steps to reproduce or unexpected behaviour and wants it fixed, or asks to debug something - also when the fix may turn out to be one line: a reported symptom is diagnosed and fixed with a test, not edited directly.
 
 ## `/bdk:design` {#design}
 

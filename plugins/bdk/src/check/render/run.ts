@@ -2,6 +2,7 @@
 // the point and revision first, the tail of each red one indented under it, one line per skipped entry, then the verdict and
 // where the result is.
 
+import { TAIL_LINES } from "../domain/verdict.ts";
 import type { RunResult } from "../schema/run.ts";
 
 export function renderRun(result: RunResult, resultFile: string): string {
@@ -17,7 +18,12 @@ export function renderRun(result: RunResult, resultFile: string): string {
     lines.push(
       `${check.status.padEnd(status)}  ${`${check.kind} ${check.tool}`.padEnd(name)}  ${scope}  ${check.output}`,
     );
-    for (const line of check.tail ?? []) lines.push(`    | ${line}`);
+    const tail = check.tail ?? [];
+    for (const line of tail) lines.push(`    | ${line}`);
+    // A full tail may be cut: a model reading only it misses a failure printed above it (#262).
+    if (tail.length === TAIL_LINES) {
+      lines.push(`    (last ${String(TAIL_LINES)} lines; the whole output is in the file above)`);
+    }
   }
   for (const entry of result.skipped) {
     const why =
