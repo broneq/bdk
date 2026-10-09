@@ -62,9 +62,11 @@ Done when `R/reproduction.md` exists and says `reproduced`, or you stopped at no
 
 Follow the evidence from the symptom to its cause: the line the error names or the output comes from, the data it gets, and the caller that produced that data. Read every caller and callee you follow; do not stop at the line that throws when the wrong value comes from elsewhere. Do not guess a cause the code does not show: when nothing explains the observation, write `Status: blocked` with what you read into `R/diagnosis.md` and go to step 7.
 
+The fix covers this one bug. A **related defect** you find on the way - another bug, or data the bug already wrote that fixing the cause does not repair (records or files it already saved wrong) - is not part of it: note each one (what, where, why the fix leaves it) for steps 5 to 7, and do not size, plan or test it. It gets its own Change, which the user starts.
+
 Then size the fix: the lines it changes, every reference to each symbol it changes (Grep the code and the tests), and the test file that covers the code (a neighbouring `*.test.*`, or the tests' directory for a new one).
 
-Done when you can name the root cause with its file and line, the files the fix touches, and the test file.
+Done when you can name the root cause with its file and line, the files the fix touches, the test file, and any related defects.
 
 ## 4. Decide the fix fits one part
 
@@ -77,8 +79,8 @@ Done when you know whether the fix is one part.
 Run `openspec new change <change> --schema bdk`. For each artifact run `openspec instructions <artifact> --change <change>`, follow its `<instruction>`, fill its `<template>` without the template's comments, and write the file with Write.
 
 - **proposal.md**: under Why, the bug in one or two sentences, the issue first when there is one (`Tracks #42.`), and the reproduction (`.bdk/runs/<change>/debug/reproduction.md`). What Changes: the fix in a few bullets. Capabilities: the capability whose behaviour is broken, under Modified when a main spec holds it, else under New.
-- **Spec delta** `specs/<capability>/spec.md`: it always holds the reproduction as a scenario with its exact input and expected output, so the implementer tests it and the review's E2E check drives it. When a main spec requirement covers the behaviour, copy that requirement whole under `## MODIFIED Requirements` and add the scenario, or keep it unchanged when one of its scenarios already states this exact case. When none does, add the requirement under `## ADDED Requirements`. Never change what the spec promised to fit the code.
-- **design.md**: Context with the reproduction (way in, steps, observed); Decisions with D1 the root cause (file and line, the data that goes wrong and where it comes from) and D2 the fix with the alternatives considered; the call sites the fix reaches and why each stays correct; Risks.
+- **Spec delta** `specs/<capability>/spec.md`: it always holds the reproduction as a scenario with its exact input and expected output, so the implementer tests it and the review's E2E check drives it. It holds no scenario for a related defect. When a main spec requirement covers the behaviour, copy that requirement whole under `## MODIFIED Requirements` and add the scenario, or keep it unchanged when one of its scenarios already states this exact case. When none does, add the requirement under `## ADDED Requirements`. Never change what the spec promised to fit the code.
+- **design.md**: Context with the reproduction (way in, steps, observed); Decisions with D1 the root cause (file and line, the data that goes wrong and where it comes from) and D2 the fix with the alternatives considered; the call sites the fix reaches and why each stays correct; Risks, with each related defect as `[Related, not fixed: <what, where>] -> its own Change`. Neither Goals nor D2 covers a related defect.
 - **plan/parts/01.md** (not when too large):
 
 ```markdown
@@ -109,7 +111,7 @@ files:
    - Verified by: tally / Requirement: Total / Scenario: Total after an add; a test in test/tally.test.js that runs `tally add 5` then `tally total` in a scratch directory and expects `Total: 5.00`, exit 0
 ```
 
-  Each task changes one thing; the first task's `Verified by:` names the test that reproduces the bug with the reproduction's exact input, so the implementer sees it red before the fix. `files` lists every file the tasks touch, tests included. The only acceptance scenario is the reproduction scenario, and no task only pins behaviour that already works (a scenario that passes today): the implementer must see every acceptance test red, and such a test cannot fail, so it would block the fix.
+  Each task changes one thing; the first task's `Verified by:` names the test that reproduces the bug with the reproduction's exact input, so the implementer sees it red before the fix. `files` lists every file the tasks touch, tests included. The only acceptance scenario is the reproduction scenario, and no task only pins behaviour that already works (a scenario that passes today): the implementer must see every acceptance test red, and such a test cannot fail, so it would block the fix. A related defect gets no scenario and no task either, even when its test would fail today: it is named in `design.md` and `diagnosis.md`, not fixed here.
 
 Run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" plan check openspec/changes/<change>/plan/parts`: exit 1 lists problems, fix them and run it again; exit 3 is an environment problem, pass it on and stop. Then `openspec validate <change>`: fix what it reports.
 
@@ -131,10 +133,10 @@ Part: openspec/changes/fix-total-crash/plan/parts/01.md
 Next: /bdk:debug fix-total-crash
 ```
 
-The first line is `Status: ready`, `too-large` (no `Part:` line; `Next: /bdk:design <change>`), `not-reproduced` (only `Reproduction:` and `Next:` with what would help reproduce it) or `blocked` (`Reason:` instead of `Root cause:`).
+After `Root cause:`, write one line `Related: <where (file:line, or the data)> <what goes wrong>; <why this fix leaves it>` per related defect you found in step 3, none when there is none; `Scenario:` names only the reproduction scenario. The first line is `Status: ready`, `too-large` (no `Part:` line; `Next: /bdk:design <change>`), `not-reproduced` (only `Reproduction:` and `Next:` with what would help reproduce it) or `blocked` (`Reason:` instead of `Root cause:`).
 
 Done when `R/diagnosis.md` exists and its first line is the status.
 
 ## 7. Reply
 
-Reply in a few lines: the status line; whether and how the bug reproduced; the root cause; the Change and its part, or what is missing; and the next step from `diagnosis.md`. Never say the bug is fixed: nothing is fixed until `/bdk:execute` builds the part.
+Reply in a few lines: the status line; whether and how the bug reproduced; the root cause; each related defect as not fixed, with its own Change as the way to fix it; the Change and its part, or what is missing; and the next step from `diagnosis.md`. Never say the bug is fixed: nothing is fixed until `/bdk:execute` builds the part.
