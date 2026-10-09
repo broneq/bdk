@@ -10,7 +10,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, onTestFinished } from "vitest";
 import { openspecWarning, runPath } from "../evals/run.ts";
 import { planGroup } from "../src/plan/index.ts";
 import { checkResult } from "../src/plan/schema/check.ts";
@@ -36,8 +36,16 @@ afterAll(() => {
   rmSync(scratch, { recursive: true, force: true });
 });
 
+/**
+ * A new directory under the scratch root, deleted when the calling test finishes. Every scaffold
+ * is a git repository, so leaving them all for one delete in afterAll made that hook outgrow its
+ * timeout as cases were added (#336).
+ */
 function fresh(name: string): string {
   const dir = mkdtempSync(join(scratch, `${name}-`));
+  onTestFinished(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
   mkdirSync(join(dir, "home"));
   return dir;
 }

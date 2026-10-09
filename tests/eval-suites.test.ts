@@ -11,7 +11,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, onTestFinished } from "vitest";
 
 // Free checks of every plugin's eval suite (spec skill-evals, design D1-D4 of
 // v3-318-eval-loader-all-plugins). Paid runs never happen here: the loader runs at a cost
@@ -41,8 +41,16 @@ afterAll(() => {
   rmSync(scratch, { recursive: true, force: true });
 });
 
+/**
+ * A new directory under the scratch root, deleted when the calling test finishes. Every scaffold
+ * is a git repository, so leaving them all for one delete in afterAll made that hook outgrow its
+ * timeout as cases were added (#336).
+ */
 function fresh(name: string): string {
   const dir = mkdtempSync(join(scratch, `${name}-`));
+  onTestFinished(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
   mkdirSync(join(dir, "home"));
   return dir;
 }
