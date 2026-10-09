@@ -304,7 +304,7 @@ sequenceDiagram
   participant L as lead (execute,<br/>review-round)
   H->>M: /bdk:run intent, issue or issue list
   M->>M: Skill propose, Skill design
-  alt policy.gates.design = manual
+  alt policy.gates.design<br/>= manual
     M->>H: approve design
     H-->>M: ok
   end
