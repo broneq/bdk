@@ -6,7 +6,7 @@ Notation in the diagrams: see the [glossary](./glossary.md#notation-in-the-diagr
 
 ## Who starts whom
 
-The main thread (an orchestrator) starts leads and single agents; a lead starts workers as foreground `Agent` calls. A block that runs in the main thread is called with the `Skill` tool.
+The main thread (an orchestrator) starts leads and single agents; a lead starts workers as foreground `Agent` calls. Every `Agent` call a BDK skill makes names its run mode: `run_in_background: false` for an agent the caller waits for, so the host never starts a worker in the background and a lead never waits on one by polling; only a lead started under `execution.lead: background` gets `run_in_background: true`. A block that runs in the main thread is called with the `Skill` tool.
 
 ```mermaid
 flowchart LR

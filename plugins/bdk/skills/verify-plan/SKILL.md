@@ -19,7 +19,7 @@ The block above says `BDK not configured: run /bdk:setup` or `BDK configuration 
 
 The check runs on a fresh context in the agent `bdk:verifier`, so it reads the plan as the implementers will.
 
-- **You are not `bdk:verifier`** (the main thread, or any other agent): do not check the plan yourself. Start one agent with the `Agent` tool: `subagent_type: "bdk:verifier"`, the prompt `Run the skill bdk:verify-plan for the Change <change>.` (the argument above; without one, say so and let it pick), `model` set to `models.verifier.model` and `effort` set to `models.verifier.effort`, each only when the configuration above sets it. Wait for it. Reply with its verdict line, the report path and its `Must address` IDs, and stop.
+- **You are not `bdk:verifier`** (the main thread, or any other agent): do not check the plan yourself. Start one agent with the `Agent` tool in the foreground (`run_in_background: false`): `subagent_type: "bdk:verifier"`, the prompt `Run the skill bdk:verify-plan for the Change <change>.` (the argument above; without one, say so and let it pick), `model` set to `models.verifier.model` and `effort` set to `models.verifier.effort`, each only when the configuration above sets it. Wait for it. Reply with its verdict line, the report path and its `Must address` IDs, and stop.
 - **You are `bdk:verifier`**: continue with step 1. When you were continued with a message after a fix, start again at step 1; the previous report is now the last one.
 
 ## 1. Find the plan

@@ -81,7 +81,7 @@ Done when every part of the wave has its work directory.
 
 Split the wave's parts into batches of at most `execution.max-parallel`, in ascending order. For each batch, repeat until every part of the batch is `done` or `blocked`:
 
-1. **Implement.** For each part of the batch that needs an implementer run (every part at first; later the parts to retry), add 1 to its `attempts` and write the state. Then start, in one message, one foreground Agent call per part:
+1. **Implement.** For each part of the batch that needs an implementer run (every part at first; later the parts to retry), add 1 to its `attempts` and write the state. Then start, in one message, one foreground Agent call (`run_in_background: false`) per part:
    - `subagent_type: "bdk:implementer"`, prompt `Run the skill bdk:implement-part with the arguments: <change> <id> --run-dir <run dir>`, plus ` --workdir <run dir>/worktrees/<id>` for a part that runs in a worktree;
    - `model`: `policy.escalation.model` when this is the part's last run within this run's budget; else `models.implementer.model` when set; else no `model`.
    - `effort`: on the part's last run, `policy.escalation.effort` when set, else `models.implementer.effort` when set; on an earlier run, `models.implementer.effort` when set; else no `effort`.
@@ -89,7 +89,7 @@ Split the wave's parts into batches of at most `execution.max-parallel`, in asce
    - `Status: done`: the part goes to conform.
    - `Status: blocker` with `Kind: plan-defect` or `Kind: environment`: mark the part `blocked` at once, with the kind and the evidence as `reason`. A retry cannot fix a plan or install a tool.
    - `Status: blocker` with `Kind: other`, or no report: retry the part while its budget lasts; when spent, mark it `blocked` with the last reason.
-3. **Conform.** Start, in one message, one foreground Agent call per part that goes to conform: `subagent_type: "bdk:conformer"`, prompt `Run the skill bdk:conform-part with the arguments: <change> <id> --run-dir <run dir>` (plus ` --workdir <run dir>/worktrees/<id>` for a part that runs in a worktree), and `model` `models.conformer.model` and `effort` `models.conformer.effort`, each when set.
+3. **Conform.** Start, in one message, one foreground Agent call (`run_in_background: false`) per part that goes to conform: `subagent_type: "bdk:conformer"`, prompt `Run the skill bdk:conform-part with the arguments: <change> <id> --run-dir <run dir>` (plus ` --workdir <run dir>/worktrees/<id>` for a part that runs in a worktree), and `model` `models.conformer.model` and `effort` `models.conformer.effort`, each when set.
 4. **Read** each `<run dir>/execute/conform-<id>.md`:
    - `Verdict: PASS`: commit the part (below), then mark it `done`.
    - `Verdict: FAIL`, or no report: retry the part while its budget lasts (the implementer reads the failed report); when spent, mark it `blocked` with the `Left` items naming tasks, or the red check, as `reason`.
@@ -107,7 +107,7 @@ For each `done` part of the wave that ran in a worktree, in ascending order (a w
 
 1. `git merge --no-ff --no-edit bdk/<change>/part-<id>`.
 2. When it succeeds: `git worktree remove <run dir>/worktrees/<id>`, then `git branch -d bdk/<change>/part-<id>`.
-3. When it stops on conflicts: start one foreground Agent call, `subagent_type: "bdk:implementer"`, prompt `Run the skill bdk:resolve-conflict with the arguments: <change> <id> --run-dir <run dir>`, `model` `models.implementer.model` and `effort` `models.implementer.effort`, each when set. Read `<run dir>/execute/merge-<id>.md`.
+3. When it stops on conflicts: start one foreground Agent call (`run_in_background: false`), `subagent_type: "bdk:implementer"`, prompt `Run the skill bdk:resolve-conflict with the arguments: <change> <id> --run-dir <run dir>`, `model` `models.implementer.model` and `effort` `models.implementer.effort`, each when set. Read `<run dir>/execute/merge-<id>.md`.
    - `Status: done`, `git diff --name-only --diff-filter=U` prints nothing, and `git grep -n -e "^<<<<<<< " -e "^>>>>>>> " -- <resolved files>` finds nothing: `git add -- <resolved files>`, then `git commit --no-edit`, then remove the worktree and the branch as in 2.
    - Otherwise run `resolve-conflict` once more with `model` `policy.escalation.model` and `effort` `policy.escalation.effort` (else `models.implementer.effort`, when set) and check again. When it still fails: `git merge --abort`, keep the part's worktree and branch, and mark the part `blocked` with the reason `merge conflict` and the report's evidence.
 
@@ -124,7 +124,7 @@ Two parts green alone can be red together: one renames what another calls. When 
 with `<base>` from `waves.<n>.base` in the state. It runs the items of the `wave` point, such as the project's whole test suite, on what the wave changed.
 
 - Verdict `pass` or `none`: mark the wave `done` and write the state.
-- Verdict `fail`: start one foreground Agent call, `subagent_type: "bdk:implementer"`, prompt `Run the skill bdk:resolve-conflict with the arguments: <change> --wave <n> --base <base> --run-dir <run dir>` (plus ` --parts <parts dir>` with `--parts`), `model` `models.implementer.model` and `effort` `models.implementer.effort`, each when set. Read `<run dir>/execute/wave-<n>.md`.
+- Verdict `fail`: start one foreground Agent call (`run_in_background: false`), `subagent_type: "bdk:implementer"`, prompt `Run the skill bdk:resolve-conflict with the arguments: <change> --wave <n> --base <base> --run-dir <run dir>` (plus ` --parts <parts dir>` with `--parts`), `model` `models.implementer.model` and `effort` `models.implementer.effort`, each when set. Read `<run dir>/execute/wave-<n>.md`.
   - `Status: done`: `git add -A`, then `git commit -m "<message>"` in the log's style naming the wave, e.g. `fix(ledger): reconcile wave 1`; mark the wave `done` and write the state.
   - Otherwise run `resolve-conflict` once more with `model` `policy.escalation.model` and `effort` `policy.escalation.effort` (else `models.implementer.effort`, when set), committing on `Status: done`. When it still fails, mark the wave `blocked` with the report's kind and evidence as `reason`, write the state, and leave its uncommitted changes in the main checkout for the user.
 

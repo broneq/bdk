@@ -50,7 +50,7 @@ Start one agent with the Agent tool:
 
 - `subagent_type: "bdk:lead"`;
 - prompt `Run the skill bdk:review-round with the arguments: <change> --run-dir <run dir> --round <N>`;
-- `run_in_background: true` when `execution.lead` is `background`; in the foreground when it is `foreground`;
+- `run_in_background: true` when `execution.lead` is `background`; `run_in_background: false` when it is `foreground`;
 - `model` `models.lead.model` and `effort` `models.lead.effort`, each when set.
 
 A background lead reports through a notification that arrives by itself: end your turn and wait for it, without polling its files or sleeping, and do nothing else on this Change meanwhile.

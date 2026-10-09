@@ -17,7 +17,7 @@ Write the plan parts of one Change so that one implementer agent per part builds
 
 ## 0. Run on the planner
 
-This block runs on the `bdk:planner` agent, whose instructions start with "You are `bdk:planner`". When you are that agent, go to step 1. When you are not (a user typed the command, or another skill invoked this one in the main thread), do not read the design or write a part yourself: start the agent with the Agent tool, `subagent_type: "bdk:planner"`, prompt `Run the skill bdk:plan-draft with the arguments: <the arguments above>`, `model` set to `models.planner.model` and `effort` set to `models.planner.effort`, each only when the configuration above sets it. Wait for it, reply with its reply, and stop.
+This block runs on the `bdk:planner` agent, whose instructions start with "You are `bdk:planner`". When you are that agent, go to step 1. When you are not (a user typed the command, or another skill invoked this one in the main thread), do not read the design or write a part yourself: start the agent with the Agent tool in the foreground (`run_in_background: false`), `subagent_type: "bdk:planner"`, prompt `Run the skill bdk:plan-draft with the arguments: <the arguments above>`, `model` set to `models.planner.model` and `effort` set to `models.planner.effort`, each only when the configuration above sets it. Wait for it, reply with its reply, and stop.
 
 ## 1. Start
 
