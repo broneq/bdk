@@ -47,7 +47,7 @@ Done when every open question has an answer.
 
 ## 5. Open the Change
 
-With `--name`, use that name. Otherwise name it in kebab-case, two to five words of the change; from an issue, `<issue-number>-<slug>` (`42-csv-export`). When `openspec/changes/<name>/` exists: with a `proposal.md`, stop and report that Change and its proposal path, changing nothing; without one, write the proposal into it. Otherwise run `openspec new change <name> --schema bdk`.
+With `--name`, use that name. Otherwise read `openspec/config.yaml` with Read first: when an entry of `rules.proposal` says how a Change is named ("A change is named `v3-<N>-<slug>`"), follow it, N being the issue number. Without such a rule, name it in kebab-case, two to five words of the change; from an issue, `<issue-number>-<slug>` (`42-csv-export`). Either way the name matches `^[a-z0-9][a-z0-9-]*$`. When `openspec/changes/<name>/` exists: with a `proposal.md`, stop and report that Change and its proposal path, changing nothing; without one, write the proposal into it. Otherwise run `openspec new change <name> --schema bdk`.
 
 Done when `openspec/changes/<name>/.openspec.yaml` exists.
 

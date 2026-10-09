@@ -13,7 +13,7 @@ Arguments: $ARGUMENTS
 
 # Setup
 
-Leave this project configured for BDK: `bdk config check` exits 0, `bdk config show` reports no "not configured" line, OpenSpec uses the BDK schema, and the permission and ignore rules are in place. Run `bdk` always as `"${CLAUDE_PLUGIN_ROOT}/bin/bdk"`. Read and search files with Read, Glob and Grep, not with Bash. Run each command on its own, without `;`, `&&`, pipes or `echo`: the result shows the exit code, and a compound command needs the user's approval. Never commit; the user reviews and commits.
+Leave this project configured for BDK: `bdk config check` exits 0, `bdk config show` reports no "not configured" line, the BDK OpenSpec schema is installed, and the permission and ignore rules are in place. Run `bdk` always as `"${CLAUDE_PLUGIN_ROOT}/bin/bdk"`. Read and search files with Read, Glob and Grep, not with Bash. Run each command on its own, without `;`, `&&`, pipes or `echo`: the result shows the exit code, and a compound command needs the user's approval. Never commit; the user reviews and commits.
 
 ## 1. Read the state
 
@@ -33,9 +33,11 @@ Note for every value the file it came from. In a repository of several packages,
 
 ## 3. Ask, only when something is open
 
-Open questions are only these: two commands competing for one group, a test or lint group with no command found, an E2E `start` or port the files do not settle, an `openspec/config.yaml` naming a schema other than `spec-driven` or `bdk`, deleting v2 files, and installing Playwright for a `browser` item ([Playwright](references/e2e.md#playwright)). When none is open, ask nothing and go on.
+Open questions are only these: two commands competing for one group, a test or lint group with no command found, an E2E `start` or port the files do not settle, an existing `openspec/config.yaml` naming a schema other than `bdk` (step 7), deleting v2 files, and installing Playwright for a `browser` item ([Playwright](references/e2e.md#playwright)). When none is open, ask nothing and go on.
 
-Otherwise ask them all in one `AskUserQuestion` call (at most 4 questions), the recommended answer first in each. A group with no command found offers "The project has none" first. When you cannot ask, take the recommended answers and name them in the report, except deleting files and installing: then keep the v2 files, install nothing, and list both in the report. Done when every open question has an answer.
+Otherwise ask them all in one `AskUserQuestion` call (at most 4 questions), the recommended answer first in each. A group with no command found offers "The project has none" first. When you cannot ask, take the recommended answers and name them in the report, except deleting files and installing: then keep the v2 files, install nothing, and list both in the report.
+
+The schema question: "Make `bdk` the default OpenSpec schema of this project?", recommended first "Keep `<schema>`; BDK opens its own Changes with `--schema bdk`", second "Switch to `bdk`". The project's schema line and its `context:` text are the team's own workflow: never change them without a yes. Done when every open question has an answer.
 
 ## 4. Write `.bdk/settings.yaml`
 
@@ -84,15 +86,15 @@ Done when every rule is in the file and the JSON parses.
 
 1. When `openspec/` is missing, initialise it with OpenSpec 1.13.2: `openspec --version`; when it prints `1.13.2`, run `openspec init --tools none .`, otherwise `npx -y @fission-ai/openspec@1.13.2 init --tools none .`. When neither runs, write `openspec/config.yaml` holding `schema: bdk`, and empty `openspec/specs/.gitkeep` and `openspec/changes/archive/.gitkeep`, and tell the user in the report to install it: `npm i -g @fission-ai/openspec@1.13.2`.
 2. Install the schema, also on a re-run so a plugin update reaches the project: `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" openspec install`. It copies the schema the plugin ships into `openspec/schemas/bdk/` and lists each file as added, updated or unchanged.
-3. Set the `schema:` line of `openspec/config.yaml` to `schema: bdk` with Edit, keeping the rest of the file.
+3. Set the `schema:` line of `openspec/config.yaml` to `schema: bdk` with Edit, keeping the rest of the file, only when this run created `openspec/`, the file names no schema, or the user answered "Switch to `bdk`" in step 3. Otherwise leave the line and the `context:` text as they are.
 4. When an OpenSpec CLI ran, run `openspec schema which bdk` (or its `npx` form): it must name the project as the source.
 
-Done when `openspec/schemas/bdk/schema.yaml` exists and `openspec/config.yaml` says `schema: bdk`.
+Done when `openspec/schemas/bdk/schema.yaml` exists, and `openspec/config.yaml` says `schema: bdk` or keeps the schema the project had.
 
 ## 8. Keep run files out of git
 
 - Add `/.bdk/runs/` and `/.bdk/settings.local.yaml` to `.gitignore`, each when missing.
-- `git check-ignore -v .bdk/settings.yaml`: when it prints a rule (BDK v2 wrote `/.bdk/`), remove that rule from its file, so the team sees the settings.
+- `git check-ignore -v .bdk/settings.yaml`: when it prints a rule (BDK v2 wrote `/.bdk/`), remove that rule from its file, so the team sees the settings. Note the rule and its file for the report.
 - Delete v2 paths only after the user agreed in step 3.
 
 Done when `git check-ignore -q .bdk/settings.yaml` exits 1 and `git check-ignore -q .bdk/runs/x` exits 0.
@@ -113,6 +115,8 @@ Report briefly:
 
 - each value written, with the file it came from (`tools.test.vitest: pnpm test (package.json scripts.test)`);
 - the `paths` written on each check item (`tools.test.pytest: api/**`), or "no `paths`: one package";
+- OpenSpec: `schema: bdk` set, or, when the project keeps its own schema, "OpenSpec keeps `<schema>` as the project's default; BDK opens its own Changes with `--schema bdk`";
+- a removed ignore rule, in a line of its own: "Removed `/.bdk/` from `.gitignore` (BDK v2 ignored all of `.bdk/`): `.bdk/settings.yaml` is now tracked for the team; `.bdk/runs/` and `.bdk/settings.local.yaml` stay ignored";
 - E2E: the entries written, or "E2E skipped" with the reason (a library has nothing to run); for a `browser` item, the Playwright line of [Playwright](references/e2e.md#playwright);
 - the decision surface, in one line: "questions and triage use a Lavish page" or "questions and triage use AskUserQuestion; install lavish-axi for a browser review page";
 - the files created or changed, left uncommitted for review;

@@ -2,7 +2,7 @@
 name: design
 description: 'Runs the design stage of an OpenSpec Change - maps the code with explore, drafts the specs and design.md with design-draft, checks them with verify-design until a report passes or policy.budgets.verifier is spent, then applies the design gate of policy.gates.design. Resumes from the run files. Use when a Change has a proposal and needs its design, when asked to "design" a Change, or when /bdk:run reaches the design stage.'
 argument-hint: "[change-name]"
-allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Read Glob Grep Write Agent SendMessage ToolSearch AskUserQuestion
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(npx -y lavish-axi poll *) Read Glob Grep Write Agent SendMessage ToolSearch AskUserQuestion
 ---
 
 Current BDK configuration of this project:
@@ -13,13 +13,15 @@ Arguments: $ARGUMENTS
 
 # Design
 
-You compose three blocks and apply the gate; you never do a block's work. Do not map the code, write or fix a spec delta or `design.md`, or check the design yourself: the blocks do that. The only file you write is the gate file `.bdk/runs/<change>/design/gate.md`. Never commit, create a branch or start the plan stage.
+You compose three blocks and apply the gate; you never do a block's work. Do not map the code, write or fix a spec delta, `design.md` or `proposal.md`, or check the design yourself: the blocks do that. The only file you write is the gate file `.bdk/runs/<change>/design/gate.md`. Never commit, create a branch or start the plan stage.
 
 The blocks:
 
 - **explore**: start an agent with the Agent tool, `subagent_type: "bdk:explorer"`, prompt `Run the skill bdk:explore with the arguments: <change>`, `model` set to `models.explorer.model` and `effort` set to `models.explorer.effort`, each only when the configuration above sets it. It writes `.bdk/runs/<change>/design/explore.md`.
-- **design-draft**: start an agent with the Agent tool, `subagent_type: "bdk:designer"`, prompt `Run the skill bdk:design-draft with the arguments: <change>` (or `<change> <revision request>` after a gate asking for changes), `model` set to `models.designer.model` and `effort` set to `models.designer.effort`, each only when the configuration above sets it. Keep the agent ID it returns. It writes the spec deltas and `design.md`, or fixes them when the last report failed. It cannot ask the user itself: when the Lavish page does not open, it ends with its open questions and writes nothing; handle them as step 3 says, each time this block runs.
+- **design-draft**: start an agent with the Agent tool, `subagent_type: "bdk:designer"`, prompt `Run the skill bdk:design-draft with the arguments: <change>` (or `<change> <revision request>` after a gate asking for changes), `model` set to `models.designer.model` and `effort` set to `models.designer.effort`, each only when the configuration above sets it. Keep the agent ID it returns. It writes the spec deltas and `design.md`, or fixes them when the last report failed. It cannot ask the user itself: it ends with `Page open: <page>` and the round's decisions, or, when the Lavish page does not open, with its open questions, and writes nothing; handle them as step 3 says, each time this block runs, for every round.
 - **verify-design**: start an agent with the Agent tool, `subagent_type: "bdk:verifier"`, prompt `Run the skill bdk:verify-design with the arguments: <change>`, `model` set to `models.verifier.model` and `effort` set to `models.verifier.effort`, each only when the configuration above sets it. It writes the next `.bdk/runs/<change>/design/verify-N.md` and returns its verdict line. Keep the agent ID it returns.
+
+Start every block in the foreground (`run_in_background: false`) and wait for its result: the next step reads the file it writes. When an agent runs in the background anyway, end your turn with one line naming the running block; its notification resumes you, and step 2 finds where to start.
 
 Before each block, tell the user in one line which block runs and which file it writes, e.g. `Mapping the code: bdk:explorer writes .bdk/runs/add-csv-export/design/explore.md`.
 
@@ -49,7 +51,10 @@ A step whose file exists never runs again. Done when you know the row.
 ## 3. Map and draft
 
 1. Without `explore.md` and `design.md`: run **explore** and wait for it.
-2. Run **design-draft** with `<change>`. When the designer ends with open questions instead of writing files, ask them with `AskUserQuestion`: at most four questions per call, the recommended option first, each option one label and one sentence. Continue the same designer with `SendMessage` (load it first with `ToolSearch` query `select:SendMessage` when it is listed only by name): `Answers: <question>: <chosen option or the user's note>; ...`. Without the tool or the agent ID, run **design-draft** again with `<change> Answers: ...`. When `AskUserQuestion` is not available, say that the browser review page (Lavish) could not open when the designer says so, list the questions in your reply, the recommended option first and marked "(recommended)", and stop here: the user's answers continue the designer, and a later `/bdk:design <change>` resumes at row 3.
+2. Run **design-draft** with `<change>`. Until it writes the files, answer each round it ends with:
+   - `Page open: <page>`: the page is where the user answers; the decisions listed after that line are only for you to name. Tell the user in one line that the questions are on that page in the browser, then always wait with `npx -y lavish-axi poll <page>` in the foreground, whatever else the designer reports about the page; never ask the page's questions in your reply instead (Bash `timeout` 600000; run it again when it times out). Continue the same designer with `SendMessage` (load it first with `ToolSearch` query `select:SendMessage` when it is listed only by name): `Answers: <the poll's output, verbatim>`. Do not summarise, interpret or settle anything in it: a note the user wrote may open a new decision, and only the designer decides that. When the poll is interrupted, or the user asks to stop waiting, do not poll again in this turn: answer what the user asked (a summary of the open decisions, for one), name the page, say that answers given on the page stay queued and that `/bdk:design <change>` picks them up, and end your turn. A later run resumes at row 3, and the designer opens the same page again.
+   - Open questions without a page: ask them with `AskUserQuestion`: at most four questions per call, the recommended option first, each option one label and one sentence. Continue the same designer with `SendMessage`: `Answers: <question>: <chosen option or the user's note>; ...`. Without the tool or the agent ID, run **design-draft** again with `<change> Answers: ...`.
+   - When `AskUserQuestion` is not available: say that the browser review page (Lavish) could not open when the designer says so, list the questions in your reply, the recommended option first and marked "(recommended)", end the reply with one line saying how to answer (`Reply with the numbers of your choices, or your own answer.`), and stop here: the user's answers continue the designer, and a later `/bdk:design <change>` resumes at row 3.
 
 Done when `design.md` exists.
 
@@ -66,13 +71,13 @@ Done when the last report passes, or you stopped on a spent budget.
 
 ## 5. Apply the design gate
 
-Collect every line of `design.md` that starts with `Decided without the user:` (Grep, not a full read).
+Collect every line of `design.md` that starts with `Decided without the user:`, `Scope changed by the user:` or `Deviation:` (Grep, not a full read).
 
 - `policy.gates.design: auto`: approve without asking.
-- `manual`: ask with one `AskUserQuestion` call, header `Design gate`: approve the design of `<change>`? Name `design.md`, the spec deltas, the passing report and the decisions taken without the user. Options: `Approve` (recommended) and `Request changes` (the user says what to change in a note or in "Other").
+- `manual`: end your turn on exactly one question: one `AskUserQuestion` call, header `Design gate`, and no reply text after it. Put everything the user needs into the question text, not into a reply before it: approve the design of `<change>`? Name `design.md`, the spec deltas, the passing report, the decisions taken without the user, the scope changes and each deviation with "update the issue's acceptance signal to match". Options: `Approve` (recommended) and `Request changes` (the user says what to change in a note or in "Other").
   - Approve: approved.
   - Request changes: run **design-draft** with `<change> <the requested change>`, then go back to step 4, verify step, within the same budget; after a pass, ask again.
-  - When `AskUserQuestion` is not available: ask in your reply whether the design may be approved, naming the same files and decisions, and end your turn without writing the gate file. When the user approves in the conversation, write the gate file then.
+  - When `AskUserQuestion` is not available: name the same files, decisions, scope changes and deviations in your reply, say that the gate file is written once the user approves, then end the reply with exactly one line, `Approve the design of <change>? Reply "approve", or say what to change.`, with nothing after it, and end your turn without writing the gate file. When the user approves in the conversation, write the gate file then.
 
 On approval write `.bdk/runs/<change>/design/gate.md`:
 
@@ -90,7 +95,8 @@ Reply in a few lines:
 
 - the files written in this run (`explore.md`, the spec deltas, `design.md`, each `verify-N.md`, `gate.md`);
 - the last verdict and the verifier passes used of the budget;
-- every `Decided without the user:` line of `design.md`;
+- every `Decided without the user:` and `Scope changed by the user:` line of `design.md`;
+- every `Deviation:` line, with the note that the tracking issue's acceptance signal needs the same change (BDK does not edit the issue);
 - the gate's outcome;
 - after an approval, the next stage: `/bdk:plan <change>`.
 

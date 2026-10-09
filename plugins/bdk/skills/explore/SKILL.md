@@ -17,7 +17,7 @@ When the block above says "BDK not configured: run /bdk:setup", stop: reply with
 
 ## 0. Run as `bdk:explorer`
 
-This block runs on the `bdk:explorer` agent, whose instructions start with "You are `bdk:explorer`". When you are not that agent (a user typed the command in the main conversation), do not map the code yourself: start the agent with the Agent tool, `subagent_type: "bdk:explorer"`, prompt `Run the skill bdk:explore with the arguments: <the arguments above>`, `model` set to `models.explorer.model` and `effort` set to `models.explorer.effort`, each only when the configuration above sets it; wait for it, reply with its answer, and stop. Keep its agent ID: a follow-up question goes to the same agent with `SendMessage`.
+This block runs on the `bdk:explorer` agent, whose instructions start with "You are `bdk:explorer`". When you are not that agent (a user typed the command in the main conversation), do not map the code yourself: start the agent with the Agent tool in the foreground (`run_in_background: false`), `subagent_type: "bdk:explorer"`, prompt `Run the skill bdk:explore with the arguments: <the arguments above>`, `model` set to `models.explorer.model` and `effort` set to `models.explorer.effort`, each only when the configuration above sets it; wait for it, reply with its answer, and stop. Keep its agent ID: a follow-up question goes to the same agent with `SendMessage`.
 
 Done when you are `bdk:explorer`, or the agent has answered.
 
@@ -30,6 +30,8 @@ Read `openspec/changes/<change>/proposal.md` whole. Done when you know the Chang
 ## 2. Map the code
 
 Start from the nouns of the proposal: Grep for them, then read the files that define them. Follow callers and callees one level out, and stop there. Read the tests of the code you read, and the manifest that names the test command. Read excerpts, not whole trees; a map takes minutes, not an hour.
+
+When the proposal relies on a command-line tool (the project's own or an installed one) and its options or output matter, run its help: `<tool> --help`, `<tool> <subcommand> --help` or `<tool> --version`, the tool called the way the project calls it (`node bin/upload.js --help`). Its output settles the point: write it under `Touches` or `Gaps` with the command as the evidence, never under `Unsure`. Run nothing else of the tool.
 
 Note for every fact the file and line you saw it at. Done when you can say, for each change the proposal lists, which code it touches or that no code exists for it yet.
 
@@ -53,10 +55,10 @@ Write `.bdk/runs/<change>/design/explore.md` (create the directories) with exact
 - <what the proposal needs that the code does not have>
 
 ## Unsure
-- <what you could not settle from the code; "None." when nothing>
+- <what you could not settle from the code or a help command; for a tool, the help command that would settle it and why it did not run; "None." when nothing>
 ```
 
-Every bullet of `Touches`, `Patterns` and `Tests` names `file:line`. Write facts, not a design: no approach, no recommendation. Keep it under 80 lines. Done when the file has the five sections.
+Every bullet of `Touches`, `Patterns` and `Tests` names `file:line`, or the help command for a tool's options. Write facts, not a design: no approach, no recommendation. Keep it under 80 lines. Done when the file has the five sections.
 
 ## 4. Reply
 

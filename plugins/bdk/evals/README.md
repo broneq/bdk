@@ -40,6 +40,8 @@ pnpm --filter @bdk/bdk run eval --allow-tools Write Edit "Bash(*/bin/bdk *)" "Ba
 
 Claude Code refuses every write to `.claude/settings.json` in a run, whatever the grants, so the cases grade the permission rules from the reply, where setup lists them for the user.
 
+`setup-existing-openspec` starts from a v2 project already on OpenSpec `spec-driven`: setup cannot ask in a run, so it must keep the schema line and its `context:`, and its reply must name the removed v2 `/.bdk/` ignore rule. `setup-claude-plugin` is a Claude Code plugin with a `bin/` launcher and grades the `plugin` E2E item that validates it.
+
 `setup-web-app` and `setup-library` also grade the decision surface setup reports: each puts a `lavish-axi` stub into the workspace's `node_modules`, which `npx -y lavish-axi` runs before any installed one. The stub of `setup-web-app` answers `--version`, so its reply names the Lavish page; the stub of `setup-library` fails, so its reply names `AskUserQuestion`. The `Bash(npx *)` grant covers both.
 
 The review cases (`review-group-*`, `review-integration-*`, `judge-*`) run on the `monthly-report` fixture, a recorded review round of a two-part Change. `review-group-instruction` and `judge-instruction` run on `monthly-report-instructions.sh`, the same round with a `CLAUDE.md` on `main` whose testing instruction part 01 breaks: the reviewer must cite it with `--rule CLAUDE.md`, and the judge must level it `should-fix` and a citation of an instruction the file does not hold `not-a-problem`. The blocks read the code and write only through `bdk findings`, so they need `bdk` and read-only `git`, and no `Write` or `Edit`:
@@ -66,6 +68,8 @@ The `propose-*` cases run `/bdk:propose`, which calls `bdk`, OpenSpec and `gh is
 ```bash
 PATH=".git/bdk-eval/bin:$PATH" pnpm --filter @bdk/bdk run eval --allow-tools Write Edit "Bash(*/bin/bdk *)" "Bash(openspec *)" "Bash(gh *)" "Bash(git *)" --case 'propose-*'
 ```
+
+`propose-naming-rule` adds to `propose-from-issue` a `rules.proposal` entry naming Changes `v3-<N>-<slug>`, and grades that the Change opens as `v3-42-*` after the skill read `openspec/config.yaml`.
 
 A case that reads issues writes `.git/bdk-eval/issues/<n>.json` with the fields of `gh issue view --json` (`number`, `title`, `body`, `labels`, `state`, `url`) and copies the stand-in the same way.
 
@@ -128,13 +132,15 @@ pnpm --filter @bdk/bdk run eval --allow-tools Write "Bash(*/bin/bdk *)" "Bash(np
 pnpm --filter @bdk/bdk run eval --ablation none --tag orchestrator --allow-tools Write Edit SendMessage "Bash(*/bin/bdk *)" "Bash(mkdir -p *)" "Bash(cd *)" "Bash(git *)" "Bash(npx -y lavish-axi *)" --case 'auto-review-*'
 ```
 
-The design-block cases (`explore-*`, `design-draft-*`, `verify-design-*`) start from the fixtures `ledger-proposal.sh`, `ledger-explored.sh` and `ledger-designed.sh`, and need the `bdk` launcher, OpenSpec, `git`, the Lavish CLI, and `SendMessage` and `ToolSearch`, with which the main thread continues the `bdk:designer` agent after its questions. `design-draft-lavish` and `design-draft-ask` put a `lavish-axi` stub into the workspace's `node_modules`, which `npx -y lavish-axi` runs before any installed one: the first opens every page and answers the poll, the second fails as a session without a browser does. `AskUserQuestion` is not available in a run, so `design-draft-ask` grades the questions in the reply.
+The design-block cases (`explore-*`, `design-draft-*`, `verify-design-*`) start from the fixtures `ledger-proposal.sh`, `ledger-explored.sh` and `ledger-designed.sh`, and need the `bdk` launcher, OpenSpec, `git`, the Lavish CLI, and `SendMessage` and `ToolSearch`, with which the main thread continues the `bdk:designer` agent after its questions. `design-draft-lavish` and `design-draft-ask` put a `lavish-axi` stub into the workspace's `node_modules`, which `npx -y lavish-axi` runs before any installed one: the first opens every page and answers the poll, the second fails as a session without a browser does. `AskUserQuestion` is not available in a run, so `design-draft-ask` grades the questions in the reply. The designer opens the page and hands back, and the main thread polls it: `design-draft-lavish` grades that order. `design-draft-follow-up-round` and `design-draft-scope-narrowed` put a stub into `node_modules` whose first poll answers with notes that open new decisions, and whose poll of a later page (`design-add-csv-export-2.html`) answers those: the first grades a second round that asks only the new decision, the second that an answer dropping a capability moves it to Out of scope of `proposal.md` and that an answer against the `CLAUDE.md` rule of the scaffold is asked again and recorded as a `Deviation:`. `explore-cli-options` adds an upload CLI whose options only its packed `--help` text names, so it also needs that command:
 
 ```bash
 for c in "explore-*" "design-draft-*" "verify-design-*"; do
-  pnpm --filter @bdk/bdk run eval --allow-tools Write Edit SendMessage ToolSearch "Bash(*/bin/bdk *)" "Bash(openspec *)" "Bash(npx -y lavish-axi *)" "Bash(git *)" --case "$c"
+  pnpm --filter @bdk/bdk run eval --allow-tools Write Edit SendMessage ToolSearch "Bash(*/bin/bdk *)" "Bash(openspec *)" "Bash(npx -y lavish-axi *)" "Bash(git *)" "Bash(node bin/upload.js --help)" --case "$c"
 done
 ```
+
+`design-fresh-auto-gate` and `design-manual-gate-no-ask` also grade that the blocks start in the foreground (`run_in_background: false`), and `design-manual-gate-no-ask` that its reply ends on one question.
 
 The `design-*` cases are the orchestrator cases of `/bdk:design` (`tags: [orchestrator]`, one arm). They start from the same ledger fixtures, run the design blocks inside one run (a `bdk:explorer` and an opus `bdk:verifier` agent), and need the grants of the design blocks:
 
