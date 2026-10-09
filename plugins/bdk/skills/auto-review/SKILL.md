@@ -13,7 +13,7 @@ Arguments: $ARGUMENTS
 
 # Auto-review
 
-Review a built Change in rounds until no finding is left to fix. Each round and each fix pass runs in its own `bdk:lead`; triage and fix planning run here through their skills. You compose; you never review, level, decide, plan a fix or edit code yourself, and you never start a reviewer, judge, implementer or conformer. The only file you write is `review/result.md`.
+Review a built Change in rounds until no finding is left to fix. Each round and each fix pass runs in its own `bdk:lead`; triage and fix planning run here through their skills. You compose; you never review, level, decide, plan a fix or edit code yourself, and you never start a reviewer, judge, implementer or conformer. The only file you write is `review/result.md`. Read no project source file outside the skills you invoke here (`triage` and `plan-fixes` read what they need): what the code does is the reviewers' and the judge's to say, through the round logs.
 
 ## 1. Check the configuration and the Change
 
@@ -107,6 +107,7 @@ Status: done
 ```
 
 - `Status: done` only when the last round holds no `fix` decision; else `Status: blocked`.
+- Take the status, the blockers and every round line from the round files and this stage's own stops, never from a worker's reply or from code you or a skill you invoked read. A defect no round log holds has no level and no decision, so it neither blocks the stage nor goes into the result or the reply; a defect counts once a reviewer logs it, and a later round's reviewers log what is there.
 - `## Rounds`: one line per round, from `bdk findings list` of its log, its `fixes/index.md` and `fixes/result.md`, and the gaps of its `round.md`.
 - `## Deferred`: every finding decided `defer` in any round, with place, summary, level and issue when it has one; `/bdk:close` lists them in the pull request.
 - `## Blockers`, each with the command that continues: the budget spent (each finding still decided `fix`, its level; "raise `policy.budgets.review-rounds` and run `/bdk:auto-review <change>`, or change the decision with `/bdk:triage <round dir>`"); a not-planned finding (its reason and `/bdk:design <change>` or the user's decision); a blocked fix pass (its blockers); a round without a report.
@@ -117,4 +118,4 @@ Done when the result exists and its first line is the status.
 
 ## 9. Reply
 
-Reply with the status line, the result path, the rounds in one line each, and: on `Status: done`, the next stage `/bdk:close <change>`; on `Status: blocked`, each blocker with its command. Never claim the review is done while a finding is still to fix.
+Reply with the status line, the result path, the rounds in one line each, and: on `Status: done`, the next stage `/bdk:close <change>`; on `Status: blocked`, each blocker with its command. Never claim the review is done while a finding is still to fix, and name no defect that no finding holds.

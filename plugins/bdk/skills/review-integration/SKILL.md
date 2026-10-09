@@ -29,7 +29,7 @@ A caller that reviews code outside the working directory (`/bdk:pr-review` revie
 
 With a round directory in the arguments or the request (`.bdk/runs/<change>/review/round-<N>/`), use it. Otherwise use the manual round: `.bdk/runs/manual/review/round-<N>/`, `N` the lowest number whose directory holds no `review.md`; when it holds no `groups.json`, record it with `bdk git groups <base> --rounds .bdk/runs/manual/review --record <round-dir>` (add `--plan openspec/changes/<change>/plan/parts` when `openspec/changes/` holds exactly one Change besides `archive/`; `<base>` is the `--base` given, else the branch `git symbolic-ref --short refs/remotes/origin/HEAD` names, else `main`).
 
-Read `groups.json`: `range`, `anchor` and the `integration` group's files. An `anchor` of `kind` `round` makes this a fix round: it reviews only the fixes made since round `anchor.round`. The log is `<round-dir>/findings.jsonl`; run `bdk findings list <log>` and keep what the group reviews found, so you do not repeat it. The Change is `openspec/changes/<change>/`, `<change>` being the directory under `.bdk/runs/`.
+Read `groups.json`: `range`, `anchor` and the `integration` group's files. An `anchor` of `kind` `round` makes this a fix round: it reviews only the fixes made since round `anchor.round`. The log is `<round-dir>/findings.jsonl`; run `bdk findings list <log>` and keep what the group reviews found, so you do not repeat it. In a fix round, also run `bdk findings list` on the log of every earlier round (`<round-dir>/../round-<k>/findings.jsonl`, `k` below this round's number) and keep those findings too: each already has a level and a decision, and raising it again would undo that decision. The Change is `openspec/changes/<change>/`, `<change>` being the directory under `.bdk/runs/`.
 
 Done when you know the range, the changed files, the findings so far, and the Change.
 
@@ -44,6 +44,8 @@ Done when you have the list of scenarios, and for each part the contracts it cre
 Read code to confirm or refute each item; do not review files line by line again.
 
 In a fix round, check only the scenarios whose path from the entry point runs through a changed file, and the contracts a changed file defines or uses, each followed to all its users, inside the scope or not. Every other scenario was reviewed in an earlier round and its code did not change; skip it, and skip item 4 for files outside the scope.
+
+Following a contract takes you into files outside the scope. Do not search them for problems, but a problem you see there on the way is still a problem of the Change: append it in step 4 like any other, unless a finding of this round or an earlier one already names it. A defect you saw and did not log never gets a level or a decision, so the stage can end `done` over it, or someone further on acts on a suspicion nobody judged. Start its evidence with `Outside the fix scope:`, so the judge and the user see why a round that reviewed a fix holds it.
 
 1. **Scenario to product.** For each scenario, follow it as a user runs it: from the entry point (a command, a route, a page, a configuration key) through the code to the result. Take the scenario's own inputs and compute what the code returns or prints, value by value. A scenario whose result differs, or that no entry point reaches, is a finding.
 2. **Scenario to test.** Each scenario has a test that would fail without it, at a level that proves it: a unit test with hand-built input does not prove what a command prints from a file. Name the scenario without such a test.
@@ -67,4 +69,4 @@ Done when every problem has its line in the log.
 
 ## 5. Verify and return
 
-Run `bdk findings list <log>` and check that each id you added is listed with the source `review-integration`. Return only: the number of findings you added, and their ids with summaries, one per line; "no findings" when there were none.
+Run `bdk findings list <log>` and check that each id you added is listed with the source `review-integration`. Return only: the number of findings you added, and their ids with summaries, one per line; "no findings" when there were none. Mention no problem that is not in the log: the caller acts on the log, and a problem only your reply names is one nobody levelled.
