@@ -26,6 +26,9 @@
   overflow-x: auto;
   border-radius: 8px;
   background-color: var(--vp-code-block-bg);
+  /* The text colour of VitePress code blocks; its rule does not reach this plain `pre`, whose
+     code would inherit the page text, dark on this dark background in the light theme. */
+  color: var(--vp-code-block-color);
   font-size: var(--vp-code-font-size);
   line-height: var(--vp-code-line-height);
 }
