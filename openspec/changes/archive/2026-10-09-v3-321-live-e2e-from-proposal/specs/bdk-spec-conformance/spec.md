@@ -1,28 +1,4 @@
-# bdk-spec-conformance Specification
-
-## Purpose
-Defines the `spec-conformance` block of the `bdk` plugin: before a Change is archived, it checks that the Change's spec deltas describe the product after the Change - against the code and the E2E results - so archive never turns a wrong statement into the living documentation.
-
-## Requirements
-
-### Requirement: Block on the verifier agent
-
-`spec-conformance` SHALL be a skill of the `bdk` plugin (`plugins/bdk/skills/spec-conformance/`) whose check runs on the agent `bdk:verifier` (spec `bdk-verifier`), never in the conversation that wrote the Change. When it is invoked anywhere else, such as a user typing `/bdk:spec-conformance` in the main thread, it SHALL start `bdk:verifier` with a prompt naming the skill and its arguments, and with the model `models.verifier` when the configuration sets it, wait for it, and reply with the agent's verdict line and report path, without checking anything itself. The block SHALL get the configuration from its own `bdk config show` block; in a project that is not configured it SHALL stop with the line that command prints and write nothing.
-
-#### Scenario: Typed in the main thread
-
-- **WHEN** a user types `/bdk:spec-conformance add-total` in the main thread
-- **THEN** the skill starts `bdk:verifier` to run `bdk:spec-conformance` for `add-total`, and replies with the verdict line and the path of the report the agent wrote
-
-#### Scenario: Typed in the main thread with a model set
-
-- **WHEN** a user types `/bdk:spec-conformance add-total` in the main thread of a project whose configuration sets `models.verifier: sonnet`
-- **THEN** the skill starts `bdk:verifier` with `model` `sonnet`
-
-#### Scenario: Not configured
-
-- **WHEN** `spec-conformance` runs in a project without `.bdk/settings.yaml`
-- **THEN** it writes no file and its reply says `BDK not configured: run /bdk:setup`
+## MODIFIED Requirements
 
 ### Requirement: Input
 
@@ -71,16 +47,3 @@ Every `Must address` item SHALL name the spec location (file and requirement or 
 - **WHEN** `.bdk/runs/<change>/e2e/see-the-total--empty-ledger.md` starts with `Result: fail` and names line 7 of the proposal
 - **THEN** the report has a `Must address` item for that path naming the proposal line, whose evidence names the E2E path file
 
-### Requirement: Report file
-
-The block SHALL write one file, `.bdk/runs/<change>/close/spec-conformance.md`, in the verifier report body (spec `bdk-verifier`), and change no other file. When that file already exists from an earlier run, the block SHALL read it first, keep the ID of every problem still open, give a new problem the next unused number, write `Closed: <IDs>` under the verdict line, and replace the file. Its reply SHALL be at most three lines: the verdict line, the report path, and the `Must address` IDs.
-
-#### Scenario: Rerun after a fix
-
-- **WHEN** `close/spec-conformance.md` holds `M1` and `M2`, the Change fixed `M1`, and the block runs again
-- **THEN** the new `close/spec-conformance.md` holds `Closed: M1` under the verdict line and keeps `M2` with its ID
-
-#### Scenario: Read by the run status
-
-- **WHEN** the block wrote `close/spec-conformance.md` starting with `Verdict: PASS`
-- **THEN** `bdk run status` no longer derives the step `spec-conformance` of row 9 for that Change

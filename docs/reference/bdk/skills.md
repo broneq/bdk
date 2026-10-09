@@ -92,7 +92,7 @@ Turns a bug report into a fix contract backed by evidence - reproduces the bug o
 
 Started by: you, or Claude when your request matches the description below.
 
-Runs the product as a user would against the spec scenarios of an OpenSpec Change - starts it from tools.e2e, drives each scenario through its CLI, HTTP API or a browser, writes evidence per scenario and a verdict, and records each broken scenario as a finding. Use when asked to check a change end to end, to test it manually or as a user, before a PR, or when a review round needs its E2E check.
+Uses the product as a user would to confirm that an OpenSpec Change works - lists the user processes its proposal adds or changes, starts the product from tools.e2e, drives up to 5 paths per process (main, variants, at least one that tries to break it) through its CLI, HTTP API or a browser, writes evidence per path and a verdict, and records each broken path as a finding at its proposal line. Use when asked to check a change end to end, to test it manually or as a user, before a PR, or when a review round needs its E2E check.
 
 ## `/bdk:execute` {#execute}
 

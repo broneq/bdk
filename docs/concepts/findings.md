@@ -17,7 +17,7 @@ flowchart LR
 |---|---|
 | `/bdk:review-group` on `bdk:reviewer`, one per group of files | the diff of its group, against the rules for those files (`bdk rules for`), your project instructions on the way to them, and the Change |
 | `/bdk:review-integration` on `bdk:integration-reviewer` | the whole diff: what breaks between the groups |
-| `/bdk:e2e-check` on `bdk:e2e-tester` | the running product, against each spec scenario of the Change |
+| `/bdk:e2e-check` on `bdk:e2e-tester` | the running product, along the paths of each user process the proposal adds or changes; a finding points at the proposal line |
 | `bdk check run` | your test, lint and build commands; a red check is a finding |
 
 Reviewers only report: they change no code and decide nothing.

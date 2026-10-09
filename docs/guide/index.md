@@ -48,7 +48,7 @@ Each box is a command you can run yourself, one at a time, or let `/bdk:run` run
 
 ## What makes it different
 
-- **It checks the product, not only the code.** Each Change carries spec scenarios, and the review starts your product and drives those scenarios as a user would ([E2E checks](/concepts/e2e)), next to code review and your project's tests and linters.
+- **It checks the product, not only the code.** Each Change's scenarios become tests, and the review starts your product and uses what the proposal promised as a user would, including the ways a user can get it wrong ([E2E checks](/concepts/e2e)), next to code review and your project's tests and linters.
 - **It keeps living documentation.** Every Change ends by merging its spec deltas into `openspec/specs/`, so the specs always say what the product does ([OpenSpec Changes](/concepts/openspec-changes)).
 - **You choose how much it asks.** By default BDK stops at the design gate and asks you about review findings; a few settings let it run unattended ([gates and budgets](/concepts/gates-and-budgets)).
 - **Everything is a file.** A stage that stops can be run again and picks up where it left off ([run state](/concepts/run-state)).

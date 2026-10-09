@@ -22,7 +22,7 @@ Writes the spec deltas and design.md of one BDK Change, or fixes them after a fa
 
 Model: `sonnet`
 
-Runs the product as a user would against the spec scenarios of one OpenSpec Change and records each broken scenario as a finding. Give it the Change name and, in a review round, the round's findings log. Never edits the product.
+Uses the product as a user would to confirm that one OpenSpec Change works as its proposal says - drives up to 5 paths per user process the proposal adds or changes - and records each broken path as a finding. Give it the Change name and, in a review round, the round's findings log. Never edits the product.
 
 ## `explorer` {#explorer}
 

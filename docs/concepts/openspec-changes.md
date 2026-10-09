@@ -32,7 +32,7 @@ The order list SHALL offer a CSV download of the orders it shows.
 - **THEN** the browser downloads `orders.csv` holding only the shipped orders
 ```
 
-Scenarios are the acceptance criteria of the whole run. Each plan part names the scenarios it makes true, and the implementer writes their tests first. The conformer checks the part against them. The [E2E check](./e2e.md) drives them on the running product, and `/bdk:spec-conformance` checks the product against them before the archive.
+Scenarios are the acceptance criteria of the whole run. Each plan part names the scenarios it makes true, and the implementer writes their tests first. The conformer checks the part against them. The [E2E check](./e2e.md) does not replay them: it derives its paths from the proposal and uses the running product as a user would. `/bdk:spec-conformance` checks the product against them before the archive.
 
 ## Who writes what
 
@@ -51,7 +51,7 @@ You can edit any of them by hand between stages. A stage reads the files as they
 
 ## Without spec deltas
 
-A Change that changes no behaviour (a refactoring, tooling, documentation) has no capability. Its `.openspec.yaml` sets `skip_specs: true`, and the stages skip what only scenarios feed, such as the E2E check.
+A Change that changes no behaviour (a refactoring, tooling, documentation) has no capability. Its `.openspec.yaml` sets `skip_specs: true`, and the stages skip what only scenarios feed, such as the acceptance tests; the E2E check is `SKIPPED` when the proposal changes nothing a user does.
 
 ## Sources
 

@@ -1,23 +1,4 @@
-# bdk-e2e-check Specification
-
-## Purpose
-Defines the `e2e-check` block of the `bdk` plugin and its agent `bdk:e2e-tester`: how BDK starts the product from `tools.e2e` and, as a user would, drives the paths of each user process the proposal of a Change adds or changes, and what it leaves behind - evidence per path, a verdict, and one finding per broken path at its proposal line.
-
-## Requirements
-
-### Requirement: Block and agent
-
-`e2e-check` SHALL be a skill of the `bdk` plugin (`plugins/bdk/skills/e2e-check/`) that runs alone, in the main thread or in an agent, and `bdk:e2e-tester` SHALL be an agent of the plugin (`plugins/bdk/agents/e2e-tester.md`) that preloads it. The agent SHALL NOT have the `Edit` or `NotebookEdit` tools: the tester checks the product and never changes it. The block SHALL get the configuration from its own `bdk config show` block; in a project that is not configured, or whose configuration is invalid, it SHALL stop with the line that command prints and run nothing.
-
-#### Scenario: Not configured
-
-- **WHEN** `e2e-check` runs in a project without `.bdk/settings.yaml`
-- **THEN** it starts no product, writes no file, and its reply says `BDK not configured: run /bdk:setup`
-
-#### Scenario: Tester cannot edit
-
-- **WHEN** the agent file `plugins/bdk/agents/e2e-tester.md` is read
-- **THEN** its frontmatter preloads the skill `e2e-check` and denies `Edit` and `NotebookEdit`
+## ADDED Requirements
 
 ### Requirement: Input and user processes
 
@@ -97,6 +78,33 @@ The block SHALL NOT write test files or change product files; it SHALL write onl
 - **WHEN** the block has driven a browser path with Playwright
 - **THEN** `git status` of the project shows no file outside `.bdk/runs/`, and the scripts it wrote are gone
 
+### Requirement: Path evidence files
+
+For each path the block SHALL write `<process>--<path>.md` in its E2E directory, `<process>` being the process name and `<path>` `main` or what the path does, both in kebab-case. Its first line SHALL be `Result: pass`, `Result: fail`, `Result: blocked` or `Result: not-driven`, followed by the lines `Process:`, `Path:` with the path's kind (`main`, `variant` or `break`), `Proposal:` with the proposal file, line and text, and `Item:`, then the steps taken with what the product showed at each check, the expected outcome with where it came from (`Expected from:` a design or delta location, or `baseline`, when the proposal line alone does not state it), the observed outcome, and, for a browser path, an `## Evidence` section listing the screenshots and the video it saved next to the file: a screenshot at each expected outcome, `<process>--<path>-<n>.png`, and one video of the path, `<process>--<path>.webm` (`<process>--<path>-<actor>.webm` per actor when the path uses several browser contexts). When Playwright cannot record (its ffmpeg is not installed, as with the system Chrome alone), `## Evidence` SHALL say so and name `npx -y playwright@<version> install chromium`, and the path is judged from what the replay read and the screenshots.
+
+It SHALL write `verdict.md` there, whose first line is `Verdict: PASS` (every driven path passed), `Verdict: FAIL` (at least one failed or is blocked by the product), `Verdict: SKIPPED` (nothing to run) or `Verdict: BLOCKED` (only the environment stopped it), followed by one `## <process>` section per process holding one line per path, `- <result>: <path> (<kind>, proposal.md:<line>) - <file>`, and a last section `## Not a user process` with one line per proposal line left out and its reason, or `- None.`. A later run into the same E2E directory SHALL replace these files.
+
+#### Scenario: Verdict index
+
+- **WHEN** a Change has one user process with three driven paths that pass, and one internal proposal line
+- **THEN** `e2e/verdict.md` starts with `Verdict: PASS`, lists the three paths under the process heading with their results, kinds, proposal lines and files, and lists the internal line under `## Not a user process`
+
+#### Scenario: Broken browser path with video
+
+- **WHEN** the `main` path of the process `count-clicks` of a web entry without a `browser` field fails because the click changes nothing
+- **THEN** `e2e/count-clicks--main.md` starts with `Result: fail`, its `## Evidence` lists `count-clicks--main-1.png` and `count-clicks--main.webm`, both files exist next to it and are not empty, and the log holds one `e2e-check` finding for that path
+
+### Requirement: Findings at the proposal line
+
+Each failed path SHALL be one finding, appended with `bdk findings add <log> --source e2e-check`, with a summary `<process> / <path>: <what the product did instead>`, `--file` and `--line` pointing at the proposal line the path comes from (`openspec/changes/<change>/proposal.md`), and `--evidence` naming the path file and the observed against the expected outcome. The log SHALL be the one the caller named, else `.bdk/runs/<change>/e2e/findings.jsonl`. A defect the tester sees while driving that breaks no path (a crash, an error page, an error in the browser console) MAY be a finding without `--file`. The block SHALL NOT set a level or a decision; that belongs to the judge and to triage.
+
+#### Scenario: Finding points at the proposal
+
+- **WHEN** a path traced to line 7 of `openspec/changes/c/proposal.md` fails
+- **THEN** `bdk findings list <log>` shows one finding from `e2e-check` for that path with file `openspec/changes/c/proposal.md`, line 7, and no level
+
+## MODIFIED Requirements
+
 ### Requirement: Start, ready and stop
 
 For each `tools.e2e` entry the paths need, the block SHALL run `start` with the entry's `env`, then wait for `ready`: a URL until it answers with a status below 500, a command until it exits 0, for at most 120 seconds. For `driver: cli`, `start` SHALL run to its end before `ready`. For `browser` and `http`, `start` SHALL run in the background, and when the `ready` URL answers before `start` ran, the block SHALL NOT drive that foreign process: it SHALL report the entry blocked by the environment. A `start` that fails, or a `ready` that does not pass in time, SHALL be one finding for the entry with the output that shows why, and every path of that entry SHALL be `blocked`. Before it returns, the block SHALL stop every process it started and close the browser session it opened.
@@ -142,31 +150,6 @@ The block SHALL read the page right after each action and before each expected o
 - **WHEN** `@playwright/test` resolves from the project root
 - **THEN** the block drives the paths with that package and installs no other Playwright
 
-### Requirement: Path evidence files
-
-For each path the block SHALL write `<process>--<path>.md` in its E2E directory, `<process>` being the process name and `<path>` `main` or what the path does, both in kebab-case. Its first line SHALL be `Result: pass`, `Result: fail`, `Result: blocked` or `Result: not-driven`, followed by the lines `Process:`, `Path:` with the path's kind (`main`, `variant` or `break`), `Proposal:` with the proposal file, line and text, and `Item:`, then the steps taken with what the product showed at each check, the expected outcome with where it came from (`Expected from:` a design or delta location, or `baseline`, when the proposal line alone does not state it), the observed outcome, and, for a browser path, an `## Evidence` section listing the screenshots and the video it saved next to the file: a screenshot at each expected outcome, `<process>--<path>-<n>.png`, and one video of the path, `<process>--<path>.webm` (`<process>--<path>-<actor>.webm` per actor when the path uses several browser contexts). When Playwright cannot record (its ffmpeg is not installed, as with the system Chrome alone), `## Evidence` SHALL say so and name `npx -y playwright@<version> install chromium`, and the path is judged from what the replay read and the screenshots.
-
-It SHALL write `verdict.md` there, whose first line is `Verdict: PASS` (every driven path passed), `Verdict: FAIL` (at least one failed or is blocked by the product), `Verdict: SKIPPED` (nothing to run) or `Verdict: BLOCKED` (only the environment stopped it), followed by one `## <process>` section per process holding one line per path, `- <result>: <path> (<kind>, proposal.md:<line>) - <file>`, and a last section `## Not a user process` with one line per proposal line left out and its reason, or `- None.`. A later run into the same E2E directory SHALL replace these files.
-
-#### Scenario: Verdict index
-
-- **WHEN** a Change has one user process with three driven paths that pass, and one internal proposal line
-- **THEN** `e2e/verdict.md` starts with `Verdict: PASS`, lists the three paths under the process heading with their results, kinds, proposal lines and files, and lists the internal line under `## Not a user process`
-
-#### Scenario: Broken browser path with video
-
-- **WHEN** the `main` path of the process `count-clicks` of a web entry without a `browser` field fails because the click changes nothing
-- **THEN** `e2e/count-clicks--main.md` starts with `Result: fail`, its `## Evidence` lists `count-clicks--main-1.png` and `count-clicks--main.webm`, both files exist next to it and are not empty, and the log holds one `e2e-check` finding for that path
-
-### Requirement: Findings at the proposal line
-
-Each failed path SHALL be one finding, appended with `bdk findings add <log> --source e2e-check`, with a summary `<process> / <path>: <what the product did instead>`, `--file` and `--line` pointing at the proposal line the path comes from (`openspec/changes/<change>/proposal.md`), and `--evidence` naming the path file and the observed against the expected outcome. The log SHALL be the one the caller named, else `.bdk/runs/<change>/e2e/findings.jsonl`. A defect the tester sees while driving that breaks no path (a crash, an error page, an error in the browser console) MAY be a finding without `--file`. The block SHALL NOT set a level or a decision; that belongs to the judge and to triage.
-
-#### Scenario: Finding points at the proposal
-
-- **WHEN** a path traced to line 7 of `openspec/changes/c/proposal.md` fails
-- **THEN** `bdk findings list <log>` shows one finding from `e2e-check` for that path with file `openspec/changes/c/proposal.md`, line 7, and no level
-
 ### Requirement: Skipped without an E2E entry
 
 When the resolved configuration has no `tools.e2e` item, the block SHALL start nothing, read no proposal, add no finding, write `e2e/verdict.md` with `Verdict: SKIPPED` and the reason (`no tools.e2e entry`, with `/bdk:setup` to add one), and say in its reply that E2E was skipped and why. A Change whose proposal adds or changes no user process SHALL be skipped the same way, with the reason `the proposal changes nothing a user does` and the proposal lines under `## Not a user process`.
@@ -189,3 +172,29 @@ The block SHALL end with a short reply: the verdict line, the number of processe
 
 - **WHEN** `bdk:e2e-tester` finishes a Change with one failed path
 - **THEN** its reply starts with `Verdict: FAIL`, gives the processes, the path counts and one finding, and names `e2e/verdict.md`
+
+## REMOVED Requirements
+
+### Requirement: Input and scenarios
+
+**Reason**: The block derives user processes from the proposal instead of reading the spec scenarios (#317 D7); the project's own tests prove the scenarios.
+
+**Migration**: Replaced by "Input and user processes".
+
+### Requirement: Drive scenarios as a user
+
+**Reason**: The block drives up to 5 paths per user process instead of each spec scenario.
+
+**Migration**: Replaced by "Drive paths as a user".
+
+### Requirement: Evidence files
+
+**Reason**: Evidence is keyed by process and path instead of spec scenario.
+
+**Migration**: Replaced by "Path evidence files": `<process>--<path>.md` instead of `<scenario>.md`.
+
+### Requirement: Findings
+
+**Reason**: A finding points at the proposal line its path comes from instead of a spec scenario heading.
+
+**Migration**: Replaced by "Findings at the proposal line".
