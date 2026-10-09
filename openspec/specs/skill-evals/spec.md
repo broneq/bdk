@@ -159,7 +159,7 @@ Every other command SHALL exit 1 naming the stand-in, and it SHALL never reach t
 
 ### Requirement: No paid evals in CI, free checks of the suite
 
-No CI workflow SHALL start a paid eval run. PR CI SHALL find every `plugins/<name>/evals/` that holds a case and, for each, load every case with the pinned Claude Code loader at a cost ceiling of zero and with the tools that plugin's eval README grants, and fail on a case that does not load or a grader that cannot pass with those tools. It SHALL run every case scaffold of every such suite and every shared fixture of `plugins/bdk/evals/fixtures/` as the harness runs them, and fail on a missing script or a non-zero exit. A suite whose plugin has no grants listed for the check SHALL fail it. The check SHALL prove that it detects a broken case, so a change in the loader's output cannot turn it into a silent pass.
+No CI workflow SHALL start a paid eval run. PR CI SHALL find every `plugins/<name>/evals/` that holds a case and, for each, load every case with the pinned Claude Code loader at a cost ceiling of zero and with the tools that plugin's eval README grants, and fail on a case that does not load or a grader that cannot pass with those tools. It SHALL run every case scaffold of every such suite and every shared fixture of `plugins/bdk/evals/fixtures/` as the harness runs them, and fail on a missing script or a non-zero exit. A suite whose plugin has no grants listed for the check SHALL fail it. The check SHALL prove that it detects a broken case, so a change in the loader's output cannot turn it into a silent pass. The check SHALL delete each workspace it builds when the test that built it finishes, so neither its run time nor its cleanup grows with the number of cases, and it SHALL never fail on the time a cleanup takes.
 
 #### Scenario: Broken case fails CI
 
@@ -190,6 +190,16 @@ No CI workflow SHALL start a paid eval run. PR CI SHALL find every `plugins/<nam
 
 - **WHEN** the check runs with an empty `HOME` and no model credentials
 - **THEN** it completes without a model call and without cost
+
+#### Scenario: Cleanup does not grow with the suite
+
+- **WHEN** the check has run a scaffold or fixture test
+- **THEN** that test's workspace is gone before the next test of the file starts, and the end of the file deletes only an empty scratch directory
+
+#### Scenario: Full runs under load pass
+
+- **WHEN** `pnpm check` runs five times in a row on a Mac
+- **THEN** every run passes with no hook timeout
 
 ### Requirement: B1-sized fixture
 
