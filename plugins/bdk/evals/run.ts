@@ -6,22 +6,32 @@
 // them. A pnpm shim there points into `node_modules/.pnpm/`, which the run's sandbox cannot read
 // under the home directory, so a case calling `openspec` would fail. The run gets PATH without
 // them and finds a global `openspec` instead.
+//
+// The sandbox also denies reads under /Users except the directories on PATH, so the shell
+// prefix of the `git` host workaround (CLAUDE_CODE_SHELL_PREFIX) is unreadable in a run unless
+// its directory is on PATH; the run gets that directory first (design D2 of
+// v3-313-execute-evals-lead).
 import { spawnSync } from "node:child_process";
 import { accessSync, constants, realpathSync } from "node:fs";
 import { homedir } from "node:os";
-import { delimiter, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { delimiter, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = join(import.meta.dirname, "..");
 const CLAUDE = join(ROOT, "..", "..", "node_modules", ".bin", "claude");
 const README = "evals/README.md, Host limits";
 
-/** PATH without any `node_modules/.bin` directory, every other entry kept in its order. */
-export function runPath(path: string): string {
-  return path
+/**
+ * PATH without any `node_modules/.bin` directory, every other entry kept in its order, and the
+ * directory of an absolute shell prefix first (once).
+ */
+export function runPath(path: string, shellPrefix?: string): string {
+  const entries = path
     .split(delimiter)
-    .filter((entry) => !/(^|[\\/])node_modules[\\/]\.bin[\\/]?$/.test(entry))
-    .join(delimiter);
+    .filter((entry) => !/(^|[\\/])node_modules[\\/]\.bin[\\/]?$/.test(entry));
+  if (shellPrefix === undefined || !isAbsolute(shellPrefix)) return entries.join(delimiter);
+  const prefixDir = dirname(shellPrefix);
+  return [prefixDir, ...entries.filter((entry) => entry !== prefixDir)].join(delimiter);
 }
 
 /** Why a run cannot start `openspec` from this PATH, or undefined when it can. */
@@ -52,7 +62,7 @@ function executable(file: string): boolean {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const path = runPath(process.env.PATH ?? "");
+  const path = runPath(process.env.PATH ?? "", process.env.CLAUDE_CODE_SHELL_PREFIX);
   const warning = openspecWarning(path, homedir());
   if (warning !== undefined) console.error(warning);
   const { status, error } = spawnSync(
