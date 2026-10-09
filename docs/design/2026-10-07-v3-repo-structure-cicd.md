@@ -86,7 +86,7 @@ BDK v3 will ship several Claude Code plugins and at least two CLIs from one repo
 - Cost: a second branch that only CI writes; `pnpm build` before `claude --plugin-dir`.
 
 ```mermaid
-flowchart LR
+flowchart TB
   PR[PR: skills + CLI together] -->|merge| MAIN[main: sources, no dist]
   MAIN -->|conventional commits| RP[release-please: release PR]
   RP -->|merge, tag P--vX| JOB[publish job: build P + validate]
@@ -106,7 +106,7 @@ flowchart LR
 - Users get sources, tests and evals in their cache.
 
 ```mermaid
-flowchart LR
+flowchart TB
   PRS[PR] -->|merge| STG[staging: sources]
   STG -->|release PR + dist commit| MAINR[main: releases with dist]
   MAINR -->|git clone ./plugins/P| USERA2[user]
@@ -127,7 +127,7 @@ flowchart LR
 - `--plugin-dir` does not install dependencies, so dev mode needs manual linking.
 
 ```mermaid
-flowchart LR
+flowchart TB
   PRB[PR: CLI in packages/] -->|merge| RELB[release CLI]
   RELB -->|npm publish| NPMB[npm @scope/cli]
   NPMB -->|bump exact pin| PR2[PR: plugin lockfile + skill]
@@ -197,15 +197,19 @@ Jobs run in parallel on `ubuntu-latest`:
 `check`, `plugins` and `commitlint` are required checks. `docs` is required only when it runs (path filter). If installing Claude Code becomes slow or breaks, cache the npm package by version; `validate` stays mandatory.
 
 ```mermaid
-flowchart LR
-  PRC[PR] -->|on PR| CHECK[check: lint, typecheck, vitest, build]
-  PRC -->|on PR| PLUG[plugins: validate --strict, skill-check]
-  PRC -->|on PR| CL[commitlint]
+flowchart TB
+  subgraph ALL[" "]
+    direction TB
+    CHECK[check: lint, typecheck, vitest, build]
+    PLUG[plugins: validate --strict, skill-check]
+    CL[commitlint]
+    CHECK ~~~ PLUG ~~~ CL
+  end
+  PRC[PR] -->|on PR| ALL
   PRC -->|only if docs/ changed| DOCS[docs: vitepress build]
-  CHECK -->|required| MERGE[merge allowed]
-  PLUG -->|required| MERGE
-  CL -->|required| MERGE
+  ALL -->|required| MERGE[merge allowed]
   DOCS -->|required when it runs| MERGE
+  style ALL fill:transparent,stroke:#8b93a1,stroke-dasharray:4 3
 ```
 
 ### Releases (`release.yml`)

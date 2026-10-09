@@ -43,15 +43,15 @@ Three blocks and a gate. The verifier is one agent continued with `SendMessage` 
 ```mermaid
 flowchart TB
   EX["/bdk:explore<br/>Agent bdk:explorer, haiku"] -->|"R/design/explore.md"| DR
-  DR["/bdk:design-draft<br/>bdk:designer"] -->|"C/specs, C/design.md"| VER
-  DR -.->|"open decisions"| Q(["questions to the user<br/>policy.questions"])
+  DR["/bdk:design-draft<br/>bdk:designer"] -.->|"open decisions"| Q(["questions to the user<br/>policy.questions"])
+  DR -->|"C/specs, C/design.md"| VER
   VER["/bdk:verify-design<br/>Agent bdk:verifier, opus"] -->|"R/design/verify-N.md"| V{{"verdict"}}
-  V -->|"FAIL, budget left"| FIX["/bdk:design-draft fixes<br/>Must address"]
+  V -->|"FAIL,<br/>budget left"| FIX["/bdk:design-draft<br/>fixes Must address"]
   FIX -->|"SendMessage to<br/>the same verifier"| VER
-  V -->|"FAIL, budget spent"| STOPB["stop, no gate"]
+  V -->|"FAIL,<br/>budget spent"| STOPB["stop,<br/>no gate"]
   V -->|"PASS"| GATE(["design gate<br/>policy.gates.design"])
-  GATE -->|"request changes"| REV["/bdk:design-draft with<br/>the request"] --> VER
-  GATE -->|"auto, or approve"| GF["R/design/gate.md<br/>Gate: approved"]
+  GATE -->|"request<br/>changes"| REV["/bdk:design-draft<br/>with the request"] --> VER
+  GATE -->|"auto, or<br/>approve"| GF["R/design/gate.md<br/>Gate: approved"]
 ```
 
 Every block runs in the foreground: `/bdk:design` waits for each one before the next step.
@@ -102,17 +102,17 @@ sequenceDiagram
   participant M as /bdk:execute
   participant L as bdk:lead
   U->>M: /bdk:execute change
-  M->>M: plan parts exist? bdk run status
-  M-)L: Agent: /bdk:execute-waves (background)
+  M->>M: plan parts exist?<br/>bdk run status
+  M-)L: Agent: /bdk:execute-waves<br/>(background)
   Note over M: ends its turn, waits
-  L->>L: waves: implement, conform,<br/>commit, merge
+  L->>L: waves: implement,<br/>conform, commit, merge
   L--)M: R/execute/result.md
   alt Status: done
     M->>U: next: /bdk:auto-review
-  else blocked, decide-and-record
+  else blocked,<br/>decide-and-record
     M->>U: blockers, no retry
-  else blocked, questions: stop
-    M->>U: retry the blocked parts?
+  else blocked,<br/>questions: stop
+    M->>U: retry the blocked<br/>parts?
     U-->>M: retry
     M->>L: SendMessage: run again
   end
@@ -173,13 +173,12 @@ flowchart TB
 One part, step by step inside its two worker agents:
 
 ```mermaid
-%%{init: {"sequence": {"actorMargin": 16, "width": 100}}}%%
 sequenceDiagram
   participant L as bdk:lead
   participant I as implementer
   participant F as conformer
   participant B as bdk CLI
-  L->>I: part NN, --run-dir, --workdir
+  L->>I: part NN,<br/>--run-dir, --workdir
   I->>B: bdk rules for --stage execute
   I->>I: check the task contracts<br/>(a plan defect stops here)
   I->>B: bdk check run NN-red<br/>--at part --kind test
@@ -188,9 +187,9 @@ sequenceDiagram
   I->>B: bdk check run NN --at part<br/>--changed HEAD (up to 3 runs)
   I-->>L: R/execute/part-NN.md
   L->>F: part NN, --run-dir, --workdir
-  F->>B: bdk rules for --stage execute
+  F->>B: bdk rules for<br/>--stage execute
   F->>F: fix what keeps behaviour,<br/>leave the rest
-  F->>B: bdk check run conform-NN<br/>(only after an edit)
+  F->>B: bdk check run<br/>conform-NN (only<br/>after an edit)
   F-->>L: R/execute/conform-NN.md
   L->>L: git add -A, git commit
 ```
@@ -219,11 +218,11 @@ Rounds and fix passes each run in a fresh `bdk:lead`; triage and fix planning ru
 flowchart TB
   RND["/bdk:review-round N<br/>Agent bdk:lead"] -->|"round-N/review.md"| TRI
   TRI(["/bdk:triage<br/>Skill, main thread<br/>policy.gates.review"])
-  TRI -->|"a finding left undecided"| WAITU["stop until<br/>the user decides"]
+  TRI -->|"a finding left<br/>undecided"| WAITU["stop until<br/>the user decides"]
   TRI --> FIX{{"a fix decision?"}}
+  FIX -->|"yes"| PF["/bdk:plan-fixes<br/>Skill, main thread"]
   FIX -->|"no"| OK["review/result.md<br/>Status: done"]
   FIX -->|"yes, N at<br/>the budget"| BLK["review/result.md<br/>Status: blocked"]
-  FIX -->|"yes"| PF["/bdk:plan-fixes<br/>Skill, main thread"]
   PF -->|"a finding<br/>Not planned"| BLK
   PF -->|"fixes/parts/NN.md"| FP["/bdk:execute-waves<br/>on the fix parts<br/>Agent bdk:lead"]
   FP -->|"fixes/result.md<br/>blocked"| BLK
@@ -247,33 +246,30 @@ Triage policy, which decides in auto mode and is the preselected recommendation 
 ## `/bdk:review-round` (lead skill)
 
 ```mermaid
-%%{init: {"sequence": {"actorMargin": 12, "width": 96, "noteMargin": 6}}}%%
 sequenceDiagram
   participant L as bdk:lead
-  participant B as bdk CLI
   participant R as reviewer x N
   participant E as e2e-tester
   participant I as integration<br/>reviewer
   participant J as judge
-  L->>B: bdk git groups<br/>--record round-N
-  B-->>L: groups.json
+  L->>L: bdk git groups<br/>--record round-N:<br/>groups.json
   par batches of execution.max-parallel
-    L->>R: /bdk:review-group per group
-    R->>B: bdk findings add
+    L->>R: /bdk:review-group<br/>per group
+    R->>R: bdk findings add
   and
-    L->>B: bdk check run round-N<br/>--at review --changed base<br/>--round N
-    Note over B: appends red checks
+    L->>L: bdk check run round-N<br/>--at review<br/>--changed base<br/>--round N
+    Note over L: appends red checks
   end
   par after the check run
     L->>E: /bdk:e2e-check
-    E->>B: bdk findings add
+    E->>E: bdk findings add
   and
     L->>I: /bdk:review-integration
-    I->>B: bdk findings add
+    I->>I: bdk findings add
   end
   L->>J: /bdk:judge
-  J->>B: bdk findings level,<br/>bdk findings report
-  B-->>L: round-N/review.md
+  J->>J: bdk findings level,<br/>bdk findings report
+  J-->>L: round-N/review.md
   L->>L: write<br/>round-N/round.md
 ```
 
@@ -286,16 +282,16 @@ flowchart TB
   C0{{"Change archived?<br/>archive committed?"}}
   C0 -->|"not archived"| C1
   C0 -->|"archived, openspec/ uncommitted"| C4
-  C0 -->|"archived and committed"| C5
-  C1["tree dirty? Skill /bdk:commit"] --> C2
-  C2["Agent bdk:verifier (opus)<br/>/bdk:spec-conformance<br/>--base origin/&lt;base&gt;<br/>writes R/close/spec-conformance.md"]
+  C0 -->|"archived and<br/>committed"| C5
+  C1["tree dirty?<br/>Skill /bdk:commit"] --> C2
+  C2["Agent bdk:verifier (opus)<br/>/bdk:spec-conformance<br/>--base origin/&lt;base&gt;<br/>writes R/close/<br/>spec-conformance.md"]
   C2 -->|"FAIL"| CS["stop: archive nothing,<br/>name which side to fix"]
-  C2 -->|"PASS"| C3["openspec archive &lt;change&gt; --yes<br/>deltas merged into openspec/specs/"]
-  C3 --> C4["Skill /bdk:commit: only openspec/"]
+  C2 -->|"PASS"| C3["openspec archive<br/>&lt;change&gt; --yes<br/>deltas merged into<br/>openspec/specs/"]
+  C3 --> C4["Skill /bdk:commit:<br/>only openspec/"]
   C4 --> C5["git push -u origin &lt;branch&gt;<br/>never forced"]
-  C5 -->|"fails"| CP["stop: archived and committed locally"]
-  C5 --> C6["gh pr view, or gh pr create<br/>body from R/close/pr-body.md"]
-  C6 --> C7["write R/close/pr.md last<br/>(bdk run status reads it as done)"]
+  C5 -->|"fails"| CP["stop: archived and<br/>committed locally"]
+  C5 --> C6["gh pr view, or<br/>gh pr create, body from<br/>R/close/pr-body.md"]
+  C6 --> C7["write R/close/pr.md last<br/>(bdk run status<br/>reads it as done)"]
 ```
 
 ## `/bdk:pr-review` and the `/bdk:pr-review-round` lead
@@ -303,25 +299,24 @@ flowchart TB
 Reviews any open pull request in a detached worktree. It runs no checks and no E2E; nothing reaches GitHub before the user confirms.
 
 ```mermaid
-%%{init: {"sequence": {"actorMargin": 12, "width": 96, "noteMargin": 6}}}%%
 sequenceDiagram
   actor U as user
   participant M as /bdk:pr-review
   participant L as bdk:lead
-  participant W as review workers
+  participant W as review<br/>workers
   participant G as GitHub
   U->>M: /bdk:pr-review 7
   M->>G: gh pr view
-  M->>M: write pr-7/pr.md (brief)
-  M-)L: Agent: /bdk:pr-review-round
+  M->>M: write pr-7/pr.md<br/>(brief)
+  M-)L: Agent:<br/>/bdk:pr-review-round
   L->>G: git ls-remote,<br/>git fetch pull/7/head
   L->>L: detached worktree,<br/>find the Change,<br/>bdk git groups
-  L->>W: reviewers,<br/>integration, judge
+  L->>W: reviewers,<br/>integration,<br/>judge
   W-->>L: findings.jsonl,<br/>review.md
   L->>L: remove worktree,<br/>result.md
   L--)M: Status line
   M->>U: verdict and every<br/>finding to post
-  U-->>M: post, other verdict,<br/>comment only, or skip
+  U-->>M: post, other<br/>verdict,<br/>comment only,<br/>or skip
   M->>G: gh api POST review.json
   M->>M: write posted.md
 ```
@@ -333,24 +328,23 @@ Several pull requests (`/bdk:pr-review 7 8`) start one lead each in one message,
 `--verify` re-checks your previous review and reviews only the commits added since it:
 
 ```mermaid
-%%{init: {"sequence": {"actorMargin": 12, "width": 96, "noteMargin": 6}}}%%
 sequenceDiagram
   actor U as user
   participant M as /bdk:pr-review
   participant L as bdk:lead
   participant R as reviewers<br/>and judge
   participant G as GitHub
-  U->>M: /bdk:pr-review --verify 7
+  U->>M: /bdk:pr-review<br/>--verify 7
   M->>G: gh api graphql (reviews, threads)
   M->>M: write pr-7/previous.json<br/>(your open blocker and<br/>should-fix findings)
-  M-)L: Agent: /bdk:pr-review-round<br/>--verify --since (previous head)
-  L->>L: worktree at the new head,<br/>bdk findings add<br/>each previous finding
+  M-)L: Agent:<br/>/bdk:pr-review-round<br/>--verify --since<br/>(previous head)
+  L->>L: worktree at<br/>the new head,<br/>bdk findings add<br/>each previous<br/>finding
   L->>L: bdk git groups<br/>(previous head)<br/>(origin/base after<br/>a force-push)
-  L->>R: review the new<br/>commits, then judge<br/>the whole round
-  R-->>L: findings, levels,<br/>review.md
+  L->>R: review the<br/>new commits,<br/>then judge the<br/>whole round
+  R-->>L: findings,<br/>levels,<br/>review.md
   L--)M: Status line
-  M->>U: fixed (not-a-problem),<br/>left and new findings
-  U-->>M: post, other verdict,<br/>comment only, or skip
+  M->>U: fixed<br/>(not-a-problem),<br/>left and new<br/>findings
+  U-->>M: post, other<br/>verdict,<br/>comment only,<br/>or skip
   M->>G: gh api POST review.json<br/>(inline comments on new findings)
   M->>G: resolveReviewThread<br/>for each fixed finding
 ```
@@ -361,17 +355,17 @@ The previous findings go into the round's log before any reviewer starts, and th
 
 ```mermaid
 flowchart TB
-  G0{{"clean tree for a new report?"}} -->|"no"| GS["stop: commit or stash first"]
+  G0{{"clean tree for<br/>a new report?"}} -->|"no"| GS["stop: commit or<br/>stash first"]
   G0 -->|"yes"| G1
   G1["Skill /bdk:diagnose-bug<br/>reproduce as a user<br/>(tools.e2e or public interface)<br/>writes R/debug/reproduction.md,<br/>diagnosis.md and the fix Change:<br/>proposal, spec delta, design,<br/>plan/parts/01.md"]
-  G1 -->|"not-reproduced or blocked"| GX["stop, nothing changed"]
   G1 -->|"too-large"| GL["stop: continue with<br/>/bdk:design &lt;change&gt;"]
   G1 -->|"ready"| G2(["fix gate<br/>policy.gates.design"])
-  G2 -->|"stop"| GT["leave the Change for review"]
-  G2 -->|"fix"| G3["write R/debug/gate.md<br/>git switch -c &lt;change&gt;<br/>when on the base<br/>Skill /bdk:commit the Change"]
+  G1 -->|"not-reproduced<br/>or blocked"| GX["stop, nothing<br/>changed"]
+  G2 -->|"fix"| G3["write R/debug/gate.md<br/>git switch -c &lt;change&gt;<br/>when on the base<br/>Skill /bdk:commit<br/>the Change"]
+  G2 -->|"stop"| GT["leave the Change<br/>for review"]
   G3 --> G4["Skill /bdk:execute<br/>reproduction test red,<br/>fix, green, conform"]
-  G4 -->|"blocked"| G6
   G4 -->|"done"| G5["Skill /bdk:auto-review"]
+  G4 -->|"blocked"| G6
   G5 --> G6["write R/debug/result.md<br/>next: /bdk:close"]
 ```
 

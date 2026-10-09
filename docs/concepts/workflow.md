@@ -29,20 +29,21 @@ Propose, design and plan leave the Change files uncommitted for review; `/bdk:ru
 ```mermaid
 flowchart TB
   subgraph A["/bdk:run"]
-    direction TB
+    direction LR
     A1["queue from an intent<br/>or issues"] --> A2["per Change: branch,<br/>propose ... close"]
     A2 --> A3["PR per Change"]
   end
   subgraph B["/bdk:debug"]
-    direction TB
+    direction LR
     B1["/bdk:diagnose-bug:<br/>one-part fix Change"] --> B2(["fix gate"])
     B2 --> B3["execute,<br/>auto-review"]
   end
   subgraph C["/bdk:pr-review"]
-    direction TB
+    direction LR
     C1["review lead<br/>on any open PR"] --> C2(["post the review?"])
     C2 --> C3["one GitHub review"]
   end
+  A ~~~ B ~~~ C
 ```
 
 Points where the user decides, and the setting that skips them:

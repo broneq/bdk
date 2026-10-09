@@ -18,14 +18,28 @@ Your project's rules need no measurement: they are your team's choices.
 ## Who reads them, and when
 
 ```mermaid
-flowchart LR
+flowchart TB
   R[("BDK pack<br/>+ rules in the settings")] --> S["bdk rules for<br/>--stage S --files F"]
-  S -->|"stage design,<br/>no files"| D["/bdk:design-draft writes,<br/>/bdk:verify-design checks"]
-  S -->|"stage plan, no files;<br/>each part's files"| P["/bdk:plan-draft writes,<br/>/bdk:verify-plan checks"]
-  S -->|"stage execute,<br/>the part's files"| I["bdk:implementer<br/>writes the code"]
-  S -->|"stage execute,<br/>the changed files"| C["bdk:conformer<br/>checks the code"]
-  S -->|"stage review,<br/>the group's files"| V["bdk:reviewer<br/>reports findings"]
-  S -->|"stage review,<br/>the cited rule"| J["bdk:judge<br/>sets the level"]
+  S -->|"the rules for<br/>a stage and files"| RD
+  subgraph RD["read by"]
+    direction TB
+    subgraph RA[" "]
+      direction LR
+      A1["stage design,<br/>no files:<br/>/bdk:design-draft writes,<br/>/bdk:verify-design checks"] ~~~ A2["stage plan, no files;<br/>each part's files:<br/>/bdk:plan-draft writes,<br/>/bdk:verify-plan checks"]
+    end
+    subgraph RB[" "]
+      direction LR
+      B1["stage execute,<br/>the part's files:<br/>bdk:implementer<br/>writes the code"] ~~~ B2["stage execute,<br/>the changed files:<br/>bdk:conformer<br/>checks the code"]
+    end
+    subgraph RC[" "]
+      direction LR
+      C1["stage review,<br/>the group's files:<br/>bdk:reviewer<br/>reports findings"] ~~~ C2["stage review,<br/>the cited rule:<br/>bdk:judge<br/>sets the level"]
+    end
+    RA ~~~ RB ~~~ RC
+  end
+  style RA fill:transparent,stroke:transparent
+  style RB fill:transparent,stroke:transparent
+  style RC fill:transparent,stroke:transparent
 ```
 
 | Stage | Role | What it does with the rules |
