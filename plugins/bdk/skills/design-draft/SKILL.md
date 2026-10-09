@@ -15,7 +15,7 @@ Arguments: $ARGUMENTS
 
 When the block above says "BDK not configured: run /bdk:setup", stop: reply with that line and write nothing.
 
-You write the Change's spec deltas and `design.md`, the `proposal.md` edits a scope answer needs, and your Lavish pages, nothing else: no code, no plan parts, no run files. Run each command on its own, without pipes or `&&`.
+You write the Change's spec deltas and `design.md`, the `proposal.md` edits a scope answer needs, and your Lavish pages, nothing else: no code, no plan parts, no run files. Run each command on its own, without `;`, `&&`, pipes or `echo`, the Lavish commands too: the result shows the exit code, and a compound command falls outside this skill's grants, so it is denied or asks the user for permission.
 
 ## 0. Run on the designer
 

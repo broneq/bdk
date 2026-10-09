@@ -11,7 +11,7 @@ import {
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it, onTestFinished } from "vitest";
-import { openspecWarning, runPath } from "../evals/run.ts";
+import { openspecWarning, runEnv, runPath } from "../evals/run.ts";
 import { planGroup } from "../src/plan/index.ts";
 import { checkResult } from "../src/plan/schema/check.ts";
 import { run } from "../src/shared/cli/index.ts";
@@ -258,6 +258,19 @@ describe("eval launcher", () => {
     expect(runPath(path, undefined)).toBe(path);
     expect(runPath(path, "")).toBe(path);
     expect(runPath(path, "bin/macos-git-prefix.sh")).toBe(path);
+  });
+
+  it("turns off npm's update check and keeps every other variable", () => {
+    const env = runEnv({ HOME: "/tmp/h", PATH: "/usr/bin", npm_config_update_notifier: "true" });
+    expect(env).toEqual({ HOME: "/tmp/h", PATH: "/usr/bin", npm_config_update_notifier: "false" });
+  });
+
+  it("gives the run the cleaned PATH with the shell prefix's directory first", () => {
+    const prefix = "/Users/Shared/bdk-eval/bin/macos-git-prefix.sh";
+    const path = [join(PLUGIN, "node_modules", ".bin"), "/usr/bin"].join(delimiter);
+    expect(runEnv({ PATH: path, CLAUDE_CODE_SHELL_PREFIX: prefix }).PATH).toBe(
+      ["/Users/Shared/bdk-eval/bin", "/usr/bin"].join(delimiter),
+    );
   });
 
   it("grants what /bdk:execute uses in the README command of the execute-* cases", () => {
