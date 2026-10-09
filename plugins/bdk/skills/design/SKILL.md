@@ -2,7 +2,7 @@
 name: design
 description: 'Runs the design stage of an OpenSpec Change - maps the code with explore, drafts the specs and design.md with design-draft, checks them with verify-design until a report passes or policy.budgets.verifier is spent, then applies the design gate of policy.gates.design. Resumes from the run files. Use when a Change has a proposal and needs its design, when asked to "design" a Change, or when /bdk:run reaches the design stage.'
 argument-hint: "[change-name]"
-allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Read Glob Grep Write Skill Agent SendMessage ToolSearch AskUserQuestion
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Read Glob Grep Write Agent SendMessage ToolSearch AskUserQuestion
 ---
 
 Current BDK configuration of this project:
@@ -17,9 +17,9 @@ You compose three blocks and apply the gate; you never do a block's work. Do not
 
 The blocks:
 
-- **explore**: start an agent with the Agent tool, `subagent_type: "bdk:explorer"`, prompt `Run the skill bdk:explore with the arguments: <change>`, and `model` set to `models.explorer` when the configuration above sets it. It writes `.bdk/runs/<change>/design/explore.md`.
-- **design-draft**: call the Skill tool with `bdk:design-draft` and the arguments `<change>` (or `<change> <revision request>` after a gate asking for changes). It runs here, in the main thread, because it may ask the user; it writes the spec deltas and `design.md`, or fixes them when the last report failed.
-- **verify-design**: start an agent with the Agent tool, `subagent_type: "bdk:verifier"`, prompt `Run the skill bdk:verify-design with the arguments: <change>`, and `model` set to `models.verifier` when the configuration above sets it. It writes the next `.bdk/runs/<change>/design/verify-N.md` and returns its verdict line. Keep the agent ID it returns.
+- **explore**: start an agent with the Agent tool, `subagent_type: "bdk:explorer"`, prompt `Run the skill bdk:explore with the arguments: <change>`, `model` set to `models.explorer.model` and `effort` set to `models.explorer.effort`, each only when the configuration above sets it. It writes `.bdk/runs/<change>/design/explore.md`.
+- **design-draft**: start an agent with the Agent tool, `subagent_type: "bdk:designer"`, prompt `Run the skill bdk:design-draft with the arguments: <change>` (or `<change> <revision request>` after a gate asking for changes), `model` set to `models.designer.model` and `effort` set to `models.designer.effort`, each only when the configuration above sets it. Keep the agent ID it returns. It writes the spec deltas and `design.md`, or fixes them when the last report failed. It cannot ask the user itself: when the Lavish page does not open, it ends with its open questions and writes nothing; handle them as step 3 says, each time this block runs.
+- **verify-design**: start an agent with the Agent tool, `subagent_type: "bdk:verifier"`, prompt `Run the skill bdk:verify-design with the arguments: <change>`, `model` set to `models.verifier.model` and `effort` set to `models.verifier.effort`, each only when the configuration above sets it. It writes the next `.bdk/runs/<change>/design/verify-N.md` and returns its verdict line. Keep the agent ID it returns.
 
 Before each block, tell the user in one line which block runs and which file it writes, e.g. `Mapping the code: bdk:explorer writes .bdk/runs/add-csv-export/design/explore.md`.
 
@@ -49,7 +49,7 @@ A step whose file exists never runs again. Done when you know the row.
 ## 3. Map and draft
 
 1. Without `explore.md` and `design.md`: run **explore** and wait for it.
-2. Run **design-draft** with `<change>`. When it ends its turn with questions for the user instead of writing files, stop here as well: the user's answers continue it, and a later `/bdk:design <change>` resumes at row 3.
+2. Run **design-draft** with `<change>`. When the designer ends with open questions instead of writing files, ask them with `AskUserQuestion`: at most four questions per call, the recommended option first, each option one label and one sentence. Continue the same designer with `SendMessage` (load it first with `ToolSearch` query `select:SendMessage` when it is listed only by name): `Answers: <question>: <chosen option or the user's note>; ...`. Without the tool or the agent ID, run **design-draft** again with `<change> Answers: ...`. When `AskUserQuestion` is not available, say that the browser review page (Lavish) could not open when the designer says so, list the questions in your reply, the recommended option first and marked "(recommended)", and stop here: the user's answers continue the designer, and a later `/bdk:design <change>` resumes at row 3.
 
 Done when `design.md` exists.
 

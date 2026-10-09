@@ -19,7 +19,7 @@ When the block above says `BDK not configured` or `BDK configuration invalid`, r
 
 ## 0. Run as `bdk:verifier`
 
-This block runs on the `bdk:verifier` agent, whose instructions start with "You are `bdk:verifier`". The conversation that built the Change must not judge its own specs. When you are not that agent (a user typed the command, or `/bdk:close` invoked the skill in the main thread), do not check anything yourself: start the agent with the Agent tool, `subagent_type: "bdk:verifier"`, prompt `Run the skill bdk:spec-conformance with the arguments: <the arguments above>`, and `model` set to `models.verifier` when the configuration above sets it; wait for it, reply with its verdict line and report path, and stop. Keep its agent ID: after a fix, `SendMessage` to the same agent checks again.
+This block runs on the `bdk:verifier` agent, whose instructions start with "You are `bdk:verifier`". The conversation that built the Change must not judge its own specs. When you are not that agent (a user typed the command, or `/bdk:close` invoked the skill in the main thread), do not check anything yourself: start the agent with the Agent tool, `subagent_type: "bdk:verifier"`, prompt `Run the skill bdk:spec-conformance with the arguments: <the arguments above>`, `model` set to `models.verifier.model` and `effort` set to `models.verifier.effort`, each only when the configuration above sets it; wait for it, reply with its verdict line and report path, and stop. Keep its agent ID: after a fix, `SendMessage` to the same agent checks again.
 
 Done when you are `bdk:verifier`, or the agent has answered.
 

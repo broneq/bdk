@@ -98,15 +98,15 @@ flowchart TB
   end
   subgraph R2[" "]
     direction LR
-    S2["/bdk:design"] --- C2["policy.questions<br/>policy.budgets.verifier<br/>policy.gates.design<br/>models.explorer<br/>models.verifier"]
+    S2["/bdk:design"] --- C2["policy.questions<br/>policy.budgets.verifier<br/>policy.gates.design<br/>models.explorer<br/>models.designer<br/>models.verifier"]
   end
   subgraph R3[" "]
     direction LR
-    S3["/bdk:plan"] --- C3["policy.budgets.verifier<br/>plan.part.max-tasks<br/>plan.part.max-files<br/>plan.part.max-bytes<br/>models.verifier"]
+    S3["/bdk:plan"] --- C3["policy.budgets.verifier<br/>plan.part.max-tasks<br/>plan.part.max-files<br/>plan.part.max-bytes<br/>models.planner<br/>models.verifier"]
   end
   subgraph R4[" "]
     direction LR
-    S4["/bdk:execute"] --- C4["execution.lead<br/>execution.max-parallel<br/>policy.budgets.part-attempts<br/>policy.escalation.model<br/>tools.test, tools.lint, tools.build<br/>languages, rules.disabled<br/>models.implementer<br/>models.conformer<br/>policy.questions (retry)"]
+    S4["/bdk:execute"] --- C4["execution.lead<br/>execution.max-parallel<br/>policy.budgets.part-attempts<br/>policy.escalation.model<br/>policy.escalation.effort<br/>tools.test, tools.lint, tools.build<br/>languages, rules.disabled<br/>models.implementer<br/>models.conformer<br/>policy.questions (retry)"]
   end
   subgraph R5[" "]
     direction LR
@@ -140,11 +140,11 @@ The same as a list, key by key; types, defaults and allowed values are in the [s
 | `policy.budgets.verifier` | `/bdk:design`, `/bdk:plan` |
 | `policy.budgets.part-attempts` | `/bdk:execute-waves` |
 | `policy.budgets.review-rounds` | `/bdk:auto-review`, `/bdk:triage` |
-| `policy.escalation.model` | `/bdk:execute-waves` |
+| `policy.escalation.model`, `policy.escalation.effort` | `/bdk:execute-waves` |
 | `plan.part.max-tasks`, `plan.part.max-files`, `plan.part.max-bytes` | `bdk plan check`, `/bdk:plan-draft`, `/bdk:plan-fixes`, `/bdk:diagnose-bug` |
 | `execution.lead` | `/bdk:execute`, `/bdk:auto-review`, `/bdk:pr-review` |
 | `execution.max-parallel` | `/bdk:execute-waves`, `/bdk:review-round`, `/bdk:pr-review-round` |
-| `models.lead`, `models.explorer`, `models.verifier`, `models.implementer`, `models.conformer`, `models.reviewer`, `models.integration-reviewer`, `models.e2e-tester`, `models.judge` | the `Agent` call that starts that role |
+| `models.<role>.model`, `models.<role>.effort` for the roles `lead`, `explorer`, `designer`, `planner`, `verifier`, `implementer`, `conformer`, `reviewer`, `integration-reviewer`, `e2e-tester`, `judge` | the `Agent` call that starts that role (`model` and `effort`) |
 | `hooks.subagent-git` | `bdk hooks pre-tool-use` |
 
 ## Hooks

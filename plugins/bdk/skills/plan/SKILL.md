@@ -1,8 +1,8 @@
 ---
 name: plan
-description: 'Runs the plan stage of an OpenSpec Change - drafts the plan parts with plan-draft, checks them with bdk plan check, and verifies them with verify-plan on bdk:verifier, fixing and verifying again until a report passes or policy.budgets.verifier is spent. Stops on an unfinished design or a gap of the design. Resumes from the run files. Use when a Change has its specs and design and needs a plan, when asked to "plan" a Change, or when /bdk:run reaches the plan stage.'
+description: 'Runs the plan stage of an OpenSpec Change - drafts the plan parts with plan-draft on bdk:planner, checks them with bdk plan check, and verifies them with verify-plan on bdk:verifier, fixing and verifying again until a report passes or policy.budgets.verifier is spent. Stops on an unfinished design or a gap of the design. Resumes from the run files. Use when a Change has its specs and design and needs a plan, when asked to "plan" a Change, or when /bdk:run reaches the plan stage.'
 argument-hint: "[change-name]"
-allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Read Glob Grep Skill Agent SendMessage ToolSearch
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Read Glob Grep Agent SendMessage ToolSearch
 ---
 
 Current BDK configuration of this project:
@@ -17,11 +17,11 @@ You compose the plan blocks; you never do a block's work. Do not write, fix or c
 
 The blocks:
 
-- **plan-draft**: call the Skill tool with `bdk:plan-draft` and the arguments `<change>`. It runs here, in the main thread. It writes the parts `openspec/changes/<change>/plan/parts/NN.md`, or fixes them when the last report failed, and runs `bdk plan check` itself.
+- **plan-draft**: start an agent with the Agent tool, `subagent_type: "bdk:planner"`, prompt `Run the skill bdk:plan-draft with the arguments: <change>`, `model` set to `models.planner.model` and `effort` set to `models.planner.effort`, each only when the configuration above sets it. Start a new planner each time this block runs. It writes the parts `openspec/changes/<change>/plan/parts/NN.md`, or fixes them when the last report failed, and runs `bdk plan check` itself.
 - **check**: run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" plan check openspec/changes/<change>/plan/parts`, on its own. It prints the waves, and the problems under `problems:` with exit 1; exit 3 is an environment problem.
-- **verify-plan**: start an agent with the Agent tool, `subagent_type: "bdk:verifier"`, prompt `Run the skill bdk:verify-plan for the Change <change>.`, and `model` set to `models.verifier` when the configuration above sets it. It writes the next `.bdk/runs/<change>/plan/verify-N.md` and returns its verdict line. Keep the agent ID it returns.
+- **verify-plan**: start an agent with the Agent tool, `subagent_type: "bdk:verifier"`, prompt `Run the skill bdk:verify-plan for the Change <change>.`, `model` set to `models.verifier.model` and `effort` set to `models.verifier.effort`, each only when the configuration above sets it. It writes the next `.bdk/runs/<change>/plan/verify-N.md` and returns its verdict line. Keep the agent ID it returns.
 
-Before each block, tell the user in one line which block runs and which file it writes, e.g. `Checking the plan: bdk:verifier writes .bdk/runs/add-csv-export/plan/verify-1.md`.
+Before each block, tell the user in one line which block runs and which file it writes, e.g. `Drafting the plan: bdk:planner writes openspec/changes/add-csv-export/plan/parts/`, `Checking the plan: bdk:verifier writes .bdk/runs/add-csv-export/plan/verify-1.md`.
 
 ## 1. Check the configuration and the Change
 

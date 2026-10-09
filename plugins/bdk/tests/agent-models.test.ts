@@ -3,7 +3,7 @@ import { basename, join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { describeSettings } from "../src/config/domain/describe.ts";
-import { SettingsSchema } from "../src/config/domain/settings.ts";
+import { MODEL_ROLES, SettingsSchema } from "../src/config/domain/settings.ts";
 
 // Spec `bdk-cli/config`, "Every agent is a models role": every agent of the plugin is a role of
 // `models`, the `models` description names it, and every skill that starts the agent passes
@@ -42,6 +42,10 @@ function callsWithoutRole(): string[] {
 describe("models roles", () => {
   it("names every agent of the plugin as a role of the models description", () => {
     expect(agents.filter((agent) => !roles.includes(agent))).toEqual([]);
+  });
+
+  it("accepts exactly the agents of the plugin as roles of the schema", () => {
+    expect([...MODEL_ROLES].sort()).toEqual(agents);
   });
 
   it("names no role in the models description that is not an agent", () => {

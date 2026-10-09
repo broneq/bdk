@@ -35,7 +35,7 @@ Start one agent with the Agent tool:
 - `subagent_type: "bdk:lead"`;
 - prompt `Run the skill bdk:execute-waves with the arguments: <change> --run-dir <absolute run directory>`;
 - `run_in_background: true` when `execution.lead` is `background` (the default); in the foreground when it is `foreground`;
-- `model` set to `models.lead` when the configuration sets it.
+- `model` set to `models.lead.model` and `effort` set to `models.lead.effort`, each only when the configuration sets it.
 
 Keep the agent ID it returns. A background lead reports through a notification that arrives by itself: end your turn and wait for it, without polling its files or sleeping, and do nothing else on this Change meanwhile.
 

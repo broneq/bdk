@@ -139,7 +139,7 @@ describe("keys", () => {
         { kind: "key", name: "scoped" },
       ],
     });
-    expect(resolveKey("models.implementer").ok).toBe(true);
+    expect(resolveKey("models.implementer.effort").ok).toBe(true);
     expect(resolveKey("tools.e2e.web.env.PORT").ok).toBe(true);
     expect(resolveKey("tools.e2e.web.browser").ok).toBe(true);
     expect(resolveKey("steps.execute.review.enabled").ok).toBe(true);
@@ -152,7 +152,10 @@ describe("keys", () => {
       segment: "max-task",
       known: ["max-tasks", "max-files", "max-bytes"],
     });
-    expect(resolveKey("models.Bad")).toMatchObject({ ok: false, known: [] });
+    expect(resolveKey("models.Bad")).toMatchObject({
+      ok: false,
+      known: expect.arrayContaining(["implementer", "planner"]) as unknown,
+    });
     expect(resolveKey("languages.x")).toMatchObject({ ok: false, at: "languages" });
     expect(knownUnder("")).toContain("tools");
     expect(knownUnder("tools.test.unit")).toEqual(["command", "scoped", "timeout", "paths"]);
@@ -234,7 +237,7 @@ describe("validate", () => {
               { id: "a", command: "y" },
             ],
           },
-          models: { Bad: "opus" },
+          models: { Bad: { model: "opus" } },
           plan: { part: { "max-files": "many" } },
         }),
       ],
@@ -242,7 +245,7 @@ describe("validate", () => {
     );
     expect(problems.map((problem) => [problem.key, problem.message.split(":")[0]])).toEqual([
       ["tools.lint", "duplicate id a"],
-      ["models.Bad", "invalid key"],
+      ["models.Bad", "unknown key"],
       ["plan.part.max-files", "Invalid input"],
     ]);
   });

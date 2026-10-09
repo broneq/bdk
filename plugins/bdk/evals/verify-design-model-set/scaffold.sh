@@ -4,5 +4,6 @@ set -euo pipefail
 bash "$(dirname "$0")/../fixtures/ledger-designed.sh"
 cat > .bdk/settings.local.yaml <<'YAML'
 models:
-  verifier: sonnet
+  verifier:
+    model: sonnet
 YAML

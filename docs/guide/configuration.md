@@ -25,7 +25,7 @@ The `bdk` command line ships inside the plugin and is on the `PATH` of Claude Co
 ```text
 bdk config set policy.gates.review auto
 bdk config set tools.test.vitest.timeout 900
-bdk config set models.implementer opus --layer local
+bdk config set models.implementer.model opus --layer local
 ```
 
 An item of a list is addressed by its `id`: `tools.test.vitest.timeout` is the `timeout` of the `tools.test` item whose `id` is `vitest`. Editing the files by hand works as well; run `bdk config check` afterwards. Every BDK command reads the configuration when it starts, so a change applies to the next command.
@@ -131,7 +131,8 @@ rules:
 execution:
   lead: foreground
 models:
-  implementer: opus
+  implementer:
+    model: opus
 ```
 
 A key a later layer sets replaces the earlier value as a whole, except lists of items with an `id`, which merge item by item. So a local `rules.disabled` replaces the team's list rather than adding to it.
@@ -141,8 +142,9 @@ A key a later layer sets replaces the earlier value as a whole, except lists of 
 ```yaml
 # fewer, cheaper runs
 models:
-  verifier: sonnet
-  integration-reviewer: sonnet
+  verifier: { model: sonnet }
+  integration-reviewer: { model: sonnet }
+  designer: { model: sonnet }
 execution:
   max-parallel: 3
 policy:
@@ -154,8 +156,9 @@ policy:
 ```yaml
 # more thorough
 models:
-  implementer: opus
-  reviewer: opus
+  implementer: { model: opus, effort: high }
+  reviewer: { model: opus }
+  planner: { effort: xhigh }
 policy:
   budgets:
     part-attempts: 4
@@ -185,15 +188,24 @@ policy:
 
 ### Choose models
 
-Each agent runs on its own model unless `models.<role>` sets another; the role is the agent's name (`explorer`, `verifier`, `implementer` and so on), and every stage that starts the agent uses it:
+Each agent runs on its own model and at your session's effort unless `models.<role>` sets another; the role is the agent's name (`explorer`, `designer`, `planner`, `verifier`, `implementer` and so on), and every stage that starts the agent uses it. A role takes `model` (a name or alias such as `opus`, `sonnet`, `haiku`) and `effort` (`low`, `medium`, `high`, `xhigh` or `max`), each optional:
 
 ```yaml
 models:
-  implementer: opus
-  reviewer: sonnet
+  designer:
+    effort: xhigh          # think harder on the design, on the session's model
+  planner:
+    model: sonnet
+  implementer:
+    model: opus
+    effort: high
+  reviewer:
+    model: sonnet
 ```
 
-The roles and their default models are in the [agents reference](/reference/bdk/agents). [`policy.escalation.model`](/reference/bdk/settings#policy-escalation-model) is the model of the last attempt at a part that keeps failing.
+`bdk config check` rejects a role that is not an agent (with a suggestion for a misspelt one) and an effort level Claude Code does not know. A role written as a plain model name (`implementer: opus`) is no longer valid: write `implementer: { model: opus }`. `/bdk:design-draft` and `/bdk:plan-draft` run on the agents `bdk:designer` and `bdk:planner`; with nothing set they run on your session's model, as before.
+
+The roles and their default models are in the [agents reference](/reference/bdk/agents). [`policy.escalation.model`](/reference/bdk/settings#policy-escalation-model) and [`policy.escalation.effort`](/reference/bdk/settings#policy-escalation-effort) are the model and effort of the last attempt at a part that keeps failing.
 
 ### More or fewer retries
 
@@ -207,9 +219,9 @@ policy:
 
 ### When a part keeps failing: retries and escalation
 
-The execute lead gives each plan part a budget of implementer runs per `/bdk:execute` run, `policy.budgets.part-attempts` (3). A part is run again when its implementer reports a blocker of kind `other` or its conformer fails it; the next run reads the failed report. The last run within the budget uses `policy.escalation.model` (`opus`) instead of the implementer's model, so a stronger model gets the hardest case. With `part-attempts: 1` that single run is the last one and already runs on the escalation model.
+The execute lead gives each plan part a budget of implementer runs per `/bdk:execute` run, `policy.budgets.part-attempts` (3). A part is run again when its implementer reports a blocker of kind `other` or its conformer fails it; the next run reads the failed report. The last run within the budget uses `policy.escalation.model` (`opus`) instead of the implementer's model, and `policy.escalation.effort` when set (else the implementer's effort), so a stronger model gets the hardest case. With `part-attempts: 1` that single run is the last one and already runs on the escalation model.
 
-When the budget is spent, the part is marked `blocked`, later waves do not start, and `execute/result.md` names the reason and the command that unblocks it. Two kinds of blocker skip the retries: a plan defect (`/bdk:plan <change>` fixes it) and a missing tool or environment problem (`/bdk:setup`). A merge conflict gets one more attempt at resolving it on the escalation model, then blocks too. Each new `/bdk:execute` run gives the blocked parts a fresh budget; under `policy.questions: stop` BDK asks you whether to retry them now.
+When the budget is spent, the part is marked `blocked`, later waves do not start, and `execute/result.md` names the reason and the command that unblocks it. Two kinds of blocker skip the retries: a plan defect (`/bdk:plan <change>` fixes it) and a missing tool or environment problem (`/bdk:setup`). A merge conflict gets one more attempt at resolving it on the escalation model and effort, then blocks too. Each new `/bdk:execute` run gives the blocked parts a fresh budget; under `policy.questions: stop` BDK asks you whether to retry them now.
 
 ```yaml
 policy:
@@ -217,8 +229,10 @@ policy:
     part-attempts: 4       # up to 4 implementer runs per part in one execute run
   escalation:
     model: opus            # the model of the last of them
+    effort: high           # and its effort
 models:
-  implementer: sonnet      # the model of the runs before it
+  implementer:
+    model: sonnet          # the model of the runs before it
 ```
 
 ### Plan parts size

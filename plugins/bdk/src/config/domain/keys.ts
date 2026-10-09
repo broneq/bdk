@@ -52,7 +52,10 @@ export function resolveKey(key: string): Resolution {
       continue;
     }
     if (node instanceof z.ZodRecord) {
-      if (!(node.keyType as z.ZodType).safeParse(segment).success) return fail([]);
+      const keyType = node.keyType as z.ZodType;
+      if (!keyType.safeParse(segment).success) {
+        return fail(keyType instanceof z.ZodEnum ? keyType.options.map(String) : []);
+      }
       steps.push({ kind: "key", name: segment });
       node = unwrap(node.valueType as z.ZodType);
       continue;

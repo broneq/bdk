@@ -31,7 +31,7 @@ Done when you are `bdk:lead`.
 - **State file and result file**: with `--parts`, `state.json` and `result.md` in the directory that holds the parts directory (`<run dir>/review/round-<N>/fixes/`), never in the parts directory, where `bdk plan check` takes every other `.md` for a misnamed part; else `<run dir>/state.json` and `<run dir>/execute/result.md`. Never write the other pair: the plan's state stays the plan's, and `bdk run status` reads it.
 - With `--parts`, a blocker this skill would send to `/bdk:plan <change>` names the part file in the parts directory instead: its author (`plan-fixes`) fixes it, through `/bdk:auto-review <change>`. A blocker that would name `/bdk:execute <change>` names `/bdk:auto-review <change>` instead: `/bdk:execute` builds plan parts only.
 - **Run directory**: `--run-dir <path>`, an absolute path. Without it, take `.bdk/runs/<change>` under the path `git rev-parse --show-toplevel` prints. Run `mkdir -p <run dir>/execute`. Pass this absolute path to every worker.
-- **Settings** from the configuration above, with their defaults: `execution.max-parallel` (10), `policy.budgets.part-attempts` (3), `policy.escalation.model` (`opus`), and `models.implementer` and `models.conformer` when set.
+- **Settings** from the configuration above, with their defaults: `execution.max-parallel` (10), `policy.budgets.part-attempts` (3), `policy.escalation.model` (`opus`), and `policy.escalation.effort`, `models.implementer.model`, `models.implementer.effort`, `models.conformer.model` and `models.conformer.effort` when set.
 - **State**: the state file when it exists. Its schema:
 
   ```json
@@ -76,12 +76,13 @@ Split the wave's parts into batches of at most `execution.max-parallel`, in asce
 
 1. **Implement.** For each part of the batch that needs an implementer run (every part at first; later the parts to retry), add 1 to its `attempts` and write the state. Then start, in one message, one foreground Agent call per part:
    - `subagent_type: "bdk:implementer"`, prompt `Run the skill bdk:implement-part with the arguments: <change> <id> --run-dir <run dir>`, plus ` --workdir <run dir>/worktrees/<id>` for a worktree part;
-   - `model`: `policy.escalation.model` when this is the part's last run within this run's budget; else `models.implementer` when set; else no `model`.
+   - `model`: `policy.escalation.model` when this is the part's last run within this run's budget; else `models.implementer.model` when set; else no `model`.
+   - `effort`: on the part's last run, `policy.escalation.effort` when set, else `models.implementer.effort` when set; on an earlier run, `models.implementer.effort` when set; else no `effort`.
 2. **Read** each part's `<run dir>/execute/part-<id>.md`, its first line and, for a blocker, its `## Blocker` section:
    - `Status: done`: the part goes to conform.
    - `Status: blocker` with `Kind: plan-defect` or `Kind: environment`: mark the part `blocked` at once, with the kind and the evidence as `reason`. A retry cannot fix a plan or install a tool.
    - `Status: blocker` with `Kind: other`, or no report: retry the part while its budget lasts; when spent, mark it `blocked` with the last reason.
-3. **Conform.** Start, in one message, one foreground Agent call per part that goes to conform: `subagent_type: "bdk:conformer"`, prompt `Run the skill bdk:conform-part with the arguments: <change> <id> --run-dir <run dir>` (plus ` --workdir <run dir>/worktrees/<id>` for a worktree part), and `model` `models.conformer` when set.
+3. **Conform.** Start, in one message, one foreground Agent call per part that goes to conform: `subagent_type: "bdk:conformer"`, prompt `Run the skill bdk:conform-part with the arguments: <change> <id> --run-dir <run dir>` (plus ` --workdir <run dir>/worktrees/<id>` for a worktree part), and `model` `models.conformer.model` and `effort` `models.conformer.effort`, each when set.
 4. **Read** each `<run dir>/execute/conform-<id>.md`:
    - `Verdict: PASS`: commit the part (below), then mark it `done`.
    - `Verdict: FAIL`, or no report: retry the part while its budget lasts (the implementer reads the failed report); when spent, mark it `blocked` with the `Left` items naming tasks, or the red check, as `reason`.
@@ -99,9 +100,9 @@ For each `done` worktree part of the wave, in ascending order:
 
 1. `git merge --no-ff --no-edit bdk/<change>/part-<id>`.
 2. When it succeeds: `git worktree remove <run dir>/worktrees/<id>`, then `git branch -d bdk/<change>/part-<id>`.
-3. When it stops on conflicts: start one foreground Agent call, `subagent_type: "bdk:implementer"`, prompt `Run the skill bdk:resolve-conflict with the arguments: <change> <id> --run-dir <run dir>`, `model` `models.implementer` when set. Read `<run dir>/execute/merge-<id>.md`.
+3. When it stops on conflicts: start one foreground Agent call, `subagent_type: "bdk:implementer"`, prompt `Run the skill bdk:resolve-conflict with the arguments: <change> <id> --run-dir <run dir>`, `model` `models.implementer.model` and `effort` `models.implementer.effort`, each when set. Read `<run dir>/execute/merge-<id>.md`.
    - `Status: done`, `git diff --name-only --diff-filter=U` prints nothing, and `git grep -n -e "^<<<<<<< " -e "^>>>>>>> " -- <resolved files>` finds nothing: `git add -- <resolved files>`, then `git commit --no-edit`, then remove the worktree and the branch as in 2.
-   - Otherwise run `resolve-conflict` once more with `model` `policy.escalation.model` and check again. When it still fails: `git merge --abort`, keep the part's worktree and branch, and mark the part `blocked` with the reason `merge conflict` and the report's evidence.
+   - Otherwise run `resolve-conflict` once more with `model` `policy.escalation.model` and `effort` `policy.escalation.effort` (else `models.implementer.effort`, when set) and check again. When it still fails: `git merge --abort`, keep the part's worktree and branch, and mark the part `blocked` with the reason `merge conflict` and the report's evidence.
 
 Write the state. Done when every `done` part of the wave is merged into the Change branch, or blocked.
 

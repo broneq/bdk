@@ -112,18 +112,18 @@ pnpm --filter @bdk/bdk run eval --allow-tools Write "Bash(*/bin/bdk *)" "Bash(np
 pnpm --filter @bdk/bdk run eval --ablation none --tag orchestrator --allow-tools Write Edit SendMessage "Bash(*/bin/bdk *)" "Bash(mkdir -p *)" "Bash(cd *)" "Bash(git *)" "Bash(npx -y lavish-axi *)" --case 'auto-review-*'
 ```
 
-The design-block cases (`explore-*`, `design-draft-*`, `verify-design-*`) start from the fixtures `ledger-proposal.sh`, `ledger-explored.sh` and `ledger-designed.sh`, and need the `bdk` launcher, OpenSpec, `git` and the Lavish CLI. `design-draft-lavish` and `design-draft-ask` put a `lavish-axi` stub into the workspace's `node_modules`, which `npx -y lavish-axi` runs before any installed one: the first opens every page and answers the poll, the second fails as a session without a browser does. `AskUserQuestion` is not available in a run, so `design-draft-ask` grades the questions in the reply.
+The design-block cases (`explore-*`, `design-draft-*`, `verify-design-*`) start from the fixtures `ledger-proposal.sh`, `ledger-explored.sh` and `ledger-designed.sh`, and need the `bdk` launcher, OpenSpec, `git`, the Lavish CLI, and `SendMessage` and `ToolSearch`, with which the main thread continues the `bdk:designer` agent after its questions. `design-draft-lavish` and `design-draft-ask` put a `lavish-axi` stub into the workspace's `node_modules`, which `npx -y lavish-axi` runs before any installed one: the first opens every page and answers the poll, the second fails as a session without a browser does. `AskUserQuestion` is not available in a run, so `design-draft-ask` grades the questions in the reply.
 
 ```bash
 for c in "explore-*" "design-draft-*" "verify-design-*"; do
-  pnpm --filter @bdk/bdk run eval --allow-tools Write Edit "Bash(*/bin/bdk *)" "Bash(openspec *)" "Bash(npx -y lavish-axi *)" "Bash(git *)" --case "$c"
+  pnpm --filter @bdk/bdk run eval --allow-tools Write Edit SendMessage ToolSearch "Bash(*/bin/bdk *)" "Bash(openspec *)" "Bash(npx -y lavish-axi *)" "Bash(git *)" --case "$c"
 done
 ```
 
 The `design-*` cases are the orchestrator cases of `/bdk:design` (`tags: [orchestrator]`, one arm). They start from the same ledger fixtures, run the design blocks inside one run (a `bdk:explorer` and an opus `bdk:verifier` agent), and need the grants of the design blocks:
 
 ```bash
-pnpm --filter @bdk/bdk run eval --ablation none --tag orchestrator --allow-tools Write Edit "Bash(*/bin/bdk *)" "Bash(openspec *)" "Bash(npx -y lavish-axi *)" "Bash(git *)" --case 'design-*'
+pnpm --filter @bdk/bdk run eval --ablation none --tag orchestrator --allow-tools Write Edit SendMessage ToolSearch "Bash(*/bin/bdk *)" "Bash(openspec *)" "Bash(npx -y lavish-axi *)" "Bash(git *)" --case 'design-*'
 ```
 
 `--case 'design-*'` alone also matches the `design-draft-*` block cases; `--tag orchestrator` keeps only the orchestrator ones.
@@ -163,10 +163,10 @@ pnpm --filter @bdk/bdk run eval --trust-plugin --allow-tools Write Edit Bash --c
 pnpm --filter @bdk/bdk run eval --trust-plugin --ablation none --tag orchestrator --allow-tools Write Edit Bash --case 'debug-*'
 ```
 
-The `*-model*` cases check that `models.<role>` reaches the `Agent` call of every stage that starts the role's agent (spec `bdk-cli/config`, "Every agent is a models role"): `design-models-per-role`, `plan-models-verifier` and `close-models-verifier` (orchestrators) and `explore-model-set`, `verify-design-model-set` and `spec-conformance-model-set` (blocks typed in the main thread). Each reuses the fixture of its stage's cases and sets `models.explorer` or `models.verifier` to `sonnet` in the ignored `.bdk/settings.local.yaml`; a `tool_used` grader on `Agent` requires both the `subagent_type` and `"model": "sonnet"` in the call's input, in any order. They ask whether the call carries the model, not whether the block changes the outcome, so one arm and one run are enough. The grants are those of the `close-*` cases, which cover the others (on a Mac, see the `git` entry of "Host limits"):
+The `*-model*` cases check that `models.<role>` reaches the `Agent` call of every stage that starts the role's agent (spec `bdk-cli/config`, "Every agent is a models role"): `design-models-per-role`, `plan-models-verifier` and `close-models-verifier` (orchestrators) and `explore-model-set`, `verify-design-model-set` and `spec-conformance-model-set` (blocks typed in the main thread) set `models.explorer.model` or `models.verifier.model` to `sonnet`; `design-draft-model-effort` and `implement-part-model-effort` (blocks) and `plan-model-effort` (orchestrator) set `model` and `effort` of `designer`, `implementer`, `planner` and `verifier`; `execute-escalation-model-effort` (orchestrator, on the `execute-*` fixture) sets `policy.budgets.part-attempts: 1`, so each part's only implementer run is the escalated one on `policy.escalation.model` and `policy.escalation.effort`, and `models.conformer.effort`. Each reuses the fixture of its stage's cases and writes the settings into the ignored `.bdk/settings.local.yaml`; a `tool_used` grader on `Agent` requires the `subagent_type` and the configured `"model"` and `"effort"` in the call's input, in any order. They ask whether the call carries the model, not whether the block changes the outcome, so one arm and one run are enough. The grants are those of the `close-*` cases, which cover the others (on a Mac, see the `git` entry of "Host limits"):
 
 ```bash
-PATH=".git/bdk-eval/bin:$PATH" pnpm --filter @bdk/bdk run eval --ablation none --runs 1 --allow-tools Write Edit "Bash(*/bin/bdk *)" "Bash(openspec *)" "Bash(gh *)" "Bash(git *)" "Bash(npx -y lavish-axi *)" --case '*-model*'
+PATH=".git/bdk-eval/bin:$PATH" pnpm --filter @bdk/bdk run eval --ablation none --runs 1 --allow-tools Write Edit SendMessage ToolSearch "Bash(*/bin/bdk *)" "Bash(openspec *)" "Bash(gh *)" "Bash(git *)" "Bash(npx -y lavish-axi *)" "Bash(mkdir -p *)" "Bash(cd *)" --case '*-model*'
 ```
 
 A grader on the order of Bash calls is a `regex` on the trace, not `tool_order`: the free check loads cases with the grants `Write Edit`, under which a `tool_order` naming Bash cannot pass.

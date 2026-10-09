@@ -13,6 +13,8 @@ flowchart LR
   O["orchestrators<br/>(main thread)"]
   O -->|"Skill"| MB["main-thread blocks"]
   O -->|"Agent"| EXP["explorer, haiku"]
+  O -->|"Agent"| DES["designer, session model"]
+  O -->|"Agent"| PLN["planner, session model"]
   O -->|"Agent"| VER["verifier, opus"]
   O -->|"Agent, background"| EW["lead: /bdk:execute-waves"]
   O -->|"Agent, background"| RR["lead: /bdk:review-round"]
@@ -35,9 +37,9 @@ flowchart LR
 | Block | Role | Runs on (default model) | Writes | Reads |
 |---|---|---|---|---|
 | `/bdk:explore` | author (map) | `bdk:explorer` (haiku) | `R/design/explore.md` | proposal, code |
-| `/bdk:design-draft` | author | main thread | `C/specs/**/spec.md`, `C/design.md` | proposal, explore map, last `verify-N.md` |
+| `/bdk:design-draft` | author | `bdk:designer` (session's model) | `C/specs/**/spec.md`, `C/design.md` | proposal, explore map, last `verify-N.md` |
 | `/bdk:verify-design` | verifier | `bdk:verifier` (opus) | `R/design/verify-N.md` | proposal, specs, design, explore map, code |
-| `/bdk:plan-draft` | author | main thread | `C/plan/parts/NN.md` | proposal, specs, design, code, last `verify-N.md` |
+| `/bdk:plan-draft` | author | `bdk:planner` (session's model) | `C/plan/parts/NN.md` | proposal, specs, design, code, last `verify-N.md` |
 | `/bdk:verify-plan` | verifier | `bdk:verifier` (opus) | `R/plan/verify-N.md` | parts, specs, design, code |
 | `/bdk:execute-waves` | lead | `bdk:lead` (sonnet) | `R/state.json`, `R/execute/result.md`, commits, merges | parts, worker reports |
 | `/bdk:implement-part` | author (code) | `bdk:implementer` (sonnet) | product code and tests, `R/execute/part-NN.md` | part, specs, design, rules, `CLAUDE.md` |
@@ -55,7 +57,7 @@ flowchart LR
 | `/bdk:commit` | tool | main thread | git commits | diff, commit convention |
 | `/bdk:adr` | tool | main thread | one ADR file | design decision or text |
 
-The model of each agent can be overridden with `models.<role>`, where the role is the agent's name (`lead`, `explorer`, `verifier`, `implementer`, `conformer`, `reviewer`, `integration-reviewer`, `e2e-tester`, `judge`); every stage that starts the agent passes it, so `models.verifier` sets the verifier of `/bdk:design`, `/bdk:plan` and `/bdk:close` alike. See [CLI, configuration and hooks](./cli-config-hooks.md#configuration-bdk-settings-yaml).
+The model and effort of each agent can be overridden with `models.<role>.model` and `models.<role>.effort`, where the role is the agent's name (`lead`, `explorer`, `designer`, `planner`, `verifier`, `implementer`, `conformer`, `reviewer`, `integration-reviewer`, `e2e-tester`, `judge`); every stage that starts the agent passes them, so `models.verifier` sets the verifier of `/bdk:design`, `/bdk:plan` and `/bdk:close` alike. See [CLI, configuration and hooks](./cli-config-hooks.md#configuration-bdk-settings-yaml).
 
 ## Sources
 

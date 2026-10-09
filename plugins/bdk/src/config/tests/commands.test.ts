@@ -29,7 +29,7 @@ const CONFIGURED = { [PROJECT]: "languages: [typescript]\n", [OPENSPEC]: "" };
 describe("bdk config show", () => {
   it("prints one leaf per line with its origin after the layer line", async () => {
     const { code, stdout, stderr } = await bdk(
-      { ...CONFIGURED, [LOCAL]: "models:\n  implementer: sonnet\n" },
+      { ...CONFIGURED, [LOCAL]: "models:\n  implementer:\n    model: sonnet\n" },
       "config",
       "show",
     );
@@ -39,7 +39,7 @@ describe("bdk config show", () => {
       `# BDK configuration: root ${ROOT}; layers project .bdk/settings.yaml, local .bdk/settings.local.yaml`,
     );
     expect(lines).toContain('languages: ["typescript"]  # project');
-    expect(lines).toContain('models.implementer: "sonnet"  # local');
+    expect(lines).toContain('models.implementer.model: "sonnet"  # local');
     expect(lines).toContain('execution.lead: "background"  # default');
     expect(lines).toContain("execution.max-parallel: 10  # default");
   });

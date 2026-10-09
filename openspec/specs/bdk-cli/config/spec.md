@@ -54,7 +54,7 @@ Layers SHALL merge key by key: mappings merge deeply; an array whose items are a
 
 ### Requirement: Settings keys
 
-The configuration SHALL accept exactly these keys; any other key at any level SHALL be a problem naming its full dotted key. A key segment, a `models` role, a `steps` orchestrator and an `id` SHALL be kebab-case (`^[a-z0-9][a-z0-9-]*$`). An item of an array merged by `id` SHALL be addressed by its `id` as a key segment (`tools.test.unit.scoped`) in every output and argument.
+The configuration SHALL accept exactly these keys; any other key at any level SHALL be a problem naming its full dotted key. A key segment, a `steps` orchestrator and an `id` SHALL be kebab-case (`^[a-z0-9][a-z0-9-]*$`). A `models` role SHALL be one of the roles of "Every agent is a models role"; any other role SHALL be an unknown key with the closest role as a suggestion. An item of an array merged by `id` SHALL be addressed by its `id` as a key segment (`tools.test.unit.scoped`) in every output and argument.
 
 | Key                                                  | Type                                                                                                         | Default      |
 | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------ |
@@ -62,12 +62,13 @@ The configuration SHALL accept exactly these keys; any other key at any level SH
 | `tools.e2e`                                          | items by `id`: `start` (command), `ready` (URL or command), `driver` (`cli`, `http`, `browser`), `env` (map of variable name to string, optional), `browser` (`playwright` or `chrome-devtools-mcp`, optional; read only for `driver: browser`, where an absent field means `playwright`); all but `env` and `browser` required | `[]`         |
 | `languages`                                          | list of kebab-case names                                                                                     | `[]`         |
 | `rules.disabled`                                     | list of rule names                                                                                           | `[]`         |
-| `models.<role>`                                      | model name or alias                                                                                          | none set     |
+| `models.<role>.model`, `models.<role>.effort`       | mapping per role, both fields optional: `model` (model name or alias the role's agent runs on), `effort` (`low`, `medium`, `high`, `xhigh` or `max`); a string value for a role is a problem naming the `model` field | none set     |
 | `policy.gates.design`, `policy.gates.review`         | `manual` or `auto`                                                                                           | `manual`     |
 | `policy.questions`                                   | `decide-and-record` or `stop`                                                                                | `stop`       |
 | `policy.budgets.part-attempts`, `policy.budgets.review-rounds` | integer, at least 1                                                                                 | `3`, `3`     |
 | `policy.budgets.verifier`                           | integer, at least 1: the most verifier passes one design or plan orchestrator run spends                     | `3`          |
 | `policy.escalation.model`                            | model a blocked part is retried with                                                                         | `opus`       |
+| `policy.escalation.effort`                           | `low`, `medium`, `high`, `xhigh` or `max`: effort of the escalated implementer run; when absent the run takes `models.implementer.effort` | none set     |
 | `plan.part.max-tasks`, `plan.part.max-files`, `plan.part.max-bytes` | integer, at least 1                                                                           | `5`, `10`, `8192` |
 | `steps.<orchestrator>`                               | items by `id`: `enabled` (boolean, optional), `use` (project skill or agent replacing the block, optional)    | none set     |
 | `execution.lead`                                     | `background` or `foreground`                                                                                 | `background` |
@@ -116,6 +117,31 @@ A missing required field, a value of the wrong type or outside its allowed value
 - **WHEN** no layer sets `execution.max-parallel`, and later the local layer sets `execution.max-parallel: 0`
 - **THEN** `bdk config show execution.max-parallel` first prints 10 with origin `default`, then `bdk config check` reports `execution.max-parallel` and that it must be at least 1, and exits 1
 
+#### Scenario: Model and effort of a role
+
+- **WHEN** `.bdk/settings.yaml` sets `models.implementer: { model: opus, effort: high }` and `policy.escalation.effort: max`
+- **THEN** `bdk config check` exits 0, and `bdk config show models` prints `models.implementer.model: "opus"  # project` and `models.implementer.effort: "high"  # project`
+
+#### Scenario: Unknown effort
+
+- **WHEN** `.bdk/settings.yaml` sets `models.planner.effort: extreme`
+- **THEN** `bdk config check` reports `models.planner.effort` with the allowed values `low`, `medium`, `high`, `xhigh` and `max`, and exits 1
+
+#### Scenario: Unknown role
+
+- **WHEN** `.bdk/settings.yaml` sets `models.implementor.model: opus`
+- **THEN** `bdk config check` reports `models.implementor` as an unknown key, suggests `models.implementer`, and exits 1
+
+#### Scenario: Model as a plain string
+
+- **WHEN** `.bdk/settings.yaml` sets `models.reviewer: sonnet`
+- **THEN** `bdk config check` reports `models.reviewer` and that it must be a mapping with `model` and `effort`, and exits 1
+
+#### Scenario: Set the effort of a role
+
+- **WHEN** `bdk config set models.designer.effort xhigh` runs in a configured project
+- **THEN** `.bdk/settings.yaml` holds `models.designer.effort: xhigh` and the exit code is 0
+
 ### Requirement: Configured project
 
 A project SHALL count as configured when its project layer file `.bdk/settings.yaml` exists and its root holds an `openspec/` directory. Only `/bdk:setup` is meant to run without a configuration; this command group SHALL still run in an unconfigured project, and `set` SHALL create a missing layer file and its directory.
@@ -138,8 +164,8 @@ Only usage, environment and internal errors of the CLI frame SHALL give another 
 
 #### Scenario: Values with their origin layer
 
-- **WHEN** the project layer sets `languages: [typescript]` and the local layer sets `models.implementer: sonnet`
-- **THEN** `bdk config show` prints `languages: ["typescript"]  # project`, `models.implementer: "sonnet"  # local` and `execution.lead: "background"  # default`, and exits 0
+- **WHEN** the project layer sets `languages: [typescript]` and the local layer sets `models.implementer.model: sonnet`
+- **THEN** `bdk config show` prints `languages: ["typescript"]  # project`, `models.implementer.model: "sonnet"  # local` and `execution.lead: "background"  # default`, and exits 0
 
 #### Scenario: Not configured
 
@@ -235,27 +261,37 @@ The settings schema SHALL hold a one-sentence description for every key of the S
 
 ### Requirement: Every agent is a models role
 
-Every agent the `bdk` plugin ships (`plugins/bdk/agents/<name>.md`) SHALL be a role of `models`, named by the agent's file name: `lead`, `explorer`, `verifier`, `implementer`, `conformer`, `reviewer`, `integration-reviewer`, `e2e-tester` and `judge`. The description of `models` in the settings schema SHALL name every one of them. Every skill of the plugin that starts one of these agents SHALL pass the `Agent` call's `model` set to `models.<agent>` when the configuration sets it, and no `model` when it does not, so the agent runs on the model of its frontmatter; the only exception SHALL be the last implementer run of a plan part, which runs on `policy.escalation.model` (spec `bdk-execute`). A workspace test SHALL fail and name the agent when an agent file is not a role of the `models` description, and SHALL fail and name the skill when a paragraph of a `SKILL.md` that starts `subagent_type: "bdk:<agent>"` does not name `models.<agent>`.
+Every agent the `bdk` plugin ships (`plugins/bdk/agents/<name>.md`) SHALL be a role of `models`, named by the agent's file name: `lead`, `explorer`, `verifier`, `implementer`, `conformer`, `reviewer`, `integration-reviewer`, `e2e-tester`, `judge`, `designer` and `planner`; the schema SHALL accept exactly these roles. The description of `models` in the settings schema SHALL name every one of them. Every skill of the plugin that starts one of these agents SHALL set the `Agent` call's `model` to `models.<agent>.model` and its `effort` to `models.<agent>.effort`, each only when the configuration sets it, and leave the field out when it does not, so the agent runs on the model of its frontmatter (the session's model for `model: inherit`) and at the session's effort level; the only exception SHALL be the last implementer run of a plan part and the second `resolve-conflict` run, which run on `policy.escalation.model` and `policy.escalation.effort` (spec `bdk-execute`). A workspace test SHALL fail and name the agent when an agent file is not a role of the `models` description or of the schema, and SHALL fail and name the skill when a paragraph of a `SKILL.md` that starts `subagent_type: "bdk:<agent>"` does not name `models.<agent>`.
 
 #### Scenario: Verifier model in every stage
 
-- **WHEN** the configuration sets `models.verifier: sonnet` and `/bdk:design`, `/bdk:plan` and `/bdk:close` start their verifier
+- **WHEN** the configuration sets `models.verifier.model: sonnet` and `/bdk:design`, `/bdk:plan` and `/bdk:close` start their verifier
 - **THEN** each `Agent` call with `subagent_type: "bdk:verifier"` has `model` `sonnet`
 
 #### Scenario: Explorer model
 
-- **WHEN** the configuration sets `models.explorer: sonnet` and `/bdk:design` maps the code of a Change
+- **WHEN** the configuration sets `models.explorer.model: sonnet` and `/bdk:design` maps the code of a Change
 - **THEN** the `Agent` call with `subagent_type: "bdk:explorer"` has `model` `sonnet`
 
 #### Scenario: Role not set
 
 - **WHEN** the configuration sets no `models.explorer`
-- **THEN** the `Agent` call with `subagent_type: "bdk:explorer"` has no `model`, and the explorer runs on `haiku`, the model of its frontmatter
+- **THEN** the `Agent` call with `subagent_type: "bdk:explorer"` has neither `model` nor `effort`, and the explorer runs on `haiku`, the model of its frontmatter
+
+#### Scenario: Implementer with model and effort
+
+- **WHEN** the configuration sets `models.implementer.model: sonnet` and `models.implementer.effort: low`, and a user types `/bdk:implement-part add-csv-export 01`
+- **THEN** the `Agent` call that starts `bdk:implementer` has `model` `sonnet` and `effort` `low`
+
+#### Scenario: Effort without a model
+
+- **WHEN** the configuration sets only `models.reviewer.effort: high`
+- **THEN** every `Agent` call that starts `bdk:reviewer` has `effort` `high` and no `model`
 
 #### Scenario: New agent without a role
 
-- **WHEN** a contributor adds `plugins/bdk/agents/planner.md` and leaves the `models` description unchanged
-- **THEN** `pnpm check` fails and names `planner`
+- **WHEN** a contributor adds `plugins/bdk/agents/stylist.md` and leaves the `models` description unchanged
+- **THEN** `pnpm check` fails and names `stylist`
 
 #### Scenario: Agent call without its model
 

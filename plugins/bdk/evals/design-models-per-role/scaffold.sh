@@ -4,8 +4,10 @@ set -euo pipefail
 bash "$(dirname "$0")/../fixtures/ledger-proposal.sh"
 cat > .bdk/settings.local.yaml <<'YAML'
 models:
-  explorer: sonnet
-  verifier: sonnet
+  explorer:
+    model: sonnet
+  verifier:
+    model: sonnet
 policy:
   questions: decide-and-record
   gates:

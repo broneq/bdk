@@ -43,7 +43,7 @@ Three blocks and a gate. The verifier is one agent continued with `SendMessage` 
 ```mermaid
 flowchart TB
   EX["/bdk:explore<br/>Agent bdk:explorer, haiku"] -->|"R/design/explore.md"| DR
-  DR["/bdk:design-draft<br/>Skill, main thread"] -->|"C/specs, C/design.md"| VER
+  DR["/bdk:design-draft<br/>bdk:designer"] -->|"C/specs, C/design.md"| VER
   DR -.->|"open decisions"| Q(["questions to the user<br/>policy.questions"])
   VER["/bdk:verify-design<br/>Agent bdk:verifier, opus"] -->|"R/design/verify-N.md"| V{{"verdict"}}
   V -->|"FAIL, budget left"| FIX["/bdk:design-draft fixes<br/>Must address"]
@@ -70,7 +70,7 @@ The verifier budget is `policy.budgets.verifier` (default 3) passes per run. On 
 ```mermaid
 flowchart TB
   L0{{"design finished?"}} -->|"no"| LS0["stop: /bdk:design first"]
-  L0 -->|"yes"| DRAFT["/bdk:plan-draft<br/>Skill, main thread"]
+  L0 -->|"yes"| DRAFT["/bdk:plan-draft<br/>bdk:planner"]
   DRAFT -->|"C/plan/parts/NN.md"| CHECK["bdk plan check<br/>waves, sizes, overlaps"]
   DRAFT -.->|"a gap of the design"| LS1["stop: answer it<br/>in /bdk:design"]
   CHECK -->|"exit 1, first time"| DRAFT
@@ -136,7 +136,7 @@ flowchart TB
   RI -->|"other, or no report"| RETRY
   RI -->|"done"| CONF["Agent bdk:conformer<br/>/bdk:conform-part<br/>writes R/execute/conform-NN.md"]
   CONF -->|"FAIL or no report"| RETRY{{"attempts left?<br/>policy.budgets.part-attempts,<br/>default 3"}}
-  RETRY -->|"yes (the last one on<br/>policy.escalation.model)"| IMP
+  RETRY -->|"yes (the last one on<br/>policy.escalation.model<br/>and .effort)"| IMP
   RETRY -->|"no"| PB
   CONF -->|"PASS"| COM["lead commits the part,<br/>state.json: done"]
 ```
@@ -149,7 +149,7 @@ flowchart TB
   MER -->|"clean"| MC["remove the worktree<br/>and the part branch"]
   MER -->|"conflict"| RC["Agent bdk:implementer<br/>/bdk:resolve-conflict<br/>writes R/execute/merge-NN.md"]
   RC -->|"resolved, no markers"| CM["lead: git add, git commit"] --> MC
-  RC -->|"failed"| RC2["/bdk:resolve-conflict again<br/>on policy.escalation.model"]
+  RC -->|"failed"| RC2["/bdk:resolve-conflict again<br/>on policy.escalation.model<br/>and .effort"]
   RC2 -->|"resolved"| CM
   RC2 -->|"failed"| AB["git merge --abort<br/>part blocked, worktree kept"]
 ```
