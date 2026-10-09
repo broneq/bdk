@@ -147,6 +147,8 @@ The suite SHALL hold the block cases `review-group-logic-bug`, `review-integrati
 
 The suite SHALL also hold the block cases `review-group-instruction` and `judge-instruction`, tagged `block`, built from the shared fixture `monthly-report-instructions`: the `monthly-report` fixture with a `CLAUDE.md` on `main` holding an instruction that part 01 breaks. `review-group-instruction` SHALL grade a `review-group` finding citing `CLAUDE.md`; `judge-instruction` SHALL grade the level `should-fix` for a finding that cites the broken instruction and `not-a-problem` for a finding that cites an instruction `CLAUDE.md` does not hold.
 
+The suite SHALL also hold the block case `judge-previous-repeat`, tagged `block`, on the `monthly-report` fixture with a log holding a seeded `previous-review` finding of the parse bug and, after it, a `review-group` finding of the same bug worded differently; it SHALL grade that the seeded finding is `blocker` and never `not-a-problem`, and that the later finding is `not-a-problem` with a reason naming the seeded finding's id.
+
 #### Scenario: Effect over no plugin
 
 - **WHEN** the three cases run with and without the plugin, with the Bash grants the eval README names for them
@@ -156,6 +158,11 @@ The suite SHALL also hold the block cases `review-group-instruction` and `judge-
 
 - **WHEN** `review-group-instruction` and `judge-instruction` run with the plugin, with the Bash grants the eval README names for the review cases
 - **THEN** `review-group-instruction` passes its grader on the finding citing `CLAUDE.md`, and `judge-instruction` passes its `should-fix` and `not-a-problem` graders
+
+#### Scenario: Earlier of two repeating findings kept
+
+- **WHEN** `judge-previous-repeat` runs with the plugin, with the Bash grants the eval README names for the review cases
+- **THEN** the latest level of the seeded finding is `blocker`, and the later finding's latest level is `not-a-problem` with a reason naming the seeded finding's id
 
 ### Requirement: Review of another checkout and intent
 
