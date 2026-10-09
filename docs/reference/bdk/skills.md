@@ -108,7 +108,7 @@ Runs the execute stage of an OpenSpec Change - starts one bdk:lead agent that bu
 
 Started by: other BDK skills only. It is not in the `/` menu.
 
-The execute stage of an OpenSpec Change, run by the bdk:lead agent that /bdk:execute starts (and /bdk:auto-review for the fix parts of a review round) - takes the waves of the plan parts from bdk plan check, runs each part through implement-part and conform-part in parallel batches (worktree parts in their own git worktrees), retries and escalates within the budget, commits each part, merges the worktrees in part order with resolve-conflict on a conflict, and writes state.json and execute/result.md. Not for users: /bdk:execute is the command.
+The execute stage of an OpenSpec Change, run by the bdk:lead agent that /bdk:execute starts (and /bdk:auto-review for the fix parts of a review round) - takes the waves of the plan parts from bdk plan check, runs each part through implement-part and conform-part in parallel batches (parts that share a wave in their own git worktrees, a part alone in its wave in the main checkout), retries and escalates within the budget, commits each part, merges the worktrees in part order with resolve-conflict on a conflict, and writes state.json and execute/result.md. Not for users: /bdk:execute is the command.
 
 ## `/bdk:explore` {#explore}
 

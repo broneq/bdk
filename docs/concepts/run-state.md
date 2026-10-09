@@ -72,7 +72,7 @@ openspec/specs/<capability>/spec.md   main specs: openspec archive merges the de
 | `execute/part-NN.md` | `bdk:implementer` | the lead, `/bdk:conform-part`, the implementer's retry | what was built, the checks, a blocker with its evidence | the conformer refuses the part; a retry starts without the hint |
 | `execute/conform-NN.md` | `bdk:conformer` | the lead (commits only on `PASS`), the implementer's retry | the gate before a part's commit | the part is conformed again |
 | `execute/result.md` | the execute lead | `/bdk:execute`, `/bdk:debug` | the stage's outcome and its blockers | `/bdk:execute` resumes from `state.json` |
-| `worktrees/NN/` | the execute lead | the lead on a restart (it reuses the work in it) | an isolated checkout per parallel part; removed after the merge, kept for a blocked part | the part's earlier work in it is lost |
+| `worktrees/NN/` | the execute lead | the lead on a restart (it reuses the work in it) | an isolated checkout per part of a wave with two or more parts to run (a part alone in its wave runs in the main checkout); removed after the merge, kept for a blocked part | the part's earlier work in it is lost |
 | `checks/<id>.json`, `checks/<id>/` | `bdk check run` | implementers (the output of a red check), `/bdk:plan-fixes`, the round summary | the record of every test, lint and build run, with its output | nothing reads it to decide |
 | `review/round-N/e2e/` (`e2e/` when run alone): `<scenario>.md`, screenshots and video, `verdict.md` | `bdk:e2e-tester` | the review round, `/bdk:spec-conformance`, `/bdk:close` (the verdict goes into the PR body) | the evidence of each scenario on the running product | spec conformance has no E2E evidence |
 | `review/round-N/groups.json` | `bdk git groups` | the round's reviewers, and the next round, which reviews only the commits after this round's head | the reviewed range and its groups | the next round falls back to the whole branch |
@@ -208,6 +208,7 @@ flowchart TB
 | You want a review round again from scratch | Delete `review/round-N/review.md` of the last round, or the whole round directory, and run `/bdk:auto-review <change>`. |
 | `/bdk:run` was given a new queue while one is unfinished | It refuses and shows the queue: finish it with `/bdk:run`, or delete `run.json` to drop it. |
 | A worktree of a blocked part is in the way | Leave it until the part is done: the lead reuses the work in it and removes it after the merge. |
+| A part blocked in the main checkout left uncommitted files | Leave them: the next `/bdk:execute` continues the part from them, as long as every changed path is one of that part's `files`. |
 
 Approve a gate by running its command, not by writing `gate.md` yourself: the file records an approval, it does not grant one.
 
