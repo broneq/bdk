@@ -36,7 +36,7 @@ Run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" rules for --stage plan`, without files (the
 
 Every path, function, type and command a task will name as existing comes from a file you read, exactly as written there. A task never guesses a signature.
 
-When the specs and the design leave open a choice that changes what the product does, and the code does not settle it, do not decide it: name it in the reply as a gap of the design, write no part for it, and stop if nothing can be planned without it. A gap is about behaviour this Change adds or changes; behaviour no requirement of the Change touches (an input or a command it does not name) is not a gap: leave it as the code has it and plan nothing for it. Choices inside the design's frame (a file name, a private helper, the order of tasks) are yours; list them in the reply.
+When the specs and the design leave open a choice that changes what the product does, and the code does not settle it, do not decide it: name it in the reply as a gap of the design, write no part for it, and stop if nothing can be planned without it. A gap is about behaviour this Change adds or changes, where the possible answers give the user results that differ in a way they would care about, such as losing or keeping their data. A case a requirement of the Change reaches counts even when no scenario names it: a new option that writes a file reaches the file that already exists, and overwriting it or refusing are two different products, so the user decides, not the plan. Not gaps: ordinary input handling the Change's own error rules settle by analogy (a missing argument or a malformed value gets the nearest defined error; list that as your choice), and behaviour no requirement of the Change touches (an input or a command it does not name at all), which stays as the code has it, with nothing planned for it. Choices inside the design's frame (a file name, a private helper, the order of tasks) are yours; list them in the reply.
 
 Done when every scenario is listed, every symbol you will name is confirmed in the code, and you know the plan rules.
 
@@ -99,4 +99,5 @@ Briefly:
 - the waves from `bdk plan check` (`1: 01`, `2: 02 03`) and the number of waves;
 - that every scenario is owned by one part, or which are not and why;
 - after a fix: the report IDs fixed (`Fixed: M1, M3`);
-- choices you made inside the design's frame, and gaps of the design you did not decide.
+- choices you made inside the design's frame;
+- under the heading `Gaps of the design`, each gap you did not decide, one per line, or `None.` when there is none. A gap you planned around is still a gap: list it, do not call it non-blocking.

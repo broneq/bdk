@@ -84,6 +84,17 @@ function graderTypes(caseDir: string): string[] {
     .map((file) => /^type:\s*(\S+)/m.exec(frontmatter(join(dir, file)))?.[1] ?? "");
 }
 
+/** How many graders of a case are `regex` graders on the trace. */
+function traceRegexes(caseDir: string): number {
+  const dir = join(caseDir, "graders");
+  if (!existsSync(dir)) return 0;
+  return readdirSync(dir)
+    .filter((file) => file.endsWith(".md"))
+    .map((file) => frontmatter(join(dir, file)))
+    .filter((front) => /^type:\s*regex\s*$/m.test(front) && /^target:\s*trace\s*$/m.test(front))
+    .length;
+}
+
 /** The plan/parts directories of the Changes in a workspace, relative to it. */
 function planDirs(dir: string): string[] {
   const changes = join(dir, "openspec", "changes");
@@ -171,9 +182,15 @@ describe("eval suite layout", () => {
   it.each(names.filter((name) => tags(join(EVALS, name)).includes("orchestrator")))(
     "%s grades the order of its blocks and the files it writes",
     (name) => {
-      const types = graderTypes(join(EVALS, name));
+      const dir = join(EVALS, name);
+      const types = graderTypes(dir);
       expect(types).toContain("tool_order");
-      expect(types).toContain("file_exists");
+      if (tags(dir).includes("writes-nothing")) {
+        expect(types).not.toContain("file_exists");
+        expect(traceRegexes(dir)).toBeGreaterThan(0);
+      } else {
+        expect(types).toContain("file_exists");
+      }
     },
   );
 
