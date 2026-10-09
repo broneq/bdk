@@ -108,7 +108,7 @@ Uses the product as a user would to confirm that an OpenSpec Change works - list
 
 Started by: you, or Claude when your request matches the description below.
 
-Runs the execute stage of an OpenSpec Change - starts one bdk:lead agent that builds the verified plan parts in parallel waves (implement-part, conform-part, commits, worktree merges, a wave check after each wave, state.json), waits for its result, and passes the result or a blocker on. Use when a Change has a verified plan and should be built, when asked to "execute", "build" or "implement" a Change or its plan, or when /bdk:run reaches the execute stage.
+Runs the execute stage of an OpenSpec Change - starts one bdk:lead agent that builds every part of the verified plan in parallel waves (implement-part, conform-part, commits, worktree merges, a wave check after each wave, state.json), waits for its result, and passes the result or a blocker on. Use when a whole Change or its whole plan should be built, when asked to "execute", "build" or "implement" a Change or its plan, or when /bdk:run reaches the execute stage. Not for one part (part 01, 02): implement-part builds a single part.
 
 ## `/bdk:execute-waves` {#execute-waves}
 
@@ -132,7 +132,7 @@ Maps the code an OpenSpec Change touches - modules, entry points, data, boundari
 
 Started by: you, or Claude when your request matches the description below.
 
-Implements one plan part of an OpenSpec Change on the bdk:implementer agent - checks the task contracts first and stops on a plan defect, writes a test per acceptance scenario and sees it red, builds the tasks inside the part's files, runs the part checks until green - and writes execute/part-NN.md. Use when asked to implement, build or code a plan part (01, 02) of a Change, or when the execute lead runs a part.
+Implements one plan part of an OpenSpec Change on the bdk:implementer agent - checks the task contracts first and stops on a plan defect, writes a test per acceptance scenario and sees it red, builds the tasks inside the part's files, runs the part checks until green - and writes execute/part-NN.md. Use when asked to implement, build or code one plan part (part 01, 02) of a Change, or when the execute lead runs a part. Not for the whole plan: /bdk:execute builds every part.
 
 ## `/bdk:judge` {#judge}
 

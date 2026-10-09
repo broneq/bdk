@@ -1,6 +1,6 @@
 ---
 name: implement-part
-description: 'Implements one plan part of an OpenSpec Change on the bdk:implementer agent - checks the task contracts first and stops on a plan defect, writes a test per acceptance scenario and sees it red, builds the tasks inside the part''s files, runs the part checks until green - and writes execute/part-NN.md. Use when asked to implement, build or code a plan part (01, 02) of a Change, or when the execute lead runs a part.'
+description: 'Implements one plan part of an OpenSpec Change on the bdk:implementer agent - checks the task contracts first and stops on a plan defect, writes a test per acceptance scenario and sees it red, builds the tasks inside the part''s files, runs the part checks until green - and writes execute/part-NN.md. Use when asked to implement, build or code one plan part (part 01, 02) of a Change, or when the execute lead runs a part. Not for the whole plan: /bdk:execute builds every part.'
 argument-hint: "[<change>] <part-id> [--run-dir <path>] [--workdir <path>] [--parts <dir>]"
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(mkdir -p *) Bash(cd *) Bash(git -C *) Bash(git status *) Bash(git diff *) Bash(git log *) Bash(git show *) Read Grep Glob Edit Write Agent
 ---
