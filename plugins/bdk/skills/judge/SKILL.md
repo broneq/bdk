@@ -51,9 +51,9 @@ For each finding, once: read the code at its `file` and `line`, and its evidence
 | `blocker` | The product breaks a spec scenario or the intent of the Change; a check is red (source `check`); a security hole; data loss; a regression of existing behaviour |
 | `should-fix` | The product works, but the change breaks a rule or a project instruction, or has a concrete maintenance cost the finding names |
 | `nice-to-have` | An improvement whose absence costs nothing concrete |
-| `not-a-problem` | The failure scenario does not hold; out of the Change's scope; already handled; or it repeats another finding (name that id) |
+| `not-a-problem` | The failure scenario does not hold; out of the Change's scope; already handled; or it repeats an earlier finding of the log (name that id) |
 
-A rule or instruction violation alone is never a `blocker`, however the reviewer worded it: `should-fix` at most. A cited instruction the file does not hold, or that does not bind the finding's file, is `not-a-problem`. A finding that would be a `blocker` but whose scenario does not hold is `not-a-problem`, not a lower level. "Out of the Change's scope" means code or behaviour the Change does not touch; an improvement to what the Change touches that no scenario asks for is `nice-to-have`.
+Of two findings that repeat each other, the later one in the log is the repeat: level it `not-a-problem` naming the earlier id, and judge the earlier one on its own (a caller seeds findings it must keep first). A rule or instruction violation alone is never a `blocker`, however the reviewer worded it: `should-fix` at most. A cited instruction the file does not hold, or that does not bind the finding's file, is `not-a-problem`. A finding that would be a `blocker` but whose scenario does not hold is `not-a-problem`, not a lower level. "Out of the Change's scope" means code or behaviour the Change does not touch; an improvement to what the Change touches that no scenario asks for is `nice-to-have`.
 
 Then set it:
 

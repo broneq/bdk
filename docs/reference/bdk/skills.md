@@ -156,15 +156,15 @@ Plans the fixes of a triaged BDK review round - turns every finding decided fix 
 
 Started by: you, or Claude when your request matches the description below.
 
-Reviews GitHub pull requests with the BDK review blocks - starts one bdk:lead agent per pull request that reviews its head in its own worktree (a reviewer per group, an integration reviewer, a judge), renders one GitHub review each with inline comments and a verdict, shows them, and posts them with gh only after the user confirms. --verify re-checks the previous review instead: which blocker and should-fix findings the author fixed, resolving their threads. Use when asked to review one or several pull requests (URLs or numbers, or "the PR of this branch"), or to verify, re-review or re-check a pull request after the author answered a review.
+Reviews GitHub pull requests with the BDK review blocks - starts one bdk:lead agent per pull request that reviews its head in its own worktree (a reviewer per group, an integration reviewer, a judge), renders one GitHub review each with inline comments and a verdict, shows them, and posts them with gh only after the user confirms. --verify re-checks the previous review: which blocker and should-fix findings the author fixed, resolving their threads, and reviews the commits added since it. Use when asked to review one or several pull requests (URLs or numbers, or "the PR of this branch"), or to verify, re-review or re-check a pull request after the author answered a review.
 
 ## `/bdk:pr-review-round` {#pr-review-round}
 
-`/bdk:pr-review-round <pr-number> --run-dir <absolute path> [--verify]`
+`/bdk:pr-review-round <pr-number> --run-dir <absolute path> [--verify [--since <sha>]]`
 
 Started by: other BDK skills only. It is not in the `/` menu.
 
-The review of a GitHub pull request, run by the bdk:lead agent that /bdk:pr-review starts - fetches the PR head into a detached worktree under the run directory, finds the OpenSpec Change it carries, records the groups with bdk git groups, runs review-group per group in parallel batches, then review-integration, then judge, removes the worktree and writes result.md. With --verify it re-checks the findings of the previous review with the judge instead. Not for users: /bdk:pr-review is the command.
+The review of a GitHub pull request, run by the bdk:lead agent that /bdk:pr-review starts - fetches the PR head into a detached worktree under the run directory, finds the OpenSpec Change it carries, records the groups with bdk git groups, runs review-group per group in parallel batches, then review-integration, then judge, removes the worktree and writes result.md. With --verify it first seeds the findings of the previous review, then reviews the commits since --since (the whole pull request after a force-push), and the judge levels both. Not for users: /bdk:pr-review is the command.
 
 ## `/bdk:propose` {#propose}
 

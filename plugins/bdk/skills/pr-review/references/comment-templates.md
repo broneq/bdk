@@ -48,28 +48,40 @@ Reviewed `{head commit, 7 characters}` against `{base}`{, with the OpenSpec Chan
 
 ## Verify summary
 
-The body of a verify review (`--verify`). It has no inline comments: the threads of the previous review already sit on their lines.
+The body of a verify review (`--verify`). The previous findings get no inline comment, their threads already sit on their lines; each new `blocker` and `should-fix` finding inside the diff is an "Inline comment".
 
 ```markdown
 ## BDK review: verification
 
-Checked the previous review ({previous review URL}, `{previous head commit, 7 characters}`) at `{head commit, 7 characters}`: {fixed count} fixed, {left count} left.
+Checked the previous review ({previous review URL}, `{previous head commit, 7 characters}`) at `{head commit, 7 characters}`: {fixed count} fixed, {left count} left. Reviewed {what was reviewed}: {number of posted new findings} new findings, {new blocker count} blocking.
 
 **Verdict: {Request changes | Approve}**{override note}
 
 **Left**
-- `{path}:{line}` - **[{level now}]** {summary}. {judge's reason}
+- `{path}:{line}` - **[{level now}]** {summary}. {judge's reason}{ (no thread) when it has none}
 
 **Fixed**
 - `{path}:{line}` - {summary}. {judge's reason}{ (thread resolved) when it has a thread}
 
-The commits since `{previous head commit, 7 characters}` were checked only against these findings; a full review of the pull request is `/bdk:pr-review {number}`.
+**New blocking**
+- `{path}:{line}` - {summary} (inline)
+
+**New should fix**
+- `{path}:{line}` - {summary} (inline)
+
+**Outside the diff**
+- `{path}:{line}` - **[{level}]** {summary}. {evidence}
+
+**Nice to have**
+- `{path}:{line}` - {summary}. {evidence}
 
 <!-- bdk-pr-review v3 kind=verify-summary verdict={approve | request-changes} head={full head commit} -->
 ```
 
 - `{override note}`: as in "Summary".
-- A left `blocker` stays under "Left" whatever verdict the user chose.
+- `{what was reviewed}`, one of: "the commits since `{previous head commit, 7 characters}`"; "the whole pull request, as `{previous head commit, 7 characters}` is no longer in its history" ("the whole pull request" when the previous marker named no head); "no new commits" when the previous head is the head commit, without the counts after it.
+- A left finding without a thread ends with ` (no thread)`, so the next verification finds it.
+- A left `blocker` and a new `blocker` stay where they are whatever verdict the user chose.
 
 ## Review payload
 
@@ -86,6 +98,6 @@ Written to `<round dir>/review.json` and posted with `gh api repos/{owner}/{repo
 }
 ```
 
-A verify review has `"comments": []`.
+A verify review carries the inline comments of its new findings, `"comments": []` when it has none.
 
 `event`: `REQUEST_CHANGES` for request changes, `APPROVE` for approve, `COMMENT` for a comment or the user's own pull request. `line` is a line of the head version inside a hunk of the diff.

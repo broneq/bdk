@@ -72,7 +72,7 @@ The specs it passes become the main specs, the living documentation, so a gap he
 ## Debug and PR review
 
 - `/bdk:diagnose-bug` reproduces the bug on the running product before it reads the code for a cause, names a root cause only when the code shows it, and writes the fix as a one-part Change whose spec keeps the reproduction as a scenario. It never changes what a spec promised to fit the code, and says nothing is fixed until the part is built.
-- `/bdk:pr-review` runs the group reviewers, the integration reviewer and the judge on any pull request, with the pull request's title, description and linked issues as the intent; it posts one review after you agree, and fixes nothing. With several pull requests it starts one lead each and asks once for all. `--verify` re-checks the `blocker` and `should-fix` findings of your previous review with the judge alone at the new head, posts one review of what is left and resolves the threads of the fixed findings.
+- `/bdk:pr-review` runs the group reviewers, the integration reviewer and the judge on any pull request, with the pull request's title, description and linked issues as the intent; it posts one review after you agree, and fixes nothing. With several pull requests it starts one lead each and asks once for all. `--verify` re-checks the `blocker` and `should-fix` findings of your previous review at the new head and reviews the commits added since it with the same blocks, posts one review of what is left and what is new, and resolves the threads of the fixed findings.
 
 ## Sources
 

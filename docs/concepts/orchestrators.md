@@ -296,7 +296,7 @@ The workers get `--workdir`, `--change` (or `none`) and `--intent pr.md`. The qu
 
 Several pull requests (`/bdk:pr-review 7 8`) start one lead each in one message, at most `execution.max-parallel`; the reviews are shown when every lead has returned, and one question covers all of them. A lead checks the head with `git ls-remote` and fetches without `FETCH_HEAD`, so leads in one repository do not read each other's head.
 
-`--verify` re-checks your previous review instead of reviewing again:
+`--verify` re-checks your previous review and reviews only the commits added since it:
 
 ```mermaid
 %%{init: {"sequence": {"actorMargin": 12, "width": 96, "noteMargin": 6, "wrap": true}}}%%
@@ -304,23 +304,24 @@ sequenceDiagram
   actor U as user
   participant M as /bdk:pr-review
   participant L as bdk:lead
-  participant J as bdk:judge
+  participant R as reviewers<br/>and judge
   participant G as GitHub
   U->>M: /bdk:pr-review --verify 7
   M->>G: gh api graphql (reviews, threads)
   M->>M: write pr-7/previous.json<br/>(your open blocker and should-fix findings)
-  M-)L: Agent: /bdk:pr-review-round --verify
+  M-)L: Agent: /bdk:pr-review-round<br/>--verify --since (previous head)
   L->>L: worktree at the new head,<br/>bdk findings add each previous finding
-  L->>J: judge the round
-  J-->>L: levels, review.md
+  L->>L: bdk git groups (previous head)<br/>(origin/base after a force-push)
+  L->>R: review the new commits,<br/>then judge the whole round
+  R-->>L: findings, levels, review.md
   L--)M: Status line
-  M->>U: fixed (not-a-problem) and left findings
+  M->>U: fixed (not-a-problem), left<br/>and new findings
   U-->>M: post, other verdict,<br/>comment only, or skip
-  M->>G: gh api POST review.json (no inline comments)
+  M->>G: gh api POST review.json<br/>(inline comments on new findings)
   M->>G: resolveReviewThread for each fixed finding
 ```
 
-A finding the judge now levels `not-a-problem` is fixed; any other level is left, and a left `blocker` requests changes. Only threads you opened are resolved, and only after the review is posted. The commits since the previous review are checked only against its findings; `/bdk:pr-review 7` reviews the whole pull request again.
+The previous findings go into the round's log before any reviewer starts, and the reviewers, the integration reviewer and the judge then run on the range from the previous review's head to the new head; after a force-push (the previous head is no longer an ancestor) they review the whole pull request. The judge levels the previous and the new findings together, and of two findings that repeat each other it keeps the earlier one. A previous finding the judge now levels `not-a-problem` is fixed; any other level is left. New `blocker` and `should-fix` findings inside the diff become inline comments, as in a review. A left or new `blocker` requests changes. Only threads you opened are resolved, and only after the review is posted.
 
 ## `/bdk:debug`
 
