@@ -8,10 +8,11 @@
 |---|---|---|
 | Web app | a UI framework or bundler dependency (`vite`, `next`, `react-scripts`, `@angular/core`, `nuxt`, `@sveltejs/kit`, `astro`), or an `index.html` a dev script serves; a Playwright or Cypress config | `web`, `browser` |
 | HTTP API | a server framework (`express`, `fastify`, `koa`, `hono`, `@nestjs/core`; `fastapi`, `flask`, `django`; Go `net/http` or a router in a `main` package; Spring Boot; Rails) and no UI | `api`, `http` |
+| Claude Code plugin | `.claude-plugin/plugin.json` in the package, also with a `bin/` or `package.json` `bin` | `plugin`, `cli` |
 | CLI | `package.json` `bin`; `[project.scripts]` in `pyproject.toml`; a Go `main` package that serves nothing; `[[bin]]` or `src/main.rs` in `Cargo.toml` | `cli`, `cli` |
 | Library | none of the above: exported code only | no item |
 
-A web UI that serves its own API in one process is one `web` item. A workspace with several products gets one item each, the `id` suffixed with the package name (`web-admin`, `api-billing`).
+Check the rows top down; the first that matches wins. A plugin's `bin/` launcher is not a product of its own: its user runs the plugin's skills and hooks in a Claude Code session. A `.claude-plugin/marketplace.json` alone only lists plugins: classify each plugin directory it names. A web UI that serves its own API in one process is one `web` item. A workspace with several products gets one item each, the `id` suffixed with the package name (`web-admin`, `api-billing`).
 
 ## Web app
 
@@ -22,6 +23,12 @@ A web UI that serves its own API in one process is one `web` item. A workspace w
 
 - `start`: the `start` script, else `dev`, through the package manager; else the framework's run command (`uvicorn <module>:app --port <port>`, `flask --app <module> run --port <port>`, `python manage.py runserver <port>`, `go run .`, `./gradlew bootRun`, `bin/rails server`).
 - `ready`: `http://localhost:<port><path>`. The port from code (`listen(4000)`, `PORT ?? 4000`) or configuration (`.env.example`, `application.properties`), else the framework default (Express and Node servers 3000, FastAPI with uvicorn 8000, Flask 5000, Django 8000, Spring Boot 8080, Rails 3000). The path is a health route the code defines (`/health`, `/healthz`, `/status`, `/ping`), else `/`.
+
+## Claude Code plugin
+
+- `ready`: `claude plugin validate <plugin dir>` (`.` at the repository root), which exits 0 when the manifest, skills, agents and hooks load.
+- `start`: the build command that makes the plugin loadable (`pnpm build` when hooks or `bin/` run built files under `dist/`); with no build, the same command as `ready`.
+- The E2E tester drives each scenario as a session: `claude -p "<what the user types>" --plugin-dir <absolute plugin dir>` in a scratch directory. Say in the report that every driven scenario is one model call on the user's account.
 
 ## CLI
 

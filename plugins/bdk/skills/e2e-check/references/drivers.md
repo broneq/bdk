@@ -6,6 +6,7 @@ How to drive a scenario through each `tools.e2e` driver, and how to close what y
 
 - A user runs the CLI in their own directory. Create a fresh directory per scenario with `mktemp -d` and run every command of the scenario there, the CLI called the way `ready` calls it with every path made absolute: `cd /tmp/x && node /abs/project/bin/todo.js list`. State the CLI writes then stays out of the project and out of the next scenario.
 - When the WHEN needs files (an input file, a config), create them in that directory first and name them in the steps.
+- A Claude Code plugin item (`ready` runs `claude plugin validate <dir>`): the user's action is a session in that directory, `cd /tmp/x && claude -p "<what the user types, e.g. /demo:greet Ada>" --plugin-dir /abs/project/<dir>`. What the product shows is the session's reply and the files it left in the directory.
 - Record each command with its exit code, and the stdout and stderr lines that matter. Check the exit code when the scenario names one, and the exact text when it quotes one.
 
 ## `http`

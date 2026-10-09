@@ -9,11 +9,11 @@ Every BDK command reads the project's configuration first. Until a project has o
 ## What setup does
 
 1. **Reads the project.** Manifests, lockfiles, scripts and the configs they name: the languages, the test, lint and build commands (with a variant that runs only on given files, when the tool has one; in a repository of several packages, each check also gets the `paths` of its package), and how to start the product so BDK can use it as a user would.
-2. **Asks only what it cannot settle.** For example two test commands competing, no lint command found, or a dev server port the files do not name. All questions come in one go, the recommended answer first.
+2. **Asks only what it cannot settle.** For example two test commands competing, no lint command found, a dev server port the files do not name, or whether to make `bdk` the default OpenSpec schema of a project that already runs OpenSpec on another one. All questions come in one go, the recommended answer first.
 3. **Writes `.bdk/settings.yaml`** with what it found, and nothing else; every other key keeps its default. Then it runs `bdk config check` until the file is valid.
 4. **Adds permission rules** to `.claude/settings.json`, so the stages can run `bdk`, `openspec`, `git`, `gh` and your project's commands without asking each time. Claude Code asks you to approve this write, and applies the rules only in a project folder you trusted (the dialog Claude Code shows the first time you open the folder).
-5. **Sets up OpenSpec** with the BDK schema: `openspec/config.yaml` says `schema: bdk`, and the schema lives in `openspec/schemas/bdk/`.
-6. **Keeps run files out of git:** `.bdk/runs/` and `.bdk/settings.local.yaml` go into `.gitignore`; `.bdk/settings.yaml` stays tracked, so the team shares it.
+5. **Sets up OpenSpec** with the BDK schema, which lives in `openspec/schemas/bdk/`. In a project without OpenSpec, `openspec/config.yaml` says `schema: bdk`. A project that already has OpenSpec keeps its own `schema:` line unless you agree to switch: BDK opens its own Changes with `--schema bdk` either way.
+6. **Keeps run files out of git:** `.bdk/runs/` and `.bdk/settings.local.yaml` go into `.gitignore`; `.bdk/settings.yaml` stays tracked, so the team shares it. A BDK v2 project ignored all of `.bdk/`: setup removes that rule and says so in its report.
 7. **Reports where you will answer questions.** It runs `npx -y lavish-axi --version`: when it works, design questions and review triage come as a Lavish page in the browser; otherwise they come as `AskUserQuestion` in the terminal, and the report suggests installing `lavish-axi` for the browser page. Setup installs nothing for it.
 
 Setup commits nothing: review the files and commit them yourself.

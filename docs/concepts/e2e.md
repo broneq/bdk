@@ -25,7 +25,7 @@ tools:
 
 | Driver | The tester | Evidence |
 |---|---|---|
-| `cli` | runs the commands in a fresh temporary directory, as a user in their own folder | each command with its exit code and output |
+| `cli` | runs the commands in a fresh temporary directory, as a user in their own folder; for a Claude Code plugin (item `plugin`, `ready: claude plugin validate <dir>`), a session there: `claude -p "<what the user types>" --plugin-dir <dir>`, one model call per scenario | each command with its exit code and output |
 | `http` | sends the requests with `curl` | status, headers that matter, body |
 | `browser` | drives a browser with small Playwright scripts it writes and runs one at a time (or with `chrome-devtools-mcp`, by `tools.e2e.<id>.browser`), then replays each scenario once with video on | what the page shows, a screenshot at each THEN, a video |
 
