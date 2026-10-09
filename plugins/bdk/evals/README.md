@@ -36,6 +36,8 @@ The `setup-*` cases run `/bdk:setup`, which calls the plugin's `bdk`, OpenSpec, 
 pnpm --filter @bdk/bdk run eval --allow-tools Write Edit "Bash(*/bin/bdk *)" "Bash(openspec *)" "Bash(npx *)" "Bash(node -e *)" "Bash(git *)" --case 'setup-*'
 ```
 
+`setup-multi-package` runs on a repository of `api/` (uv, pytest, ruff) and `web/` (pnpm, vitest, eslint) and grades that each check item's `paths` cover only its package; `setup-web-app` grades that a single package gets no `paths`.
+
 Claude Code refuses every write to `.claude/settings.json` in a run, whatever the grants, so the cases grade the permission rules from the reply, where setup lists them for the user.
 
 `setup-web-app` and `setup-library` also grade the decision surface setup reports: each puts a `lavish-axi` stub into the workspace's `node_modules`, which `npx -y lavish-axi` runs before any installed one. The stub of `setup-web-app` answers `--version`, so its reply names the Lavish page; the stub of `setup-library` fails, so its reply names `AskUserQuestion`. The `Bash(npx *)` grant covers both.

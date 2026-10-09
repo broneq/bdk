@@ -8,7 +8,7 @@ Every BDK command reads the project's configuration first. Until a project has o
 
 ## What setup does
 
-1. **Reads the project.** Manifests, lockfiles, scripts and the configs they name: the languages, the test, lint and build commands (with a variant that runs only on given files, when the tool has one), and how to start the product so BDK can use it as a user would.
+1. **Reads the project.** Manifests, lockfiles, scripts and the configs they name: the languages, the test, lint and build commands (with a variant that runs only on given files, when the tool has one; in a repository of several packages, each check also gets the `paths` of its package), and how to start the product so BDK can use it as a user would.
 2. **Asks only what it cannot settle.** For example two test commands competing, no lint command found, or a dev server port the files do not name. All questions come in one go, the recommended answer first.
 3. **Writes `.bdk/settings.yaml`** with what it found, and nothing else; every other key keeps its default. Then it runs `bdk config check` until the file is valid.
 4. **Adds permission rules** to `.claude/settings.json`, so the stages can run `bdk`, `openspec`, `git`, `gh` and your project's commands without asking each time. Claude Code asks you to approve this write, and applies the rules only in a project folder you trusted (the dialog Claude Code shows the first time you open the folder).

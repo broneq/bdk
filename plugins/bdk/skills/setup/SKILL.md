@@ -29,7 +29,7 @@ Done when you know which steps this run does.
 
 Read the project's manifests and lockfiles, its scripts and the configs they name, before writing anything. Use [the stack table](references/stacks.md) for `languages`, `tools.test`, `tools.lint`, `tools.build` and their `scoped` forms, and [the E2E table](references/e2e.md) for `tools.e2e`. A v2 `.bdk/settings.json` is a hint: [v2 projects](references/stacks.md#v2-projects).
 
-Note for every value the file it came from. Done when every group has a value, an empty answer with a reason, or an open question.
+Note for every value the file it came from. In a repository of several packages, detect the items per package and decide each item's `paths` by [the paths rules](references/stacks.md#paths-in-a-repository-of-several-packages). Done when every group has a value, an empty answer with a reason, or an open question.
 
 ## 3. Ask, only when something is open
 
@@ -49,6 +49,7 @@ tools:
     - id: vitest
       command: pnpm test
       scoped: pnpm vitest run {files}
+      # paths: ["web/**"] - only in a repository of several packages
   lint:
     - id: eslint
       command: pnpm lint
@@ -63,7 +64,7 @@ tools:
       driver: browser
 ```
 
-Leave out a group that has no item. Done when the file holds every detected value.
+Leave out a group that has no item. Write `paths` only as the paths rules say; a single-package repository gets none. Done when the file holds every detected value.
 
 ## 5. Check the settings
 
@@ -111,6 +112,7 @@ Then check which decision surface the project gets: run `npx -y lavish-axi --ver
 Report briefly:
 
 - each value written, with the file it came from (`tools.test.vitest: pnpm test (package.json scripts.test)`);
+- the `paths` written on each check item (`tools.test.pytest: api/**`), or "no `paths`: one package";
 - E2E: the entries written, or "E2E skipped" with the reason (a library has nothing to run); for a `browser` item, the Playwright line of [Playwright](references/e2e.md#playwright);
 - the decision surface, in one line: "questions and triage use a Lavish page" or "questions and triage use AskUserQuestion; install lavish-axi for a browser review page";
 - the files created or changed, left uncommitted for review;
