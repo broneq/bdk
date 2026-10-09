@@ -1,6 +1,6 @@
 ---
 name: execute
-description: 'Runs the execute stage of an OpenSpec Change - starts one bdk:lead agent that builds the verified plan parts in parallel waves (implement-part, conform-part, commits, worktree merges, a wave check after each wave, state.json), waits for its result, and passes the result or a blocker on. Use when a Change has a verified plan and should be built, when asked to "execute", "build" or "implement" a Change or its plan, or when /bdk:run reaches the execute stage.'
+description: 'Runs the execute stage of an OpenSpec Change - starts one bdk:lead agent that builds every part of the verified plan in parallel waves (implement-part, conform-part, commits, worktree merges, a wave check after each wave, state.json), waits for its result, and passes the result or a blocker on. Use when a whole Change or its whole plan should be built, when asked to "execute", "build" or "implement" a Change or its plan, or when /bdk:run reaches the execute stage. Not for one part (part 01, 02): implement-part builds a single part.'
 argument-hint: "[change-name]"
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(git rev-parse *) Read Glob Grep Agent SendMessage ToolSearch AskUserQuestion
 ---
@@ -19,8 +19,9 @@ You start the execute lead and pass its result on; the lead does the stage. You 
 
 When the block above says `BDK not configured: run /bdk:setup` or that the configuration is invalid, stop: start nothing and reply with that line.
 
-- **Change**: the argument. Without one, take the only directory under `openspec/changes/` other than `archive/`; with none or several, name what you found and stop.
+- **Change**: the first argument. Without one, take the only directory under `openspec/changes/` other than `archive/`; with none or several, name what you found and stop.
 - **Plan**: `openspec/changes/<change>/plan/parts/` must hold at least one part file; otherwise stop and name `/bdk:plan <change>` as the stage to run first.
+- **One part**: this stage takes no part id; it builds every part. When a second argument names a part (`01`), or you were asked to build one part, start nothing: list the part files of the plan, and when the part is among them, reply that `/bdk:execute` builds the whole plan, name `/bdk:implement-part <change> <part-id>` as the command that builds and checks that one part (uncommitted, on `bdk:implementer`), and `/bdk:execute <change>` for the whole plan; when it is not, name the parts you found. Stop.
 - **Queue**: when `.bdk/runs/run.json` exists and queues the Change, run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" run status --json` and read the Change's entry. Stage `execute`: go on. Any earlier stage: stop, naming the stage, its reason and its command (`/bdk:<stage> <change>`). A later stage: reply that the parts are built and name that stage's command.
 - **Run directory**: `.bdk/runs/<change>` under the path `git rev-parse --show-toplevel` prints, as an absolute path.
 
