@@ -11,8 +11,9 @@ const DOCS = join(import.meta.dirname, "..");
 /** Not site pages: the archive stays out of the site, the rest is tooling. */
 const SKIP = /^(v3-draft1|node_modules|\.vitepress)\//;
 /**
- * The site draws flowcharts with wrapping off (`theme/mermaid-diagram.ts`), so a label line is
- * as wide as its author wrote it (spec `docs-site`, "Flowchart label lines stay short").
+ * The site draws flowcharts and sequence diagrams with wrapping off (`theme/mermaid-diagram.ts`),
+ * so a label line is as wide as its author wrote it (spec `docs-site`, "Diagram label lines stay
+ * short").
  */
 const MAX_LABEL_LINE = 40;
 
@@ -23,13 +24,41 @@ interface FlowchartDb {
   getSubGraphs(): { title?: string }[];
 }
 
-/** Each line of each node, edge and subgraph label, as the reader sees it. */
-function labelLines(db: FlowchartDb): string[] {
-  const labels = [
+/** One text of a sequence diagram and whether mermaid wraps it. */
+interface SequenceText {
+  wrap?: boolean;
+}
+
+/**
+ * The parts of mermaid's sequence database this test reads. Messages hold the notes and the
+ * block labels (`loop`, `alt`, `par`, ...) too.
+ */
+interface SequenceDb {
+  getActors(): Map<string, SequenceText & { description?: string }>;
+  getMessages(): (SequenceText & { message?: string })[];
+  getBoxes(): (SequenceText & { name?: string })[];
+}
+
+/** Each node, edge and subgraph label of a flowchart. */
+function flowchartLabels(db: FlowchartDb): (string | undefined)[] {
+  return [
     ...[...db.getVertices().values()].map((vertex) => vertex.text),
     ...db.getEdges().map((edge) => edge.text),
     ...db.getSubGraphs().map((subgraph) => subgraph.title),
   ];
+}
+
+/** Each participant name, message, note, block label and box name of a sequence diagram. */
+function sequenceTexts(db: SequenceDb): { text: string | undefined; wrap: boolean | undefined }[] {
+  return [
+    ...[...db.getActors().values()].map((actor) => ({ text: actor.description, wrap: actor.wrap })),
+    ...db.getMessages().map((message) => ({ text: message.message, wrap: message.wrap })),
+    ...db.getBoxes().map((box) => ({ text: box.name, wrap: box.wrap })),
+  ];
+}
+
+/** Each line of each label, as the reader sees it. */
+function labelLines(labels: (string | undefined)[]): string[] {
   return labels.flatMap((label) =>
     (label ?? "").split(/<br\s*\/?>/i).map((line) =>
       line
@@ -59,13 +88,23 @@ async function problems(pages: ReadonlyMap<string, string>): Promise<string[]> {
       // layout (it draws an empty SVG in happy-dom), and parse() returns no diagram.
       // eslint-disable-next-line @typescript-eslint/no-deprecated
       const diagram = await mermaid.mermaidAPI.getDiagramFromText(block.code);
+      let labels: (string | undefined)[] = [];
       if (diagram.type.startsWith("flowchart")) {
-        for (const line of labelLines(diagram.db as unknown as FlowchartDb)) {
-          if (line.length > MAX_LABEL_LINE) {
-            found.push(
-              `${at}: label line over ${String(MAX_LABEL_LINE)} characters, break it with <br/>: ${line}`,
-            );
-          }
+        labels = flowchartLabels(diagram.db as unknown as FlowchartDb);
+      } else if (diagram.type === "sequence") {
+        const texts = sequenceTexts(diagram.db as unknown as SequenceDb);
+        // Wrapping cuts a word wider than the box into pieces with a hyphen of its own
+        // (`/bdk:pr-rev-` / `iew`), so it stays off whichever way a block turns it on.
+        if (texts.some((text) => text.wrap === true)) {
+          found.push(`${at}: wraps text; sequence diagrams break lines only at <br/>`);
+        }
+        labels = texts.map((text) => text.text);
+      }
+      for (const line of labelLines(labels)) {
+        if (line.length > MAX_LABEL_LINE) {
+          found.push(
+            `${at}: label line over ${String(MAX_LABEL_LINE)} characters, break it with <br/>: ${line}`,
+          );
         }
       }
     }
@@ -115,6 +154,41 @@ describe("mermaid blocks", () => {
     );
   });
 
+  it("names a sequence line over the limit, in a participant, a message, a note or a block", async () => {
+    const long = "bdk check run round-N --at review --changed base --round N";
+    const page = [
+      "```mermaid",
+      "sequenceDiagram",
+      `  box transparent ${long}`,
+      `    participant L as short<br/>${long}`,
+      "  end",
+      `  loop ${long}`,
+      `    L->>L: ${long}`,
+      `    Note over L: ${long}`,
+      "  end",
+      // `;` ends a sequence statement, so this edge case has no HTML entity.
+      "  L->>L: a change name, and this is 40 chars long",
+      "```",
+    ].join("\n");
+    expect((await problems(new Map([["docs/concepts/x.md", page]]))).sort()).toEqual(
+      Array.from(
+        { length: 5 },
+        () => `docs/concepts/x.md:1: label line over 40 characters, break it with <br/>: ${long}`,
+      ),
+    );
+  });
+
+  it.each([
+    ["an init line", '%%{init: {"sequence": {"wrap": true}}}%%\nsequenceDiagram\n  A->>B: hi'],
+    ["the wrap directive", "%%{wrap}%%\nsequenceDiagram\n  A->>B: hi"],
+    ["a wrap: prefix", "sequenceDiagram\n  A->>B: wrap: hi"],
+  ])("names a sequence diagram that turns wrapping on in %s", async (_, code) => {
+    const page = `# Page\n\n\`\`\`mermaid\n${code}\n\`\`\`\n`;
+    expect(await problems(new Map([["docs/concepts/x.md", page]]))).toEqual([
+      "docs/concepts/x.md:3: wraps text; sequence diagrams break lines only at <br/>",
+    ]);
+  });
+
   it("names a block that sets its own wrappingWidth", async () => {
     const page =
       '# Page\n\n```mermaid\n%%{init: {"flowchart": {"wrappingWidth": 200}}}%%\nflowchart TB\n  A --> B\n```\n';
@@ -123,7 +197,7 @@ describe("mermaid blocks", () => {
     ]);
   });
 
-  it("parse on every page of the site, with short flowchart label lines", async () => {
+  it("parse on every page of the site, with short label lines and no sequence wrapping", async () => {
     const files = readdirSync(DOCS, { recursive: true, encoding: "utf8" })
       .map((file) => file.split("\\").join("/"))
       .filter((file) => file.endsWith(".md") && !SKIP.test(file))

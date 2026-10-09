@@ -86,11 +86,11 @@ Done when `groups.json` exists and you hold the group ids.
 
 ## 6. Run the workers
 
-Every worker gets the same inputs after its own: `--workdir <worktree> --change <change or none> --intent <run dir>/pr.md`. Start each as a foreground `Agent` call; set `model` from `models.<role>.model` and `effort` from `models.<role>.effort`, each when the configuration sets it.
+Every worker gets the same inputs after its own: `--workdir <worktree> --change <change or none> --intent <run dir>/pr.md`. Start each as a foreground `Agent` call with `run_in_background: false` (a call without it may start in the background, and you end when your turn ends). Never read or poll a worker's task output file and never sleep to wait for one: a foreground call returns the worker's reply.
 
-1. **Reviewers.** One `bdk:reviewer` per group except `integration`, at most `execution.max-parallel` in one message, in group order; a larger round in batches. Prompt: `Review group <id> of the round <round dir> --workdir <worktree> --change <change> --intent <run dir>/pr.md`.
-2. **Integration.** After every reviewer returned, one `bdk:integration-reviewer`. Prompt: `Review the round <round dir> as a whole --workdir <worktree> --change <change> --intent <run dir>/pr.md`.
-3. **Judge.** After it, one `bdk:judge`. Prompt: `Judge the round <round dir> --workdir <worktree> --change <change> --intent <run dir>/pr.md`. In verify mode it levels the previous findings and the new ones together: `not-a-problem` on a previous finding means it is fixed. You do not interpret the levels: the main conversation does.
+1. **Reviewers.** One Agent call per group except `integration`, at most `execution.max-parallel` in one message, in group order; a larger round in batches: `subagent_type: "bdk:reviewer"`, `run_in_background: false`, prompt `Review group <id> of the round <round dir> --workdir <worktree> --change <change> --intent <run dir>/pr.md`, `model` `models.reviewer.model` and `effort` `models.reviewer.effort`, each when set.
+2. **Integration.** After every reviewer returned, one Agent call: `subagent_type: "bdk:integration-reviewer"`, `run_in_background: false`, prompt `Review the round <round dir> as a whole --workdir <worktree> --change <change> --intent <run dir>/pr.md`, `model` `models.integration-reviewer.model` and `effort` `models.integration-reviewer.effort`, each when set.
+3. **Judge.** After it, one Agent call: `subagent_type: "bdk:judge"`, `run_in_background: false`, prompt `Judge the round <round dir> --workdir <worktree> --change <change> --intent <run dir>/pr.md`, `model` `models.judge.model` and `effort` `models.judge.effort`, each when set. In verify mode it levels the previous findings and the new ones together: `not-a-problem` on a previous finding means it is fixed. You do not interpret the levels: the main conversation does.
 
 After the judge, `<round dir>/review.md` must exist. When it does not, start the judge once more; a second miss goes to step 8 with the blocker `judge wrote no report`.
 

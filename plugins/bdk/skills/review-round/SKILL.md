@@ -54,10 +54,10 @@ Done when `groups.json` exists and you hold its groups.
 
 In one message:
 
-- one Agent call per group other than `integration`: `subagent_type: "bdk:reviewer"`, prompt `Review group <id> of the round <round dir>`, `model` `models.reviewer.model` and `effort` `models.reviewer.effort`, each when set;
+- one Agent call per group other than `integration`: `subagent_type: "bdk:reviewer"`, `run_in_background: false`, prompt `Review group <id> of the round <round dir>`, `model` `models.reviewer.model` and `effort` `models.reviewer.effort`, each when set;
 - one Bash call: `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" check run <run dir> round-<N> --at review --changed <base> --round <N>`, with `<base>` of step 2. It runs the items of the `review` point, such as the whole and slow suites, and exits 1 when a check is red and has then appended the red checks to the log; that is a result, not an error.
 
-Start every Agent call in the foreground: you end when your turn ends, and a background worker would report to nobody. When the reviewers number more than `execution.max-parallel`, start them in batches of that size, in the groups' order, the check run with the first batch.
+Start every Agent call in the foreground, with `run_in_background: false` (a call without it may start in the background): you end when your turn ends, and a background worker would report to nobody. Never read or poll a worker's task output file and never sleep to wait for one; a foreground call returns the worker's reply. When the reviewers number more than `execution.max-parallel`, start them in batches of that size, in the groups' order, the check run with the first batch.
 
 A group with no files, or a round whose `groups` is empty (nothing changed since the anchor), gets no reviewer; the checks still run.
 
@@ -69,8 +69,8 @@ Done when every reviewer has returned and the check run has ended.
 
 Only after step 3 has ended, so the project's suites and the started product never compete for the same machine, start in one message:
 
-- one Agent call `subagent_type: "bdk:e2e-tester"`, prompt `Check the Change <change> end to end; the findings log is <round dir>/findings.jsonl`, `model` `models.e2e-tester.model` and `effort` `models.e2e-tester.effort`, each when set;
-- when `groups` holds an `integration` group, one Agent call `subagent_type: "bdk:integration-reviewer"`, prompt `Review the Change as a whole for the round <round dir>`, `model` `models.integration-reviewer.model` and `effort` `models.integration-reviewer.effort`, each when set. It reads what the group reviews found.
+- one Agent call `subagent_type: "bdk:e2e-tester"`, `run_in_background: false`, prompt `Check the Change <change> end to end; the findings log is <round dir>/findings.jsonl`, `model` `models.e2e-tester.model` and `effort` `models.e2e-tester.effort`, each when set;
+- when `groups` holds an `integration` group, one Agent call `subagent_type: "bdk:integration-reviewer"`, `run_in_background: false`, prompt `Review the Change as a whole for the round <round dir>`, `model` `models.integration-reviewer.model` and `effort` `models.integration-reviewer.effort`, each when set. It reads what the group reviews found.
 
 A failed run is retried once, as in step 3. The E2E check runs in every round, also one with no group.
 
@@ -78,7 +78,7 @@ Done when both have returned, or the E2E tester has returned and the round has n
 
 ## 5. Judge
 
-Start one Agent call: `subagent_type: "bdk:judge"`, prompt `Judge the round <round dir>`, `model` `models.judge.model` and `effort` `models.judge.effort`, each when set. It levels every finding and writes `<round dir>/review.md`. When `review.md` is missing after it returns, start it once more; when it is still missing, write `round.md` (step 6) with the gap and reply that the round has no report.
+Start one Agent call: `subagent_type: "bdk:judge"`, `run_in_background: false`, prompt `Judge the round <round dir>`, `model` `models.judge.model` and `effort` `models.judge.effort`, each when set. It levels every finding and writes `<round dir>/review.md`. When `review.md` is missing after it returns, start it once more; when it is still missing, write `round.md` (step 6) with the gap and reply that the round has no report.
 
 Done when `review.md` exists.
 

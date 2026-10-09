@@ -18,7 +18,7 @@ You compose the steps that end a Change: commit, check, archive, commit, push, p
 The blocks:
 
 - **commit**: call the Skill tool with `bdk:commit` and the arguments this skill gives. It stages by path, follows the project's commit convention and reports the commits.
-- **spec-conformance**: start an agent with the Agent tool, `subagent_type: "bdk:verifier"`, prompt `Run the skill bdk:spec-conformance with the arguments: <change> --base <diff base>`, `model` set to `models.verifier.model` and `effort` set to `models.verifier.effort`, each only when the configuration above sets it, where the diff base is `origin/<base>` when `git rev-parse --verify --quiet origin/<base>` prints a commit, else `<base>`: the pull request compares with the remote base, and a local base may already hold the Change's commits. It writes `.bdk/runs/<change>/close/spec-conformance.md` and returns its verdict line.
+- **spec-conformance**: start an agent with the Agent tool in the foreground (`run_in_background: false`), `subagent_type: "bdk:verifier"`, prompt `Run the skill bdk:spec-conformance with the arguments: <change> --base <diff base>`, `model` set to `models.verifier.model` and `effort` set to `models.verifier.effort`, each only when the configuration above sets it, where the diff base is `origin/<base>` when `git rev-parse --verify --quiet origin/<base>` prints a commit, else `<base>`: the pull request compares with the remote base, and a local base may already hold the Change's commits. It writes `.bdk/runs/<change>/close/spec-conformance.md` and returns its verdict line.
 
 Before each step, tell the user in one line what runs and what it writes, e.g. `Checking the specs: bdk:verifier writes .bdk/runs/add-csv-export/close/spec-conformance.md`.
 

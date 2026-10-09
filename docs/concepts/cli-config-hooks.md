@@ -163,7 +163,7 @@ sequenceDiagram
   alt not configured or invalid
     B-->>H: one warning, no context
   else configured
-    B-->>H: the BDK process in five fixed lines:<br/>stages, /bdk:run, resume, direct small edits
+    B-->>H: the BDK process in five fixed lines:<br/>stages, /bdk:run, resume,<br/>direct small edits
   end
   Note over H,C: PreToolUse, every Bash call
   H->>B: bdk hooks pre-tool-use
