@@ -61,6 +61,7 @@ const MODEL: Model = {
     { key: "tools.test.<id>.scoped", type: "string", required: false, description: "Scoped." },
     { key: "hooks", type: "mapping", required: false, description: "Hooks." },
   ],
+  planProblems: [],
 };
 
 function check(page: string): string[] {

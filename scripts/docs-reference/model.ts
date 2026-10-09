@@ -7,6 +7,8 @@ import { join, relative } from "node:path";
 import { parse } from "yaml";
 
 import { describeSettings } from "../../plugins/bdk/src/config/domain/describe.ts";
+import { CHECKS, PROBLEMS } from "../../plugins/bdk/src/plan/domain/check.ts";
+import type { Check, ProblemDoc } from "../../plugins/bdk/src/plan/domain/check.ts";
 import { isRuleFile, parseRule } from "../../plugins/bdk/src/rules/domain/rule.ts";
 import type { Rule } from "../../plugins/bdk/src/rules/domain/rule.ts";
 import type { SettingDoc } from "../../plugins/bdk/src/config/domain/describe.ts";
@@ -45,6 +47,10 @@ export interface PluginDoc {
   readonly hooks: readonly HookDoc[];
 }
 
+export interface PlanProblemDoc extends ProblemDoc {
+  readonly check: Check;
+}
+
 export interface Model {
   readonly plugins: readonly PluginDoc[];
   /** The rule pack of the bdk plugin, in pack order (`bdk rules for` orders the same way). */
@@ -52,6 +58,8 @@ export interface Model {
   /** The bdk command groups, sorted by name as `bdk --help` lists them. */
   readonly cli: readonly Group[];
   readonly settings: readonly SettingDoc[];
+  /** The problems `bdk plan check` reports, in the order it lists them. */
+  readonly planProblems: readonly PlanProblemDoc[];
 }
 
 const REPO = join(import.meta.dirname, "../..");
@@ -267,5 +275,6 @@ export async function loadModel(): Promise<Model> {
     rules: readRules(join(REPO, "plugins/bdk/rules")),
     cli,
     settings: describeSettings(SettingsSchema),
+    planProblems: CHECKS.map((check) => ({ check, ...PROBLEMS[check] })),
   };
 }

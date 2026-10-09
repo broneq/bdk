@@ -30,7 +30,7 @@ Then the **design gate**: BDK asks you to approve the design, naming the files t
 /bdk:plan add-csv-export
 ```
 
-`/bdk:plan-draft` cuts the work into parts, `plan/parts/01.md`, `02.md`, ..., each small enough for one agent, with the files it touches, the spec scenarios it makes true and its tasks. `/bdk:verify-plan` checks the plan; `bdk plan check` checks part sizes and dependencies.
+`/bdk:plan-draft` cuts the work into parts, `plan/parts/01.md`, `02.md`, ..., each small enough for one agent, with the files it touches, the spec scenarios it makes true and its tasks. `/bdk:verify-plan` checks the plan; `bdk plan check` checks part sizes and dependencies, and computes the waves. The plan stays uncommitted for you to read: [how a plan is cut](/concepts/stages#how-a-plan-is-cut) explains parts, waves, `depends-on` and `isolation`, what to look for in a part file, and what each problem of `bdk plan check` means.
 
 **Put the Change on its own branch and commit its files now**: the build starts only from a clean tree, and the Change's commits never go to your base branch.
 

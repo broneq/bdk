@@ -515,6 +515,24 @@ Exit codes:
   4  internal error
 ```
 
+#### Problems {#plan-check-problems}
+
+Each line under `problems:` starts with the kind of the problem (`check` in `--json`), then the part ids it concerns and a message. The kinds, in the order the command lists them:
+
+| Problem | What it means | What to do |
+|---|---|---|
+| `no-parts` | The directory holds no part file `NN.md`, so there is no plan to check. | Check the path: it is `openspec/changes/<change>/plan/parts`. When it is right, run `/bdk:plan <change>` to write the parts. |
+| `name` | A `.md` file in the directory is not named `NN.md` (two digits), so it is not read as a part. | Rename it to the next free `NN.md` when it is a part, and set its `id` to match; otherwise move it out of the directory. |
+| `frontmatter` | The frontmatter of a part breaks a rule; the message names the key. The part gets no wave until it is fixed. | Fix the key the message names: `id` is the quoted file stem (`"01"`), `depends-on` a list of quoted part ids (`[]` for none), `isolation` is `worktree` or `shared`, and `files` lists exact repository-relative file paths, with no glob, directory, absolute path or `..`. |
+| `no-tasks` | The part has no numbered task under its `## Tasks` heading. | Write its tasks as a numbered list under a level-2 `## Tasks` heading, or remove the part when it has nothing to build. |
+| `max-tasks` | The part has more tasks than `plan.part.max-tasks` allows. | Split the part in two; parts that share no file and do not depend on each other run in the same wave. Raise `plan.part.max-tasks` only when your agents handle bigger parts well. |
+| `max-files` | The part lists more files than `plan.part.max-files` allows; a file listed twice counts once. | Split the part in two by the files it touches. Raise `plan.part.max-files` only when your agents handle bigger parts well. |
+| `max-bytes` | The part file is larger, in bytes, than `plan.part.max-bytes` allows. | Split the part in two, or cut text the implementer does not need. Raise `plan.part.max-bytes` only when your agents handle bigger parts well. |
+| `unknown-dependency` | `depends-on` names a part id that has no part file. The part gets no wave, and neither does any part that depends on it. | Correct the id, or remove it from `depends-on`. |
+| `cycle` | Parts depend on each other in a cycle, or a part depends on itself, so no order can build them. They get no wave. | Remove the edge that is not needed: `depends-on` lists only the parts whose output a part uses. When two parts truly need each other, move what both need into a part of its own that both depend on, or merge them. |
+| `overlap` | Two or more parts of one wave list the same file. They would change it in parallel, in separate worktrees, and conflict when merged. | Move the changes to that file into one part, or make one part depend on the other so that they run in different waves. |
+| `shared-not-alone` | A `shared` part runs in a wave with other parts. A shared part works in the main checkout and changes state outside its files (a lockfile, generated code, a migration sequence) that a parallel part could change too. The check names it and never moves it: which part goes first is a plan decision. | Add `depends-on` edges so that the shared part has a wave of its own, or set it to `worktree` when it changes nothing outside its `files`. |
+
 ## `bdk rules` {#rules}
 
 ```text

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { checkPlan } from "../domain/check.ts";
+import { CHECKS, PROBLEMS, checkPlan } from "../domain/check.ts";
 import type { Limits } from "../domain/check.ts";
 import type { Part } from "../domain/part.ts";
 
@@ -223,5 +223,15 @@ describe("checkPlan within a wave", () => {
       "overlap 02,03",
       "shared-not-alone 03",
     ]);
+  });
+});
+
+describe("PROBLEMS", () => {
+  it("explains every check, in the order of CHECKS", () => {
+    expect(Object.keys(PROBLEMS)).toEqual([...CHECKS]);
+    for (const check of CHECKS) {
+      expect(PROBLEMS[check].meaning, check).toMatch(/\S/);
+      expect(PROBLEMS[check].fix, check).toMatch(/\S/);
+    }
   });
 });

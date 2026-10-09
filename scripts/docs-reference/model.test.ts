@@ -4,7 +4,8 @@ import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import type { Group } from "../../plugins/bdk/src/shared/cli/index.ts";
-import { bdkGroups, readPlugins, readRules } from "./model.ts";
+import { CHECKS } from "../../plugins/bdk/src/plan/domain/check.ts";
+import { bdkGroups, loadModel, readPlugins, readRules } from "./model.ts";
 import { renderReference } from "./render.ts";
 
 // The source model of the Reference (design D3 of v3-268-docs-site-user-docs) on fixture plugins.
@@ -183,7 +184,13 @@ describe("renderReference", () => {
   it("is deterministic and marks every page as generated", () => {
     manifest("kit");
     skill("kit", "plan", 'description: "Plans {{ x }} <b>."\n');
-    const model = { plugins: readPlugins(root, []), rules: [], cli: [HOOKS], settings: [] };
+    const model = {
+      plugins: readPlugins(root, []),
+      rules: [],
+      cli: [HOOKS],
+      settings: [],
+      planProblems: [],
+    };
     const first = renderReference(model);
     expect(renderReference(model)).toEqual(first);
     for (const [path, page] of first) {
@@ -237,9 +244,13 @@ describe("renderReference", () => {
       { key: "models.<role>", type: "string" as const, required: true, description: "Model name." },
     ];
     const page =
-      renderReference({ plugins: readPlugins(root, []), rules: [], cli: [], settings }).get(
-        "bdk/settings.md",
-      ) ?? "";
+      renderReference({
+        plugins: readPlugins(root, []),
+        rules: [],
+        cli: [],
+        settings,
+        planProblems: [],
+      }).get("bdk/settings.md") ?? "";
     expect(page).toContain(
       "```yaml\npolicy:\n  # What a skill does with an open question (decide-and-record | stop, default: stop)\n  questions: decide-and-record\n  # Limits on retries\n  budgets:\n    # Most verifier passes\n    verifier: 3\n```",
     );
@@ -265,11 +276,27 @@ describe("renderReference", () => {
       rules: readRules(join(root, "rules")),
       cli: [],
       settings: [],
+      planProblems: [],
     };
     const page = renderReference(model).get("bdk/rules.md") ?? "";
     expect(page).toContain("| [`BDK-CQ-1`](#bdk-cq-1) | Naming |");
     expect(page).toContain("### `BDK-REACT-2` {#bdk-react-2}");
     expect(page).toContain("Language pack: `react`");
     expect(page).toContain("Descriptive &lt;identifiers&gt;.");
+  });
+
+  it("lists the problems of bdk plan check under its CLI entry, one row per kind", async () => {
+    const page = renderReference(await loadModel()).get("bdk/cli.md") ?? "";
+    const entry = page.indexOf("### `bdk plan check` {#plan-check}");
+    const section = page.indexOf("#### Problems {#plan-check-problems}");
+    expect(entry).toBeGreaterThan(-1);
+    expect(section).toBeGreaterThan(entry);
+    const rows = page
+      .slice(section, page.indexOf("\n## ", section))
+      .split("\n")
+      .flatMap((line) => /^\| `([a-z-]+)` \|/.exec(line)?.[1] ?? []);
+    expect(rows, "Every check of bdk plan check needs its row in the CLI Reference").toEqual([
+      ...CHECKS,
+    ]);
   });
 });
