@@ -109,7 +109,7 @@ files:
    - Verified by: tally / Requirement: Total / Scenario: Total after an add; a test in test/tally.test.js that runs `tally add 5` then `tally total` in a scratch directory and expects `Total: 5.00`, exit 0
 ```
 
-  Each task changes one thing; the first task's `Verified by:` names the test that reproduces the bug with the reproduction's exact input, so the implementer sees it red before the fix. `files` lists every file the tasks touch, tests included.
+  Each task changes one thing; the first task's `Verified by:` names the test that reproduces the bug with the reproduction's exact input, so the implementer sees it red before the fix. `files` lists every file the tasks touch, tests included. The only acceptance scenario is the reproduction scenario, and no task only pins behaviour that already works (a scenario that passes today): the implementer must see every acceptance test red, and such a test cannot fail, so it would block the fix.
 
 Run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" plan check openspec/changes/<change>/plan/parts`: exit 1 lists problems, fix them and run it again; exit 3 is an environment problem, pass it on and stop. Then `openspec validate <change>`: fix what it reports.
 
