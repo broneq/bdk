@@ -92,6 +92,8 @@ flowchart TB
 
 "Design finished" means `proposal.md`, at least one spec delta and `design.md` exist, and the last `design/verify-N.md`, when there is one, passes. A later pass continues the same verifier with `SendMessage`. On a new start, `/bdk:plan` starts at the draft (no part), the check (parts, no report), the fix (last report `FAIL`) or the report (last report `PASS`).
 
+A gap of the design is a choice about what the product does that the specs and the design leave open: a case a new requirement reaches counts even when no scenario names it, when its answers differ in a way you would care about, such as whether `--out <path>` overwrites a file that already exists. Ordinary input handling that the Change's error rules settle by analogy is the planner's choice, not a gap. `/bdk:plan-draft` names each gap in its reply and decides none; `/bdk:plan` then stops before any verifier pass, quotes the gaps and names `/bdk:design <change>`. Behaviour no requirement of the Change touches is not a gap and stays as the code has it.
+
 ## `/bdk:execute` and the `/bdk:execute-waves` lead
 
 `/bdk:execute` is thin: it starts one `bdk:lead` with the stage skill `/bdk:execute-waves` and passes the result on. The lead is the only writer of `state.json` and the only agent that commits and merges.
