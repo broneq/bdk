@@ -145,7 +145,7 @@ The same as a list, key by key; types, defaults and allowed values are in the [s
 | `execution.lead` | `/bdk:execute`, `/bdk:auto-review`, `/bdk:pr-review` |
 | `execution.max-parallel` | `/bdk:execute-waves`, `/bdk:review-round`, `/bdk:pr-review-round` |
 | `models.lead`, `models.explorer`, `models.verifier`, `models.implementer`, `models.conformer`, `models.reviewer`, `models.integration-reviewer`, `models.e2e-tester`, `models.judge` | the `Agent` call that starts that role |
-| `hooks.subagent-git` | `bdk hooks pre-tool-use`, `bdk hooks session-start` |
+| `hooks.subagent-git` | `bdk hooks pre-tool-use` |
 
 ## Hooks
 
@@ -162,12 +162,14 @@ sequenceDiagram
   alt not configured or invalid
     B-->>H: one warning, no context
   else configured
-    B-->>H: BDK context, and the guard<br/>notice when hooks.subagent-git is on
+    B-->>H: the BDK process in five fixed lines:<br/>stages, /bdk:run, resume, direct small edits
   end
   Note over H,C: PreToolUse, every Bash call
   H->>B: bdk hooks pre-tool-use
   B-->>H: allow or deny
 ```
+
+In a configured project the session start context tells the main session how work is done there, before any skill runs: work with behaviour to specify goes through the stages `/bdk:propose`, `/bdk:design`, `/bdk:plan`, `/bdk:execute`, `/bdk:auto-review` and `/bdk:close`; `/bdk:run` carries it to a pull request, `/bdk:debug` fixes a bug that needs diagnosis and `/bdk:pr-review` reviews a pull request; a stage that stopped continues when its command runs again; a small edit you can see whole is done directly. The text is the same in every project and reads neither the settings nor the run state. How to use the `bdk` CLI itself is not in it.
 
 The `PreToolUse` guard denies only when all four hold, checked cheapest first so most calls never touch the file system:
 

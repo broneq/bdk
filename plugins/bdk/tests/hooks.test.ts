@@ -1,5 +1,13 @@
 import { spawnSync } from "node:child_process";
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -120,12 +128,17 @@ describe("hooks/hooks.json", () => {
     ]);
   });
 
-  it("gives a configured session its context", () => {
+  it("gives a configured session its context, naming only skills the plugin ships", () => {
     const { status, stdout } = hook("SessionStart", { session_id: "s", cwd: project });
     expect(status).toBe(0);
-    expect(JSON.parse(stdout)).toMatchObject({
-      hookSpecificOutput: { hookEventName: "SessionStart" },
-    });
+    const output = JSON.parse(stdout) as {
+      hookSpecificOutput: { hookEventName: string; additionalContext: string };
+    };
+    expect(output.hookSpecificOutput.hookEventName).toBe("SessionStart");
+    const named = [...output.hookSpecificOutput.additionalContext.matchAll(/\/bdk:([a-z-]+)/g)];
+    expect(named.length).toBeGreaterThan(0);
+    for (const [, name = ""] of named)
+      expect(existsSync(join(PLUGIN, "skills", name, "SKILL.md")), `/bdk:${name}`).toBe(true);
   });
 
   it("never blocks a tool call when the bundle is missing, and shows a broken session start", () => {

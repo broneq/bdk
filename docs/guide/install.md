@@ -32,7 +32,7 @@ claude plugin install bdk@bdk
 
 Install the other plugins the same way, each when you want it: `bdk-craft@bdk`, `bdk-skill-kit@bdk`, `git-identity@bdk`. None of them needs another.
 
-Restart Claude Code after installing, then type `/bdk:` to see the commands. The `bdk` plugin also starts two hooks with every session ([hooks](/reference/bdk/hooks)); the session-start hook tells Claude whether the project is configured.
+Restart Claude Code after installing, then type `/bdk:` to see the commands. The `bdk` plugin also starts two hooks with every session ([hooks](/reference/bdk/hooks)); the session-start hook tells Claude whether the project is configured and, when it is, [how work goes through the BDK stages](/concepts/cli-config-hooks#hooks).
 
 ## Update
 
