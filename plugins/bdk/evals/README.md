@@ -168,6 +168,10 @@ pnpm --filter @bdk/bdk run eval --ablation none --tag orchestrator --allow-tools
 
 `--case 'plan-*'` alone also matches the `plan-draft-*` block cases; `--tag orchestrator` keeps only the orchestrator ones.
 
+Two more `plan-*` cases cover the runs that end without a verifier pass. `plan-design-gap` adds a requirement to the spec delta that the design does not settle (`ledger export <file> --out <path>`, nothing about an existing `<path>`): `plan-draft` drafts what it can and names the gap, and `/bdk:plan` stops before any verifier and names `/bdk:design add-csv-export`. `plan-passed` starts from the hand-written plan of `plan-verify-written` with a passing `plan/verify-1.md` (kept in the case directory): no block runs, one `bdk plan check` gives the waves, nothing is written, and the reply names `/bdk:execute add-csv-export`; it is tagged `writes-nothing` (see "Write a case").
+
+Recorded 2026-10-09 (clean `HOME`, the command above): `plan-design-gap` 1.00 over 4 runs, `plan-passed` 1.00 over 3 runs, both about $0.12 to $0.50 a run. The first runs of `plan-design-gap` showed `plan-draft` calling the existing file "not touched by any requirement"; its gap rule was sharpened (archived Change `v3-249-plan-gap-evals`, design D5). Runs below 1.00 of the other `plan-*` cases in the same measurement came from denied Bash calls (#342).
+
 The `close-*` cases are the orchestrator cases of `/bdk:close` (one arm). They start from the shared fixture `tally-reviewed.sh`: the Change `add-total` after review, a bare repository `.git/bdk-eval/remote.git` inside the workspace as `origin`, so `git push` works offline, and the offline `gh` stand-in, which records `gh pr create` in `.git/bdk-eval/prs/<n>.json` and answers `gh pr view` from there. Put its directory first on `PATH` as for the `propose-*` cases; the run starts an opus `bdk:verifier` and runs `commit` (on a Mac, see the `git` entry of "Host limits"):
 
 ```bash
@@ -247,6 +251,7 @@ Write the prompt the way a user would ask, without naming the skill. Put `tags` 
 
 - **Block case** (`tags: [block]`), run with and without the plugin: at least one grader on the result (`file_exists`, `regex` with `target: { source: file, path: ... }`, or a short `llm` rubric with concrete PASS and FAIL lines) and one on the steps (`tool_order` or `tool_used`), plus a `tool_used: Skill` grader that shows the block fired.
 - **Orchestrator case** (`tags: [orchestrator]`), run with `--ablation none`: `tool_order` for the order of its blocks, `file_exists` for the files the run writes, `llm` for the outcome; time and turns come from the report.
+- **Orchestrator case that writes nothing** (`tags: [orchestrator, writes-nothing]`): a run whose correct outcome is a stop before any block writes no file, so it holds no `file_exists` grader; a `regex` grader on the trace shows what did not happen instead (no `Write` or `Edit` call, no block started), next to its `tool_order` and `llm` graders. `plan-passed` is the example.
 - Grade long output with `regex`, not `llm`: the judge's verdict varies more the longer the text.
 - `file_exists` sees only files created during the run, not files the scaffold made.
 
