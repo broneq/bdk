@@ -124,15 +124,17 @@ Inside the lead, waves run in order and the parts of a wave run in parallel batc
 flowchart TB
   W0["bdk plan check parts --json<br/>waves and isolation"] --> W1{{"wave: null, or<br/>shared-not-alone?"}}
   W1 -->|"yes"| BL0["blocked: fix the plan"]
-  W1 -->|"no"| W2["clean tree, Change branch,<br/>merge parts left unmerged by a break"]
+  W1 -->|"no"| W2["clean tree (or the earlier work<br/>of the next main-checkout part),<br/>Change branch, merge parts<br/>left unmerged by a break"]
   W2 --> W3["take the next wave<br/>with a part not done"]
-  W3 --> W4["a work directory per part<br/>shared: the main checkout<br/>worktree: R/worktrees/NN"]
+  W3 --> W4["a work directory per part<br/>main checkout: shared, or alone<br/>in its wave with no worktree yet<br/>else: R/worktrees/NN"]
   W4 --> W5["run the parts in batches<br/>of execution.max-parallel<br/>(next diagram)"]
-  W5 --> W6["merge the done worktree parts<br/>in part order (git merge --no-ff)"]
+  W5 --> W6["merge the done parts that ran<br/>in worktrees, in part order<br/>(git merge --no-ff)"]
   W6 --> NW{{"a part of the<br/>wave blocked?"}}
   NW -->|"no, waves left"| W3
   NW -->|"yes, or no wave left"| RES["write R/execute/result.md<br/>Status: done or blocked"]
 ```
+
+A worktree isolates parts that run at the same time, so only a wave with two or more parts to run uses them. A part that is the only one not done in its wave runs in the main checkout, whatever its `isolation` says: no checkout to make, the project's installed dependencies and warm tool caches, and its commit lands on the Change branch with no merge commit. A part whose worktree or `bdk/<change>/part-NN` branch is left from an earlier run keeps running there, so its earlier work is kept. A part that ran in the main checkout and did not finish leaves its files uncommitted there; the next `/bdk:execute` continues from them, and stops only on changes outside that part's `files`.
 
 Each part of a batch goes through these attempts; the implementers of a batch start in one message, then its conformers:
 
@@ -149,7 +151,7 @@ flowchart TB
   CONF -->|"PASS"| COM["lead commits the part,<br/>state.json: done"]
 ```
 
-Merging a worktree part into the Change branch:
+Merging a part that ran in a worktree into the Change branch:
 
 ```mermaid
 flowchart TB
