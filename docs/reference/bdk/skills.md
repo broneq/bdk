@@ -124,7 +124,7 @@ Implements one plan part of an OpenSpec Change on the bdk:implementer agent - ch
 
 Started by: you, or Claude when your request matches the description below.
 
-Judges the findings of a BDK review round - checks each unleveled finding against the code and sets its level (blocker, should-fix, nice-to-have, not-a-problem) by what the product does, with bdk findings level - then writes the round report with bdk findings report. Use when a review round or a user asks to judge, level, rate or triage the findings of a round, or to finish a review round.
+Judges the findings of a BDK review round - checks each unleveled finding against the code and the rule or project instruction it cites, and sets its level (blocker, should-fix, nice-to-have, not-a-problem) by what the product does, with bdk findings level - then writes the round report with bdk findings report. Use when a review round or a user asks to judge, level, rate or triage the findings of a round, or to finish a review round.
 
 ## `/bdk:plan` {#plan}
 
@@ -188,7 +188,7 @@ Resolves the merge conflict a plan part left when the execute lead merged its br
 
 Started by: you, or Claude when your request matches the description below.
 
-Reviews one group of changed files of a BDK review round - behaviour against the plan part and spec scenarios, tests that cannot fail, review rules, security - and appends each problem to the round findings log with bdk findings add. Use when a review round or a user asks to review a group (p01, unplanned, m1) of a round directory, or to review the files of a branch or a plan part without fixing them.
+Reviews one group of changed files of a BDK review round - behaviour against the plan part and spec scenarios, tests that cannot fail, review rules and the project instructions (CLAUDE.md, AGENTS.md, .claude/rules), security - and appends each problem to the round findings log with bdk findings add. Use when a review round or a user asks to review a group (p01, unplanned, m1) of a round directory, or to review the files of a branch or a plan part without fixing them.
 
 ## `/bdk:review-integration` {#review-integration}
 

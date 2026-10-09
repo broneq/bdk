@@ -1,6 +1,6 @@
 ---
 name: review-group
-description: 'Reviews one group of changed files of a BDK review round - behaviour against the plan part and spec scenarios, tests that cannot fail, review rules, security - and appends each problem to the round findings log with bdk findings add. Use when a review round or a user asks to review a group (p01, unplanned, m1) of a round directory, or to review the files of a branch or a plan part without fixing them.'
+description: 'Reviews one group of changed files of a BDK review round - behaviour against the plan part and spec scenarios, tests that cannot fail, review rules and the project instructions (CLAUDE.md, AGENTS.md, .claude/rules), security - and appends each problem to the round findings log with bdk findings add. Use when a review round or a user asks to review a group (p01, unplanned, m1) of a round directory, or to review the files of a branch or a plan part without fixing them.'
 argument-hint: "[<round-dir> <group-id>] [--base <ref>] [--workdir <path>] [--change <path>|none] [--intent <file>]"
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(git diff *) Bash(git log *) Bash(git show *) Bash(git symbolic-ref *) Bash(git rev-parse *) Bash(git -C *) Bash(cd *) Read Grep Glob
 ---
@@ -21,7 +21,7 @@ If the block above says "BDK not configured: run /bdk:setup", stop and pass that
 
 A caller that reviews code outside the working directory (`/bdk:pr-review` reviews a pull request in its own worktree) adds up to three inputs. Without them, skip this section.
 
-- `--workdir <path>`: the checkout to review. Give every Read, Grep and Glob call an absolute path under it, and read the Change and the plan parts there too; run git as `git -C <path> <command>` (the host refuses `cd` followed by `git`) and `bdk` as `cd <path> && "${CLAUDE_PLUGIN_ROOT}/bin/bdk" <command>`, one command per call. Never read the same paths in the working directory: that is another commit. The round directory and its log stay where the arguments say.
+- `--workdir <path>`: the checkout to review. Give every Read, Grep and Glob call an absolute path under it, and read the Change, the plan parts and the project instructions there too; run git as `git -C <path> <command>` (the host refuses `cd` followed by `git`) and `bdk` as `cd <path> && "${CLAUDE_PLUGIN_ROOT}/bin/bdk" <command>`, one command per call. Never read the same paths in the working directory: that is another commit. The round directory and its log stay where the arguments say.
 - `--change <path>`: the Change directory, relative to the work directory (`openspec/changes/archive/2026-10-01-monthly-report` for an archived one), in place of `openspec/changes/<change>/`. `--change none`: the range carries no Change.
 - `--intent <file>`: what the author meant (a pull request's title, description and linked issues). Read it whole as part of the contract in step 2, next to the plan part and the scenarios, or in their place when there is no Change.
 
@@ -41,9 +41,9 @@ Done when you know the range, the group's files, the log, the part file if there
 
 ## 2. Read the contract
 
-Read the plan part: its goal, acceptance scenarios and tasks. Read each spec scenario it names in `openspec/changes/<change>/specs/`. Run `bdk rules for --stage review --files <file> --files <file> ...` with every file of the group and keep the rules it prints. Without a part, the contract is the spec scenarios that name the group's code, and the commit subjects of the range (`git log --format=%s <range>`).
+Read the plan part: its goal, acceptance scenarios and tasks. Read each spec scenario it names in `openspec/changes/<change>/specs/`. Run `bdk rules for --stage review --files <file> --files <file> ...` with every file of the group and keep the rules it prints. Read the project instructions that bind the group's files: `CLAUDE.md` and `AGENTS.md` in the project root and in each directory on the way to a file of the group, and each `.claude/rules/*.md` whose `paths` match one of them or that has no `paths`. Keep each instruction with the path of its file relative to the project root (`CLAUDE.md`, `src/AGENTS.md`, `.claude/rules/testing.md`). Without a part, the contract is the spec scenarios that name the group's code, and the commit subjects of the range (`git log --format=%s <range>`).
 
-Done when you can say, for each file, what it must do.
+Done when you can say, for each file, what it must do and which rules and instructions bind it.
 
 ## 3. Review each file
 
@@ -51,7 +51,7 @@ For each file of the group: read it whole, then its diff (`git diff <range> -- <
 
 1. **Behaviour.** The code does what the tasks and scenarios say for every input they allow: boundaries, empty and missing values, signs and units, error paths. Trace a concrete input through the code and compare the result with the scenario.
 2. **Tests.** Each changed behaviour has a test that would fail if the behaviour broke. A test that cannot fail, or that only covers inputs where the bug does not show, is a problem; name the input it misses.
-3. **Rules.** Each rule from step 2 that the changed lines break.
+3. **Rules and instructions.** Each rule and each project instruction from step 2 that the changed lines break. An instruction that names what else must change with the file (a doc, a list, a test) is checked here too: read that file for it.
 4. **Security.** Input from outside the process reaching a query, a shell, a file path or an eval without a check.
 5. **Fixed findings.** For a fix part, each task names the finding it fixes. Read that finding in the earlier round's log (`bdk findings list <earlier log>`) and trace its failure scenario through the code as it is now. A failure that still happens is a finding; its evidence names the earlier id and the input that still fails.
 
@@ -64,11 +64,11 @@ Done when every file of the group is read and checked.
 One call per problem:
 
 ```
-"${CLAUDE_PLUGIN_ROOT}/bin/bdk" findings add <log> --source review-group --file <path> --line <n> --summary "<one line: what is wrong>" --evidence "<failure scenario>" [--rule <id>]
+"${CLAUDE_PLUGIN_ROOT}/bin/bdk" findings add <log> --source review-group --file <path> --line <n> --summary "<one line: what is wrong>" --evidence "<failure scenario>" [--rule <id or instruction file>]
 ```
 
 - `--evidence` is the failure scenario: the input and the wrong result ("`parse('7')` gives 7, the scenario needs 700"), or the change that would break the behaviour while every test passes. For a problem without a failure, name what it costs.
-- `--line` is where the fix goes. `--rule` only with an id step 2 printed, when the finding is that rule's violation.
+- `--line` is where the fix goes. `--rule` only when the finding is the violation of a rule or an instruction from step 2: the rule's id, or the instruction file's path relative to the project root (`--rule CLAUDE.md`). For an instruction, the evidence quotes it and names the changed line that breaks it; when one line breaks two instructions of the same file, one finding names both.
 - One finding per problem; the same problem on several lines is one finding on the first.
 
 Done when every problem has its line in the log (each call prints the finding id).

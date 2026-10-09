@@ -1,6 +1,6 @@
 # Findings - what a review round reports, how it is judged and decided
 
-A finding is one problem a review round found: a place, a summary, the evidence, and the rule it breaks when it breaks one. Every finding goes through three steps, each by a different role: found, judged, decided.
+A finding is one problem a review round found: a place, a summary, the evidence, and what it breaks when it breaks a rule or an instruction: a [rule](./rules.md) id, or the path of a project instruction file such as `CLAUDE.md`. Every finding goes through three steps, each by a different role: found, judged, decided.
 
 ```mermaid
 flowchart LR
@@ -15,7 +15,7 @@ flowchart LR
 
 | Source | Looks at |
 |---|---|
-| `/bdk:review-group` on `bdk:reviewer`, one per group of files | the diff of its group, against the rules for those files (`bdk rules for`) and the Change |
+| `/bdk:review-group` on `bdk:reviewer`, one per group of files | the diff of its group, against the rules for those files (`bdk rules for`), your project instructions on the way to them, and the Change |
 | `/bdk:review-integration` on `bdk:integration-reviewer` | the whole diff: what breaks between the groups |
 | `/bdk:e2e-check` on `bdk:e2e-tester` | the running product, against each spec scenario of the Change |
 | `bdk check run` | your test, lint and build commands; a red check is a finding |
