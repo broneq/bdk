@@ -16,7 +16,7 @@ flowchart TB
   S4 --> S5["bdk config check until exit 0"]
   S5 --> S6["permission allow rules<br/>.claude/settings.json"]
   S6 --> S7["openspec init, bdk openspec install,<br/>the project schema, or schema: bdk"]
-  S7 --> S8["gitignore .bdk/runs/ and settings.local.yaml"]
+  S7 --> S8["gitignore .bdk/runs/<br/>and settings.local.yaml"]
   S8 --> S9["bdk config show, npx -y lavish-axi --version,<br/>report with the decision surface"]
 ```
 
@@ -140,7 +140,6 @@ A worktree isolates parts that run at the same time, so only a wave with two or 
 Each part of a batch goes through these attempts; the implementers of a batch start in one message, then its conformers. The checks each worker runs are in the boxes; [Where execute runs your checks](#where-execute-runs-your-checks) has the details:
 
 ```mermaid
-%%{init: {"flowchart": {"wrappingWidth": 200}}}%%
 flowchart TB
   IMP["Agent bdk:implementer<br/>/bdk:implement-part<br/>attempts + 1<br/>in state.json"]
   IMP --> RED["acceptance tests,<br/>written first<br/>bdk check run NN-red<br/>--at part --kind test<br/>each red for<br/>the right reason"]
@@ -161,7 +160,6 @@ flowchart TB
 Merging a part that ran in a worktree into the Change branch:
 
 ```mermaid
-%%{init: {"flowchart": {"wrappingWidth": 200}}}%%
 flowchart TB
   MER["git merge --no-ff bdk/&lt;change&gt;/part-NN"]
   MER -->|"clean: no check runs"| MC["remove the worktree<br/>and the part branch"]
@@ -290,7 +288,7 @@ flowchart TB
   C0 -->|"archived, openspec/ uncommitted"| C4
   C0 -->|"archived and committed"| C5
   C1["tree dirty? Skill /bdk:commit"] --> C2
-  C2["Agent bdk:verifier (opus)<br/>/bdk:spec-conformance --base origin/&lt;base&gt;<br/>writes R/close/spec-conformance.md"]
+  C2["Agent bdk:verifier (opus)<br/>/bdk:spec-conformance<br/>--base origin/&lt;base&gt;<br/>writes R/close/spec-conformance.md"]
   C2 -->|"FAIL"| CS["stop: archive nothing,<br/>name which side to fix"]
   C2 -->|"PASS"| C3["openspec archive &lt;change&gt; --yes<br/>deltas merged into openspec/specs/"]
   C3 --> C4["Skill /bdk:commit: only openspec/"]
@@ -365,13 +363,13 @@ The previous findings go into the round's log before any reviewer starts, and th
 flowchart TB
   G0{{"clean tree for a new report?"}} -->|"no"| GS["stop: commit or stash first"]
   G0 -->|"yes"| G1
-  G1["Skill /bdk:diagnose-bug<br/>reproduce as a user (tools.e2e or public interface)<br/>writes R/debug/reproduction.md, diagnosis.md<br/>and the fix Change: proposal, spec delta, design, plan/parts/01.md"]
+  G1["Skill /bdk:diagnose-bug<br/>reproduce as a user<br/>(tools.e2e or public interface)<br/>writes R/debug/reproduction.md,<br/>diagnosis.md and the fix Change:<br/>proposal, spec delta, design,<br/>plan/parts/01.md"]
   G1 -->|"not-reproduced or blocked"| GX["stop, nothing changed"]
-  G1 -->|"too-large"| GL["stop: continue with /bdk:design &lt;change&gt;"]
+  G1 -->|"too-large"| GL["stop: continue with<br/>/bdk:design &lt;change&gt;"]
   G1 -->|"ready"| G2(["fix gate<br/>policy.gates.design"])
   G2 -->|"stop"| GT["leave the Change for review"]
-  G2 -->|"fix"| G3["write R/debug/gate.md<br/>git switch -c &lt;change&gt; when on the base<br/>Skill /bdk:commit the Change"]
-  G3 --> G4["Skill /bdk:execute<br/>reproduction test red, fix, green, conform"]
+  G2 -->|"fix"| G3["write R/debug/gate.md<br/>git switch -c &lt;change&gt;<br/>when on the base<br/>Skill /bdk:commit the Change"]
+  G3 --> G4["Skill /bdk:execute<br/>reproduction test red,<br/>fix, green, conform"]
   G4 -->|"blocked"| G6
   G4 -->|"done"| G5["Skill /bdk:auto-review"]
   G5 --> G6["write R/debug/result.md<br/>next: /bdk:close"]

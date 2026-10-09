@@ -106,7 +106,7 @@ Mechanical orchestrators are plugin dynamic workflows; interactive stages stay s
 
 ```mermaid
 flowchart TB
-  U["/bdk:auto-review"] --> W["auto-review workflow (background runtime)"]
+  U["/bdk:auto-review"] --> W["auto-review workflow<br/>(background runtime)"]
   W -->|"agent(): read config and diff"| P["planning agent"]
   P -->|"groups, steps (schema)"| W
   W -->|"parallel()"| R["reviewer per group"]
@@ -190,15 +190,15 @@ flowchart TB
     RUN["autopilot /bdk:run"]
   end
   subgraph MT["Orchestrators in the main thread"]
-    IA["propose, design, plan, auto-review, close, debug, setup"]
+    IA["propose, design, plan, auto-review,<br/>close, debug, setup"]
   end
   subgraph LD["Stage skills in a bdk:lead agent"]
     ME["execute, review-round, pr-review"]
   end
   subgraph B["Blocks (skills, preloaded into agents)"]
-    BL["author, verifier, implement, conform, review, judge, e2e blocks"]
+    BL["author, verifier, implement, conform,<br/>review, judge, e2e blocks"]
   end
-  CLI["bdk CLI: config, check, git, rules, findings, plan, run"]
+  CLI["bdk CLI: config, check, git,<br/>rules, findings, plan, run"]
   U -->|"Skill"| IA
   RUN -->|"Skill, in order"| IA
   IA -->|"Agent bdk:lead + stage skill, background"| ME
@@ -425,7 +425,7 @@ From draft 1: integration after the groups, the judge, a report for the user. Ne
 flowchart LR
   PR["proposal.md: why, capabilities"] --> SP["specs/: requirement and scenario deltas"]
   SP --> DS["design.md: decisions, Mermaid"]
-  DS --> PL["plan/parts/NN.md: tasks, depends-on, acceptance scenarios"]
+  DS --> PL["plan/parts/NN.md: tasks,<br/>depends-on, acceptance scenarios"]
   SP -->|"openspec archive"| MS["openspec/specs: living documentation"]
   classDef store fill:#5f4b8b,stroke:#9b8bc4,color:#ffffff
   class MS store

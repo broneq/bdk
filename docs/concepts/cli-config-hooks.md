@@ -80,8 +80,8 @@ Three layers merge, later over earlier; arrays of items merge by `id`. `bdk conf
 flowchart TB
   D["defaults (the zod schema)"] --> G["global: ~/.config/bdk/settings.yaml"]
   G --> P["project: .bdk/settings.yaml (committed)"]
-  P --> L["local: .bdk/settings.local.yaml (ignored)"]
-  L --> SHOW["bdk config show, in the ! block of every skill"]
+  P --> L["local: .bdk/settings.local.yaml<br/>(ignored)"]
+  L --> SHOW["bdk config show,<br/>in the ! block of every skill"]
 ```
 
 Which key steers which stage (dashed boxes hold the keys a stage reads, its blocks included):
