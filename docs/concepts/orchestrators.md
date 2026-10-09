@@ -99,6 +99,8 @@ A gap of the design is a choice about what the product does that the specs and t
 
 `/bdk:execute` is thin: it starts one `bdk:lead` with the stage skill `/bdk:execute-waves` and passes the result on. The lead is the only writer of `state.json` and the only agent that commits and merges.
 
+The stage builds every part of the plan and takes no part id: called with one (`/bdk:execute add-csv-export 01`) or asked for one part, it starts no lead and names [`/bdk:implement-part`](/reference/bdk/skills#implement-part) `<change> <part-id>`, the block that builds one part, uncommitted.
+
 ```mermaid
 sequenceDiagram
   actor U as user
