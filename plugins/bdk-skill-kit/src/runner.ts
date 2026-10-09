@@ -39,7 +39,8 @@ export function runChecks(config: CheckConfig, options: RunOptions): RunResult {
       if (!rule.check || !rule.kinds.includes(doc.kind)) continue;
       const setting = settingOf(rule, target?.settings ?? config.settings);
       if (setting.severity === "off") continue;
-      rule.check(doc, context(config, rule, setting.severity, setting.options, doc.path, findings));
+      const ctx = context(config, rule, setting.severity, setting.options, doc.path, findings);
+      guarded(rule, `on ${doc.path}`, () => rule.check?.(doc, ctx));
     }
   }
 
@@ -49,7 +50,7 @@ export function runChecks(config: CheckConfig, options: RunOptions): RunResult {
     if (setting.severity === "off") continue;
     const own = docs.filter((d) => rule.kinds.includes(d.kind));
     const ctx = context(config, rule, setting.severity, setting.options, "", findings);
-    rule.checkProject(own, { ...ctx, strays });
+    guarded(rule, "in the project check", () => rule.checkProject?.(own, { ...ctx, strays }));
   }
 
   findings.sort(compareFindings);
@@ -59,6 +60,19 @@ export function runChecks(config: CheckConfig, options: RunOptions): RunResult {
     files: docs.filter(selected).length,
     inScope,
   };
+}
+
+/**
+ * Runs one rule, naming it and where it ran when it throws, so the internal
+ * error line points at the broken rule; the original error stays the cause.
+ */
+function guarded(rule: Rule<object>, where: string, run: () => void): void {
+  try {
+    run();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`rule ${rule.id} failed ${where}: ${message}`, { cause: error });
+  }
 }
 
 /** Report order: file, line, rule, message. */
