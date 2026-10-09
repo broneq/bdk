@@ -6,7 +6,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { chromium } from "playwright";
+import { chromium, errors } from "playwright";
 import { serve } from "vitepress";
 import { type MermaidBlock, mermaidBlocks } from "./mermaid-blocks.ts";
 
@@ -14,6 +14,9 @@ import { type MermaidBlock, mermaidBlocks } from "./mermaid-blocks.ts";
 export const DESKTOP_WIDTH = 1280;
 /** A diagram drawn smaller than this share of its own size shows 14 px labels below 11 px. */
 export const MIN_SCALE = 0.8;
+
+/** How long a page's diagrams may take to draw before the check measures them as they are. */
+const DRAW_TIMEOUT = 30_000;
 
 const DOCS = join(import.meta.dirname, "..");
 /** Not site pages: the archive stays out of the site, the rest is tooling. */
@@ -34,9 +37,9 @@ export interface DrawnBlockText {
   readonly overflow: number;
 }
 
-/** One drawn diagram as the browser shows it. */
+/** One diagram frame as the browser shows it. */
 export interface DrawnDiagram {
-  /** Width of the diagram's own coordinate system (the SVG viewBox). */
+  /** Width of the diagram's own coordinate system (the SVG viewBox); 0 when it is not drawn. */
   readonly naturalWidth: number;
   /** Width the page draws it at. */
   readonly drawnWidth: number;
@@ -46,6 +49,8 @@ export interface DrawnDiagram {
   readonly labels: readonly DrawnLabel[];
   /** Each drawn line of each sequence block label. */
   readonly blockTexts: readonly DrawnBlockText[];
+  /** The Mermaid error the frame shows instead of a diagram. */
+  readonly error?: string;
 }
 
 /** A sequence block statement and its label: `alt Status: done`, `else`, `par in parallel`. */
@@ -91,6 +96,13 @@ export function diagramProblems(
       return [];
     }
     const at = `${page}:${String(block.line)}`;
+    if (diagram.error !== undefined) {
+      return [`${at}: does not draw: ${diagram.error}`];
+    }
+    // A scale read from a diagram not yet laid out is Infinity or NaN, and would pass.
+    if (!(Number.isFinite(diagram.naturalWidth) && diagram.naturalWidth > 0)) {
+      return [`${at}: not laid out, so its fit cannot be measured`];
+    }
     return [...fitProblems(at, diagram), ...labelProblems(at, block.code, diagram)];
   });
 }
@@ -175,8 +187,26 @@ function pagesWithDiagrams(): Map<string, MermaidBlock[]> {
 }
 
 /**
- * Measures the drawn diagrams of a page. It runs in the browser, so it uses nothing from this
- * module.
+ * Whether every diagram frame of a page is drawn or shows its error. A frame still drawing shows
+ * its source (`mermaid-source`) and holds Mermaid's scratch SVG, which has no viewBox yet; a drawn
+ * frame holds the diagram's SVG as its child. It runs in the browser.
+ */
+function allDrawn(count: number): boolean {
+  const frames = [...document.querySelectorAll(".mermaid")];
+  return (
+    frames.length >= count &&
+    frames.every(
+      (frame) =>
+        frame.querySelector(".mermaid-error") !== null ||
+        (!frame.classList.contains("mermaid-source") &&
+          (frame.querySelector<SVGSVGElement>(":scope > svg")?.viewBox.baseVal.width ?? 0) > 0),
+    )
+  );
+}
+
+/**
+ * Measures each diagram frame of a page, one entry per frame. It runs in the browser, so it uses
+ * nothing from this module.
  */
 function measureDiagrams(frames: Element[]): DrawnDiagram[] {
   /** The lines an element's text shows: text boxes that overlap vertically share a line. */
@@ -248,24 +278,35 @@ function measureDiagrams(frames: Element[]): DrawnDiagram[] {
     });
   }
 
-  return frames.flatMap((frame) => {
-    const svg = frame.querySelector("svg");
-    if (svg === null) {
-      return [];
+  return frames.map((frame) => {
+    const error = frame
+      .querySelector(".mermaid-error")
+      ?.textContent.replace(/^Diagram error: /, "");
+    // Only a drawn frame's own SVG: one still drawing holds Mermaid's scratch SVG, not laid out.
+    const svg = frame.classList.contains("mermaid-source")
+      ? null
+      : frame.querySelector<SVGSVGElement>(":scope > svg");
+    if (error !== undefined || svg === null) {
+      return {
+        naturalWidth: 0,
+        drawnWidth: 0,
+        overflow: 0,
+        labels: [],
+        blockTexts: [],
+        ...(error === undefined ? {} : { error }),
+      };
     }
     const naturalWidth = svg.viewBox.baseVal.width;
     const drawnWidth = svg.getBoundingClientRect().width;
-    return [
-      {
-        naturalWidth,
-        drawnWidth,
-        overflow: frame.scrollWidth - frame.clientWidth,
-        labels: [...svg.querySelectorAll("foreignObject > div")]
-          .filter((label) => label.textContent.trim())
-          .map((label) => ({ text: labelText(label), lines: lineCount(label) })),
-        blockTexts: blockTexts(svg, drawnWidth / naturalWidth),
-      },
-    ];
+    return {
+      naturalWidth,
+      drawnWidth,
+      overflow: frame.scrollWidth - frame.clientWidth,
+      labels: [...svg.querySelectorAll("foreignObject > div")]
+        .filter((label) => label.textContent.trim())
+        .map((label) => ({ text: labelText(label), lines: lineCount(label) })),
+      blockTexts: naturalWidth > 0 ? blockTexts(svg, drawnWidth / naturalWidth) : [],
+    };
   });
 }
 
@@ -279,10 +320,14 @@ async function main(): Promise<void> {
     for (const [file, blocks] of pagesWithDiagrams()) {
       await page.goto(`http://localhost:${String(port)}/bdk/${pagePath(file)}`);
       // A diagram is drawn after the page mounts; a block that fails to draw shows its error.
-      await page.waitForFunction(
-        (count) => document.querySelectorAll(".mermaid svg, .mermaid-error").length >= count,
-        blocks.length,
-      );
+      // One still not drawn when the wait ends is measured as it is and fails, named by its line.
+      await page
+        .waitForFunction(allDrawn, blocks.length, { timeout: DRAW_TIMEOUT })
+        .catch((reason: unknown) => {
+          if (!(reason instanceof errors.TimeoutError)) {
+            throw reason;
+          }
+        });
       const drawn = await page.$$eval(".mermaid", measureDiagrams);
       found.push(...diagramProblems(`docs/${file}`, blocks, drawn));
     }

@@ -257,7 +257,7 @@ The Concepts page of the orchestrators SHALL show, in the execute diagrams, ever
 - **THEN** the page says that the execute lead runs the checks of the `wave` point on the files changed since the wave's base, repairs a red wave with `/bdk:resolve-conflict --wave`, and leaves the `review` point to `/bdk:auto-review`
 
 ### Requirement: Diagrams fit the content column
-At a viewport width of 1280 px, every Mermaid diagram of a site page SHALL render at a scale of at least 0.8 of its natural width, so its 14 px labels show at 11.2 px or more, and its frame SHALL NOT scroll sideways. At a viewport width of 390 px no diagram SHALL be a left-to-right chain wider than two screens. The `docs` job of PR CI SHALL fail when a diagram of the built site renders below that scale or its frame scrolls sideways at 1280 px, and SHALL name the page, the block's line, the rendered scale and the widest natural width that fits.
+At a viewport width of 1280 px, every Mermaid diagram of a site page SHALL render at a scale of at least 0.8 of its natural width, so its 14 px labels show at 11.2 px or more, and its frame SHALL NOT scroll sideways. At a viewport width of 390 px no diagram SHALL be a left-to-right chain wider than two screens. The `docs` job of PR CI SHALL fail when a diagram of the built site renders below that scale or its frame scrolls sideways at 1280 px, and SHALL name the page, the block's line, the rendered scale and the widest natural width that fits. The check SHALL measure each diagram only once Mermaid has laid it out; a diagram it cannot measure (not drawn, or drawn with no natural width) or that shows a Mermaid error SHALL fail the check, named by its page and the block's line, never pass it.
 
 #### Scenario: Long left-to-right chain
 - **WHEN** a pull request adds a `flowchart LR` chain of nine stages to a Concepts page, 1800 px wide
@@ -265,6 +265,14 @@ At a viewport width of 1280 px, every Mermaid diagram of a site page SHALL rende
 
 #### Scenario: Wide sequence diagram
 - **WHEN** a pull request adds a sequence diagram whose messages between neighbouring lifelines make it 960 px wide
+- **THEN** the `docs` job fails and names the page and the block's line
+
+#### Scenario: Too wide as the last diagram of a page
+- **WHEN** the last diagram of a page with several diagrams is redrawn 750 px wide
+- **THEN** the `docs` job fails and names that page, that block's line and its scale below 0.8
+
+#### Scenario: Diagram the check cannot measure
+- **WHEN** a diagram of the built site is not laid out when the check measures it, or its drawn SVG has no natural width
 - **THEN** the `docs` job fails and names the page and the block's line
 
 #### Scenario: Diagrams on the site today

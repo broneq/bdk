@@ -64,6 +64,30 @@ describe("diagramProblems: fit", () => {
     ]);
   });
 
+  it("fails a diagram it cannot measure, with no fit or label findings", () => {
+    const labels = [{ text: "archived, openspec/ uncommitted", lines: 2 }];
+    expect(
+      diagramProblems(
+        page,
+        [flowchart, sequence],
+        [diagram({ naturalWidth: 0, labels }), diagram({ naturalWidth: Number.NaN })],
+      ),
+    ).toEqual([
+      "docs/concepts/x.md:3: not laid out, so its fit cannot be measured",
+      "docs/concepts/x.md:20: not laid out, so its fit cannot be measured",
+    ]);
+  });
+
+  it("fails a diagram that shows its Mermaid error, with the error", () => {
+    expect(
+      diagramProblems(
+        page,
+        [flowchart, sequence],
+        [diagram(), diagram({ naturalWidth: 0, error: "Parse error on line 2" })],
+      ),
+    ).toEqual(["docs/concepts/x.md:20: does not draw: Parse error on line 2"]);
+  });
+
   it("names a page whose blocks did not all draw", () => {
     expect(diagramProblems(page, [flowchart, sequence], [diagram()])).toEqual([
       "docs/concepts/x.md: 2 mermaid blocks, 1 drawn diagrams",
