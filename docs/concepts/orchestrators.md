@@ -364,7 +364,7 @@ The previous findings go into the round's log before any reviewer starts, and th
 flowchart TB
   G0{{"clean tree for<br/>a new report?"}} -->|"no"| GS["stop: commit or<br/>stash first"]
   G0 -->|"yes"| G1
-  G1["Skill /bdk:diagnose-bug<br/>reproduce as a user<br/>(tools.e2e or public interface)<br/>writes R/debug/reproduction.md,<br/>diagnosis.md and the fix Change:<br/>proposal, spec delta, design,<br/>plan/parts/01.md"]
+  G1["Skill /bdk:diagnose-bug<br/>reproduce as a user<br/>(tools.e2e or public interface)<br/>writes R/debug/reproduction.md,<br/>diagnosis.md and the fix Change:<br/>proposal, spec delta, design,<br/>plan/parts/01.md<br/>related defects: Related: lines,<br/>not fixed"]
   G1 -->|"too-large"| GL["stop: continue with<br/>/bdk:design &lt;change&gt;"]
   G1 -->|"ready"| G2(["fix gate<br/>policy.gates.design"])
   G1 -->|"not-reproduced<br/>or blocked"| GX["stop, nothing<br/>changed"]
@@ -376,6 +376,8 @@ flowchart TB
   G5 -->|"stops for triage,<br/>no review/result.md"| GR["stop: /bdk:debug &lt;change&gt;<br/>continues once the<br/>findings are decided"]
   G5 -->|"review/result.md"| G6["write R/debug/result.md<br/>next: /bdk:close"]
 ```
+
+The fix Change covers the reproduced bug only: its part has one acceptance scenario, the reproduction, whose test the implementer must see red. A related defect `/bdk:diagnose-bug` finds on the way, such as another bug or data the bug already wrote that fixing the cause does not repair, is named and not fixed: a `Related:` line in `diagnosis.md`, a "Related, not fixed" entry under Risks in the Change's `design.md`, the fix gate's question, and a `Related (not fixed)` line under `## Bug` in `debug/result.md`. Give each its own Change: `/bdk:debug` with its symptom, or `/bdk:propose`.
 
 ## `/bdk:diagnose-run`
 

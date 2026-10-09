@@ -70,7 +70,7 @@ Done when the diagnosis is ready, or you stopped.
 Read `R/debug/diagnosis.md` and the part `openspec/changes/<change>/plan/parts/01.md` (its goal and tasks).
 
 - `policy.gates.design: auto`: approve without asking.
-- `manual`: ask with one `AskUserQuestion` call (load it with `ToolSearch` query `select:AskUserQuestion` when it is listed only by name), header `Fix gate`: fix `<change>` as diagnosed? Name the root cause, the reproduction scenario and the part's tasks. Options: `Fix` (recommended) and `Stop` (the user says what to change in a note or in "Other").
+- `manual`: ask with one `AskUserQuestion` call (load it with `ToolSearch` query `select:AskUserQuestion` when it is listed only by name), header `Fix gate`: fix `<change>` as diagnosed? Name the root cause, the reproduction scenario, the part's tasks, and each `Related:` line of the diagnosis as not fixed by this Change. Options: `Fix` (recommended) and `Stop` (the user says what to change in a note or in "Other").
   - Fix: approved.
   - Stop, or a change requested: write nothing, commit nothing; reply that the fix Change is left for review (`openspec/changes/<change>/`) and that `/bdk:debug <change>` continues after the user's edits or approval. End your turn.
   - When `AskUserQuestion` is not available: ask in your reply, naming the same, and end your turn without the gate file. When the user approves in the conversation, write it then.
@@ -137,6 +137,7 @@ Status: done
 ```
 
 - `Status: done` only when `execute/result.md` and `review/result.md` both read `Status: done`; else `Status: blocked`.
+- `## Bug`: after `Root cause:`, one `- Related (not fixed): <text>` line per `Related:` line of `debug/diagnosis.md`, none when it has none.
 - `## Fix`: the `## Acceptance tests` lines and `## Changed files` of `R/execute/part-01.md`; the commits from `git log --oneline <base>..HEAD`.
 - `## Review`: the first line of `review/result.md` and its `## Rounds` lines.
 - `## Blockers`: each with the command that continues it.
@@ -147,4 +148,4 @@ Done when the result exists and its first line is the status.
 
 ## 9. Reply
 
-Reply with the status line, the result path, the root cause in one line, the reproduction test and whether it was seen red then green, and the review outcome. On `Status: done` name the next step `/bdk:close <change>`, which checks the specs, archives the Change and opens the pull request; on `Status: blocked` each blocker with its command. Never say the bug is fixed while the part or the review is blocked.
+Reply with the status line, the result path, the root cause in one line, each related defect as not fixed, the reproduction test and whether it was seen red then green, and the review outcome. On `Status: done` name the next step `/bdk:close <change>`, which checks the specs, archives the Change and opens the pull request; on `Status: blocked` each blocker with its command. Never say the bug is fixed while the part or the review is blocked.

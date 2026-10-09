@@ -1,57 +1,4 @@
-# bdk-debug Specification
-
-## Purpose
-
-Defines how the `bdk` plugin fixes a reported bug: the block `diagnose-bug`, which reproduces the bug on the product, finds its root cause and writes a one-part fix Change, and the orchestrator `/bdk:debug`, which gates the fix, builds it test-first through `/bdk:execute` and reviews it with `/bdk:auto-review`.
-
-## Requirements
-
-### Requirement: Skills
-
-The `bdk` plugin SHALL ship the skills `debug` (`skills/debug/`, the user command `/bdk:debug`) and `diagnose-bug` (`skills/diagnose-bug/`), both running in the main thread. `diagnose-bug` SHALL never edit product code or tests. `/bdk:debug` SHALL reproduce, diagnose, test, fix and review nothing itself: it SHALL invoke `diagnose-bug`, `commit`, `execute` and `auto-review` with the Skill tool and apply the gate. The reply that ends a block it invoked SHALL end that block only: `/bdk:debug` SHALL go on with its next step in the same turn and stop only where its own steps say to stop. Its description SHALL route a reported symptom (an error, a crash, unexpected behaviour) to `/bdk:debug` also when the fix may turn out to be one line.
-
-#### Scenario: Debug composes blocks
-
-- **WHEN** `/bdk:debug "tally total crashes after tally add 5"` runs in a configured project and the bug is reproduced
-- **THEN** the trace shows the Skill calls `diagnose-bug`, then `commit`, then `execute`, then `auto-review`, and no `Edit` or `Write` of `bin/` or `test/` by the main conversation
-
-#### Scenario: Diagnosis reply does not end the run
-
-- **WHEN** `diagnose-bug` ends with its reply and `debug/diagnosis.md` reads `Status: ready` under `policy.gates.design: auto`
-- **THEN** in the same turn `/bdk:debug` writes `debug/gate.md` and invokes `commit`
-
-#### Scenario: A one-line fix of a reported crash
-
-- **WHEN** the user reports in a configured project that `tally total` crashes with `TypeError: total.toFixed is not a function` after `tally add 5`, and asks to fix it
-- **THEN** the session invokes `/bdk:debug`, and no `Edit` of `bin/tally.js` comes before it
-
-### Requirement: Bug report and start
-
-`/bdk:debug [<bug report> | <issue>]` and `diagnose-bug [<bug report> | <issue>]` SHALL get the configuration from their own `bdk config show` block and, in a project that is not configured or whose configuration is invalid, stop with the line that command prints, writing nothing. An issue reference (`#42`, `42`, an issue URL) SHALL be read with `gh issue view`; any other text is the report. A report without an observable symptom (what the user did and what went wrong) SHALL get one question for it before anything runs. `/bdk:debug` SHALL stop before the diagnosis when `git status --porcelain` lists changes, naming them, because the fix runs through `execute`, which needs a clean tree.
-
-#### Scenario: Not configured
-
-- **WHEN** `/bdk:debug "total crashes"` runs in a project without `.bdk/settings.yaml`
-- **THEN** the reply is `BDK not configured: run /bdk:setup` and no file is written
-
-#### Scenario: Dirty tree
-
-- **WHEN** `/bdk:debug "total crashes"` runs while `src/parse.js` has uncommitted changes
-- **THEN** nothing runs, nothing is written, and the reply names `src/parse.js` and asks to commit or stash it first
-
-### Requirement: Reproduction first
-
-`diagnose-bug` SHALL name the fix Change (the name the user gives, else `fix-<slug>`, or `<issue>-fix-<slug>` from an issue) and reproduce the bug before it reads the code for a cause: through a `tools.e2e` item driven as a user would (started from `start`, waited for with `ready`, stopped afterwards), or, without one, through the closest public interface (the command or exported function the report names). It SHALL write `.bdk/runs/<change>/debug/reproduction.md` with the steps, the expected and the observed behaviour, and the decisive output. When the observed behaviour matches the expected one, it SHALL write `debug/diagnosis.md` with `Status: not-reproduced`, create no Change, and reply with what it ran and what would help reproduce the bug.
-
-#### Scenario: Bug reproduced as a user
-
-- **WHEN** the report says `tally total` crashes after `tally add 5`, and the project has a `cli` item in `tools.e2e`
-- **THEN** the trace runs `tally.js add 5` and `tally.js total` in a scratch directory, and `debug/reproduction.md` holds the crash output under its observed behaviour
-
-#### Scenario: Not reproduced
-
-- **WHEN** the report says `tally total` prints a wrong sum after `tally add 2.5`, and the product prints the right sum
-- **THEN** `debug/diagnosis.md` starts with `Status: not-reproduced`, `openspec/changes/` holds no new Change, and no product file changed
+## MODIFIED Requirements
 
 ### Requirement: Fix Change
 
@@ -85,15 +32,6 @@ After `Status: ready`, `/bdk:debug` SHALL apply `policy.gates.design`: `auto` go
 
 - **WHEN** `/bdk:debug` runs with `policy.gates.design` unset and the diagnosis is ready
 - **THEN** the reply names the root cause and asks whether to fix, no commit is made, no `bdk:lead` starts, and `debug/gate.md` does not exist
-
-### Requirement: Fix through execute and review
-
-After the gate, `/bdk:debug` SHALL switch to the branch `<change>` when the current branch is the base branch (`origin/HEAD`, else `main`), invoke `commit` for `openspec/changes/<change>/` only, then invoke `execute <change>` (the implementer writes the reproduction test, sees it red, fixes the code, sees it green; the conformer checks the part; the lead commits), then, when `execute/result.md` reads `Status: done`, invoke `auto-review <change>`. A blocked execute or review SHALL stop the run with the blocker and its command. It SHALL never edit code, tests or the Change itself.
-
-#### Scenario: Reproduced bug fixed with a test
-
-- **WHEN** `/bdk:debug` runs on the tally crash with `policy.gates.design: auto`
-- **THEN** `execute/part-01.md` starts with `Status: done` and records the reproduction test `red seen; green seen`, the branch `fix-<slug>` holds the commits of the Change and of the fix, `review/result.md` exists, and `tally add 5` then `tally total` prints `Total: 5.00`
 
 ### Requirement: Debug result and resume
 
