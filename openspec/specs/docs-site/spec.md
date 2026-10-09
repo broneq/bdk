@@ -47,7 +47,7 @@ The site SHALL have a home page and a navigation bar. Its sidebar SHALL hold, in
 - **THEN** `pnpm check` fails and names `docs/concepts/<slug>.md`
 
 ### Requirement: Mermaid diagrams render as diagrams
-A fenced code block with the language `mermaid` in a site page SHALL render as a diagram, in both the light and the dark theme, and SHALL re-render when the reader switches the theme. A flowchart label, and a participant name, message, note, block label or box name of a sequence diagram, SHALL break into lines only where its author wrote a line break (`<br/>`), never inside a word, whatever its length. No element of a drawn diagram SHALL draw a shadow or a glow, whatever the node's shape, in either theme. No lifeline, message line or frame line (a `loop`, `alt`, `opt` or `par` border or section divider) of a drawn sequence diagram SHALL be visible through the letters of a message, a frame condition or a section title: the line passes behind the text, in either theme and at any width.
+A fenced code block with the language `mermaid` in a site page SHALL render as a diagram, in both the light and the dark theme, and SHALL re-render when the reader switches the theme. A flowchart label, and a participant name, message, note, block label or box name of a sequence diagram, SHALL break into lines only where its author wrote a line break (`<br/>`), never inside a word, whatever its length. No element of a drawn diagram SHALL draw a shadow or a glow, whatever the node's shape, in either theme. A drawn diagram narrower than the inside of its frame SHALL sit centred horizontally in the frame; a diagram wider than the inside of its frame SHALL start at the frame's left padding and scroll sideways, so its left edge stays reachable. No lifeline, message line or frame line (a `loop`, `alt`, `opt` or `par` border or section divider) of a drawn sequence diagram SHALL be visible through the letters of a message, a frame condition or a section title: the line passes behind the text, in either theme and at any width.
 
 #### Scenario: Diagram in a design document
 - **WHEN** a reader opens the v3 architecture design page on the site
@@ -68,6 +68,14 @@ A fenced code block with the language `mermaid` in a site page SHALL render as a
 #### Scenario: Stadium node draws flat
 - **WHEN** a reader opens `docs/concepts/findings.md` on the site, in the light or the dark theme
 - **THEN** the stadium node "decided" draws flat like the box nodes next to it, with no shadow and no glow around it
+
+#### Scenario: Narrow diagram sits centred
+- **WHEN** a reader opens `docs/guide/index.md` or `docs/concepts/orchestrators.md` on the site at 1280 px, in the light or the dark theme
+- **THEN** the flowchart of the Guide page and each diagram of the orchestrators page narrower than its frame has equal space to its left and to its right inside the frame
+
+#### Scenario: Wide diagram scrolls at phone width
+- **WHEN** a reader opens `docs/concepts/orchestrators.md` on the site at 390 px
+- **THEN** a diagram wider than its frame starts at the frame's left padding and scrolls sideways, and scrolling back reaches its left edge
 
 #### Scenario: Lifeline behind a message label
 - **WHEN** a reader opens `docs/concepts/run-state.md` on the site, in the light or the dark theme, at desktop or phone width
