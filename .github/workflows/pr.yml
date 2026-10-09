@@ -132,3 +132,11 @@ jobs:
 
       - if: steps.changes.outputs.build == 'true'
         run: pnpm --filter @bdk/docs docs:build
+
+      # Mermaid lays a diagram out only in a browser, so the fit check measures the built site
+      # in Chromium (v3-338-docs-wide-diagrams-fit, design D3).
+      - if: steps.changes.outputs.build == 'true'
+        run: pnpm --filter @bdk/docs exec playwright install --with-deps chromium
+
+      - if: steps.changes.outputs.build == 'true'
+        run: pnpm --filter @bdk/docs docs:diagram-fit

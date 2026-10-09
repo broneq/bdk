@@ -6,11 +6,13 @@
     "docs:build": "vitepress build",
     "docs:dev": "vitepress dev",
     "docs:preview": "vitepress preview",
-    "typecheck": "vue-tsc -p .vitepress"
+    "typecheck": "vue-tsc -p .vitepress",
+    "docs:diagram-fit": "node .vitepress/diagram-fit.ts"
   },
   "devDependencies": {
     "happy-dom": "20.0.0",
     "mermaid": "12.1.0",
+    "playwright": "1.63.0",
     "typescript": "6.0.3",
     "vitepress": "1.6.4",
     "vue": "3.5.43",

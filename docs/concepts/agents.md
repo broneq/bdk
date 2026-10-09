@@ -9,26 +9,31 @@ Notation in the diagrams: see the [glossary](./glossary.md#notation-in-the-diagr
 The main thread (an orchestrator) starts leads and single agents; a lead starts workers as foreground `Agent` calls. Every `Agent` call a BDK skill makes names its run mode: `run_in_background: false` for an agent the caller waits for, so the host never starts a worker in the background and a lead never waits on one by polling; only a lead started under `execution.lead: background` gets `run_in_background: true`. A block that runs in the main thread is called with the `Skill` tool.
 
 ```mermaid
-flowchart LR
+flowchart TB
   O["orchestrators<br/>(main thread)"]
   O -->|"Skill"| MB["main-thread blocks"]
-  O -->|"Agent"| EXP["explorer, haiku"]
-  O -->|"Agent"| DES["designer, session model"]
-  O -->|"Agent"| PLN["planner, session model"]
-  O -->|"Agent"| VER["verifier, opus"]
-  O -->|"Agent"| ANA["analyst, sonnet"]
-  O -->|"Agent, background"| EW["lead: /bdk:execute-waves"]
-  O -->|"Agent, background"| RR["lead: /bdk:review-round"]
-  O -->|"Agent, background"| PRR["lead: /bdk:pr-review-round"]
-  EW --> IMPL["implementer, sonnet"]
-  EW --> CONF["conformer, sonnet"]
-  RR --> REV["reviewer, sonnet"]
-  RR --> E2E["e2e-tester, sonnet"]
-  RR --> INT["integration-reviewer, opus"]
-  RR --> JUD["judge, sonnet"]
-  PRR --> REV
-  PRR --> INT
-  PRR --> JUD
+  O -->|"Agent"| AG["explorer, haiku<br/>designer, session model<br/>planner, session model<br/>verifier, opus<br/>analyst, sonnet"]
+  O -->|"Agent, background"| LEADS
+  AG ~~~ LEADS
+  subgraph LEADS["leads"]
+    direction TB
+    subgraph S1[" "]
+      direction LR
+      L1["lead:<br/>/bdk:execute-waves"] --> W1["implementer, sonnet<br/>conformer, sonnet"]
+    end
+    subgraph S2[" "]
+      direction LR
+      L2["lead:<br/>/bdk:review-round"] --> W2["reviewer, sonnet<br/>e2e-tester, sonnet<br/>integration-reviewer, opus<br/>judge, sonnet"]
+    end
+    subgraph S3[" "]
+      direction LR
+      L3["lead:<br/>/bdk:pr-review-round"] --> W3["reviewer, sonnet<br/>integration-reviewer, opus<br/>judge, sonnet"]
+    end
+    S1 ~~~ S2 ~~~ S3
+  end
+  style S1 fill:transparent,stroke:transparent
+  style S2 fill:transparent,stroke:transparent
+  style S3 fill:transparent,stroke:transparent
 ```
 
 `bdk:reviewer`, `bdk:integration-reviewer`, `bdk:judge` and `bdk:e2e-tester` have their skill preloaded through the `skills:` frontmatter; the other agents call the skill their prompt names with the `Skill` tool. Every block skill that is typed by a user in the main thread starts its own agent instead of doing the work (its step 0), so the author never checks its own work.
