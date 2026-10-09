@@ -102,7 +102,47 @@ describe("scope", () => {
       binary: ["img/a.png"],
       deleted: ["src/old.ts"],
       dirty: ["src/c.ts", "src/d.ts"],
+      tests: [],
+      testsOnly: false,
     });
+  });
+
+  /** A range of the given text, binary and deleted paths, with `dirty` changes too. */
+  function range(text: string[], binary: string[] = [], deleted: string[] = []): Script {
+    const numstat = [...text, ...deleted].map((path) => `1\t0\t${path}\0`).join("");
+    return {
+      ...happy(),
+      [`diff --numstat ${DIFF} ${MERGE_BASE} ${HEAD}`]:
+        numstat + binary.map((path) => `-\t-\t${path}\0`).join(""),
+      [`diff --name-only --diff-filter=D ${DIFF} ${MERGE_BASE} ${HEAD}`]: deleted
+        .map((path) => `${path}\0`)
+        .join(""),
+    };
+  }
+
+  it("names a fix range of test files only, deleted ones included, as tests only", () => {
+    const result = scope(deps(range(["test/cli.test.js"], [], ["src/__tests__/old.js"])), {
+      base: "main",
+    });
+    expect(result.tests).toEqual(["src/__tests__/old.js", "test/cli.test.js"]);
+    expect(result.testsOnly).toBe(true);
+  });
+
+  it("is not tests only with a product file, a binary or a deleted product file", () => {
+    const product = scope(deps(range(["src/parse.js", "src/parse.test.js"])), { base: "main" });
+    expect(product.tests).toEqual(["src/parse.test.js"]);
+    expect(product.testsOnly).toBe(false);
+    const binary = scope(deps(range(["test/a.test.js"], ["img/logo.png"])), { base: "main" });
+    expect(binary.testsOnly).toBe(false);
+    const deleted = scope(deps(range(["test/a.test.js"], [], ["src/old.js"])), { base: "main" });
+    expect(deleted.testsOnly).toBe(false);
+  });
+
+  it("is tests only with nothing to review, whatever is dirty", () => {
+    const result = scope(deps(range([])), { base: "main" });
+    expect(result).toMatchObject({ files: [], binary: [], deleted: [], tests: [] });
+    expect(result.dirty).not.toEqual([]);
+    expect(result.testsOnly).toBe(true);
   });
 
   it("starts after the last finished round and ignores a crashed one", () => {

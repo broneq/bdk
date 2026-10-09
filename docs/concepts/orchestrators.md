@@ -268,8 +268,10 @@ sequenceDiagram
     Note over L: appends red checks
   end
   par after the check run
-    L->>E: /bdk:e2e-check
-    E->>E: bdk findings add
+    opt unless only test files<br/>changed since a PASS
+      L->>E: /bdk:e2e-check
+      E->>E: bdk findings add
+    end
   and
     L->>I: /bdk:review-integration
     I->>I: bdk findings add
@@ -280,7 +282,7 @@ sequenceDiagram
   L->>L: write<br/>round-N/round.md
 ```
 
-`bdk git groups` gets `--rounds R/review`, so a later round covers only what changed since the round before, and `--plan` with the plan parts (round 1) or the fix parts of the round before, so each group is one part. Every finding lands in `round-N/findings.jsonl`. The E2E tester starts only after the check run has ended, so your suites and the started product never compete for the same ports or browsers. A worker that fails is started once more with the same prompt; a second failure goes under `Gaps` in `round.md`.
+`bdk git groups` gets `--rounds R/review`, so a later round covers only what changed since the round before, and `--plan` with the plan parts (round 1) or the fix parts of the round before, so each group is one part. Every finding lands in `round-N/findings.jsonl`. The E2E tester starts only after the check run has ended, so your suites and the started product never compete for the same ports or browsers. A later round whose fix commits changed only test files (`testsOnly` in `groups.json`, from file names such as `test/`, `__tests__/`, `*.test.*` or `*_test.*`) runs no E2E check when the last E2E verdict passed or was skipped: the product is the one that verdict checked, so the round writes no `round-N/e2e/` and its `round.md` names the verdict it carries over. A fix that touches any other file, or a last verdict `FAIL` or `BLOCKED`, gets the full check. A worker that fails is started once more with the same prompt; a second failure goes under `Gaps` in `round.md`.
 
 ## `/bdk:close`
 

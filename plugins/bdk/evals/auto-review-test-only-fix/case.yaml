@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: auto-review-test-only-fix
+context:
+  scaffold_script: scaffold.sh
