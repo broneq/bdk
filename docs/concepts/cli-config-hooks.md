@@ -112,7 +112,7 @@ flowchart TB
   end
   subgraph R5[" "]
     direction LR
-    S5["/bdk:auto-review"] --- C5["policy.gates.review<br/>policy.budgets.review-rounds<br/>execution.lead, models.lead<br/>execution.max-parallel<br/>tools.e2e, tools.test,<br/>tools.lint, tools.build<br/>languages, rules<br/>models.reviewer, models.judge,<br/>models.integration-reviewer,<br/>models.e2e-tester<br/>fix pass:<br/>plan.part.max-tasks<br/>plan.part.max-files<br/>plan.part.max-bytes<br/>policy.budgets.part-attempts<br/>policy.escalation.model<br/>policy.escalation.effort<br/>models.implementer<br/>models.conformer"]
+    S5["/bdk:auto-review"] --- C5["policy.gates.review<br/>policy.budgets.review-rounds<br/>execution.lead, models.lead<br/>execution.max-parallel<br/>tools.e2e, tools.test,<br/>tools.lint, tools.build<br/>languages, rules<br/>models.reviewer, models.judge,<br/>models.integration-reviewer,<br/>models.e2e-tester,<br/>models.verifier<br/>fix pass:<br/>plan.part.max-tasks<br/>plan.part.max-files<br/>plan.part.max-bytes<br/>policy.budgets.part-attempts<br/>policy.escalation.model<br/>policy.escalation.effort<br/>models.implementer<br/>models.conformer"]
   end
   subgraph R6[" "]
     direction LR

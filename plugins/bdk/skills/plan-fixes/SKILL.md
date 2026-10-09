@@ -13,7 +13,7 @@ Arguments: $ARGUMENTS
 
 # Plan the fixes of a review round
 
-Turn the findings of one round that are decided `fix` into fix parts, so the execute lead builds them like plan parts: tests first, then the fix, then conform. You write only under the round's `fixes/` directory: never code, tests, specs, the Change's plan or a decision. Run `bdk` always as `"${CLAUDE_PLUGIN_ROOT}/bin/bdk"`, each command on its own. Read and search with Read, Glob and Grep.
+Turn the findings of one round that are decided `fix` into fix parts, so the execute lead builds them like plan parts: tests first, then the fix, then conform. You write only under the round's `fixes/` directory: never code, tests, specs, the Change's plan or a decision. A fix part may change a spec delta of the Change; the implementer does that, not you. Run `bdk` always as `"${CLAUDE_PLUGIN_ROOT}/bin/bdk"`, each command on its own. Read and search with Read, Glob and Grep.
 
 When the block above says `BDK not configured` or `BDK configuration invalid`, write nothing, reply with that line and stop. If it shows the command instead of its output, run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" config show` first.
 
@@ -34,7 +34,9 @@ For each finding, read the code at its `file` and `line` and trace its evidence:
 
 A finding that asks for a test ("scenario X has no test") needs one more answer: does the code already do the scenario's THEN? Trace the scenario's WHEN through the code to the output it gives. When it does, the fix only adds a test of **present behaviour**: that test passes at its first run, and the implementer must know it, because every other acceptance test has to fail before any code. When it does not, the finding is a broken behaviour like any other.
 
-A finding is **not plannable** when its fix needs a spec or design change (the scenario it breaks contradicts another scenario or the design), or when the code does not show its cause. Note it with the reason; do not plan around it.
+A finding whose fix is spec text (source `spec-conformance`, placed on a delta under `openspec/changes/<change>/specs/`) is plannable when the proposal or the design already settles what the text must say: an error message the design gives every command, a scenario the proposal asks for. Its task adds or corrects the requirement or scenario in that delta; read the proposal and the design for the exact behaviour, and the code for what the product does, so the task names both.
+
+A finding is **not plannable** when its fix needs a product decision: the behaviour it would restore or document contradicts another scenario, the proposal or the design, or none of them settles it; or when the code does not show its cause. Note it with the reason; do not plan around it.
 
 Done when every finding has its cause, the files a fix touches (code and test), its scenario if it breaks one or asks for its test (and whether that behaviour is present), or a reason it is not plannable.
 
@@ -86,7 +88,7 @@ A duration of 90 seconds prints as `1:30`, and the formatter uses descriptive na
 
 - One task per finding; its first line starts `Fix <finding id>:` and says what changes.
 - `## Acceptance scenarios`: each scenario a finding breaks, and each scenario a finding asks a test for. A scenario whose behaviour is present (step 2) ends with ` (behaviour present)`: `` - `tally` / Requirement: Total / Scenario: Empty ledger (behaviour present) ``. The implementer then expects its test to pass at the first run; without the suffix it stops, since a test that cannot fail proves nothing about a fix. Without any scenario, write `- None.`
-- `Verified by:` for a broken behaviour names a test that reproduces the finding's failure scenario with its exact input and expected result, so the implementer sees it red first; for a test of present behaviour, the scenario and a test with its exact input and expected result, ending `; it passes at its first run, the behaviour is present`, and the task changes no code; for a fix that keeps behaviour (a rename, a rule), the existing tests that must stay green. Never a command that spends money, needs credentials or reaches an external system.
+- `Verified by:` for a broken behaviour names a test that reproduces the finding's failure scenario with its exact input and expected result, so the implementer sees it red first; for a test of present behaviour, the scenario and a test with its exact input and expected result, ending `; it passes at its first run, the behaviour is present`, and the task changes no code; for a fix that keeps behaviour (a rename, a rule), the existing tests that must stay green; for a fix of spec text only, `the spec check of the next review round`, with no test, and the task adds no acceptance scenario of its own (the implementer checks acceptance scenarios against the deltas before it edits them). Never a command that spends money, needs credentials or reaches an external system.
 - `files` lists every file the tasks change, tests included, as exact repository-relative paths.
 
 Done when every plannable finding has its task.

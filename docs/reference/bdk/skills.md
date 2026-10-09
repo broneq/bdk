@@ -220,7 +220,7 @@ Reviews a whole BDK Change top down after its group reviews - every spec scenari
 
 Started by: other BDK skills only. It is not in the `/` menu.
 
-One review round of an OpenSpec Change, run by the bdk:lead agent that /bdk:auto-review starts - records the round scope and groups with bdk git groups (a later round covers only the fix commits), runs one bdk:reviewer per group and bdk check run --at review in parallel, then bdk:integration-reviewer and bdk:e2e-tester together (no E2E tester in a later round whose fixes changed only test files after a passing E2E verdict), then bdk:judge, and writes round.md next to the review.md of the judge. Not for users: /bdk:auto-review is the command.
+One review round of an OpenSpec Change, run by the bdk:lead agent that /bdk:auto-review starts - records the round scope and groups with bdk git groups (a later round covers only the fix commits), runs one bdk:reviewer per group, spec-conformance on bdk:verifier and bdk check run --at review in parallel, then bdk:integration-reviewer and bdk:e2e-tester together (no E2E tester in a later round whose fixes changed only test files after a passing E2E verdict), then bdk:judge, and writes round.md next to the review.md of the judge. Not for users: /bdk:auto-review is the command.
 
 ## `/bdk:run` {#run}
 
@@ -240,11 +240,11 @@ Configures a project for BDK in one run - detects the stack and how to start the
 
 ## `/bdk:spec-conformance` {#spec-conformance}
 
-`/bdk:spec-conformance [<change>] [--base <ref>]`
+`/bdk:spec-conformance [<change>] [--base <ref>] [--round <round dir>]`
 
 Started by: you, or Claude when your request matches the description below.
 
-Checks on the bdk:verifier agent that the spec deltas of an OpenSpec Change describe the product after the Change - against the code and the E2E results - and writes the run file close/spec-conformance.md with a PASS or FAIL verdict. Use when a Change is about to be archived, when /bdk:close checks its specs, or when asked whether the specs still match what the product does.
+Checks on the bdk:verifier agent that the spec deltas of an OpenSpec Change describe the product after the Change - against the code and the E2E results - and writes close/spec-conformance.md with a PASS or FAIL verdict; with --round it runs as a worker of a review round, writes the round's report and logs each problem as a finding the review loop fixes. Use when a Change is about to be archived, when /bdk:close checks its specs, when a review round checks the specs, or when asked whether the specs still match what the product does.
 
 ## `/bdk:triage` {#triage}
 

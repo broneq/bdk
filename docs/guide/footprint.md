@@ -11,7 +11,7 @@ What drives the spend:
 | `models.<role>.model`, `models.<role>.effort` | the agents' models and effort; by default the [verifier and the integration reviewer run on opus](/reference/bdk/agents), the explorer on haiku, the designer and the planner on your session's model, every other role on sonnet, all at your session's effort |
 | `policy.budgets.verifier` | how many design and plan verification passes a stage may spend |
 | `policy.budgets.part-attempts`, `policy.escalation.model`, `policy.escalation.effort` | retries of a failing part; the last one runs on opus |
-| `policy.budgets.review-rounds` | review rounds, each with a reviewer per group of files, the integration reviewer, the E2E tester and the judge |
+| `policy.budgets.review-rounds` | review rounds, each with a reviewer per group of files, the spec check on the verifier (opus), the integration reviewer, the E2E tester and the judge |
 | `execution.max-parallel` | how many part agents run at once: wall-clock time more than total cost |
 
 [Configuration](./configuration.md#spend-less-or-check-more) has a cheaper and a more thorough profile.

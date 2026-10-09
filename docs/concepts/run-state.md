@@ -44,7 +44,8 @@ openspec/specs/<capability>/spec.md   main specs: openspec archive merges the de
     checks/<id>.json, checks/<id>/    bdk check run
     e2e/<process>--<path>.md          /bdk:e2e-check run alone (and verdict.md)
     review/round-N/groups.json        bdk git groups --record
-    review/round-N/findings.jsonl     reviewers, e2e, checks, judge, triage
+    review/round-N/findings.jsonl     reviewers, spec check, e2e, checks, judge, triage
+    review/round-N/spec-conformance.md  /bdk:spec-conformance --round
     review/round-N/e2e/               /bdk:e2e-check in the round
     review/round-N/review.md          bdk findings report (judge, triage)
     review/round-N/round.md           /bdk:review-round lead
@@ -79,7 +80,8 @@ openspec/specs/<capability>/spec.md   main specs: openspec archive merges the de
 | `checks/<id>.json`, `checks/<id>/` | `bdk check run` | implementers (the output of a red check), `/bdk:plan-fixes`, the round summary | the record of every test, lint and build run, with its check point, the revision it compared against, and its output | nothing reads it to decide |
 | `review/round-N/e2e/` (`e2e/` when run alone): `<process>--<path>.md`, screenshots and video, `verdict.md` | `bdk:e2e-tester` | the review round, `/bdk:spec-conformance`, `/bdk:close` (the verdict goes into the PR body) | the evidence of each path on the running product; absent in a later round that carried the last verdict over because its fixes changed only test files | spec conformance has no E2E evidence |
 | `review/round-N/groups.json` | `bdk git groups` | the round's reviewers and its E2E decision (`testsOnly`), and the next round, which reviews only the commits after this round's head | the reviewed range, its test files and its groups | the next round falls back to the whole branch |
-| `review/round-N/findings.jsonl` | reviewers, E2E, red checks, judge, triage (append only) | `bdk run status`, `/bdk:auto-review`, `/bdk:plan-fixes` | the [findings](./findings.md), their levels and decisions | the round has no findings |
+| `review/round-N/spec-conformance.md` | `bdk:verifier` in the round (`/bdk:spec-conformance --round`) | `round.md`, you | the spec check of the round; its problems are also findings in the round's log | the round's spec check runs again with the round |
+| `review/round-N/findings.jsonl` | reviewers, spec check, E2E, red checks, judge, triage (append only) | `bdk run status`, `/bdk:auto-review`, `/bdk:plan-fixes` | the [findings](./findings.md), their levels and decisions | the round has no findings |
 | `review/round-N/review.md` | `bdk findings report` | `bdk run status`, `/bdk:auto-review` | marks the round finished | the round counts as unfinished and runs again |
 | `review/round-N/fixes/` | `/bdk:plan-fixes`, then the execute lead | `/bdk:auto-review`, the next round's grouping | the fix parts and their build | the fixes are planned again |
 | `review/result.md` | `/bdk:auto-review` only | `/bdk:run` (decisions for the final report), `/bdk:debug`, `/bdk:close` (deferred findings in the PR) | the review's outcome | the final report loses the review's decisions |
@@ -157,7 +159,7 @@ sequenceDiagram
 
 ```mermaid
 flowchart TB
-  W["/bdk:review-group x N: add<br/>/bdk:review-integration: add<br/>/bdk:e2e-check: add<br/>bdk check run: red checks<br/>/bdk:judge: level<br/>/bdk:triage: decide"]
+  W["/bdk:review-group x N: add<br/>/bdk:spec-conformance --round: add<br/>/bdk:review-integration: add<br/>/bdk:e2e-check: add<br/>bdk check run: red checks<br/>/bdk:judge: level<br/>/bdk:triage: decide"]
   W -->|"append"| F[("round-N/<br/>findings.jsonl")]
   F -->|"report"| REP[("round-N/<br/>review.md")]
   F -->|"list --decision fix"| PF["/bdk:plan-fixes"]

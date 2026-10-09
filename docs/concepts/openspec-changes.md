@@ -32,14 +32,14 @@ The order list SHALL offer a CSV download of the orders it shows.
 - **THEN** the browser downloads `orders.csv` holding only the shipped orders
 ```
 
-Scenarios are the acceptance criteria of the whole run. Each plan part names the scenarios it makes true, and the implementer writes their tests first. The conformer checks the part against them. The [E2E check](./e2e.md) does not replay them: it derives its paths from the proposal and uses the running product as a user would. `/bdk:spec-conformance` checks the product against them before the archive.
+Scenarios are the acceptance criteria of the whole run. Each plan part names the scenarios it makes true, and the implementer writes their tests first. The conformer checks the part against them. The [E2E check](./e2e.md) does not replay them: it derives its paths from the proposal and uses the running product as a user would. `/bdk:spec-conformance` checks the product against them in every review round and once more before the archive.
 
 ## Who writes what
 
 | Artifact | Written by | Checked by |
 |---|---|---|
 | `proposal.md` | `/bdk:propose` (or `/bdk:diagnose-bug` for a bug) | you |
-| spec deltas, `design.md` | `/bdk:design-draft` | `/bdk:verify-design`, then you at the design gate |
+| spec deltas, `design.md` | `/bdk:design-draft` (a review fix part may add what a delta misses) | `/bdk:verify-design`, then you at the design gate; `/bdk:spec-conformance` in each review round |
 | `plan/parts/NN.md` | `/bdk:plan-draft` | `/bdk:verify-plan`, `bdk plan check` |
 | main specs | `openspec archive` in `/bdk:close` | `/bdk:spec-conformance` before it |
 
@@ -47,7 +47,7 @@ You can edit any of them by hand between stages. A stage reads the files as they
 
 ## Closing: from deltas to specs
 
-`/bdk:close` first runs `/bdk:spec-conformance`: a verifier compares the spec deltas with the diff and the E2E verdict. Only when it passes does `openspec archive` move the Change to `changes/archive/` and merge its deltas into `openspec/specs/`. The archive is committed with the work, so the pull request carries the code and the updated specs together.
+`/bdk:close` first runs `/bdk:spec-conformance`: a verifier compares the spec deltas with the diff and the E2E verdict. Each review round ran the same check and fixed what it found, so close fails only on what changed after the last round. Only when it passes does `openspec archive` move the Change to `changes/archive/` and merge its deltas into `openspec/specs/`. The archive is committed with the work, so the pull request carries the code and the updated specs together.
 
 ## Without spec deltas
 

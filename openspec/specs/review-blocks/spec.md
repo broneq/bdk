@@ -82,12 +82,12 @@ The judge SHALL judge every finding of the log that has no level, once each: it 
 
 | Level | When |
 |---|---|
-| `blocker` | the product breaks a spec scenario or the intent of the Change; a check is red; a security hole; data loss; a regression of existing behaviour |
+| `blocker` | the product breaks a spec scenario or the intent of the Change; the spec deltas would not describe the product after archive (a `spec-conformance` finding whose problem holds); a check is red; a security hole; data loss; a regression of existing behaviour |
 | `should-fix` | the product works, but the change breaks a rule or a project instruction, or has a concrete maintenance cost that the finding names |
 | `nice-to-have` | an improvement whose absence costs nothing concrete |
 | `not-a-problem` | the failure scenario does not hold, the finding is out of the Change's scope or already handled, or it repeats an earlier finding of the log, whose id the reason names |
 
-Of two findings that repeat each other, the judge SHALL level the later one in the log `not-a-problem` and judge the earlier one on its own. A rule violation by itself SHALL NOT be a `blocker`. The judge SHALL add no finding, record no decision, and leave a finding that already has a level as it is.
+Of two findings that repeat each other, the judge SHALL level the later one in the log `not-a-problem` and judge the earlier one on its own. A rule violation by itself SHALL NOT be a `blocker`. For a `spec-conformance` finding the judge SHALL check both sides: what the cited spec location says, and what the code does for the input the evidence names; the finding holds when they disagree, and `/bdk:close` would refuse to archive the Change while it is open. The judge SHALL add no finding, record no decision, and leave a finding that already has a level as it is.
 
 #### Scenario: Levels of a mixed round
 
@@ -103,6 +103,11 @@ Of two findings that repeat each other, the judge SHALL level the later one in t
 
 - **WHEN** the log holds a seeded `previous-review` finding of the parse bug and, later, a `review-group` finding of the same bug, and the bug is still there
 - **THEN** the seeded finding is `blocker` and the later finding is `not-a-problem` with a reason naming the seeded finding's id
+
+#### Scenario: Error message no delta lists
+
+- **WHEN** the log holds an unleveled `spec-conformance` finding that no delta of `add-total` lists the error `tally: not an amount: <text>`, and `bin/tally.js` prints it for `tally add abc`
+- **THEN** its level is `blocker`, not `should-fix`, although the product works
 
 ### Requirement: Project instructions in the review
 
@@ -149,6 +154,8 @@ The suite SHALL also hold the block cases `review-group-instruction` and `judge-
 
 The suite SHALL also hold the block case `judge-previous-repeat`, tagged `block`, on the `monthly-report` fixture with a log holding a seeded `previous-review` finding of the parse bug and, after it, a `review-group` finding of the same bug worded differently; it SHALL grade that the seeded finding is `blocker` and never `not-a-problem`, and that the later finding is `not-a-problem` with a reason naming the seeded finding's id.
 
+The suite SHALL also hold the block case `judge-spec-conformance`, tagged `block`, on the shared fixture `tally-ledger-path` (spec `bdk-spec-conformance`, Requirement "Eval cases of spec conformance in the review round"); it SHALL grade that both unleveled `spec-conformance` findings, the error message no delta lists and the `TALLY_LEDGER` path the code breaks, are leveled `blocker`.
+
 #### Scenario: Effect over no plugin
 
 - **WHEN** the three cases run with and without the plugin, with the Bash grants the eval README names for them
@@ -163,6 +170,11 @@ The suite SHALL also hold the block case `judge-previous-repeat`, tagged `block`
 
 - **WHEN** `judge-previous-repeat` runs with the plugin, with the Bash grants the eval README names for the review cases
 - **THEN** the latest level of the seeded finding is `blocker`, and the later finding's latest level is `not-a-problem` with a reason naming the seeded finding's id
+
+#### Scenario: Spec conformance findings are blockers
+
+- **WHEN** `judge-spec-conformance` runs with the plugin, with the Bash grants the eval README names for the review cases
+- **THEN** both `spec-conformance` findings have the latest level `blocker`
 
 ### Requirement: Review of another checkout and intent
 
