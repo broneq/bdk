@@ -1,0 +1,15 @@
+
+> tally@0.5.0 test
+> node --test
+
+✔ parses a decimal amount (0.306292ms)
+✔ total after an add prints the sum (72.862417ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 154.281958
+exit 0

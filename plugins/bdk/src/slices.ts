@@ -13,6 +13,10 @@ export const SLICES: Readonly<
     why: "bdk check run reads tools.* through loadConfig and appends red checks through addFinding",
   },
   config: { imports: [], why: "leaf: the configuration every other slice may read" },
+  diagnostics: {
+    imports: [],
+    why: "leaf: counts a run from the host's transcripts; reads no other slice's files",
+  },
   findings: { imports: [], why: "leaf: the findings event log of a review round" },
   git: {
     imports: [],

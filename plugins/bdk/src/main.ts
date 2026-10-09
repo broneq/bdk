@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 
 import { checkGroup } from "./check/index.ts";
 import { configGroup } from "./config/index.ts";
+import { diagnosticsGroup } from "./diagnostics/index.ts";
 import { findingsGroup } from "./findings/index.ts";
 import { gitGroup } from "./git/index.ts";
 import { hooksGroup } from "./hooks/index.ts";
@@ -35,6 +36,7 @@ const GROUPS: readonly Group[] = [
   configGroup(deps),
   findingsGroup({ files }),
   runGroup(deps),
+  diagnosticsGroup(deps),
   // The bundle is `dist/bdk.mjs`, so the rule pack is `rules/` next to `dist/`.
   rulesGroup({ ...deps, pack: fileURLToPath(new URL("../rules", import.meta.url)) }),
   gitGroup({ ...deps, git: (cwd, args) => git(cwd, args) }),

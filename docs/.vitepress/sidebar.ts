@@ -27,7 +27,15 @@ export const USER_SECTIONS: readonly UserSection[] = [
   {
     text: "Guide",
     dir: "guide",
-    pages: ["index", "install", "first-run", "workflow", "configuration", "footprint"],
+    pages: [
+      "index",
+      "install",
+      "first-run",
+      "workflow",
+      "configuration",
+      "footprint",
+      "diagnostics",
+    ],
   },
   {
     text: "Concepts",

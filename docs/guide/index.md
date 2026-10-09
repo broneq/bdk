@@ -60,5 +60,6 @@ Each box is a command you can run yourself, one at a time, or let `/bdk:run` run
 3. [Take one idea to a pull request](./workflow.md).
 4. [Change the configuration](./configuration.md) when the defaults do not fit.
 5. Know [what a run costs and what it touches](./footprint.md).
+6. [Diagnose a finished run](./diagnostics.md): where its time and money went.
 
 This site documents BDK v3. For BDK v2 (`v2.7.0`), read the [v2 README](https://github.com/broneq/bdk/blob/v2.7.0/README.md).

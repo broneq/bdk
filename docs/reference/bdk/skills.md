@@ -86,6 +86,14 @@ Started by: you, or Claude when your request matches the description below.
 
 Turns a bug report into a fix contract backed by evidence - reproduces the bug on the product as a user would (a tools.e2e item, or the public interface the report names), finds the root cause in the code, and writes a one-part OpenSpec fix Change (proposal, a spec delta with the reproduction as a scenario, design.md with the root cause, plan/parts/01.md) plus debug/diagnosis.md under .bdk/runs. Writes no Change when the bug does not reproduce, and no plan part when the fix is too large for one. Never edits code or tests. Use when asked to diagnose, reproduce or find the cause of a bug, to prepare a fix without making it, or when /bdk:debug reaches the diagnosis.
 
+## `/bdk:diagnose-run` {#diagnose-run}
+
+`/bdk:diagnose-run [<change> | <session-id>] [--transcripts <dir>]`
+
+Started by: you, or Claude when your request matches the description below.
+
+Analyses how a BDK run went, after the fact, on the bdk:analyst agent - which stages and agents ran, how long each took, its tokens and cost, retries and blockers, and where time and tokens were wasted (repeated commands, re-reads, refused or slow calls, outliers) - from the run files under .bdk/runs/&lt;change&gt;/ and the host transcripts of its sessions, and writes .bdk/runs/&lt;change&gt;/diagnostics.md with a citation for every claim. Use when the user asks why a run was slow or expensive, what a run cost, what went wrong in a run, or wants a diagnostics report or post-mortem of a Change, a session or /bdk:run.
+
 ## `/bdk:e2e-check` {#e2e-check}
 
 `/bdk:e2e-check <change> [<findings log>]`
