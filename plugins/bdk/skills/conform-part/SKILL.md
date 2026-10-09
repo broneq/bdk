@@ -77,15 +77,17 @@ Leave a violation, with the file and line, its source and why you left it, when 
 
 Example: a task asks that a title be trimmed, and the code does not trim it. Trimming changes the output: leave it as `task 2` with the line, not fixed.
 
-Then run the checks, changed files or not:
+Then, when you edited at least one file, run the checks of the part point on the changed files:
 
 ```
-"${CLAUDE_PLUGIN_ROOT}/bin/bdk" check run <run-dir> conform-<part-id> --scope <path> --scope <path> ...
+"${CLAUDE_PLUGIN_ROOT}/bin/bdk" check run <run-dir> conform-<part-id> --at part --changed HEAD
 ```
 
-with every path of `files`. When a check is red after your fixes, your fix broke it: undo that fix by editing it back, move the item to `Left`, and run again.
+With `--workdir`, run it as `cd <workdir> && "${CLAUDE_PLUGIN_ROOT}/bin/bdk" check run <run-dir> conform-<part-id> --at part --changed HEAD`, so git reads the worktree. When a check is red after your fixes, your fix broke it: undo that fix by editing it back, move the item to `Left`, and run again.
 
-Done when each violation is fixed or left, and the checks ran after the last fix.
+When you edited nothing, run no check: the code is what the implementer's last check `<run-dir>/checks/<part-id>.json` saw. Read its `verdict` for the report.
+
+Done when each violation is fixed or left, and the checks ran after the last fix, or you edited nothing and know the implementer's verdict.
 
 ## 6. Write the report
 
@@ -105,6 +107,7 @@ Verdict: FAIL
 - checks/conform-03.json: pass
 ```
 
+- `## Checks` names `checks/conform-<part-id>.json: <verdict>` when you ran the checks, else `checks/<part-id>.json: <verdict>, unchanged`.
 - `Verdict: FAIL` if and only if the check verdict is `fail`, a `Left` item names a task, or the implementer report was missing or not done. A rule or an instruction left does not fail the part by itself: the review reads `Left`.
 - An empty section holds `- None.`
 

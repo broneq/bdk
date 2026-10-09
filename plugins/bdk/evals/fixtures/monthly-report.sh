@@ -35,7 +35,11 @@ tools:
   test:
     - id: node-test
       command: npm test
-      scoped: node --test {files}
+      when: [wave, review]
+    - id: node-test-changed
+      command: node --test {files}
+      paths: ["**/*.test.js"]
+      when: [part]
 YAML
 
 cat > openspec/config.yaml <<'YAML'

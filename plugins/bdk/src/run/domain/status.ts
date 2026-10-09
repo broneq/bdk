@@ -36,6 +36,12 @@ export interface Part {
   readonly reason: string | null;
 }
 
+/** A wave of execute with its wave check state (spec `bdk-execute`, "Wave check"). */
+export interface Wave {
+  readonly n: number;
+  readonly status: PartStatus;
+}
+
 /** The last numbered report of a verify loop, by its file name. */
 export interface Report {
   readonly name: string;
@@ -69,6 +75,8 @@ export interface ChangeSnapshot {
   readonly designVerify: Report | undefined;
   readonly planVerify: Report | undefined;
   readonly parts: readonly Part[];
+  /** The waves `state.json` names, in ascending order. */
+  readonly waves: readonly Wave[];
   /** Round directories in ascending order. */
   readonly rounds: readonly Round[];
   /** The last round's `findings.jsonl`, folded. */
@@ -143,6 +151,11 @@ export function derive(change: ChangeSnapshot): Derived {
       4,
       `${String(open.length)} of ${plural(change.parts.length, "part")} not done${tail}`,
     );
+  }
+  const wave = change.waves.find((each) => each.status !== "done");
+  if (wave !== undefined) {
+    const what = wave.status === "blocked" ? "blocked" : "not done";
+    return stage("execute", 4, `wave ${String(wave.n)} ${what}`);
   }
 
   const last = change.rounds.at(-1);

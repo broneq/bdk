@@ -5,7 +5,7 @@ import { renderRun } from "../render/run.ts";
 import { runResult } from "../schema/run.ts";
 import { runChecks } from "../use-cases/run.ts";
 import type { RunInput } from "../use-cases/run.ts";
-import { fakeShell, memory, ROOT, RUN } from "./memory.ts";
+import { fakeGit, fakeShell, memory, ROOT, RUN } from "./memory.ts";
 import type { Script } from "./memory.ts";
 
 // `bdk check run` against an in-memory file system and a fake shell (spec `bdk-cli/check`).
@@ -13,23 +13,35 @@ import type { Script } from "./memory.ts";
 const SETTINGS = `tools:
   test:
     - id: unit
-      command: vitest run
-      scoped: vitest run {files}
+      command: vitest run {files}
   lint:
     - id: eslint
       command: eslint .
       timeout: 30
 `;
 
-function project(settings = SETTINGS, scripts: Record<string, Script> = {}) {
+/** The answers of a clean repository at `ROOT`, `HEAD` resolving. */
+const REPO: Record<string, string> = {
+  "rev-parse --is-inside-work-tree": "true\n",
+  "rev-parse --verify --quiet HEAD^{commit}": "abc\n",
+  "diff --name-only --relative --no-renames --no-ext-diff --diff-filter=d -z HEAD --": "",
+  "ls-files --others --exclude-standard -z": "",
+};
+
+function project(
+  settings = SETTINGS,
+  scripts: Record<string, Script> = {},
+  answers: Record<string, string> = REPO,
+) {
   const files = memory({
     [`${ROOT}/.bdk/settings.yaml`]: settings,
     [`${ROOT}/openspec/config.yaml`]: "schema: spec-driven\n",
     [`${ROOT}/${RUN}/state.json`]: "{}",
   });
   const shell = fakeShell(files, scripts);
-  const deps = { files, shell, cwd: ROOT, home: "/home/me", env: {} };
-  return { files, shell, deps };
+  const git = fakeGit(answers);
+  const deps = { files, shell, git, cwd: ROOT, home: "/home/me", env: {} };
+  return { files, shell, git, deps };
 }
 
 const input = (extra: Partial<RunInput> = {}): RunInput => ({ runDir: RUN, id: "02", ...extra });
@@ -67,8 +79,10 @@ describe("runChecks", () => {
       },
     ]);
     expect(result).toEqual({
-      version: 1,
+      version: 2,
       id: "02",
+      at: null,
+      changed: null,
       scope: ["src/a.ts", "src/b.ts"],
       verdict: "pass",
       checks: [
@@ -108,12 +122,14 @@ describe("runChecks", () => {
 
   it("runs every command after a red one, keeps the tail and fails the verdict", async () => {
     const { files, deps } = project(SETTINGS, {
-      "vitest run": { output: "FAIL a.test.ts\n1 failed", outcome: { kind: "exit", code: 1 } },
+      "vitest run src/a.ts": {
+        output: "FAIL a.test.ts\n1 failed",
+        outcome: { kind: "exit", code: 1 },
+      },
       "eslint .": { output: "", outcome: { kind: "timeout" } },
     });
-    const result = await check(deps, input());
+    const result = await check(deps, input({ scope: ["src/a.ts"] }));
     expect(result.verdict).toBe("fail");
-    expect(result.scope).toBeNull();
     expect(result.checks.map((check) => [check.status, check.exit, check.tail])).toEqual([
       ["fail", 1, ["FAIL a.test.ts", "1 failed"]],
       ["timeout", null, []],
@@ -128,12 +144,10 @@ describe("runChecks", () => {
     const { files, shell, deps } = project(`tools:
   test:
     - id: api
-      command: uv run pytest
-      scoped: uv run pytest {files}
+      command: uv run pytest {files}
       paths: ["api/**"]
     - id: web
-      command: pnpm test
-      scoped: pnpm vitest run {files}
+      command: pnpm vitest run {files}
       paths: ["web/**"]
 `);
     const result = await check(deps, input({ scope: ["web/src/a.tsx"] }));
@@ -141,7 +155,7 @@ describe("runChecks", () => {
     expect(result).toMatchObject({
       verdict: "pass",
       checks: [{ kind: "test", tool: "web", scoped: true }],
-      skipped: [{ kind: "test", tool: "api" }],
+      skipped: [{ kind: "test", tool: "api", reason: "paths" }],
     });
     expect(runResult.parse(result)).toEqual(result);
     expect(files.data.has(`${ROOT}/${RUN}/checks/02/test-api.txt`)).toBe(false);
@@ -159,16 +173,77 @@ describe("runChecks", () => {
     expect(result).toMatchObject({
       verdict: "none",
       checks: [],
-      skipped: [{ kind: "lint", tool: "ruff" }],
+      skipped: [{ kind: "lint", tool: "ruff", reason: "paths" }],
     });
     expect(renderRun(result, file)).toBe(
       [
-        "skip  lint ruff  no scope file matches its paths",
+        "skip  lint ruff  no changed file matches its paths",
         "verdict: none",
         `result: ${RUN}/checks/02.json`,
         "",
       ].join("\n"),
     );
+  });
+
+  it("runs only the entries of the point asked for, and those without when", async () => {
+    const { shell, deps } = project(`tools:
+  test:
+    - id: related
+      command: vitest related --run {files}
+      when: [part]
+    - id: unit
+      command: vitest run
+      when: [wave, review]
+    - id: smoke
+      command: node smoke.js
+`);
+    const wave = await check(deps, input({ id: "wave-1", at: "wave", scope: ["src/a.ts"] }));
+    expect(shell.calls.map((call) => call.command)).toEqual(["vitest run", "node smoke.js"]);
+    expect(wave).toMatchObject({ at: "wave", skipped: [] });
+    shell.calls.length = 0;
+    const part = await check(deps, input({ at: "part", scope: ["src/a.ts"] }));
+    expect(shell.calls.map((call) => call.command)).toEqual([
+      "vitest related --run src/a.ts",
+      "node smoke.js",
+    ]);
+    expect(runResult.parse(part)).toEqual(part);
+  });
+
+  it("adds the files git reports changed against a revision to the scope", async () => {
+    const { shell, git, deps } = project(
+      SETTINGS,
+      {},
+      {
+        ...REPO,
+        "diff --name-only --relative --no-renames --no-ext-diff --diff-filter=d -z HEAD --":
+          "src/a.ts\0src/c.ts\0",
+        "ls-files --others --exclude-standard -z": "test/a.test.ts\0",
+      },
+    );
+    const result = await check(deps, input({ changed: "HEAD", scope: ["src/a.ts", "docs/x.md"] }));
+    expect(shell.calls[0]?.command).toBe("vitest run docs/x.md src/a.ts src/c.ts test/a.test.ts");
+    expect(result).toMatchObject({
+      changed: "HEAD",
+      scope: ["docs/x.md", "src/a.ts", "src/c.ts", "test/a.test.ts"],
+    });
+    expect(new Set(git.calls.map((call) => call.cwd))).toEqual(new Set([ROOT]));
+  });
+
+  it("skips a {files} entry with reason no-files when nothing changed", async () => {
+    const { shell, deps } = project();
+    const { result, file } = await runChecks(deps, input({ at: "part", changed: "HEAD" }));
+    expect(shell.calls.map((call) => call.command)).toEqual(["eslint ."]);
+    expect(result).toMatchObject({
+      at: "part",
+      changed: "HEAD",
+      scope: null,
+      skipped: [{ kind: "test", tool: "unit", reason: "no-files" }],
+    });
+    expect(renderRun(result, file).split("\n").slice(0, 3)).toEqual([
+      "at part, changed against HEAD",
+      `pass  lint eslint  full    ${RUN}/checks/02/lint-eslint.txt`,
+      "skip  test unit    no changed file for its {files}",
+    ]);
   });
 
   it("runs only the kinds asked for", async () => {
@@ -253,6 +328,9 @@ describe("errors before any command runs", () => {
     [{ round: "0" }, "--round"],
     [{ round: "2a" }, "--round"],
     [{ scope: ["a.ts", ""] }, "--scope"],
+    [{ at: "merge" }, "part, wave or review"],
+    [{ changed: "no-such-branch" }, "no-such-branch"],
+    [{ changed: "--output=x" }, "--output=x"],
   ])("refuses %j as usage/invalid-argument", async (extra, named) => {
     const { files, shell, deps } = project();
     const before = new Map(files.data);
@@ -266,6 +344,13 @@ describe("errors before any command runs", () => {
   it("names the kinds for an unknown one", async () => {
     const error = await failure(runChecks(project().deps, input({ kinds: ["tests"] })));
     expect(error.message).toContain("test, lint or build");
+  });
+
+  it("refuses --changed outside a git work tree", async () => {
+    const { shell, deps } = project(SETTINGS, {}, {});
+    const error = await failure(runChecks(deps, input({ changed: "HEAD" })));
+    expect(error.code).toBe("env/not-a-repo");
+    expect(shell.calls).toEqual([]);
   });
 
   it("refuses a missing run directory", async () => {

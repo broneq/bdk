@@ -42,14 +42,29 @@ tools:
   test:
     - id: vitest
       command: pnpm test
-      scoped: pnpm vitest run {files}
+      when: [wave, review]
+    - id: vitest-related
+      command: pnpm vitest related --run {files}
+      paths: ["**/*.ts", "**/*.tsx"]
+      when: [part]
+    - id: playwright
+      command: pnpm test:e2e
+      when: [review]
   lint:
     - id: eslint
       command: pnpm lint
-      scoped: pnpm eslint {files}
+      when: [review]
+    - id: eslint-changed
+      command: pnpm eslint {files}
+      paths: ["**/*.ts", "**/*.tsx"]
+      when: [part]
+    - id: tsc
+      command: pnpm typecheck
+      when: [wave, review]
   build:
     - id: vite
       command: pnpm build
+      when: [review]
   e2e:
     - id: web
       start: pnpm dev
@@ -57,7 +72,19 @@ tools:
       driver: browser
 ```
 
-`scoped` runs a check on the files a plan part changed instead of the whole project. `{files}` becomes those files, as paths from the project root, and the command runs in the project root. In a repository of several packages, give each item `paths` too, as in the next example.
+Each item is one command. `{files}` in a command becomes the files that changed, as paths from the project root, and the command runs in the project root; with no changed file the item is skipped. `when` says at which check points the item runs:
+
+| Point | When | On what |
+|---|---|---|
+| `part` | after each plan part of `/bdk:execute` | the files the part changed |
+| `wave` | after each wave of `/bdk:execute`, on the Change branch | what the wave changed |
+| `review` | in each review round of `/bdk:auto-review` | the Change against its base branch |
+
+An item without `when` runs at every point. Keep the fast checks of the changed files at `part`, the main test suite and the type check at `wave`, and the slow suites, the whole Playwright suite and the build at `review`; [where execute runs your checks](/concepts/orchestrators#where-execute-runs-your-checks) shows each point in the flow.
+
+A heavy suite that needs ports, browsers or a database is your project's to run: BDK starts the command and waits for it. When your test script already guards the machine (a lock, a fixed port per instance, a busy exit), keep that in the script; BDK runs the checks of one Change one after another and never starts the E2E check while a check run is on.
+
+`scoped` was removed. An item that still holds it fails `bdk config check`; run `/bdk:setup` again, which rewrites it into two items: the whole command with `when: [wave, review]`, and an `<id>-changed` item with the `{files}` command and `when: [part]`.
 
 ### A Python API and a React frontend in one repository
 
@@ -68,14 +95,20 @@ tools:
     - id: api
       command: uv run pytest api/tests
       paths: ["api/**"]
+      when: [wave, review]
     - id: web
       command: pnpm --dir web test
       paths: ["web/**"]
+      when: [wave, review]
   lint:
     - id: ruff
       command: uv run ruff check api
-      scoped: uv run ruff check {files}
       paths: ["api/**/*.py"]
+      when: [review]
+    - id: ruff-changed
+      command: uv run ruff check {files}
+      paths: ["api/**/*.py"]
+      when: [part]
     - id: eslint
       command: pnpm --dir web lint
       paths: ["web/**"]
@@ -92,7 +125,7 @@ tools:
       driver: browser
 ```
 
-`/bdk:setup` writes these `paths` for you in a repository of several packages: a test or build item gets its package directory (`api/**`), a lint item whose tool reads one file type gets that type in the directory (`api/**/*.py`), and an item that covers the whole repository gets none. `paths` tells each check item which files are its own, with the globs of [rule paths](/concepts/rules): `*` stays inside one directory, `**` spans any number of them. On a part that changes only `web/src/App.tsx`, `bdk check run --scope` runs the `web` tests and `eslint`, and skips `api` and `ruff`, which own none of the changed files; the result lists them as skipped. On a part that changes `api/app.py`, `ruff` checks only that file, since its `scoped` variant gets just the changed files its `paths` match. An item without `paths` gets every changed file. `paths` matters only to a scoped run: a full run, such as a review round's, runs every item's `command`.
+`/bdk:setup` writes these `paths` for you in a repository of several packages: a test or build item gets its package directory (`api/**`), a lint item whose tool reads one file type gets that type in the directory (`api/**/*.py`), and an item that covers the whole repository gets none. `paths` tells each check item which files are its own, with the globs of [rule paths](/concepts/rules): `*` stays inside one directory, `**` spans any number of them. On a part that changes only `web/src/App.tsx`, the part check runs `eslint` and skips `ruff-changed`, which owns none of the changed files; the result lists it as skipped. On a part that changes `api/app.py`, `ruff-changed` checks only that file, since `{files}` gets just the changed files its `paths` match. An item without `paths` gets every changed file. An item with `paths` and no `{files}` runs its whole command when one of its files changed, and is skipped otherwise; with no changed files at all it runs.
 
 `languages` lists the packs the rule pack has; for Python, declare your own rules under `rules` with `paths: ["**/*.py"]` ([rules](/concepts/rules)).
 

@@ -8,7 +8,7 @@ Every BDK command reads the project's configuration first. Until a project has o
 
 ## What setup does
 
-1. **Reads the project.** Manifests, lockfiles, scripts and the configs they name: the languages, the test, lint and build commands (with a variant that runs only on given files, when the tool has one; in a repository of several packages, each check also gets the `paths` of its package), and how to start the product so BDK can use it as a user would.
+1. **Reads the project.** Manifests, lockfiles, scripts and the configs they name: the languages, the test, lint and build commands, each with the check points it runs at (`when`: after each plan part, after each wave, in review), plus an item on the changed files (`{files}`) when the tool takes a list of files; in a repository of several packages, each check also gets the `paths` of its package, and how to start the product so BDK can use it as a user would.
 2. **Asks only what it cannot settle.** For example two test commands competing, no lint command found, a dev server port the files do not name, or whether to make `bdk` the default OpenSpec schema of a project that already runs OpenSpec on another one. All questions come in one go, the recommended answer first.
 3. **Writes `.bdk/settings.yaml`** with what it found, and nothing else; every other key keeps its default. Then it runs `bdk config check` until the file is valid.
 4. **Adds permission rules** to `.claude/settings.json`, so the stages can run `bdk`, `openspec`, `git`, `gh` and your project's commands without asking each time. Claude Code asks you to approve this write, and applies the rules only in a project folder you trusted (the dialog Claude Code shows the first time you open the folder).
@@ -27,14 +27,23 @@ tools:
   test:
     - id: vitest
       command: pnpm test
-      scoped: pnpm vitest run {files}
+      when: [wave, review]
+    - id: vitest-related
+      command: pnpm vitest related --run {files}
+      paths: ["**/*.ts"]
+      when: [part]
   lint:
     - id: eslint
       command: pnpm lint
-      scoped: pnpm eslint {files}
+      when: [review]
+    - id: eslint-changed
+      command: pnpm eslint {files}
+      paths: ["**/*.ts"]
+      when: [part]
   build:
     - id: vite
       command: pnpm build
+      when: [review]
   e2e:
     - id: web
       start: pnpm dev
@@ -42,7 +51,7 @@ tools:
       driver: browser
 ```
 
-Every key is described in the [settings reference](/reference/bdk/settings), for example [`tools.e2e`](/reference/bdk/settings#tools-e2e).
+Each check item says with `when` at which point it runs: the `{files}` items on the files each plan part changed, the main test suite after each wave of execute, the lint and the build in review ([configuration](/guide/configuration#a-web-app-with-a-browser-e2e-check)). Every key is described in the [settings reference](/reference/bdk/settings), for example [`tools.e2e`](/reference/bdk/settings#tools-e2e).
 
 ## Check the result
 
@@ -57,7 +66,7 @@ It prints every value with the layer it came from (`default`, `global`, `project
 ## Run setup again
 
 - **Change one thing:** `/bdk:setup add the e2e entry` changes only that, and keeps everything else.
-- **After a plugin update:** `/bdk:setup` installs the BDK schema the new version ships.
+- **After a plugin update:** `/bdk:setup` installs the BDK schema the new version ships, and rewrites a check item that still holds the removed `scoped` into two items with `when`.
 - **Coming from BDK v2:** setup reads `.bdk/settings.json` as a hint and asks before it deletes any v2 file.
 
 ## Without an E2E entry

@@ -1,6 +1,6 @@
 ---
 name: execute
-description: 'Runs the execute stage of an OpenSpec Change - starts one bdk:lead agent that builds the verified plan parts in parallel waves (implement-part, conform-part, commits, worktree merges, state.json), waits for its result, and passes the result or a blocker on. Use when a Change has a verified plan and should be built, when asked to "execute", "build" or "implement" a Change or its plan, or when /bdk:run reaches the execute stage.'
+description: 'Runs the execute stage of an OpenSpec Change - starts one bdk:lead agent that builds the verified plan parts in parallel waves (implement-part, conform-part, commits, worktree merges, a wave check after each wave, state.json), waits for its result, and passes the result or a blocker on. Use when a Change has a verified plan and should be built, when asked to "execute", "build" or "implement" a Change or its plan, or when /bdk:run reaches the execute stage.'
 argument-hint: "[change-name]"
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(git rev-parse *) Read Glob Grep Agent SendMessage ToolSearch AskUserQuestion
 ---
@@ -52,11 +52,11 @@ Done when you know the status.
 
 ## 4. Pass a blocker on
 
-Name each line of the result's `## Blockers` section: the part, the kind, the evidence in one line, and its command (`/bdk:plan <change>` for a plan defect).
+Name each line of the result's `## Blockers` section: the part or the wave, the kind, the evidence in one line, the report (`execute/wave-<n>.md` for a red wave check), and its command (`/bdk:plan <change>` for a plan defect, `/bdk:execute <change>` to retry a wave).
 
 - `policy.questions: decide-and-record`: do not retry; no policy clears a plan defect or a missing tool. Reply with the blockers and the line `Decision: stopped without a retry (policy.questions: decide-and-record)`, and stop.
-- `policy.questions: stop` (the default): ask the user whether to retry the blocked parts now (after they fixed the cause) or stop here. Use `AskUserQuestion` (load it with `ToolSearch` when it is deferred); when it is not available, put the question at the end of your reply and stop.
+- `policy.questions: stop` (the default): ask the user whether to retry the blocked parts or waves now (after they fixed the cause) or stop here. Use `AskUserQuestion` (load it with `ToolSearch` when it is deferred); when it is not available, put the question at the end of your reply and stop.
   - Retry: continue the same lead with `SendMessage` to its agent ID: `Run the skill bdk:execute-waves again with the same arguments; the user fixed the cause of the blockers and asks for a retry.` Wait for it, then go back to step 3.
   - Stop: reply with the blockers and their commands, and that `/bdk:execute <change>` continues from `state.json`.
 
-Never claim the stage is done while a part is blocked. Done when the user's choice is carried out, or you stopped.
+Never claim the stage is done while a part or a wave is blocked. Done when the user's choice is carried out, or you stopped.

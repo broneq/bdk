@@ -12,6 +12,10 @@ import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { openspecWarning, runPath } from "../evals/run.ts";
+import { planGroup } from "../src/plan/index.ts";
+import { checkResult } from "../src/plan/schema/check.ts";
+import { run } from "../src/shared/cli/index.ts";
+import { files } from "../src/shared/fs/index.ts";
 
 // Free checks specific to the bdk eval suite (spec skill-evals, design D6 of v3-189-eval-setup).
 // The loader and case-scaffold checks of every plugin's suite are in tests/eval-suites.test.ts.
@@ -80,6 +84,35 @@ function graderTypes(caseDir: string): string[] {
     .map((file) => /^type:\s*(\S+)/m.exec(frontmatter(join(dir, file)))?.[1] ?? "");
 }
 
+/** The plan/parts directories of the Changes in a workspace, relative to it. */
+function planDirs(dir: string): string[] {
+  const changes = join(dir, "openspec", "changes");
+  if (!existsSync(changes)) return [];
+  return readdirSync(changes)
+    .map((change) => `openspec/changes/${change}/plan/parts`)
+    .filter((parts) => existsSync(join(dir, parts)));
+}
+
+/** What in `bdk plan check <parts>` stops the execute lead: a part without a wave, a shared part not alone. */
+async function unorderable(cwd: string, parts: string): Promise<string[]> {
+  let stdout = "";
+  await run({
+    argv: ["plan", "check", parts, "--json"],
+    version: "0.0.0",
+    nodeVersion: process.versions.node,
+    groups: [planGroup({ files, cwd, home: join(cwd, "..", "home"), env: {} })],
+    stdout: (text) => (stdout += text),
+    stderr: () => undefined,
+  });
+  const result = checkResult.parse(JSON.parse(stdout));
+  return [
+    ...result.parts.filter((part) => part.wave === null).map((part) => `${part.id}: wave null`),
+    ...result.problems
+      .filter((problem) => problem.check === "shared-not-alone")
+      .map((problem) => problem.message),
+  ];
+}
+
 describe("eval suite fixtures", () => {
   const fixtures = readdirSync(join(EVALS, "fixtures"))
     .filter((file) => file.endsWith(".sh"))
@@ -91,11 +124,16 @@ describe("eval suite fixtures", () => {
 
   it.each(fixtures)(
     "fixtures/%s builds a workspace in an empty directory",
-    (file) => {
+    async (file) => {
       const { status, stderr, dir } = scaffold(join(EVALS, "fixtures", file));
       expect(stderr).toBe("");
       expect(status).toBe(0);
       expect(readdirSync(dir).length).toBeGreaterThan(0);
+      // The execute lead stops before any part on these problems (execute-waves, step 3); an
+      // overlap stays, since the conflict fixtures hold one on purpose.
+      for (const parts of planDirs(dir)) {
+        expect(await unorderable(dir, parts), `${file}: bdk plan check ${parts}`).toEqual([]);
+      }
     },
     SCAFFOLD_LIMIT_MS + 10_000,
   );

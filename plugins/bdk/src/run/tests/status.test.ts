@@ -167,6 +167,29 @@ describe("bdk run status: the resume table from files", () => {
     ]);
   });
 
+  it("row 4: every part done and wave 2 pending", async () => {
+    const result = await status(
+      tree(C, [], {
+        [`${DIR}/state.json`]: JSON.stringify({
+          version: 1,
+          parts: {
+            "01": { status: "done", attempts: 1 },
+            "02": { status: "done", attempts: 1 },
+          },
+          waves: {
+            "1": { base: "abc123", status: "done" },
+            "2": { base: "def456", status: "pending" },
+          },
+        }),
+      }),
+    );
+    expect(result.changes[0]).toMatchObject({
+      stage: "execute",
+      row: 4,
+      reason: "wave 2 not done",
+    });
+  });
+
   it("row 4: no state.json means every part is pending", async () => {
     const result = await status(tree(C, ["state.json"]));
     expect(result.changes[0]).toMatchObject({ stage: "execute", row: 4 });
@@ -435,6 +458,17 @@ describe("bdk run status: errors", () => {
         }),
       }),
       /^\.bdk\/runs\/v3-12-foo\/state\.json: parts\.01\.status: /,
+    ],
+    [
+      "an invalid wave status",
+      tree(C, [], {
+        [`${DIR}/state.json`]: JSON.stringify({
+          version: 1,
+          parts: {},
+          waves: { "1": { base: "abc", status: "green" } },
+        }),
+      }),
+      /state\.json: waves\.1\.status: /,
     ],
     [
       "a negative attempt count",

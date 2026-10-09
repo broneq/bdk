@@ -39,8 +39,8 @@ Layers SHALL merge key by key: mappings merge deeply; an array whose items are a
 
 #### Scenario: Array merged by id
 
-- **WHEN** the project layer declares `tools.test` items `unit` and `e2e`, and the local layer declares a `tools.test` item `unit` with only `scoped`
-- **THEN** the resolved `tools.test` holds `unit` with the project fields plus the local `scoped`, followed by `e2e` unchanged
+- **WHEN** the project layer declares `tools.test` items `unit` and `e2e`, and the local layer declares a `tools.test` item `unit` with only `when: [part]`
+- **THEN** the resolved `tools.test` holds `unit` with the project fields plus the local `when`, followed by `e2e` unchanged
 
 #### Scenario: Scalar array replaced
 
@@ -54,11 +54,11 @@ Layers SHALL merge key by key: mappings merge deeply; an array whose items are a
 
 ### Requirement: Settings keys
 
-The configuration SHALL accept exactly these keys; any other key at any level SHALL be a problem naming its full dotted key. A key segment, a `steps` orchestrator and an `id` SHALL be kebab-case (`^[a-z0-9][a-z0-9-]*$`), except a key directly under `rules`, which SHALL be a rule id: letters, digits and `-`, starting with a letter or digit (`^[A-Za-z0-9][A-Za-z0-9-]*$`), case kept. A `models` role SHALL be one of the roles of "Every agent is a models role"; any other role SHALL be an unknown key with the closest role as a suggestion. An item of an array merged by `id` SHALL be addressed by its `id` as a key segment (`tools.test.unit.scoped`) in every output and argument.
+The configuration SHALL accept exactly these keys; any other key at any level SHALL be a problem naming its full dotted key. A key segment, a `steps` orchestrator and an `id` SHALL be kebab-case (`^[a-z0-9][a-z0-9-]*$`), except a key directly under `rules`, which SHALL be a rule id: letters, digits and `-`, starting with a letter or digit (`^[A-Za-z0-9][A-Za-z0-9-]*$`), case kept. A `models` role SHALL be one of the roles of "Every agent is a models role"; any other role SHALL be an unknown key with the closest role as a suggestion. An item of an array merged by `id` SHALL be addressed by its `id` as a key segment (`tools.test.unit.when`) in every output and argument.
 
 | Key                                                  | Type                                                                                                         | Default      |
 | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------ |
-| `tools.test`, `tools.lint`, `tools.build`            | items by `id`: `command` (string, required), `scoped` (string holding `{files}`, optional), `timeout` (integer seconds, 1 to 86400, optional; `bdk check run` uses 600 when absent), `paths` (non-empty list of non-empty globs, optional; with `--scope`, `bdk check run` gives the item only the scope paths they match) | `[]`         |
+| `tools.test`, `tools.lint`, `tools.build`            | items by `id`: `command` (string, required; a `{files}` in it is replaced by the changed files, spec `bdk-cli/check`), `when` (non-empty list of distinct points among `part`, `wave` and `review`, optional; `bdk check run --at <point>` selects the items whose `when` holds the point, and an item without `when` runs at every point), `timeout` (integer seconds, 1 to 86400, optional; `bdk check run` uses 600 when absent), `paths` (non-empty list of non-empty globs, optional; `bdk check run` gives the item only the changed files they match, and skips it when none matches); the field `scoped` is removed, and a layer that sets it SHALL get a problem naming `tools.<kind>.<id>.scoped` and the rewrite: put `{files}` into the `command` of a second item that runs at `part` | `[]`         |
 | `tools.e2e`                                          | items by `id`: `start` (command), `ready` (URL or command), `driver` (`cli`, `http`, `browser`), `env` (map of variable name to string, optional), `browser` (`playwright` or `chrome-devtools-mcp`, optional; read only for `driver: browser`, where an absent field means `playwright`); all but `env` and `browser` required | `[]`         |
 | `languages`                                          | list of kebab-case names                                                                                     | `[]`         |
 | `models.<role>.model`, `models.<role>.effort`       | mapping per role, both fields optional: `model` (model name or alias the role's agent runs on), `effort` (`low`, `medium`, `high`, `xhigh` or `max`); a string value for a role is a problem naming the `model` field | none set     |
@@ -96,6 +96,16 @@ A missing required field, a value of the wrong type or outside its allowed value
 
 - **WHEN** `.bdk/settings.yaml` gives the `tools.test` item `api` the field `paths: ["api/**"]` and the `tools.lint` item `ruff` the field `paths: []`
 - **THEN** `bdk config check` accepts `tools.test.api.paths`, reports `tools.lint.ruff.paths` and that it must hold at least one glob, and exits 1
+
+#### Scenario: Check points of an item
+
+- **WHEN** `.bdk/settings.yaml` gives the `tools.test` item `unit` the field `when: [wave, review]`, the item `fast` the field `when: [part, part]`, and the item `e2e` the field `when: [merge]`
+- **THEN** `bdk config check` accepts `tools.test.unit.when`, reports `tools.test.fast.when` and that it must not repeat a point, reports `tools.test.e2e.when` with the allowed points `part`, `wave` and `review`, and exits 1
+
+#### Scenario: Removed scoped field
+
+- **WHEN** `.bdk/settings.yaml` gives the `tools.lint` item `eslint` the field `scoped: pnpm eslint {files}`
+- **THEN** `bdk config check` reports `tools.lint.eslint.scoped`, its message names that `scoped` was removed and that `{files}` goes into the `command` of a second item that runs at `part`, and exits 1
 
 #### Scenario: Browser tool of an E2E entry
 
@@ -218,7 +228,7 @@ Only usage, environment and internal errors of the CLI frame SHALL give another 
 
 #### Scenario: Missing required item field
 
-- **WHEN** the only layer defining the `tools.test` item `unit` gives it `scoped` but no `command`
+- **WHEN** the only layer defining the `tools.test` item `unit` gives it `when` but no `command`
 - **THEN** `bdk config check` reports `tools.test.unit.command` as missing and exits 1
 
 #### Scenario: Valid configuration
@@ -247,8 +257,8 @@ Only usage, environment and internal errors of the CLI frame SHALL give another 
 
 #### Scenario: Item by id
 
-- **WHEN** the project layer holds the `tools.test` item `unit` and `bdk config set tools.test.unit.scoped "pnpm vitest {files}" --layer local` runs
-- **THEN** the local file holds a `tools.test` item `unit` with only `scoped`, and the resolved item has the project `command` and the local `scoped`
+- **WHEN** the project layer holds the `tools.test` item `unit` and `bdk config set tools.test.unit.when "[part]" --layer local` runs
+- **THEN** the local file holds a `tools.test` item `unit` with only `when`, and the resolved item has the project `command` and the local `when`
 
 #### Scenario: Comments kept
 

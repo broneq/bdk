@@ -46,7 +46,7 @@ Defines `bdk run status`, the read-only command that renders the state of an aut
 
 ### Requirement: state.json schema
 
-`.bdk/runs/<change>/state.json` SHALL be a JSON object with `version` equal to `1` and `parts`, an object whose keys are part ids of two digits and whose values are `{"status": "pending" | "done" | "blocked", "attempts": <integer >= 0>, "reason": <string, optional>}`. A missing `state.json` SHALL mean that no part has a state. A file that is not valid JSON or breaks this schema SHALL be reported as `env/invalid-run-state` naming the file and the first offending key, with exit 3.
+`.bdk/runs/<change>/state.json` SHALL be a JSON object with `version` equal to `1` and `parts`, an object whose keys are part ids of two digits and whose values are `{"status": "pending" | "done" | "blocked", "attempts": <integer >= 0>, "reason": <string, optional>}`, and optionally `waves`, an object whose keys are wave numbers (decimal integers from 1) and whose values are `{"base": <commit, string>, "status": "pending" | "done" | "blocked", "reason": <string, optional>}`. A missing `state.json` SHALL mean that no part has a state. A file that is not valid JSON or breaks this schema SHALL be reported as `env/invalid-run-state` naming the file and the first offending key, with exit 3.
 
 #### Scenario: Missing state file
 
@@ -57,6 +57,11 @@ Defines `bdk run status`, the read-only command that renders the state of an aut
 
 - **WHEN** `state.json` holds a part with `"status": "finished"`
 - **THEN** the CLI reports `env/invalid-run-state` naming the file and `parts.<id>.status`, and exits 3
+
+#### Scenario: Wave state
+
+- **WHEN** `state.json` holds `"waves": {"1": {"base": "abc123", "status": "done"}, "2": {"base": "def456", "status": "pending"}}`
+- **THEN** the CLI reads it with no problem, and a wave with `"status": "green"` is reported as `env/invalid-run-state` naming `waves.<n>.status`
 
 ### Requirement: Files the derivation reads
 
@@ -106,7 +111,7 @@ The command SHALL derive the open stage of every queued Change by checking these
 | 1 | no OpenSpec Change directory, or no `proposal.md` in it | `propose` | - |
 | 2 | no `design.md`, or no `design/verify-N.md`, or the last one does not pass | `design` | - |
 | 3 | no plan part, or no `plan/verify-N.md`, or the last one does not pass | `plan` | - |
-| 4 | a part, from `plan/parts/` or from `state.json`, whose status is not `done` | `execute` | - |
+| 4 | a part, from `plan/parts/` or from `state.json`, whose status is not `done`, or a wave in `state.json` whose status is not `done` | `execute` | - |
 | 5 | no `review/round-N/` directory | `auto-review` | `first-round` |
 | 6 | a round directory without `review.md`; the lowest such round is reported | `auto-review` | `repeat-round` |
 | 7 | a finding of the last round whose latest level is `blocker` and that has no decision | `auto-review` | `triage` |
@@ -144,6 +149,11 @@ When no row matches, the stage SHALL be `done`. For each Change the result SHALL
 
 - **WHEN** plan passed, the plan has parts `01` and `02`, and `state.json` marks `01` done and `02` blocked
 - **THEN** its stage is `execute`, row 4, and the reason counts 1 of 2 parts not done
+
+#### Scenario: Row 4 - wave check not done
+
+- **WHEN** plan passed, `state.json` marks every part done and wave 2 `pending`
+- **THEN** its stage is `execute`, row 4, and the reason names wave 2
 
 #### Scenario: Row 5 - no review round
 

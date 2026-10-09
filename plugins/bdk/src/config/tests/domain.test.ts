@@ -53,7 +53,7 @@ describe("merge", () => {
       layer("local", {
         tools: {
           test: [
-            { id: "unit", scoped: "vitest {files}" },
+            { id: "unit", when: ["part"] },
             { id: "x", command: "x" },
           ],
         },
@@ -62,7 +62,7 @@ describe("merge", () => {
     expect(merged).toEqual({
       tools: {
         test: [
-          { id: "unit", command: "pnpm test", scoped: "vitest {files}" },
+          { id: "unit", command: "pnpm test", when: ["part"] },
           { id: "e2e", command: "pnpm e2e" },
           { id: "x", command: "x" },
         ],
@@ -130,13 +130,13 @@ describe("keys", () => {
   });
 
   it("resolves keys through mappings, records and id arrays", () => {
-    expect(resolveKey("tools.test.unit.scoped")).toEqual({
+    expect(resolveKey("tools.test.unit.when")).toEqual({
       ok: true,
       steps: [
         { kind: "key", name: "tools" },
         { kind: "key", name: "test" },
         { kind: "id", id: "unit" },
-        { kind: "key", name: "scoped" },
+        { kind: "key", name: "when" },
       ],
     });
     expect(resolveKey("models.implementer.effort").ok).toBe(true);
@@ -158,7 +158,7 @@ describe("keys", () => {
     });
     expect(resolveKey("languages.x")).toMatchObject({ ok: false, at: "languages" });
     expect(knownUnder("")).toContain("tools");
-    expect(knownUnder("tools.test.unit")).toEqual(["command", "scoped", "timeout", "paths"]);
+    expect(knownUnder("tools.test.unit")).toEqual(["command", "when", "timeout", "paths"]);
   });
 });
 
@@ -209,7 +209,7 @@ describe("validate", () => {
 
   it("checks a partial item only on top of the layers below it", () => {
     const project = layer("project", { tools: { test: [{ id: "unit", command: "pnpm test" }] } });
-    const local = layer("local", { tools: { test: [{ id: "unit", scoped: "vitest {files}" }] } });
+    const local = layer("local", { tools: { test: [{ id: "unit", when: ["part"] }] } });
     expect(validate([project, local], suggest).problems).toEqual([]);
     expect(validate([local], suggest).problems).toEqual([
       {
@@ -222,7 +222,7 @@ describe("validate", () => {
   });
 
   it("reports a partial item of a lower layer only when no higher layer completes it", () => {
-    const global = layer("global", { tools: { test: [{ id: "unit", scoped: "vitest {files}" }] } });
+    const global = layer("global", { tools: { test: [{ id: "unit", when: ["part"] }] } });
     const project = layer("project", { tools: { test: [{ id: "unit", command: "pnpm test" }] } });
     expect(validate([global, project], suggest).problems).toEqual([]);
   });
@@ -287,6 +287,44 @@ describe("validate", () => {
     ]);
     expect(validate([tools("api/**")], suggest).problems.map((problem) => problem.key)).toEqual([
       "tools.test.api.paths",
+    ]);
+  });
+
+  it("accepts the check points of an item and reports a repeated, unknown or empty one", () => {
+    const tools = (when: unknown) =>
+      layer("project", { tools: { test: [{ id: "unit", command: "vitest", when }] } });
+    expect(validate([tools(["wave", "review"])], suggest).settings?.tools.test).toEqual([
+      { id: "unit", command: "vitest", when: ["wave", "review"] },
+    ]);
+    expect(validate([tools(["part", "part"])], suggest).problems).toEqual([
+      expect.objectContaining({
+        key: "tools.test.unit.when",
+        message: expect.stringContaining("must not repeat a point") as unknown,
+      }) as unknown,
+    ]);
+    expect(validate([tools(["merge"])], suggest).problems).toEqual([
+      expect.objectContaining({
+        key: "tools.test.unit.when[0]",
+        message: expect.stringMatching(/part.*wave.*review/) as unknown,
+      }) as unknown,
+    ]);
+    expect(validate([tools([])], suggest).problems.map((problem) => problem.key)).toEqual([
+      "tools.test.unit.when",
+    ]);
+  });
+
+  it("reports the removed scoped field with its rewrite", () => {
+    const tools = layer("project", {
+      tools: { lint: [{ id: "eslint", command: "pnpm lint", scoped: "pnpm eslint {files}" }] },
+    });
+    expect(validate([tools], suggest).problems).toEqual([
+      {
+        layer: "project",
+        file: "/p/project.yaml",
+        key: "tools.lint.eslint.scoped",
+        message:
+          "scoped was removed: put {files} into the command of a second item that runs at part (when: [part])",
+      },
     ]);
   });
 

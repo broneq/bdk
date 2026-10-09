@@ -1,6 +1,7 @@
 // An in-memory file system and a fake shell for the check slice tests.
 
 import type { Entry, Files } from "../../shared/fs/index.ts";
+import { GitError } from "../../shared/git/index.ts";
 import type { Shell, ShellOptions, ShellOutcome } from "../../shared/shell/index.ts";
 
 export const ROOT = "/work/app";
@@ -47,4 +48,21 @@ export function fakeShell(
     return Promise.resolve(script.outcome);
   };
   return Object.assign(shell, { calls });
+}
+
+/** A git that answers by its arguments joined with spaces; an unscripted call exits 128. */
+export function fakeGit(answers: Readonly<Record<string, string>>): ((
+  cwd: string,
+  args: readonly string[],
+) => string) & {
+  readonly calls: { readonly cwd: string; readonly args: readonly string[] }[];
+} {
+  const calls: { readonly cwd: string; readonly args: readonly string[] }[] = [];
+  const git = (cwd: string, args: readonly string[]): string => {
+    calls.push({ cwd, args });
+    const answer = answers[args.join(" ")];
+    if (answer === undefined) throw new GitError(args, 128, "fatal: scripted failure");
+    return answer;
+  };
+  return Object.assign(git, { calls });
 }
