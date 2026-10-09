@@ -37,7 +37,7 @@ Done when you know the Change, the base and whether an earlier report exists.
 2. Every `openspec/changes/<change>/specs/**/spec.md`. Note each requirement under `## ADDED`, `## MODIFIED`, `## REMOVED` and `## RENAMED Requirements`, and each `#### Scenario:` with its file, heading line, WHEN and THEN.
 3. For each capability a delta modifies, removes or renames, its main spec `openspec/specs/<capability>/spec.md`: archive applies the delta to it, and the result is what must be right.
 4. The code: `git diff --stat <base>...HEAD`, then the changed files and every file a scenario runs through from its entry point (a command's dispatch, a route, a page, a configuration loader).
-5. The latest E2E results, when there are any: of `.bdk/runs/<change>/e2e/verdict.md` and `.bdk/runs/<change>/review/round-*/e2e/verdict.md`, the file modified last (Glob lists the newest first); read its verdict and every scenario file next to it whose first line is not `Result: pass`.
+5. The latest E2E results, when there are any: of `.bdk/runs/<change>/e2e/verdict.md` and `.bdk/runs/<change>/review/round-*/e2e/verdict.md`, the file modified last (Glob lists the newest first); read its verdict and every path file next to it (`<process>--<path>.md`) whose first line is not `Result: pass`.
 
 Judge from the code and the E2E results only. What `design.md`, a plan part or a commit message says the code does is a claim, not evidence.
 
@@ -50,7 +50,7 @@ For each scenario of an added or modified requirement, take its own WHEN, follow
 These six problems make the main specs wrong after archive. Each one is a `Must address` item:
 
 1. **Contradicted scenario.** The code does not produce the THEN for the WHEN, or no entry point reaches the scenario.
-2. **E2E failure.** An E2E scenario file starts with `Result: fail`.
+2. **E2E failure.** An E2E path file starts with `Result: fail`: the product breaks a promise of the proposal that the deltas are about to document. The item names the proposal line of its `Proposal:` line instead of a spec location.
 3. **Removed but present.** A removed requirement's behaviour is still in the product.
 4. **Dropped scenario.** A modified requirement leaves out a scenario of its main-spec version while the product still behaves that way: archive replaces the whole requirement, so that behaviour would lose its documentation.
 5. **Undocumented behaviour.** The diff adds or changes something a user can observe - a command, an option, an output, an exit code, an endpoint, a page, a configuration key - that no delta and no main-spec requirement describes. Internal code (a refactor, a helper, a test) never needs a delta.
@@ -78,10 +78,10 @@ Verdict: FAIL
 
 ## Checked
 - "Export" / "Two notes": src/export.js:12 prints both notes as a JSON array, exit 0.
-- E2E: `Verdict: PASS`, 3 scenarios (review/round-1/e2e/verdict.md).
+- E2E: `Verdict: PASS`, 2 processes, 7 paths (review/round-1/e2e/verdict.md).
 ```
 
-- Each `Must address` item names the spec location (file, requirement, scenario), what the spec says, what the product does, and, when the proposal settles it, which side disagrees with the intent. Its `Evidence:` line is a file and line with what the code does there, or the E2E scenario file.
+- Each `Must address` item names the spec location (file, requirement, scenario), what the spec says, what the product does, and, when the proposal settles it, which side disagrees with the intent. Its `Evidence:` line is a file and line with what the code does there, or the E2E path file.
 - `Checked` lists each scenario that holds, with where it holds, and states the E2E input: the verdict read with the path of its file under `.bdk/runs/<change>/`, or `no E2E results` when no E2E verdict exists (a `SKIPPED` or `BLOCKED` verdict is stated the same way).
 - `Verdict: FAIL` if and only if `Must address` holds an item. An empty section holds `- None.`
 - IDs: when step 1 found an earlier report, keep the ID of every problem still open, give a new problem the next unused number, and put `Closed: <IDs>` (or `Closed: none`) on the line under the verdict. Then replace the file: there is one report per Change, read by `bdk run status`. A first report has no `Closed:` line.

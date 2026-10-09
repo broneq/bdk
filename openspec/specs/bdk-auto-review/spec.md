@@ -36,7 +36,7 @@ The `bdk` plugin SHALL ship the skills `auto-review` (`skills/auto-review/`, the
 #### Scenario: E2E evidence per round
 
 - **WHEN** round 2 of `monthly-report` runs after round 1 left `round-1/e2e/verdict.md`
-- **THEN** the E2E tester writes `round-2/e2e/verdict.md` and its scenario files, `round-1/e2e/` is unchanged, and `round-2/round.md` gives the first line of `round-2/e2e/verdict.md`
+- **THEN** the E2E tester writes `round-2/e2e/verdict.md` and its path files, `round-1/e2e/` is unchanged, and `round-2/round.md` gives the first line of `round-2/e2e/verdict.md`
 
 #### Scenario: Only review items run
 
