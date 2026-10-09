@@ -81,7 +81,7 @@ languages: [javascript]
 tools:
   test:
     - id: node-test
-      # No scoped form: a part's files include bin/tally.js, which node --test would run as a test.
+      # One whole-suite item without when: it runs at every check point.
       command: npm test
   e2e:
     - id: cli

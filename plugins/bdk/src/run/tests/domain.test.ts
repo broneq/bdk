@@ -14,6 +14,7 @@ const finished: ChangeSnapshot = {
   designVerify: { name: "verify-2.md", pass: true },
   planVerify: { name: "verify-1.md", pass: true },
   parts: [done("01"), done("02")],
+  waves: [{ n: 1, status: "done" }],
   rounds: [
     { n: 1, report: true },
     { n: 2, report: true },
@@ -112,6 +113,21 @@ describe("derive: the resume table", () => {
       row: 4,
       round: null,
       reason: "1 of 2 parts not done, 1 blocked",
+    });
+  });
+
+  it("row 4: every part done and a wave whose check is not done", () => {
+    expect(
+      at({
+        waves: [
+          { n: 1, status: "done" },
+          { n: 2, status: "pending" },
+        ],
+      }),
+    ).toMatchObject({ stage: "execute", row: 4, reason: "wave 2 not done" });
+    expect(at({ waves: [{ n: 1, status: "blocked" }] })).toMatchObject({
+      row: 4,
+      reason: "wave 1 blocked",
     });
   });
 

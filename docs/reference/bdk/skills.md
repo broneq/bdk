@@ -100,7 +100,7 @@ Runs the product as a user would against the spec scenarios of an OpenSpec Chang
 
 Started by: you, or Claude when your request matches the description below.
 
-Runs the execute stage of an OpenSpec Change - starts one bdk:lead agent that builds the verified plan parts in parallel waves (implement-part, conform-part, commits, worktree merges, state.json), waits for its result, and passes the result or a blocker on. Use when a Change has a verified plan and should be built, when asked to "execute", "build" or "implement" a Change or its plan, or when /bdk:run reaches the execute stage.
+Runs the execute stage of an OpenSpec Change - starts one bdk:lead agent that builds the verified plan parts in parallel waves (implement-part, conform-part, commits, worktree merges, a wave check after each wave, state.json), waits for its result, and passes the result or a blocker on. Use when a Change has a verified plan and should be built, when asked to "execute", "build" or "implement" a Change or its plan, or when /bdk:run reaches the execute stage.
 
 ## `/bdk:execute-waves` {#execute-waves}
 
@@ -108,7 +108,7 @@ Runs the execute stage of an OpenSpec Change - starts one bdk:lead agent that bu
 
 Started by: other BDK skills only. It is not in the `/` menu.
 
-The execute stage of an OpenSpec Change, run by the bdk:lead agent that /bdk:execute starts (and /bdk:auto-review for the fix parts of a review round) - takes the waves of the plan parts from bdk plan check, runs each part through implement-part and conform-part in parallel batches (parts that share a wave in their own git worktrees, a part alone in its wave in the main checkout), retries and escalates within the budget, commits each part, merges the worktrees in part order with resolve-conflict on a conflict, and writes state.json and execute/result.md. Not for users: /bdk:execute is the command.
+The execute stage of an OpenSpec Change, run by the bdk:lead agent that /bdk:execute starts (and /bdk:auto-review for the fix parts of a review round) - takes the waves of the plan parts from bdk plan check, runs each part through implement-part and conform-part in parallel batches (parts that share a wave in their own git worktrees, a part alone in its wave in the main checkout), retries and escalates within the budget, commits each part, merges the worktrees in part order with resolve-conflict on a conflict, runs the wave check after each wave and has resolve-conflict --wave repair a red one, and writes state.json and execute/result.md. Not for users: /bdk:execute is the command.
 
 ## `/bdk:explore` {#explore}
 
@@ -184,11 +184,11 @@ Opens a BDK Change from an intent or a GitHub issue - runs openspec new change w
 
 ## `/bdk:resolve-conflict` {#resolve-conflict}
 
-`/bdk:resolve-conflict [<change>] <part-id> [--run-dir <path>] [--parts <dir>]`
+`/bdk:resolve-conflict [<change>] <part-id> [--run-dir <path>] [--parts <dir>] | [<change>] --wave <n> --base <commit> [--run-dir <path>] [--parts <dir>]`
 
 Started by: you, or Claude when your request matches the description below.
 
-Resolves the merge conflict a plan part left when the execute lead merged its branch into the Change branch, on the bdk:implementer agent - reads both sides and the parts that wanted them, edits each conflicted file to keep what both meant, runs the checks of those parts, and writes execute/merge-NN.md, leaving the merge for the lead to commit. Use when merging a part of a Change stopped on conflicts, or when the execute lead hands over a conflicted merge.
+Resolves the merge conflict a plan part left when the execute lead merged its branch into the Change branch, or repairs a red wave check after every part of a wave is on the Change branch, on the bdk:implementer agent - reads both sides and the parts that wanted them, edits the files to keep what both meant, runs the checks, and writes execute/merge-NN.md or execute/wave-N.md, leaving the commit to the lead. Use when merging a part of a Change stopped on conflicts, when a wave check (checks/wave-N.json) is red, or when the execute lead hands over either.
 
 ## `/bdk:review-group` {#review-group}
 
@@ -212,7 +212,7 @@ Reviews a whole BDK Change top down after its group reviews - every spec scenari
 
 Started by: other BDK skills only. It is not in the `/` menu.
 
-One review round of an OpenSpec Change, run by the bdk:lead agent that /bdk:auto-review starts - records the round scope and groups with bdk git groups (a later round covers only the fix commits), runs one bdk:reviewer per group, the bdk:e2e-tester and bdk check run in parallel, then bdk:integration-reviewer, then bdk:judge, and writes round.md next to the review.md of the judge. Not for users: /bdk:auto-review is the command.
+One review round of an OpenSpec Change, run by the bdk:lead agent that /bdk:auto-review starts - records the round scope and groups with bdk git groups (a later round covers only the fix commits), runs one bdk:reviewer per group and bdk check run --at review in parallel, then bdk:e2e-tester and bdk:integration-reviewer, then bdk:judge, and writes round.md next to the review.md of the judge. Not for users: /bdk:auto-review is the command.
 
 ## `/bdk:run` {#run}
 

@@ -57,7 +57,13 @@ describe("describeSettings", () => {
       default: 8192,
     });
     expect(byKey.get("plan.part.max-bytes")).not.toHaveProperty("max");
-    expect(byKey.get("tools.test.<id>.scoped")).toMatchObject({ type: "string", required: false });
+    expect(byKey.get("tools.test.<id>.when")).toMatchObject({
+      type: "list",
+      of: "enum",
+      values: ["part", "wave", "review"],
+      required: false,
+    });
+    expect(byKey.has("tools.test.<id>.scoped")).toBe(false);
     expect(byKey.get("tools.test.<id>.command")).toMatchObject({ required: true });
   });
 

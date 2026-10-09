@@ -27,7 +27,7 @@ Done when you know which steps this run does.
 
 ## 2. Detect
 
-Read the project's manifests and lockfiles, its scripts and the configs they name, before writing anything. Use [the stack table](references/stacks.md) for `languages`, `tools.test`, `tools.lint`, `tools.build` and their `scoped` forms, and [the E2E table](references/e2e.md) for `tools.e2e`. A v2 `.bdk/settings.json` is a hint: [v2 projects](references/stacks.md#v2-projects).
+Read the project's manifests and lockfiles, its scripts and the configs they name, before writing anything. Use [the stack table](references/stacks.md) for `languages`, `tools.test`, `tools.lint`, `tools.build`, their forms on changed files and their check points (`when`), and [the E2E table](references/e2e.md) for `tools.e2e`. A v2 `.bdk/settings.json` is a hint: [v2 projects](references/stacks.md#v2-projects).
 
 Note for every value the file it came from. In a repository of several packages, detect the items per package and decide each item's `paths` by [the paths rules](references/stacks.md#paths-in-a-repository-of-several-packages). Done when every group has a value, an empty answer with a reason, or an open question.
 
@@ -50,15 +50,27 @@ tools:
   test:
     - id: vitest
       command: pnpm test
-      scoped: pnpm vitest run {files}
+      when: [wave, review]
       # paths: ["web/**"] - only in a repository of several packages
+    - id: vitest-related
+      command: pnpm vitest related --run {files}
+      paths: ["**/*.ts", "**/*.tsx"]
+      when: [part]
   lint:
     - id: eslint
       command: pnpm lint
-      scoped: pnpm eslint {files}
+      when: [review]
+    - id: eslint-changed
+      command: pnpm eslint {files}
+      paths: ["**/*.ts", "**/*.tsx"]
+      when: [part]
+    - id: tsc
+      command: pnpm typecheck
+      when: [wave, review]
   build:
     - id: vite
       command: pnpm build
+      when: [review]
   e2e:
     - id: web
       start: pnpm dev
@@ -66,7 +78,7 @@ tools:
       driver: browser
 ```
 
-Leave out a group that has no item. Write `paths` only as the paths rules say; a single-package repository gets none. Done when the file holds every detected value.
+Leave out a group that has no item. Write `when` on every check item by [the points table](references/stacks.md#check-points). Write `paths` only as the paths rules say: a single-package repository gets them only on its `{files}` items. On a re-run, rewrite an item holding the removed `scoped` as [Rewrite the removed `scoped`](references/stacks.md#rewrite-the-removed-scoped) says. Done when the file holds every detected value.
 
 ## 5. Check the settings
 
@@ -77,8 +89,8 @@ Run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" config check`. Exit 1 lists problems as `<f
 Edit the project's `.claude/settings.json` (create it as `{"permissions": {"allow": []}}` when missing). Claude Code asks the user to approve every write to this file; when the write is refused, list the rules in the report for the user to add. Add to `permissions.allow` each of these that is missing, keeping every other entry and key:
 
 - `Bash(bdk *)` and `Bash(*/bin/bdk *)` (skills call the launcher by its plugin path), `Bash(openspec *)`, `Bash(git *)`, `Bash(gh *)`;
-- `Bash(<command>)` for each `tools.test`, `tools.lint` and `tools.build` command, and each `tools.e2e` `start` and command `ready` (a URL needs no rule);
-- `Bash(<prefix> *)` for each `scoped` form, `<prefix>` being the command before `{files}` (`pnpm vitest run {files}` gives `Bash(pnpm vitest run *)`).
+- `Bash(<command>)` for each `tools.test`, `tools.lint` and `tools.build` command without `{files}`, and each `tools.e2e` `start` and command `ready` (a URL needs no rule);
+- `Bash(<prefix> *)` for each command holding `{files}`, `<prefix>` being the command before `{files}` (`pnpm vitest run {files}` gives `Bash(pnpm vitest run *)`).
 
 Done when every rule is in the file and the JSON parses.
 
@@ -114,7 +126,8 @@ Then check which decision surface the project gets: run `npx -y lavish-axi --ver
 Report briefly:
 
 - each value written, with the file it came from (`tools.test.vitest: pnpm test (package.json scripts.test)`);
-- the `paths` written on each check item (`tools.test.pytest: api/**`), or "no `paths`: one package";
+- the `when` of each check item, in one line (`part: vitest-related, eslint-changed; wave: vitest, tsc; review: vitest, eslint, tsc, vite`);
+- the `paths` written on each check item (`tools.test.pytest: api/**`), or "`paths` only on the `{files}` items: one package";
 - OpenSpec: `schema: bdk` set, or, when the project keeps its own schema, "OpenSpec keeps `<schema>` as the project's default; BDK opens its own Changes with `--schema bdk`";
 - a removed ignore rule, in a line of its own: "Removed `/.bdk/` from `.gitignore` (BDK v2 ignored all of `.bdk/`): `.bdk/settings.yaml` is now tracked for the team; `.bdk/runs/` and `.bdk/settings.local.yaml` stay ignored";
 - E2E: the entries written, or "E2E skipped" with the reason (a library has nothing to run); for a `browser` item, the Playwright line of [Playwright](references/e2e.md#playwright);

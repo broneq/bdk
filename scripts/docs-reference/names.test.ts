@@ -58,7 +58,7 @@ const MODEL: Model = {
     },
     { key: "tools", type: "mapping", required: false, description: "Tools." },
     { key: "tools.test", type: "items", required: false, description: "Tests." },
-    { key: "tools.test.<id>.scoped", type: "string", required: false, description: "Scoped." },
+    { key: "tools.test.<id>.when", type: "list", required: false, description: "When." },
     { key: "hooks", type: "mapping", required: false, description: "Hooks." },
   ],
   planProblems: [],
@@ -75,7 +75,7 @@ describe("checkNames", () => {
         [
           "Run `/bdk:plan`, then `/bdk:review-round` on `bdk:verifier`.",
           "`bdk config show` and `bdk config set <key> <value>`; `bdk config --help`.",
-          "Set `policy.budgets.review-rounds`, `policy.budgets.*`, `tools.test.unit.scoped`.",
+          "Set `policy.budgets.review-rounds`, `policy.budgets.*`, `tools.test.unit.when`.",
           "Read `hooks/hooks.json`, see [plan](/reference/bdk/skills#plan) and [it](../reference/bdk/agents.md#verifier).",
           "`/bdk:<stage>` is a placeholder, and so is `bdk <group> <verb>`.",
           "Switch off `BDK-CQ-1` with `rules.disabled`; `BDK-<AREA>-<N>` is a pattern.",
