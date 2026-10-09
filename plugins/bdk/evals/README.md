@@ -77,7 +77,7 @@ PATH=".git/bdk-eval/bin:$PATH" pnpm --filter @bdk/bdk run eval --allow-tools Wri
 
 A case that reads issues writes `.git/bdk-eval/issues/<n>.json` with the fields of `gh issue view --json` (`number`, `title`, `body`, `labels`, `state`, `url`) and copies the stand-in the same way.
 
-The `e2e-check-*` cases run the product of the scaffolded project as a user would, through commands the skill cannot know in advance, so they need `Bash` itself; the sandbox still confines every command to the run's workspace. `--trust-plugin` lets the run start without a terminal:
+The `e2e-check-*` cases run the product of the scaffolded project as a user would, through commands the skill cannot know in advance, so they need `Bash` itself; the sandbox still confines every command to the run's workspace. They grade paths the tester derives from the proposal of the tally Change (`fixtures/tally-cli.sh`): `e2e-check-cli-broken` a broken empty-ledger path and an internal proposal line left out, `e2e-check-proposal-paths` a `--json` promise that only the proposal makes, `e2e-check-no-user-change` a refactor proposal that gives `SKIPPED`, `e2e-check-no-e2e` a project without a `tools.e2e` item. Path names are the tester's own, so the graders read `verdict.md` lines (`- <result>: <path> (<kind>, proposal.md:<line>) - <file>`) rather than file names. `--trust-plugin` lets the run start without a terminal:
 
 ```bash
 pnpm --filter @bdk/bdk run eval --trust-plugin --allow-tools Write Bash --case 'e2e-check-*'

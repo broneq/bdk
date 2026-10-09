@@ -1,5 +1,5 @@
 ---
-description: "CLI: an empty ledger, a path of the process the proposal adds, is broken in the product; E2E derives its paths from the proposal, reports the break at the proposal line and leaves the internal line out."
+description: "CLI: the proposal promises `tally total --json`, no spec scenario names it and the product ignores the flag; E2E derives that path from the proposal and reports it at the proposal line."
 tags: [block]
 max_turns: 40
 allowed_tools: [Read, Glob, Grep, Skill, Write, Bash]

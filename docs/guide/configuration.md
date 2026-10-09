@@ -143,7 +143,7 @@ tools:
       driver: cli
 ```
 
-For `driver: cli`, `start` runs once to its end and `ready` must then exit 0; the tester runs the commands of each scenario in a fresh directory.
+For `driver: cli`, `start` runs once to its end and `ready` must then exit 0; the tester runs the commands of each path in a fresh directory.
 
 ### Team settings and your own
 

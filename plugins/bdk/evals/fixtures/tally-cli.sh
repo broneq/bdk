@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Shared fixture: a configured BDK project with a Node CLI `tally` and an OpenSpec Change
-# `add-total` whose spec delta has two scenarios a user can run, one broken in the product
+# `add-total` whose proposal adds one user process (`tally total`) and one internal change (the
+# parser module), and whose spec delta has two scenarios a user can run, one broken in the product
 # (an empty ledger exits 1 instead of printing a zero total), and one internal scenario.
 # One commit, written into the current directory. See ../README.md, "Shared fixtures".
 set -euo pipefail
@@ -114,6 +115,7 @@ Users want to see the sum of what they added to the ledger.
 ## What Changes
 
 - New command `tally total`.
+- Amount parsing moves into one pure function, `parseAmount` in `src/parse.js`.
 MD
 
 cat > openspec/changes/add-total/specs/tally/spec.md <<'MD'
