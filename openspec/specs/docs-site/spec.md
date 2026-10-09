@@ -47,7 +47,7 @@ The site SHALL have a home page and a navigation bar. Its sidebar SHALL hold, in
 - **THEN** `pnpm check` fails and names `docs/concepts/<slug>.md`
 
 ### Requirement: Mermaid diagrams render as diagrams
-A fenced code block with the language `mermaid` in a site page SHALL render as a diagram, in both the light and the dark theme, and SHALL re-render when the reader switches the theme. A flowchart label SHALL break into lines only where its author wrote a line break (`<br/>`), never inside a word, whatever the label's length.
+A fenced code block with the language `mermaid` in a site page SHALL render as a diagram, in both the light and the dark theme, and SHALL re-render when the reader switches the theme. A flowchart label SHALL break into lines only where its author wrote a line break (`<br/>`), never inside a word, whatever the label's length. No element of a drawn diagram SHALL draw a shadow or a glow, whatever the node's shape, in either theme.
 
 #### Scenario: Diagram in a design document
 - **WHEN** a reader opens the v3 architecture design page on the site
@@ -60,6 +60,10 @@ A fenced code block with the language `mermaid` in a site page SHALL render as a
 #### Scenario: Hyphenated name in a flowchart label
 - **WHEN** a reader opens `docs/concepts/orchestrators.md` on the site, in the light or the dark theme, at desktop or phone width
 - **THEN** a node label such as `Agent bdk:implementer<br/>/bdk:implement-part` shows `/bdk:implement-part` on one line, and no flowchart label on the page is split inside a word
+
+#### Scenario: Stadium node draws flat
+- **WHEN** a reader opens `docs/concepts/findings.md` on the site, in the light or the dark theme
+- **THEN** the stadium node "decided" draws flat like the box nodes next to it, with no shadow and no glow around it
 
 ### Requirement: Links into the archive point to GitHub
 The `docs/v3-draft1/` archive SHALL stay out of the site. A relative link from a site page to a file in the archive SHALL point to that file on GitHub, `https://github.com/broneq/bdk/blob/main/docs/v3-draft1/<path>`, keeping any `#anchor`. A relative link to an archive file that does not exist SHALL fail the site build and name the page and the link.
