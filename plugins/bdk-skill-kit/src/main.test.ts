@@ -1,6 +1,6 @@
 import { spawn, spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative, sep } from "node:path";
 import { describe, expect, it } from "vitest";
 import { main } from "./main.ts";
 import { skill, tree } from "./test-helpers.ts";
@@ -179,6 +179,26 @@ describe("main", () => {
   it("narrows per-file rules to path arguments", async () => {
     const root = project({ "skills/beta/SKILL.md": skill("beta", "", "BAD\n") });
     expect((await cli(root, ["skills/alpha"])).code).toBe(0);
+  });
+
+  it("checks an absolute skills dir named by a config outside the project", async () => {
+    const skills = join(tree({ "skills/beta/SKILL.md": skill("beta", "", "BAD\n") }), "skills");
+    const scratch = tree({
+      "check.config.mjs": `import t from "./t.mjs"; export default { targets: [{ kind: "skills", dirs: [${JSON.stringify(skills)}] }], plugins: [t] };`,
+      "t.mjs": rulePlugin,
+    });
+    const out = await cli(tree({}), ["--config", join(scratch, "check.config.mjs"), "--json"]);
+    expect(out.stderr).toBe("");
+    expect(out.code).toBe(1);
+    const parsed = JSON.parse(out.stdout) as { findings: { rule: string; file: string }[] };
+    expect(parsed.findings.map((f) => [f.rule, f.file])).toEqual([
+      [
+        "t/bad-word",
+        relative(scratch, join(skills, "beta", "SKILL.md"))
+          .split(sep)
+          .join("/"),
+      ],
+    ]);
   });
 
   it("applies the portable profile to every skills target with --portable", async () => {

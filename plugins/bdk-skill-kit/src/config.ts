@@ -33,6 +33,14 @@ export interface LoadedConfig {
 
 const CONFIG_NAMES = ["skill-check.config.ts", "skill-check.config.mjs", "skill-check.config.js"];
 
+/**
+ * The absolute directory of a target `dirs` entry: relative to the config
+ * root, or as written when absolute. Validation and discovery both use it.
+ */
+export function targetDir(root: string, dir: string): string {
+  return resolve(root, dir);
+}
+
 export async function loadConfig(cwd: string, explicit?: string): Promise<LoadedConfig> {
   const file = explicit
     ? resolve(cwd, explicit)
@@ -111,7 +119,7 @@ export function loadTarget(
     throw fail("dirs must list at least one directory");
   }
   for (const dir of dirs) {
-    const full = resolve(root, dir);
+    const full = targetDir(root, dir);
     if (!existsSync(full) || !statSync(full).isDirectory()) {
       throw fail(`directory \`${dir}\` does not exist`);
     }
