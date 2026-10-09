@@ -119,6 +119,7 @@ Every finding SHALL carry a rule ID, a severity (`error` or `warning`), a file p
 
 The config SHALL declare targets. Each target SHALL have a kind, a list of directories, a profile and a name:
 
+- a directory is resolved against the config root, so a relative directory is relative to the config file and an absolute one is used as written; config validation and discovery resolve it the same way;
 - kind `skills` scans `<dir>/<name>/SKILL.md`, matching the file name in any letter case so that `skill-file-name` can report a wrong case;
 - a subdirectory of a `skills` dir that is itself a `skills` dir of any target is a container of skills, not a skill directory, so the outer scan skips it;
 - kind `agents` scans `<dir>/*.md`;
@@ -152,6 +153,11 @@ The config SHALL also declare the plugins to load, per-rule settings, per-target
 
 - **WHEN** the config declares a `skills` target with `plugin: false`
 - **THEN** the target resolves with `plugin` false and every document of that target sees it on `doc.target`
+
+#### Scenario: absolute target directory
+
+- **WHEN** a config outside the project declares a `skills` target whose `dirs` entry is an absolute path to a skills directory
+- **THEN** `skill-check --config <that file>` checks the skills in that directory and prints its findings, with no stack trace
 
 ### Requirement: Rule API
 

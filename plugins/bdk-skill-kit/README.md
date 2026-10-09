@@ -55,6 +55,8 @@ export default defineConfig({
 });
 ```
 
+A `dirs` entry is relative to the config file or absolute, so a config kept outside a project can name that project's skills by their absolute path; findings then name files relative to the config file.
+
 A skills dir may sit inside another one, for example `dirs: ["skills", "skills/roles"]`: the outer scan then treats `skills/roles` as a container of skills, not as a skill directory without `SKILL.md`.
 
 A target is a plugin's by default. On agents that means `hooks`, `mcpServers`, `permissionMode` and `initialPrompt`, which plugin agents ignore, are reported; `plugin: false` admits them for agents under `.claude/agents/`. On skills, `plugin: false` makes `name-format` report the names Claude Code reserves outside a plugin, `synced` and `anthropic-skills`.
