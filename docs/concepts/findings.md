@@ -3,7 +3,7 @@
 A finding is one problem a review round found: a place, a summary, the evidence, and what it breaks when it breaks a rule or an instruction: a [rule](./rules.md) id, or the path of a project instruction file such as `CLAUDE.md`. Every finding goes through three steps, each by a different role: found, judged, decided.
 
 ```mermaid
-flowchart LR
+flowchart TB
   F["found<br/>reviewers,<br/>integration reviewer,<br/>E2E check, red checks"] --> J["judged<br/>/bdk:judge sets a level"]
   J --> D(["decided<br/>/bdk:triage: you, or<br/>policy.gates.review auto"])
   D -->|"fix"| X["fix part, built,<br/>reviewed next round"]

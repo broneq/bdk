@@ -115,7 +115,6 @@ Cylinders are files, boxes are the blocks that write or read them. `bdk run stat
 ## Execute
 
 ```mermaid
-%%{init: {"sequence": {"actorMargin": 16, "width": 100}}}%%
 sequenceDiagram
   participant L as execute lead
   participant I as implementer
@@ -137,7 +136,7 @@ sequenceDiagram
     I->>R: execute/merge-NN.md
   end
   L->>R: write execute/result.md
-  Note over R: bdk run status reads state.json
+  Note over L,R: bdk run status reads state.json
 ```
 
 ## Review: the findings event log
@@ -145,14 +144,9 @@ sequenceDiagram
 `round-N/findings.jsonl` is an append-only event log. Every writer appends through `bdk findings`, so parallel reviewers never rewrite each other's lines; `bdk findings list` folds it into the current view.
 
 ```mermaid
-flowchart LR
-  RG["/bdk:review-group x N"] -->|"add"| F
-  RI["/bdk:review-integration"] -->|"add"| F
-  E2["/bdk:e2e-check"] -->|"add"| F
-  CK["bdk check run"] -->|"red checks"| F
-  J["/bdk:judge"] -->|"level"| F
-  T["/bdk:triage"] -->|"decide"| F
-  F[("round-N/<br/>findings.jsonl")]
+flowchart TB
+  W["/bdk:review-group x N: add<br/>/bdk:review-integration: add<br/>/bdk:e2e-check: add<br/>bdk check run: red checks<br/>/bdk:judge: level<br/>/bdk:triage: decide"]
+  W -->|"append"| F[("round-N/<br/>findings.jsonl")]
   F -->|"report"| REP[("round-N/<br/>review.md")]
   F -->|"list --decision fix"| PF["/bdk:plan-fixes"]
   F -.->|"fold"| ST["bdk run status"]
@@ -165,7 +159,6 @@ flowchart LR
 ## Close
 
 ```mermaid
-%%{init: {"sequence": {"actorMargin": 16, "width": 100}}}%%
 sequenceDiagram
   participant CL as /bdk:close
   participant V as verifier
@@ -173,13 +166,13 @@ sequenceDiagram
   participant G as git, GitHub
   CL->>V: /bdk:spec-conformance
   V->>FS: read deltas, main specs,<br/>diff, the latest e2e/verdict.md
-  V->>FS: write close/spec-conformance.md
+  V->>FS: write close/<br/>spec-conformance.md
   V-->>CL: Verdict line
   CL->>G: archive, commit, push
   CL->>FS: write close/pr-body.md
   CL->>G: gh pr create
   CL->>FS: write close/pr.md (last)
-  Note over FS: bdk run status: done
+  Note over CL,G: bdk run status: done
 ```
 
 ## How `bdk run status` derives the stage
@@ -188,18 +181,20 @@ sequenceDiagram
 
 ```mermaid
 flowchart TB
-  R1{{"proposal.md?"}} -->|"no"| S1["propose"]
+  R1{{"proposal.md?"}}
   R1 -->|"yes"| R2{{"design.md and last<br/>design/verify-N.md PASS?"}}
-  R2 -->|"no"| S2["design"]
   R2 -->|"yes"| R3{{"plan parts and last<br/>plan/verify-N.md PASS?"}}
-  R3 -->|"no"| S3["plan"]
   R3 -->|"yes"| R4{{"every part done<br/>in state.json?"}}
-  R4 -->|"no"| S4["execute"]
-  R4 -->|"yes"| R5{{"review round with report,<br/>no undecided blocker,<br/>no fix decision in the last round?"}}
-  R5 -->|"no"| S5["auto-review<br/>first-round, repeat-round, triage or fix"]
-  R5 -->|"yes"| R6{{"/bdk:spec-conformance PASS,<br/>archived, close/pr.md?"}}
-  R6 -->|"no"| S6["close<br/>/bdk:spec-conformance, archive or pr"]
+  R4 -->|"yes"| R5{{"review round with report,<br/>no undecided blocker,<br/>no fix decision<br/>in the last round?"}}
+  R5 -->|"yes"| R6{{"/bdk:spec-conformance<br/>PASS, archived,<br/>close/pr.md?"}}
   R6 -->|"yes"| S7["done"]
+  R1 -->|"no"| S1["propose"]
+  R2 -->|"no"| S2["design"]
+  R3 -->|"no"| S3["plan"]
+  R4 -->|"no"| S4["execute"]
+  R5 -->|"no"| S5["auto-review<br/>first-round, repeat-round,<br/>triage or fix"]
+  R6 -->|"no"| S6["close<br/>/bdk:spec-conformance,<br/>archive or pr"]
+  S1 ~~~ S2 ~~~ S3 ~~~ S4 ~~~ S5 ~~~ S6
 ```
 
 ## Recover from a stop

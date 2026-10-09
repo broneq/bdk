@@ -16,6 +16,12 @@ const SKIP = /^(v3-draft1|node_modules|\.vitepress)\//;
  * short").
  */
 const MAX_LABEL_LINE = 40;
+/**
+ * An init directive or a `config:` frontmatter. Wrapping and layout are set once for the site
+ * (`theme/mermaid-diagram.ts`), so a diagram fits the content column the same way on every page
+ * (spec `docs-site`, "Diagrams fit the content column").
+ */
+const OWN_CONFIG = /%%\{\s*init(ialize)?\s*:|^\s*---\s*\n[\s\S]*?^\s*config\s*:/m;
 
 /** The parts of mermaid's flowchart database this test reads. */
 interface FlowchartDb {
@@ -81,8 +87,8 @@ async function problems(pages: ReadonlyMap<string, string>): Promise<string[]> {
         found.push(`${at}: ${message ?? ""}`);
         continue;
       }
-      if (block.code.includes("wrappingWidth")) {
-        found.push(`${at}: sets wrappingWidth; flowcharts use the site-wide value`);
+      if (OWN_CONFIG.test(block.code)) {
+        found.push(`${at}: sets its own Mermaid configuration; diagrams use the site-wide one`);
       }
       // The parsed labels come only from the diagram's database: render() needs a browser's
       // layout (it draws an empty SVG in happy-dom), and parse() returns no diagram.
@@ -179,7 +185,6 @@ describe("mermaid blocks", () => {
   });
 
   it.each([
-    ["an init line", '%%{init: {"sequence": {"wrap": true}}}%%\nsequenceDiagram\n  A->>B: hi'],
     ["the wrap directive", "%%{wrap}%%\nsequenceDiagram\n  A->>B: hi"],
     ["a wrap: prefix", "sequenceDiagram\n  A->>B: wrap: hi"],
   ])("names a sequence diagram that turns wrapping on in %s", async (_, code) => {
@@ -189,15 +194,33 @@ describe("mermaid blocks", () => {
     ]);
   });
 
-  it("names a block that sets its own wrappingWidth", async () => {
-    const page =
-      '# Page\n\n```mermaid\n%%{init: {"flowchart": {"wrappingWidth": 200}}}%%\nflowchart TB\n  A --> B\n```\n';
+  it.each([
+    ["an init line", '%%{init: {"flowchart": {"wrappingWidth": 200}}}%%\nflowchart TB\n  A --> B'],
+    [
+      "an initialize line",
+      '%%{initialize: {"sequence": {"actorMargin": 50}}}%%\nsequenceDiagram\n  A->>B: hi',
+    ],
+    [
+      "a config frontmatter",
+      "---\nconfig:\n  flowchart:\n    wrappingWidth: 200\n---\nflowchart TB\n  A --> B",
+    ],
+  ])("names a block that sets its own configuration in %s", async (_, code) => {
+    const page = `# Page\n\n\`\`\`mermaid\n${code}\n\`\`\`\n`;
     expect(await problems(new Map([["docs/concepts/x.md", page]]))).toEqual([
-      "docs/concepts/x.md:3: sets wrappingWidth; flowcharts use the site-wide value",
+      "docs/concepts/x.md:3: sets its own Mermaid configuration; diagrams use the site-wide one",
     ]);
   });
 
-  it("parse on every page of the site, with short label lines and no sequence wrapping", async () => {
+  it("names a sequence diagram that turns wrapping on in an init line, as both", async () => {
+    const page =
+      '# Page\n\n```mermaid\n%%{init: {"sequence": {"wrap": true}}}%%\nsequenceDiagram\n  A->>B: hi\n```\n';
+    expect(await problems(new Map([["docs/concepts/x.md", page]]))).toEqual([
+      "docs/concepts/x.md:3: sets its own Mermaid configuration; diagrams use the site-wide one",
+      "docs/concepts/x.md:3: wraps text; sequence diagrams break lines only at <br/>",
+    ]);
+  });
+
+  it("parse on every page of the site, with short label lines, no own configuration and no sequence wrapping", async () => {
     const files = readdirSync(DOCS, { recursive: true, encoding: "utf8" })
       .map((file) => file.split("\\").join("/"))
       .filter((file) => file.endsWith(".md") && !SKIP.test(file))

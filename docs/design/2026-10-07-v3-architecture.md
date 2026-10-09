@@ -85,14 +85,16 @@ The orchestrator is a skill the main thread follows; blocks are skills called wi
 
 ```mermaid
 flowchart TB
-  U["/bdk:auto-review"] --> O["auto-review skill (main thread)"]
-  O -->|"Agent x N, parallel"| R["reviewer per group"]
+  U["/bdk:auto-review"] --> O["auto-review skill<br/>(main thread)"]
+  O -->|"Agent x N,<br/>parallel"| R["reviewer<br/>per group"]
   O -->|"Bash"| K["bdk check run"]
   R -->|"findings file"| O
   K -->|"result file"| O
-  O -->|"Agent"| I["integration reviewer"]
+  O -->|"Agent"| I["integration<br/>reviewer"]
   O -->|"Agent"| J["judge"]
   J -->|"round report"| O
+  R ~~~ I
+  K ~~~ J
   classDef primary fill:#3b6ea5,stroke:#7fa8d0,color:#ffffff
   class O primary
 ```
@@ -106,15 +108,17 @@ Mechanical orchestrators are plugin dynamic workflows; interactive stages stay s
 
 ```mermaid
 flowchart TB
+  P["planning<br/>agent"] -->|"groups, steps<br/>(schema)"| W
   U["/bdk:auto-review"] --> W["auto-review workflow<br/>(background runtime)"]
-  W -->|"agent(): read config and diff"| P["planning agent"]
-  P -->|"groups, steps (schema)"| W
-  W -->|"parallel()"| R["reviewer per group"]
-  W -->|"agent()"| K["agent running bdk check run"]
+  W -->|"agent(): read<br/>config and diff"| P
+  W -->|"parallel()"| R["reviewer<br/>per group"]
+  W -->|"agent()"| K["agent running<br/>bdk check run"]
   R -->|"JSON"| W
-  W -->|"agent()"| I["integration reviewer"]
+  W -->|"agent()"| I["integration<br/>reviewer"]
   W -->|"agent()"| J["judge"]
   J -->|"final report"| M["main thread"]
+  R ~~~ I
+  K ~~~ J
   classDef primary fill:#3b6ea5,stroke:#7fa8d0,color:#ffffff
   class W primary
 ```
@@ -129,13 +133,15 @@ The stage skill runs in one lead subagent that starts the workers and returns a 
 ```mermaid
 flowchart TB
   U["/bdk:auto-review"] --> S["main thread"]
-  S -->|"Agent: whole stage"| L["review lead (subagent)"]
-  L -->|"Agent x N"| R["reviewer per group"]
+  S -->|"Agent: whole stage"| L["review lead<br/>(subagent)"]
+  L -->|"Agent x N"| R["reviewer<br/>per group"]
   L -->|"Bash"| K["bdk check run"]
   R -->|"findings"| L
-  L -->|"Agent"| I["integration reviewer"]
+  L -->|"Agent"| I["integration<br/>reviewer"]
   L -->|"Agent"| J["judge"]
   L -->|"summary"| S
+  R ~~~ I
+  K ~~~ J
   classDef primary fill:#3b6ea5,stroke:#7fa8d0,color:#ffffff
   class L primary
 ```
@@ -231,7 +237,7 @@ The tree under the main thread: lead (level 1), worker such as an implementer or
 ### Stages and units of work
 
 ```mermaid
-flowchart LR
+flowchart TB
   P["propose"] -->|"proposal.md"| D["design"]
   D -->|"specs, design.md"| PL["plan"]
   PL -->|"plan parts"| E["execute"]
@@ -294,8 +300,8 @@ Tools: `commit`, `adr`, `add-rule`, `refine-rules`, `mermaid-drawer`.
 ```mermaid
 sequenceDiagram
   actor H as user
-  participant M as run (main thread)
-  participant L as lead (execute, review-round)
+  participant M as run<br/>(main thread)
+  participant L as lead (execute,<br/>review-round)
   H->>M: /bdk:run intent, issue or issue list
   M->>M: Skill propose, Skill design
   alt policy.gates.design = manual
@@ -327,7 +333,7 @@ sequenceDiagram
   participant X as explore
   participant A as design-draft
   participant V as verify-design
-  O->>X: map the code for the proposal
+  O->>X: map the code<br/>for the proposal
   X-->>O: design/explore.md
   O->>A: approaches, questions
   A->>H: Lavish page (or policy auto)
@@ -338,7 +344,7 @@ sequenceDiagram
     V-->>O: design/verify-N.md
     O->>A: fix per must_address
   end
-  O->>H: design gate (manual or auto)
+  O->>H: design gate<br/>(manual or auto)
 ```
 
 #### Plan
@@ -372,7 +378,7 @@ sequenceDiagram
   participant C as bdk check run
   L->>I: part NN and its stage rules
   I->>C: part checks
-  I-->>L: execute/part-NN.md (done or blocker)
+  I-->>L: execute/part-NN.md<br/>(done or blocker)
   L->>F: part diff against<br/>rules, instructions, tasks
   F->>C: part checks
   F-->>L: execute/conform-NN.md
@@ -380,10 +386,10 @@ sequenceDiagram
   alt red checks or blocker
     L->>I: retry, then a stronger model<br/>(policy.escalation)
   end
-  L->>L: commit the part in its worktree
+  L->>L: commit the part<br/>in its worktree
   L->>L: after the wave: merge part<br/>worktrees in part order
   alt merge conflict
-    L->>I: edit the conflicted files<br/>of the later part, then its checks
+    L->>I: edit the conflicted files<br/>of the later part,<br/>then its checks
     L->>L: commit the merge
   end
 ```
@@ -394,19 +400,17 @@ A blocker left after the retries and the escalation goes back to the main thread
 
 ```mermaid
 sequenceDiagram
-  participant L as review-round lead
-  participant C as bdk CLI
-  participant R as reviewer (per group)
+  participant L as review-round<br/>lead
+  participant R as reviewer<br/>(per group)
   participant E as e2e-tester
-  participant I as integration reviewer
+  participant I as integration<br/>reviewer
   participant J as judge
-  L->>C: bdk git groups<br/>(scope: since the last round)
-  C-->>L: file groups
+  L->>L: bdk git groups: file groups<br/>(scope: since the last round)
   par in parallel
     L->>R: review-group
     R-->>L: findings appended
   and
-    L->>C: bdk check run (full)
+    L->>L: bdk check run (full)
   and
     L->>E: e2e-check per scenario
     E-->>L: findings appended
@@ -422,7 +426,7 @@ From draft 1: integration after the groups, the judge, a report for the user. Ne
 ### Change artifacts: the BDK OpenSpec schema
 
 ```mermaid
-flowchart LR
+flowchart TB
   PR["proposal.md: why, capabilities"] --> SP["specs/: requirement and scenario deltas"]
   SP --> DS["design.md: decisions, Mermaid"]
   DS --> PL["plan/parts/NN.md: tasks,<br/>depends-on, acceptance scenarios"]
@@ -478,17 +482,22 @@ In v3.0 `/bdk:run` drives itself: its skill text runs the stages in order and, a
 ### Findings and triage
 
 ```mermaid
-flowchart LR
-  RG["review-group (x N)"] -->|"append"| F["review/round-N/findings.jsonl"]
-  RI["review-integration"] -->|"append"| F
-  E2["e2e-check"] -->|"append"| F
+flowchart TB
+  subgraph RV[" "]
+    direction LR
+    RG["review-group (x N)"]
+    RI["review-integration"]
+    E2["e2e-check"]
+  end
+  RV -->|"append"| F["review/round-N/findings.jsonl"]
   CK["bdk check run"] -->|"append red checks"| F
   J["judge"] -->|"append level events"| F
-  F -->|"bdk findings list: fold, dedupe, count"| T["triage (main thread)"]
+  F -->|"bdk findings list:<br/>fold, dedupe, count"| T["triage (main thread)"]
   T -->|"the model writes the page"| LV["Lavish"]
   LV -->|"append decision events"| F
   classDef store fill:#5f4b8b,stroke:#9b8bc4,color:#ffffff
   class F store
+  style RV fill:transparent,stroke:#8b93a1,stroke-dasharray:4 3
 ```
 
 - The file is an event log. A `finding` line holds `id`, `source`, `file`, `line`, `rule`, `summary`, `evidence`. A `level` line (judge: blocker, should-fix, nice-to-have, not-a-problem) and a `decision` line (triage: fix, accept, defer, with an issue only when the user chose one) name a finding id. `bdk findings list` folds the log into the current view; the event schema and the dedupe key are in spec `bdk-cli/findings`.

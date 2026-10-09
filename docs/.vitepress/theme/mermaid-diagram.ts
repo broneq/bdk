@@ -3,7 +3,8 @@ import { defineComponent, h, nextTick, onMounted, ref, useId, watch } from "vue"
 import { backSequenceLabels } from "./label-backing.ts";
 
 // A diagram shrinks to the page width, but not below this share of its own width: text stays
-// readable and a wide diagram scrolls sideways instead, mostly on phones.
+// readable and a wide diagram scrolls sideways instead, on phones. On desktop every diagram fits
+// at 0.8 or more; `docs:diagram-fit` measures it on the built site.
 const minScale = 0.6;
 
 /** A design system token as the page resolves it now, in the current theme. */
@@ -95,9 +96,17 @@ export default defineComponent({
           // mermaid blocks test keeps those lines short and the width the same for every page.
           flowchart: { wrappingWidth: 10000 },
           // Sequence wrapping cuts a word wider than its box into pieces with a hyphen of its
-          // own (`/bdk:pr-rev-` / `iew`); off, a text breaks only at <br/>. The same test
-          // rejects a block that turns it back on.
-          sequence: { wrap: false },
+          // own (`/bdk:pr-rev-` / `iew`); off, a text breaks only at <br/>. The tighter layout
+          // (Mermaid's defaults: 150 px boxes, 50 px gaps and side margins) lets a diagram of
+          // four or five lifelines fit the content column. The same test rejects a block that
+          // sets its own configuration.
+          sequence: {
+            wrap: false,
+            width: 96,
+            actorMargin: 10,
+            noteMargin: 8,
+            diagramMarginX: 8,
+          },
         });
         // render() draws a syntax error as a diagram of its own; parse() throws it instead, so
         // the reader gets the error with the source.
