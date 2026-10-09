@@ -182,15 +182,15 @@ sequenceDiagram
   L->>I: part NN, --run-dir, --workdir
   I->>B: bdk rules for --stage execute
   I->>I: check the task contracts<br/>(a plan defect stops here)
-  I->>B: bdk check run NN-red --at part --kind test
+  I->>B: bdk check run NN-red<br/>--at part --kind test
   Note over I,B: acceptance tests must be red
   I->>I: build the tasks
-  I->>B: bdk check run NN --at part --changed HEAD (up to 3 runs)
+  I->>B: bdk check run NN --at part<br/>--changed HEAD (up to 3 runs)
   I-->>L: R/execute/part-NN.md
   L->>F: part NN, --run-dir, --workdir
   F->>B: bdk rules for --stage execute
   F->>F: fix what keeps behaviour,<br/>leave the rest
-  F->>B: bdk check run conform-NN (only after an edit)
+  F->>B: bdk check run conform-NN<br/>(only after an edit)
   F-->>L: R/execute/conform-NN.md
   L->>L: git add -A, git commit
 ```
@@ -247,21 +247,21 @@ Triage policy, which decides in auto mode and is the preselected recommendation 
 ## `/bdk:review-round` (lead skill)
 
 ```mermaid
-%%{init: {"sequence": {"actorMargin": 12, "width": 96, "noteMargin": 6, "wrap": true}}}%%
+%%{init: {"sequence": {"actorMargin": 12, "width": 96, "noteMargin": 6}}}%%
 sequenceDiagram
   participant L as bdk:lead
   participant B as bdk CLI
   participant R as reviewer x N
   participant E as e2e-tester
-  participant I as integration-<br/>reviewer
+  participant I as integration<br/>reviewer
   participant J as judge
-  L->>B: bdk git groups --record round-N
+  L->>B: bdk git groups<br/>--record round-N
   B-->>L: groups.json
   par batches of execution.max-parallel
     L->>R: /bdk:review-group per group
     R->>B: bdk findings add
   and
-    L->>B: bdk check run round-N --at review --changed base --round N
+    L->>B: bdk check run round-N<br/>--at review --changed base<br/>--round N
     Note over B: appends red checks
   end
   par after the check run
@@ -272,9 +272,9 @@ sequenceDiagram
     I->>B: bdk findings add
   end
   L->>J: /bdk:judge
-  J->>B: bdk findings level, bdk findings report
+  J->>B: bdk findings level,<br/>bdk findings report
   B-->>L: round-N/review.md
-  L->>L: write round-N/round.md
+  L->>L: write<br/>round-N/round.md
 ```
 
 `bdk git groups` gets `--rounds R/review`, so a later round covers only what changed since the round before, and `--plan` with the plan parts (round 1) or the fix parts of the round before, so each group is one part. Every finding lands in `round-N/findings.jsonl`. The E2E tester starts only after the check run has ended, so your suites and the started product never compete for the same ports or browsers. A worker that fails is started once more with the same prompt; a second failure goes under `Gaps` in `round.md`.
@@ -303,7 +303,7 @@ flowchart TB
 Reviews any open pull request in a detached worktree. It runs no checks and no E2E; nothing reaches GitHub before the user confirms.
 
 ```mermaid
-%%{init: {"sequence": {"actorMargin": 12, "width": 96, "noteMargin": 6, "wrap": true}}}%%
+%%{init: {"sequence": {"actorMargin": 12, "width": 96, "noteMargin": 6}}}%%
 sequenceDiagram
   actor U as user
   participant M as /bdk:pr-review
@@ -314,13 +314,13 @@ sequenceDiagram
   M->>G: gh pr view
   M->>M: write pr-7/pr.md (brief)
   M-)L: Agent: /bdk:pr-review-round
-  L->>G: git ls-remote, git fetch pull/7/head
-  L->>L: detached worktree,<br/>find the Change, bdk git groups
-  L->>W: reviewers, integration, judge
-  W-->>L: findings.jsonl, review.md
-  L->>L: remove worktree, result.md
+  L->>G: git ls-remote,<br/>git fetch pull/7/head
+  L->>L: detached worktree,<br/>find the Change,<br/>bdk git groups
+  L->>W: reviewers,<br/>integration, judge
+  W-->>L: findings.jsonl,<br/>review.md
+  L->>L: remove worktree,<br/>result.md
   L--)M: Status line
-  M->>U: verdict and every finding to post
+  M->>U: verdict and every<br/>finding to post
   U-->>M: post, other verdict,<br/>comment only, or skip
   M->>G: gh api POST review.json
   M->>M: write posted.md
@@ -333,7 +333,7 @@ Several pull requests (`/bdk:pr-review 7 8`) start one lead each in one message,
 `--verify` re-checks your previous review and reviews only the commits added since it:
 
 ```mermaid
-%%{init: {"sequence": {"actorMargin": 12, "width": 96, "noteMargin": 6, "wrap": true}}}%%
+%%{init: {"sequence": {"actorMargin": 12, "width": 96, "noteMargin": 6}}}%%
 sequenceDiagram
   actor U as user
   participant M as /bdk:pr-review
@@ -342,17 +342,17 @@ sequenceDiagram
   participant G as GitHub
   U->>M: /bdk:pr-review --verify 7
   M->>G: gh api graphql (reviews, threads)
-  M->>M: write pr-7/previous.json<br/>(your open blocker and should-fix findings)
+  M->>M: write pr-7/previous.json<br/>(your open blocker and<br/>should-fix findings)
   M-)L: Agent: /bdk:pr-review-round<br/>--verify --since (previous head)
-  L->>L: worktree at the new head,<br/>bdk findings add each previous finding
-  L->>L: bdk git groups (previous head)<br/>(origin/base after a force-push)
-  L->>R: review the new commits,<br/>then judge the whole round
-  R-->>L: findings, levels, review.md
+  L->>L: worktree at the new head,<br/>bdk findings add<br/>each previous finding
+  L->>L: bdk git groups<br/>(previous head)<br/>(origin/base after<br/>a force-push)
+  L->>R: review the new<br/>commits, then judge<br/>the whole round
+  R-->>L: findings, levels,<br/>review.md
   L--)M: Status line
-  M->>U: fixed (not-a-problem), left<br/>and new findings
+  M->>U: fixed (not-a-problem),<br/>left and new findings
   U-->>M: post, other verdict,<br/>comment only, or skip
   M->>G: gh api POST review.json<br/>(inline comments on new findings)
-  M->>G: resolveReviewThread for each fixed finding
+  M->>G: resolveReviewThread<br/>for each fixed finding
 ```
 
 The previous findings go into the round's log before any reviewer starts, and the reviewers, the integration reviewer and the judge then run on the range from the previous review's head to the new head; after a force-push (the previous head is no longer an ancestor) they review the whole pull request. The judge levels the previous and the new findings together, and of two findings that repeat each other it keeps the earlier one. A previous finding the judge now levels `not-a-problem` is fixed; any other level is left. New `blocker` and `should-fix` findings inside the diff become inline comments, as in a review. A left or new `blocker` requests changes. Only threads you opened are resolved, and only after the review is posted.
