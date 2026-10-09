@@ -6,6 +6,8 @@ import { resolve } from "node:path";
 import { CliError } from "../../shared/cli/index.ts";
 import { GitError } from "../../shared/git/index.ts";
 import { nulPaths, numstat, recordHead } from "../domain/range.ts";
+import { byCodeUnit } from "../domain/pack.ts";
+import { isTestFile } from "../domain/tests.ts";
 import type { ScopeResult } from "../schema/scope.ts";
 import { lastFinishedRound } from "../store/rounds.ts";
 import type { GitDeps } from "./deps.ts";
@@ -97,14 +99,20 @@ export function scope(deps: GitDeps, input: ScopeInput): ScopeResult {
     run(["diff", "--name-only", ...DIFF, "HEAD"]) +
       run(["diff", "--cached", "--name-only", ...DIFF]),
   );
+  const files = changed.text.filter((path) => !gone.has(path));
+  const binary = changed.binary.filter((path) => !gone.has(path));
+  const all = [...files, ...binary, ...deleted].sort(byCodeUnit);
+  const tests = all.filter(isTestFile);
   return {
     base: input.base,
     anchor,
     head: headSha,
     range: `${anchor.sha}..${headSha}`,
-    files: changed.text.filter((path) => !gone.has(path)),
-    binary: changed.binary.filter((path) => !gone.has(path)),
+    files,
+    binary,
     deleted,
     dirty,
+    tests,
+    testsOnly: tests.length === all.length,
   };
 }

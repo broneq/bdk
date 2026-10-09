@@ -13,7 +13,7 @@ Arguments: $ARGUMENTS
 
 # Triage a review round
 
-Decide every undecided finding of one judged round and record each decision. You add no finding, set no level (the judge did), change no project file, commit nothing and start no agent. Run `bdk` always as `"${CLAUDE_PLUGIN_ROOT}/bin/bdk"`, each command on its own, without pipes or `&&`.
+Decide every undecided finding of one judged round and record each decision. You add no finding, set no level (the judge did), change no project file, commit nothing and start no agent. Run `bdk` always as `"${CLAUDE_PLUGIN_ROOT}/bin/bdk"`. Run each command on its own, without `;`, `&&`, pipes or `echo`, the Lavish commands too: the result shows the exit code, and a compound command falls outside this skill's grants, so it is denied or asks the user for permission.
 
 If the block above says "BDK not configured: run /bdk:setup", stop and reply with that line. If it shows the command instead of its output, run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" config show` first.
 

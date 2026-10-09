@@ -11,6 +11,11 @@
 // prefix of the `git` host workaround (CLAUDE_CODE_SHELL_PREFIX) is unreadable in a run unless
 // its directory is on PATH; the run gets that directory first (design D2 of
 // v3-313-execute-evals-lead).
+//
+// npm checks for its own update on any command whose cache holds no recent check, as under the
+// clean HOME of the README's host limits. The sandbox denies that request and reports it in the
+// command's output although the command worked, so the run gets the check off (design D1 of
+// v3-298-evals-lavish-stub-offline).
 import { spawnSync } from "node:child_process";
 import { accessSync, constants, realpathSync } from "node:fs";
 import { homedir } from "node:os";
@@ -32,6 +37,15 @@ export function runPath(path: string, shellPrefix?: string): string {
   if (shellPrefix === undefined || !isAbsolute(shellPrefix)) return entries.join(delimiter);
   const prefixDir = dirname(shellPrefix);
   return [prefixDir, ...entries.filter((entry) => entry !== prefixDir)].join(delimiter);
+}
+
+/** The environment of a run: the caller's, with `runPath` and npm's update check off. */
+export function runEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  return {
+    ...env,
+    PATH: runPath(env.PATH ?? "", env.CLAUDE_CODE_SHELL_PREFIX),
+    npm_config_update_notifier: "false",
+  };
 }
 
 /** Why a run cannot start `openspec` from this PATH, or undefined when it can. */
@@ -62,13 +76,13 @@ function executable(file: string): boolean {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const path = runPath(process.env.PATH ?? "", process.env.CLAUDE_CODE_SHELL_PREFIX);
-  const warning = openspecWarning(path, homedir());
+  const env = runEnv(process.env);
+  const warning = openspecWarning(env.PATH ?? "", homedir());
   if (warning !== undefined) console.error(warning);
   const { status, error } = spawnSync(
     CLAUDE,
     ["plugin", "eval", ".", "--scaffold", ...process.argv.slice(2)],
-    { cwd: ROOT, stdio: "inherit", env: { ...process.env, PATH: path } },
+    { cwd: ROOT, stdio: "inherit", env },
   );
   if (error !== undefined) throw error;
   process.exit(status ?? 1);

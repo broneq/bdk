@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -154,6 +154,36 @@ describe("rounds", () => {
     expect(next.files).toEqual(["src/mail/send.ts"]);
     const { stdout } = await bdk(["git", "scope", "main", "--rounds", review]);
     expect(stdout).toMatch(/^range [0-9a-f]{7}\.\.[0-9a-f]{7}, since round 1\n/);
+  });
+
+  it("records a fix round of test files only as tests only, and says so in the text", async () => {
+    commit("work", "src/parse.js", "src/parse.test.js");
+    const review = join(root, "run", "review");
+    const first = groupsSchema.parse(
+      await json([
+        "git",
+        "groups",
+        "main",
+        "--rounds",
+        review,
+        "--record",
+        join(review, "round-1"),
+      ]),
+    );
+    expect(first).toMatchObject({ tests: ["src/parse.test.js"], testsOnly: false });
+    writeFileSync(join(review, "round-1", "review.md"), "# Round 1\n");
+    commit("fix", "src/parse.test.js", "test/import-cli.test.js");
+    await json(["git", "groups", "main", "--rounds", review, "--record", join(review, "round-2")]);
+    const recorded = groupsSchema.parse(
+      JSON.parse(readFileSync(join(review, "round-2", "groups.json"), "utf8")),
+    );
+    expect(recorded).toMatchObject({
+      files: ["src/parse.test.js", "test/import-cli.test.js"],
+      tests: ["src/parse.test.js", "test/import-cli.test.js"],
+      testsOnly: true,
+    });
+    const { stdout } = await bdk(["git", "groups", "main", "--rounds", review]);
+    expect(stdout).toContain("test files (2 of 2, tests only):\n  src/parse.test.js\n");
   });
 
   it("falls back to the merge base after a rebase rewrote the recorded head", async () => {

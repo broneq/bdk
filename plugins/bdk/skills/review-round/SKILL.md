@@ -1,6 +1,6 @@
 ---
 name: review-round
-description: 'One review round of an OpenSpec Change, run by the bdk:lead agent that /bdk:auto-review starts - records the round scope and groups with bdk git groups (a later round covers only the fix commits), runs one bdk:reviewer per group and bdk check run --at review in parallel, then bdk:e2e-tester and bdk:integration-reviewer, then bdk:judge, and writes round.md next to the review.md of the judge. Not for users: /bdk:auto-review is the command.'
+description: 'One review round of an OpenSpec Change, run by the bdk:lead agent that /bdk:auto-review starts - records the round scope and groups with bdk git groups (a later round covers only the fix commits), runs one bdk:reviewer per group and bdk check run --at review in parallel, then bdk:e2e-tester (not in a later round whose fixes changed only test files after a passing E2E verdict) and bdk:integration-reviewer, then bdk:judge, and writes round.md next to the review.md of the judge. Not for users: /bdk:auto-review is the command.'
 argument-hint: "<change> --run-dir <absolute path> --round <N>"
 user-invocable: false
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(git symbolic-ref *) Bash(git rev-parse *) Read Write Glob Agent
@@ -46,7 +46,7 @@ When the round directory holds `groups.json`, reuse it: a rerun reviews the rang
 - `<base>`: `git symbolic-ref --short refs/remotes/origin/HEAD` without its `origin/` prefix; else `main`.
 - `<parts>`: when `N` is above 1 and `<run dir>/review/round-<N-1>/fixes/parts/` holds part files (`NN.md`), that directory: round `N` reviews the fixes of round `N-1`, grouped by fix part. Otherwise `openspec/changes/<change>/plan/parts`.
 
-Read `groups.json`: `anchor` (`kind` `round` means a fix round; a `fallback` says why an earlier round could not be the anchor), `range`, `files`, `dirty` and `groups`. Note a `fallback` and any `dirty` file (changed, not committed, so not reviewed) for `round.md`.
+Read `groups.json`: `anchor` (`kind` `round` means a fix round; a `fallback` says why an earlier round could not be the anchor), `range`, `files`, `dirty`, `groups`, `tests` (the changed paths that are test files) and `testsOnly` (every changed path is a test file, or nothing changed). Note a `fallback` and any `dirty` file (changed, not committed, so not reviewed) for `round.md`.
 
 Done when `groups.json` exists and you hold its groups.
 
@@ -67,14 +67,22 @@ Done when every reviewer has returned and the check run has ended.
 
 ## 4. E2E and integration
 
+First decide whether the round **carries the E2E verdict over**. It does only when all three hold:
+
+- `N` is above 1;
+- `testsOnly` in `groups.json` is `true`;
+- the last E2E verdict reads `Verdict: PASS` or `Verdict: SKIPPED`: Glob `<run dir>/review/round-*/e2e/verdict.md`, take the one of the highest round number below `N`, and read its first line.
+
+Then the fixes since that verdict changed only tests, so the product is the one it checked: start no E2E tester and write no `<round dir>/e2e/`; `/bdk:close` and `/bdk:spec-conformance` keep reading that verdict. In every other case (round 1, any other changed path, no earlier verdict, `FAIL` or `BLOCKED`) the E2E check runs.
+
 Only after step 3 has ended, so the project's suites and the started product never compete for the same machine, start in one message:
 
-- one Agent call `subagent_type: "bdk:e2e-tester"`, `run_in_background: false`, prompt `Check the Change <change> end to end; the findings log is <round dir>/findings.jsonl`, `model` `models.e2e-tester.model` and `effort` `models.e2e-tester.effort`, each when set;
+- unless the round carries the verdict over, one Agent call `subagent_type: "bdk:e2e-tester"`, `run_in_background: false`, prompt `Check the Change <change> end to end; the findings log is <round dir>/findings.jsonl`, `model` `models.e2e-tester.model` and `effort` `models.e2e-tester.effort`, each when set;
 - when `groups` holds an `integration` group, one Agent call `subagent_type: "bdk:integration-reviewer"`, `run_in_background: false`, prompt `Review the Change as a whole for the round <round dir>`, `model` `models.integration-reviewer.model` and `effort` `models.integration-reviewer.effort`, each when set. It reads what the group reviews found.
 
-A failed run is retried once, as in step 3. The E2E check runs in every round, also one with no group.
+A failed run is retried once, as in step 3. A round with no group still runs the E2E check unless it carries the verdict over.
 
-Done when both have returned, or the E2E tester has returned and the round has no integration group.
+Done when every agent you started has returned; a round that carries the verdict over and has no integration group starts none.
 
 ## 5. Judge
 
@@ -110,6 +118,12 @@ Report: review.md
 ```
 
 - The counts per group come from each worker's reply; the checks verdict from the check run's output; the E2E line is the first line of `<round dir>/e2e/verdict.md`, where the E2E tester writes its evidence when given the round's log.
+- A round that carried the verdict over (step 4) has this E2E line instead, with the count of `tests` and the carried file and its first line:
+
+  ```markdown
+  ## E2E
+  - not re-run: the fix scope holds only test files (2); carried over round-1/e2e/verdict.md: Verdict: PASS
+  ```
 - `Gaps`: a worker that failed twice, an anchor `fallback`, uncommitted files left out of the scope. An empty section holds `- None.`
 
 Done when `round.md` exists.

@@ -18,6 +18,8 @@ export const scopeSchema = z.strictObject({
   binary: paths,
   deleted: paths,
   dirty: paths,
+  tests: paths,
+  testsOnly: z.boolean(),
 });
 
 export type ScopeResult = z.infer<typeof scopeSchema>;

@@ -13,7 +13,7 @@ Arguments: $ARGUMENTS
 
 # Design
 
-You compose three blocks and apply the gate; you never do a block's work. Do not map the code, write or fix a spec delta, `design.md` or `proposal.md`, or check the design yourself: the blocks do that. The only file you write is the gate file `.bdk/runs/<change>/design/gate.md`. Never commit, create a branch or start the plan stage.
+You compose three blocks and apply the gate; you never do a block's work. Do not map the code, write or fix a spec delta, `design.md` or `proposal.md`, or check the design yourself: the blocks do that. The only file you write is the gate file `.bdk/runs/<change>/design/gate.md`. Never commit, create a branch or start the plan stage. Run each command on its own, without `;`, `&&`, pipes or `echo`, the Lavish poll too: the result shows the exit code, and a compound command falls outside this skill's grants, so it is denied or asks the user for permission.
 
 The blocks:
 
