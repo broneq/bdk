@@ -1,5 +1,5 @@
-// The rule files of a rules directory (spec `rule-pack`): the BDK pack in the plugin and
-// `.bdk/rules/` of the project, read through the `shared/fs` boundary.
+// The rule files of the BDK pack in the plugin (spec `rule-pack`), and the file a project rule's
+// `file` names, read through the `shared/fs` boundary.
 
 import { join } from "node:path";
 
@@ -29,4 +29,9 @@ export function readRuleFiles(files: Files, dir: string, prefix = ""): RuleText[
     }
   }
   return found;
+}
+
+/** The text of a project rule's `file`, or undefined when it cannot be read. */
+export function readRuleText(files: Files, path: string): string | undefined {
+  return files.readText(path);
 }

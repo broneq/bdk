@@ -54,15 +54,15 @@ Layers SHALL merge key by key: mappings merge deeply; an array whose items are a
 
 ### Requirement: Settings keys
 
-The configuration SHALL accept exactly these keys; any other key at any level SHALL be a problem naming its full dotted key. A key segment, a `steps` orchestrator and an `id` SHALL be kebab-case (`^[a-z0-9][a-z0-9-]*$`). A `models` role SHALL be one of the roles of "Every agent is a models role"; any other role SHALL be an unknown key with the closest role as a suggestion. An item of an array merged by `id` SHALL be addressed by its `id` as a key segment (`tools.test.unit.scoped`) in every output and argument.
+The configuration SHALL accept exactly these keys; any other key at any level SHALL be a problem naming its full dotted key. A key segment, a `steps` orchestrator and an `id` SHALL be kebab-case (`^[a-z0-9][a-z0-9-]*$`), except a key directly under `rules`, which SHALL be a rule id: letters, digits and `-`, starting with a letter or digit (`^[A-Za-z0-9][A-Za-z0-9-]*$`), case kept. A `models` role SHALL be one of the roles of "Every agent is a models role"; any other role SHALL be an unknown key with the closest role as a suggestion. An item of an array merged by `id` SHALL be addressed by its `id` as a key segment (`tools.test.unit.scoped`) in every output and argument.
 
 | Key                                                  | Type                                                                                                         | Default      |
 | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------ |
 | `tools.test`, `tools.lint`, `tools.build`            | items by `id`: `command` (string, required), `scoped` (string holding `{files}`, optional), `timeout` (integer seconds, 1 to 86400, optional; `bdk check run` uses 600 when absent), `paths` (non-empty list of non-empty globs, optional; with `--scope`, `bdk check run` gives the item only the scope paths they match) | `[]`         |
 | `tools.e2e`                                          | items by `id`: `start` (command), `ready` (URL or command), `driver` (`cli`, `http`, `browser`), `env` (map of variable name to string, optional), `browser` (`playwright` or `chrome-devtools-mcp`, optional; read only for `driver: browser`, where an absent field means `playwright`); all but `env` and `browser` required | `[]`         |
 | `languages`                                          | list of kebab-case names                                                                                     | `[]`         |
-| `rules.disabled`                                     | list of rule names                                                                                           | `[]`         |
 | `models.<role>.model`, `models.<role>.effort`       | mapping per role, both fields optional: `model` (model name or alias the role's agent runs on), `effort` (`low`, `medium`, `high`, `xhigh` or `max`); a string value for a role is a problem naming the `model` field | none set     |
+| `rules.<id>`                                         | rule entry (spec `rule-pack`, "Project rules" and "Switching rules off"): `text` (string), `file` (path), `kind` (`house`, `knowledge`), `paths` (non-empty list of strings), `stages` (non-empty list of distinct `design`, `plan`, `execute`, `review`), `source` (string), `verified` (date `YYYY-MM-DD`), `enabled` (boolean), all optional in one layer; a resolved entry whose id does not start with `BDK-` SHALL hold exactly one of `text` and `file`, and `source` and `verified` when its `kind` is `knowledge` and only then; a resolved entry whose id starts with `BDK-` SHALL hold no field but `enabled`, `paths` and `stages` | `{}` |
 | `policy.gates.design`, `policy.gates.review`         | `manual` or `auto`                                                                                           | `manual`     |
 | `policy.questions`                                   | `decide-and-record` or `stop`                                                                                | `stop`       |
 | `policy.budgets.part-attempts`, `policy.budgets.review-rounds` | integer, at least 1                                                                                 | `3`, `3`     |
@@ -141,6 +141,31 @@ A missing required field, a value of the wrong type or outside its allowed value
 
 - **WHEN** `bdk config set models.designer.effort xhigh` runs in a configured project
 - **THEN** `.bdk/settings.yaml` holds `models.designer.effort: xhigh` and the exit code is 0
+
+#### Scenario: Rule id keeps its case
+
+- **WHEN** `bdk config set rules.API-1.enabled false --layer local` runs in a project whose project layer declares `rules: {API-1: {text: "Parse the body."}}`
+- **THEN** the local file holds `rules: {API-1: {enabled: false}}`, and `bdk config show rules.API-1` prints `rules.API-1.text` with origin `project` and `rules.API-1.enabled` with origin `local`
+
+#### Scenario: Text and file both set
+
+- **WHEN** the project layer declares `rules: {API-1: {text: "...", file: docs/api.md}}`
+- **THEN** `bdk config check` reports `rules.API-1` and that a rule holds exactly one of `text` and `file`, and exits 1
+
+#### Scenario: Pack rule given a text
+
+- **WHEN** the project layer declares `rules: {BDK-CQ-1: {text: "Short names are fine."}}`
+- **THEN** `bdk config check` reports `rules.BDK-CQ-1.text` and that a `BDK-` entry takes only `enabled`, `paths` and `stages`, and exits 1
+
+#### Scenario: Knowledge rule without source
+
+- **WHEN** the project layer declares `rules: {PYD-1: {kind: knowledge, verified: 2026-10-01, text: "..."}}`
+- **THEN** `bdk config check` reports `rules.PYD-1.source` as missing and exits 1
+
+#### Scenario: Removed rules.disabled
+
+- **WHEN** the project layer still sets `rules: {disabled: [BDK-DP-2]}`
+- **THEN** `bdk config check` reports a problem under `rules.disabled` and exits 1
 
 ### Requirement: Configured project
 

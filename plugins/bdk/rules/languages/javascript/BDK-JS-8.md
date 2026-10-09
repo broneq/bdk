@@ -6,7 +6,6 @@ paths:
   - "**/*.cjs"
   - "**/*.jsx"
 stages:
-  - plan
   - execute
   - review
 measured:

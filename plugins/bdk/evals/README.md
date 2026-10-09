@@ -88,6 +88,14 @@ The `plan-draft-*` and `verify-plan-*` cases start from the shared fixture `ledg
 pnpm --filter @bdk/bdk run eval --allow-tools Write Edit "Bash(*/bin/bdk *)" --case '*plan-*'
 ```
 
+The `*-rules` cases (`design-draft-rules`, `verify-design-rules`, `plan-draft-rules`, `verify-plan-rules`) declare a project rule of stage `design` (`IO-1`) or `plan` (`API-DOC-1`) in the scaffold's `.bdk/settings.yaml`, on the ledger fixtures, and grade that the draft follows and names it and that the verifier fails a design or a part that breaks it. They need the grants of both block groups (on a Mac, see "Host limits"):
+
+```bash
+pnpm --filter @bdk/bdk run eval --allow-tools Write Edit "Bash(*/bin/bdk *)" "Bash(openspec *)" "Bash(npx -y lavish-axi *)" "Bash(git *)" --case '*-rules'
+```
+
+Recorded 2026-10-09: `design-draft-rules` Δ 0.00 (the baseline reads the rule from the settings too), `plan-draft-rules` Δ +0.11, `verify-design-rules` and `verify-plan-rules` Δ +1.00; the archived Change `v3-272-rules-config` (design D8) holds the reading.
+
 The `spec-conformance-*` cases start from the shared fixture `tally-change.sh` (the Change `add-total` on its branch, with `main` as the base and a main spec to merge into); each scaffold adds one commit with what it tests. The block runs in a `bdk:verifier` agent (opus), reads `git diff` against `main` and writes `close/spec-conformance.md` (on a Mac, see the `git` entry of "Host limits"):
 
 ```bash

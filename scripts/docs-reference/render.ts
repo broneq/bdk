@@ -218,9 +218,9 @@ function rulesPage(rules: readonly Rule[]): string {
   ]);
   return page(
     "plugins/bdk/rules/**/*.md",
-    "bdk rules - the rule pack that implementers and reviewers read",
+    "bdk rules - the rule pack that the roles of each stage read",
     [
-      "The rules BDK ships. `bdk rules for` gives each role the rules of its stage that match the files it works on; a language pack's rules apply only when `languages` lists the pack. Switch a rule off by its id in `rules.disabled`, and add your own under `.bdk/rules/`: see [Rules](/concepts/rules).",
+      "The rules BDK ships. `bdk rules for` gives each role the rules of its stage that match the files it works on; a language pack's rules apply only when `languages` lists the pack. Switch a rule off with `enabled: false` under its id in `rules`, narrow its `paths` or `stages` there, and declare your own rules in the same map: see [Rules](/concepts/rules).",
       table,
       ...entries,
     ],

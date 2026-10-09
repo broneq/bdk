@@ -121,6 +121,128 @@ const Step = z.strictObject({
   use: text.optional().meta(about("Project skill or agent that runs instead of the step's block.")),
 });
 
+/** The stages and kinds of a rule (spec `rule-pack`); `rules/domain/rule.ts` holds the same. */
+export const RULE_STAGES = ["design", "plan", "execute", "review"] as const;
+export const RULE_KINDS = ["house", "knowledge"] as const;
+/** The prefix of the BDK pack's rule ids. */
+export const PACK_PREFIX = "BDK-";
+/** A rule id (spec `bdk-cli/config`, "Settings keys"): the one key that keeps its case. */
+export const RULE_ID = /^[A-Za-z0-9][A-Za-z0-9-]*$/;
+
+const ruleId = z.string().regex(RULE_ID, "must be a rule id (letters, digits and -)");
+
+const RuleEntry = z
+  .strictObject({
+    text: text
+      .optional()
+      .meta(
+        about("The rule text, Markdown; a project rule holds exactly one of `text` and `file`."),
+      ),
+    file: text
+      .optional()
+      .meta(
+        about(
+          "Markdown file holding the rule text, relative to the project root (to the directory of the global settings file in the global layer); a leading `---` frontmatter block is skipped.",
+        ),
+      ),
+    kind: z
+      .enum(RULE_KINDS)
+      .optional()
+      .meta(
+        about(
+          "`house` (a choice among valid alternatives, the default) or `knowledge` (a fact about a library, language or tool).",
+        ),
+      ),
+    paths: z
+      .array(text)
+      .min(1, "must name at least one glob")
+      .optional()
+      .meta(
+        about(
+          'Globs, relative to the project root, of the files the rule governs; `["**"]` when absent.',
+        ),
+      ),
+    stages: z
+      .array(z.enum(RULE_STAGES))
+      .min(1, "must name at least one stage")
+      .refine((stages) => new Set(stages).size === stages.length, "must not repeat a stage")
+      .optional()
+      .meta(
+        about(
+          "Stages whose roles read the rule, among `design`, `plan`, `execute` and `review`; `[execute, review]` when absent.",
+        ),
+      ),
+    source: text.optional().meta(about("Where the fact of a `knowledge` rule is documented.")),
+    verified: z.iso
+      .date("must be a date YYYY-MM-DD")
+      .optional()
+      .meta(about("The date (`YYYY-MM-DD`) the fact of a `knowledge` rule was last checked.")),
+    enabled: z
+      .boolean()
+      .optional()
+      .meta(about("`false` switches the rule off, so no role reads it; `true` when absent.")),
+  })
+  .meta(
+    about(
+      "A rule: a project rule holds `text` or `file`; an entry whose id starts with `BDK-` sets only `enabled`, `paths` or `stages` of that pack rule.",
+    ),
+  );
+
+/** Fields an entry for a pack rule may set: the pack's text and kind stay the pack's. */
+const PACK_FIELDS: ReadonlySet<string> = new Set(["enabled", "paths", "stages"]);
+
+/**
+ * A rule entry's checks across its fields (spec `bdk-cli/config`, "Settings keys"). Checks that a
+ * higher layer can still satisfy carry `resolved: true`, so `validate` reports them only on the
+ * full merge, like a missing required field.
+ */
+function checkRules(rules: Record<string, z.infer<typeof RuleEntry>>, ctx: z.RefinementCtx): void {
+  for (const [id, entry] of Object.entries(rules)) {
+    if (id.startsWith(PACK_PREFIX)) {
+      for (const field of Object.keys(entry).filter((name) => !PACK_FIELDS.has(name))) {
+        ctx.addIssue({
+          code: "custom",
+          path: [id, field],
+          message: "a BDK- entry takes only enabled, paths and stages",
+        });
+      }
+      continue;
+    }
+    if (entry.text !== undefined && entry.file !== undefined) {
+      ctx.addIssue({
+        code: "custom",
+        path: [id],
+        message: "a project rule holds exactly one of text and file",
+      });
+    } else if (entry.text === undefined && entry.file === undefined) {
+      ctx.addIssue({
+        code: "custom",
+        path: [id],
+        message: "a project rule holds exactly one of text and file",
+        params: { resolved: true },
+      });
+    }
+    for (const field of ["source", "verified"] as const) {
+      if (entry.kind === "knowledge" && entry[field] === undefined) {
+        ctx.addIssue({
+          code: "custom",
+          path: [id, field],
+          message: "required, missing",
+          params: { resolved: true },
+        });
+      }
+      if (entry.kind !== "knowledge" && entry[field] !== undefined) {
+        ctx.addIssue({
+          code: "custom",
+          path: [id, field],
+          message: "belongs to knowledge rules only",
+          params: { resolved: true },
+        });
+      }
+    }
+  }
+}
+
 const gate = (description: string) =>
   z.enum(["manual", "auto"]).default("manual").meta(about(description));
 
@@ -166,16 +288,27 @@ export const SettingsSchema = z
         examples: [["typescript", "react"]],
       }),
     rules: z
-      .strictObject({
-        disabled: z
-          .array(text)
-          .default([])
-          .meta(about("Rules of the rule pack that no role reads in this project.")),
-      })
-      .prefault({})
+      .record(ruleId, RuleEntry)
+      .superRefine(checkRules)
+      .default({})
       .meta({
-        ...about("Which rules of the BDK rule pack and of `.bdk/rules/` apply."),
-        examples: [{ disabled: ["BDK-DP-2", "BDK-REACT-10"] }],
+        ...about(
+          "The project's own rules and changes to the rules of the BDK rule pack, each by its rule id; an id starting with `BDK-` changes the pack rule of that id.",
+        ),
+        entry: "id",
+        examples: [
+          {
+            "API-1": {
+              paths: ["src/api/**"],
+              text: "Every handler under `src/api/` parses its request body with the schema in `src/api/schemas/`.",
+            },
+            "GATEWAY-1": {
+              stages: ["design", "plan", "review"],
+              file: "docs/conventions/gateway.md",
+            },
+            "BDK-DP-2": { enabled: false },
+          },
+        ],
       }),
     models: z
       .partialRecord(z.enum(MODEL_ROLES), RoleModel)

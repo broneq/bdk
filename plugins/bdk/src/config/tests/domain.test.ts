@@ -23,7 +23,7 @@ describe("defaults", () => {
     expect(DEFAULTS).toEqual({
       tools: { test: [], lint: [], build: [], e2e: [] },
       languages: [],
-      rules: { disabled: [] },
+      rules: {},
       models: {},
       policy: {
         gates: { design: "manual", review: "manual" },
@@ -344,5 +344,104 @@ describe("validate", () => {
       ["project", "tools.e2e.web.ready"],
       ["project", "tools.e2e.web.driver"],
     ]);
+  });
+
+  it("accepts project rules and pack adjustments keyed by rule id", () => {
+    const { problems, settings } = validate(
+      [
+        layer("project", {
+          rules: {
+            "API-1": { paths: ["src/api/**"], text: "Parse the body." },
+            "GATEWAY-1": { stages: ["design"], file: "docs/gateway.md" },
+            "PYD-1": {
+              kind: "knowledge",
+              source: "https://docs.pydantic.dev",
+              verified: "2026-10-01",
+              text: "Use field_validator.",
+            },
+            "BDK-DP-2": { enabled: false },
+            "BDK-REACT-10": { paths: ["apps/web/**/*.tsx"], stages: ["review"] },
+          },
+        }),
+      ],
+      suggest,
+    );
+    expect(problems).toEqual([]);
+    expect(settings?.rules["BDK-DP-2"]).toEqual({ enabled: false });
+    expect(settings?.rules["API-1"]).toEqual({ paths: ["src/api/**"], text: "Parse the body." });
+  });
+
+  it("completes a project rule across layers and reports a rule no layer completes", () => {
+    const project = layer("project", { rules: { "API-1": { text: "Parse the body." } } });
+    const local = layer("local", { rules: { "API-1": { enabled: false } } });
+    expect(validate([project, local], suggest).problems).toEqual([]);
+    const global = layer("global", { rules: { "API-1": { enabled: false } } });
+    expect(validate([global, project], suggest).problems).toEqual([]);
+    expect(validate([local], suggest).problems).toEqual([
+      {
+        layer: "local",
+        file: "/p/local.yaml",
+        key: "rules.API-1",
+        message: "a project rule holds exactly one of text and file",
+      },
+    ]);
+  });
+
+  it("reports a rule with both text and file", () => {
+    const { problems } = validate(
+      [layer("project", { rules: { "API-1": { text: "x", file: "docs/api.md" } } })],
+      suggest,
+    );
+    expect(problems).toEqual([
+      expect.objectContaining({
+        key: "rules.API-1",
+        message: "a project rule holds exactly one of text and file",
+      }) as unknown,
+    ]);
+  });
+
+  it("reports a pack rule entry with a field other than enabled, paths and stages", () => {
+    const { problems } = validate(
+      [layer("project", { rules: { "BDK-CQ-1": { text: "Short names are fine." } } })],
+      suggest,
+    );
+    expect(problems).toEqual([
+      expect.objectContaining({
+        key: "rules.BDK-CQ-1.text",
+        message: "a BDK- entry takes only enabled, paths and stages",
+      }) as unknown,
+    ]);
+  });
+
+  it("checks the knowledge fields of a resolved rule", () => {
+    const rule = (fields: Record<string, unknown>) =>
+      validate([layer("project", { rules: { "PYD-1": { text: "x", ...fields } } })], suggest)
+        .problems;
+    expect(rule({ kind: "knowledge", verified: "2026-10-01" })).toEqual([
+      expect.objectContaining({
+        key: "rules.PYD-1.source",
+        message: "required, missing",
+      }) as unknown,
+    ]);
+    expect(rule({ source: "https://x" })).toEqual([
+      expect.objectContaining({
+        key: "rules.PYD-1.source",
+        message: "belongs to knowledge rules only",
+      }) as unknown,
+    ]);
+    expect(rule({ kind: "knowledge", source: "https://x", verified: "soon" })).toEqual([
+      expect.objectContaining({ key: "rules.PYD-1.verified" }) as unknown,
+    ]);
+  });
+
+  it("reports invalid stages, an invalid rule id and the removed rules.disabled", () => {
+    const keys = (rules: Record<string, unknown>) =>
+      validate([layer("project", { rules })], suggest).problems.map((problem) => problem.key);
+    expect(keys({ "X-1": { text: "x", stages: ["deploy"] } })).toEqual(["rules.X-1.stages[0]"]);
+    expect(keys({ "X-1": { text: "x", stages: ["review", "review"] } })).toEqual([
+      "rules.X-1.stages",
+    ]);
+    expect(keys({ "-bad": { text: "x" } })).toEqual(["rules.-bad"]);
+    expect(keys({ disabled: ["BDK-DP-2"] })).toEqual(["rules.disabled"]);
   });
 });

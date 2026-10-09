@@ -29,7 +29,7 @@ Which skill calls which command. Every skill that reads the configuration also r
 | `bdk openspec install` | `/bdk:setup` |
 | `bdk run status` | `/bdk:run`, `/bdk:execute`, `/bdk:auto-review`, `/bdk:close` |
 | `bdk plan check` | `/bdk:plan`, `/bdk:plan-draft`, `/bdk:verify-plan`, `/bdk:plan-fixes`, `/bdk:diagnose-bug`, `/bdk:execute-waves` |
-| `bdk rules for` | `/bdk:implement-part`, `/bdk:conform-part` (stage `execute`); `/bdk:review-group`, `/bdk:judge` (stage `review`) |
+| `bdk rules for` | `/bdk:design-draft`, `/bdk:verify-design` (stage `design`); `/bdk:plan-draft`, `/bdk:verify-plan` (stage `plan`); `/bdk:implement-part`, `/bdk:conform-part` (stage `execute`); `/bdk:review-group`, `/bdk:judge` (stage `review`) |
 | `bdk check run` | `/bdk:implement-part`, `/bdk:conform-part`, `/bdk:resolve-conflict`, `/bdk:review-round` |
 | `bdk git groups` | `/bdk:review-round`, `/bdk:pr-review-round`; `/bdk:review-group` and `/bdk:review-integration` for a manual round |
 | `bdk git scope` | no skill (`bdk git groups` uses the same range logic) |
@@ -98,15 +98,15 @@ flowchart TB
   end
   subgraph R2[" "]
     direction LR
-    S2["/bdk:design"] --- C2["policy.questions<br/>policy.budgets.verifier<br/>policy.gates.design<br/>models.explorer<br/>models.designer<br/>models.verifier"]
+    S2["/bdk:design"] --- C2["policy.questions<br/>policy.budgets.verifier<br/>policy.gates.design<br/>languages, rules<br/>models.explorer<br/>models.designer<br/>models.verifier"]
   end
   subgraph R3[" "]
     direction LR
-    S3["/bdk:plan"] --- C3["policy.budgets.verifier<br/>plan.part.max-tasks<br/>plan.part.max-files<br/>plan.part.max-bytes<br/>models.planner<br/>models.verifier"]
+    S3["/bdk:plan"] --- C3["policy.budgets.verifier<br/>plan.part.max-tasks<br/>plan.part.max-files<br/>plan.part.max-bytes<br/>languages, rules<br/>models.planner<br/>models.verifier"]
   end
   subgraph R4[" "]
     direction LR
-    S4["/bdk:execute"] --- C4["execution.lead<br/>execution.max-parallel<br/>policy.budgets.part-attempts<br/>policy.escalation.model<br/>policy.escalation.effort<br/>tools.test, tools.lint, tools.build<br/>languages, rules.disabled<br/>models.implementer<br/>models.conformer<br/>policy.questions (retry)"]
+    S4["/bdk:execute"] --- C4["execution.lead<br/>execution.max-parallel<br/>policy.budgets.part-attempts<br/>policy.escalation.model<br/>policy.escalation.effort<br/>tools.test, tools.lint, tools.build<br/>languages, rules<br/>models.implementer<br/>models.conformer<br/>policy.questions (retry)"]
   end
   subgraph R5[" "]
     direction LR
@@ -133,7 +133,7 @@ The same as a list, key by key; types, defaults and allowed values are in the [s
 |---|---|
 | `tools.test`, `tools.lint`, `tools.build` | `bdk check run` (in `/bdk:implement-part`, `/bdk:conform-part`, `/bdk:resolve-conflict`, `/bdk:review-round`); `/bdk:setup` writes them |
 | `tools.e2e` | `/bdk:e2e-check`, `/bdk:diagnose-bug`; `/bdk:setup` writes it |
-| `languages`, `rules.disabled` | `bdk rules for` |
+| `languages`, `rules` | `bdk rules for` (in the design, plan, execute and review blocks above) |
 | `policy.gates.design` | `/bdk:design` (design gate), `/bdk:debug` (fix gate) |
 | `policy.gates.review` | `/bdk:triage` |
 | `policy.questions` | `/bdk:propose`, `/bdk:design-draft`, `/bdk:execute` (retry), `/bdk:pr-review` (post) |

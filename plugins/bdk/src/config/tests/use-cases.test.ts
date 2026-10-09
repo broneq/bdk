@@ -246,3 +246,47 @@ describe("set", () => {
     expect(usage(() => set(d, "languages", "[go]", "local")).code).toBe("env/config-invalid");
   });
 });
+
+describe("rules entries", () => {
+  it("sets a rule entry by its id, keeping the id's case, and shows each field's layer", () => {
+    const { deps: d, fs } = configured({
+      [PROJECT]: 'rules:\n  API-1:\n    text: "Parse the body."\n',
+    });
+    set(d, "rules.API-1.enabled", "false", "local");
+    expect(fs.data.get(LOCAL)).toBe("rules:\n  API-1:\n    enabled: false\n");
+    const result = show(d, "rules.API-1");
+    expect(result.status === "ok" && result.entries).toEqual([
+      { key: "rules.API-1.text", value: "Parse the body.", origin: "project" },
+      { key: "rules.API-1.enabled", value: false, origin: "local" },
+    ]);
+  });
+
+  it("refuses a text for a pack rule entry", () => {
+    const { deps: d, fs } = configured();
+    const refused = usage(() => set(d, "rules.BDK-CQ-1.text", "Short names are fine."));
+    expect(refused.code).toBe("usage/invalid-value");
+    expect(refused.message).toMatch(/rules\.BDK-CQ-1\.text/);
+    expect(fs.data.get(PROJECT)).toBe("");
+  });
+});
+
+describe("loadConfig", () => {
+  it("returns the layer files and the origin of every resolved leaf", () => {
+    const { deps: d } = configured({
+      [GLOBAL]: "rules:\n  ME-1:\n    file: me-1.md\n",
+      [PROJECT]: "rules:\n  API-1:\n    text: x\n",
+      [LOCAL]: "rules:\n  API-1:\n    paths: [src/api/**]\n",
+    });
+    const state = loadConfig(d);
+    if (state.status !== "ok") throw new Error(state.status);
+    expect(state.files).toEqual([
+      { layer: "global", path: GLOBAL, present: true },
+      { layer: "project", path: PROJECT, present: true },
+      { layer: "local", path: LOCAL, present: true },
+    ]);
+    expect(state.origins.get("rules.ME-1.file")).toBe("global");
+    expect(state.origins.get("rules.API-1.text")).toBe("project");
+    expect(state.origins.get("rules.API-1.paths")).toBe("local");
+    expect(state.origins.get("execution.lead")).toBe("default");
+  });
+});

@@ -2,7 +2,8 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { isRuleFile, parseRule } from "../src/rules/domain/rule.ts";
+import { RULE_KINDS, RULE_STAGES } from "../src/config/index.ts";
+import { isRuleFile, KINDS, parseRule, STAGES } from "../src/rules/domain/rule.ts";
 import type { Rule } from "../src/rules/domain/rule.ts";
 
 // The BDK rule pack as shipped (spec `rule-pack`, "BDK pack and language packs" and "Admission by
@@ -28,7 +29,6 @@ const parsed = files.map((relPath) => ({
   rule: parseRule({
     relPath,
     file: `rules/${relPath}`,
-    origin: "bdk",
     content: readFileSync(join(PACK, relPath), "utf8"),
   }),
 }));
@@ -58,6 +58,16 @@ describe("BDK rule pack", () => {
     const ids = rules.map((rule) => rule.id);
     expect(ids.filter((id) => !id.startsWith("BDK-"))).toEqual([]);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("uses the stages and kinds the configuration accepts for a project rule", () => {
+    expect(RULE_STAGES).toEqual(STAGES);
+    expect(RULE_KINDS).toEqual(KINDS);
+  });
+
+  it("keeps the plan stage only in the rules a plan decides", () => {
+    const plan = rules.filter((rule) => rule.stages.includes("plan")).map((rule) => rule.id);
+    expect(plan.sort()).toEqual(["BDK-ARCH-3", "BDK-ARCH-4", "BDK-CQ-1"]);
   });
 
   it("ships the javascript, typescript and react language packs, each for its own files", () => {

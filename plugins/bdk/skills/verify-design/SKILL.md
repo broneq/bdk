@@ -33,7 +33,9 @@ When `design.md` or the spec deltas are missing, write a report with `Verdict: F
 
 Read `proposal.md`, every `specs/**/spec.md` of the Change, `design.md`, and `.bdk/runs/<change>/design/explore.md` when present. On a later pass, read again every file that changed (`git diff`, or the files the caller names) and every file an open item names.
 
-Done when you can list each claim the design makes about existing code.
+Run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" rules for --stage design`, without files, as a Bash command of its own, and keep the rules it prints, each under its id.
+
+Done when you can list each claim the design makes about existing code, and the design rules.
 
 ## 3. Check
 
@@ -46,10 +48,11 @@ Done when you can list each claim the design makes about existing code.
 7. **Risks.** Concrete: a named bottleneck, failure mode, hidden cost or unconfirmed assumption, not "could be a concern".
 8. **Open questions.** Only unknowns that change neither the specs, the decisions nor the plan.
 9. **Plan readiness.** The design names the modules, interfaces and data the plan parts will touch.
+10. **Rules.** The design breaks no rule of step 2, unless a decision records the user's agreement to depart from it.
 
 ## 4. Sort
 
-- **Must address**: a defect that would make the plan or the product wrong. A false claim about the code; a requirement without an answer, or one the design contradicts; a capability without a spec delta; a scenario that cannot run; a failure path the specs imply and the design ignores; a decision against the proposal.
+- **Must address**: a defect that would make the plan or the product wrong. A false claim about the code; a requirement without an answer, or one the design contradicts; a capability without a spec delta; a scenario that cannot run; a failure path the specs imply and the design ignores; a decision against the proposal; a design that breaks a rule of step 2 without the user's agreement, the item naming the rule's id.
 - **Should consider**: every other gap from step 3.
 
 Not a problem: wording, style, a choice among valid alternatives the design argued, anything outside the proposal.

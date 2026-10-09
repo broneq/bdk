@@ -32,7 +32,7 @@ export const SLICES: Readonly<
   },
   rules: {
     imports: ["config"],
-    why: "bdk rules for reads languages and rules.disabled through loadConfig, a config use case",
+    why: "bdk rules for reads languages and the rules entries with their layers through loadConfig, a config use case",
   },
   run: {
     imports: ["findings"],

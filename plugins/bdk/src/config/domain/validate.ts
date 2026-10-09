@@ -98,6 +98,10 @@ function issueProblems(
     const [inner] = issue.issues;
     return [problemAt(layers, parent, `invalid key: ${inner?.message ?? issue.message}`)];
   }
+  if (issue.code === "custom" && (issue.params as { resolved?: boolean } | undefined)?.resolved) {
+    // A rule entry's cross-field check: a later layer may still supply the field (`kind` too).
+    return last ? [problemAt(layers, parent, issue.message)] : [];
+  }
   if (issue.code === "invalid_type" && valueAt(merged, issue.path) === undefined) {
     // A later layer may still supply a missing field; only the full merge decides.
     return last ? [problemAt(layers, parent, "required, missing")] : [];

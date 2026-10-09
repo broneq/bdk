@@ -1,5 +1,5 @@
-// Which rules a role reads (spec `bdk-cli/rules`, "Rules for a stage and files"; spec
-// `rule-pack`, "Switching rules off"): pure, so the same rules and inputs give the same answer.
+// Which rules a role reads (spec `bdk-cli/rules`, "Rules for a stage and files"): pure, so the
+// same rules and inputs give the same answer. Rules switched off never reach it (`entries.ts`).
 
 import { minimatch } from "minimatch";
 
@@ -11,9 +11,6 @@ export interface SelectInput {
   /** Root-relative paths; none drops the path condition. */
   readonly files: readonly string[];
   readonly languages: readonly string[];
-  readonly disabled: readonly string[];
-  /** "Did you mean": the frame's `closest`, passed in since `domain/` imports no `shared/`. */
-  readonly closest: (input: string, names: readonly string[]) => string | undefined;
 }
 
 export interface Selected extends Rule {
@@ -21,12 +18,7 @@ export interface Selected extends Rule {
   readonly matched: readonly string[];
 }
 
-export interface Selection {
-  readonly rules: readonly Selected[];
-  readonly warnings: readonly string[];
-}
-
-const ORIGIN_ORDER = { bdk: 0, project: 1 } as const;
+const ORIGIN_ORDER = { bdk: 0, global: 1, project: 2, local: 3 } as const;
 
 /** Origin first, then id with numbers compared by value (`BDK-REACT-2` before `BDK-REACT-10`). */
 function order(a: Rule, b: Rule): number {
@@ -36,24 +28,9 @@ function order(a: Rule, b: Rule): number {
   );
 }
 
-export function select(input: SelectInput): Selection {
-  const warnings: string[] = [];
-  const ids = input.rules.map((rule) => rule.id);
-  for (const id of input.disabled) {
-    if (ids.includes(id)) continue;
-    const near = input.closest(id, ids);
-    warnings.push(
-      `rules.disabled names no rule ${id}${near === undefined ? "" : `; did you mean ${near}?`}`,
-    );
-  }
-  for (const language of input.languages) {
-    if (!input.rules.some((rule) => rule.language === language)) {
-      warnings.push(`no rules for language ${language}`);
-    }
-  }
+export function select(input: SelectInput): Selected[] {
   const selected: Selected[] = [];
   for (const rule of input.rules) {
-    if (input.disabled.includes(rule.id)) continue;
     if (rule.language !== null && !input.languages.includes(rule.language)) continue;
     if (!rule.stages.includes(input.stage)) continue;
     const matched = input.files.filter((file) =>
@@ -62,5 +39,5 @@ export function select(input: SelectInput): Selection {
     if (input.files.length > 0 && matched.length === 0) continue;
     selected.push({ ...rule, matched });
   }
-  return { rules: selected.sort(order), warnings };
+  return selected.sort(order);
 }

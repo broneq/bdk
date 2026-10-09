@@ -1,6 +1,6 @@
-// The rule file (spec `rule-pack`, "Rule file"; design D2): YAML frontmatter and the rule text.
-// The id is the file name and the language pack the `languages/<name>/` directory, so neither
-// can disagree with the file's place.
+// The rule file of the BDK pack (spec `rule-pack`, "Rule file"; design D2): YAML frontmatter and
+// the rule text. The id is the file name and the language pack the `languages/<name>/` directory,
+// so neither can disagree with the file's place.
 
 import { parse, YAMLParseError } from "yaml";
 import { z } from "zod";
@@ -9,9 +9,11 @@ export const STAGES = ["design", "plan", "execute", "review"] as const;
 export type Stage = (typeof STAGES)[number];
 
 export const KINDS = ["house", "knowledge"] as const;
-export const ORIGINS = ["bdk", "project"] as const;
+/** `bdk` for a pack rule, else the configuration layer that sets a project rule's text. */
+export const ORIGINS = ["bdk", "global", "project", "local"] as const;
+export type Origin = (typeof ORIGINS)[number];
 
-/** The prefix of the BDK pack's ids; a project rule may not use it (design D5). */
+/** The prefix of the BDK pack's ids; a `rules` entry with it adjusts a pack rule. */
 export const PACK_PREFIX = "BDK-";
 
 const ID = /^[A-Za-z0-9][A-Za-z0-9-]*$/;
@@ -42,10 +44,10 @@ const Frontmatter = z
 
 export interface Rule {
   readonly id: string;
-  readonly origin: (typeof ORIGINS)[number];
+  readonly origin: Origin;
   /** The language pack, from `languages/<name>/`; null for a rule of no language. */
   readonly language: string | null;
-  /** Where the rule lives, for messages and output: `rules/...` or `.bdk/rules/...`. */
+  /** Where the rule lives, for messages and output: `rules/...`, a layer file or a rule's `file`. */
   readonly file: string;
   readonly kind: (typeof KINDS)[number];
   readonly paths: readonly string[];
@@ -64,7 +66,6 @@ export interface RuleSource {
   /** The path inside the rules directory, `/`-separated. */
   readonly relPath: string;
   readonly file: string;
-  readonly origin: Rule["origin"];
   readonly content: string;
 }
 
@@ -87,14 +88,16 @@ function split(content: string): { yaml: string; body: string } | undefined {
   return { yaml: lines.slice(1, end).join("\n"), body: lines.slice(end + 1).join("\n") };
 }
 
-/** The rule, or a problem naming the field (the caller adds the file). */
+/** The text of a Markdown file without a leading `---` frontmatter block, trimmed. */
+export function ruleBody(content: string): string {
+  return (split(content)?.body ?? content.replace(/^\uFEFF/, "")).trim();
+}
+
+/** The pack rule, or a problem naming the field (the caller adds the file). */
 export function parseRule(source: RuleSource): Rule | string {
   const segments = source.relPath.split("/");
   const id = (segments.at(-1) ?? "").replace(/\.md$/, "");
   if (!ID.test(id)) return `id ${JSON.stringify(id)} must be letters, digits and -`;
-  if (source.origin === "project" && id.startsWith(PACK_PREFIX)) {
-    return `id ${id} uses the prefix ${PACK_PREFIX} reserved for the BDK pack; rename the file`;
-  }
   const parts = split(source.content);
   if (parts === undefined) return "no frontmatter: the file must start with a --- block";
   let data: unknown;
@@ -118,7 +121,7 @@ export function parseRule(source: RuleSource): Rule | string {
   const front = result.data;
   return {
     id,
-    origin: source.origin,
+    origin: "bdk",
     language: segments[0] === "languages" && segments.length >= 3 ? (segments[1] ?? null) : null,
     file: source.file,
     kind: front.kind,

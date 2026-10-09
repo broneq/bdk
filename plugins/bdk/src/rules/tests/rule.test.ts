@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isRuleFile, parseRule } from "../domain/rule.ts";
+import { isRuleFile, parseRule, ruleBody } from "../domain/rule.ts";
 import type { Rule } from "../domain/rule.ts";
 
 // The rule file format of spec `rule-pack`, "Rule file".
@@ -14,8 +14,8 @@ stages: [plan, execute, review]
 **Naming.** Descriptive identifiers.
 `;
 
-function parse(relPath: string, content: string, origin: Rule["origin"] = "bdk"): Rule | string {
-  return parseRule({ relPath, file: `rules/${relPath}`, origin, content });
+function parse(relPath: string, content: string): Rule | string {
+  return parseRule({ relPath, file: `rules/${relPath}`, content });
 }
 
 describe("rule files", () => {
@@ -107,9 +107,10 @@ describe("rule files", () => {
     expect(parse("x/my rule.md", HOUSE)).toContain("id");
   });
 
-  it("rejects a project rule with the BDK- prefix", () => {
-    expect(parse("BDK-CQ-1.md", HOUSE, "project")).toContain("BDK-");
-    expect(parse("API-1.md", HOUSE, "project")).toMatchObject({ id: "API-1", origin: "project" });
+  it("gives the body of a project rule file without its frontmatter, or the whole text", () => {
+    expect(ruleBody(HOUSE)).toBe("**Naming.** Descriptive identifiers.");
+    expect(ruleBody("\uFEFF  Plain text.\r\n")).toBe("Plain text.");
+    expect(ruleBody("---\ntitle: x\n---\n\n")).toBe("");
   });
 
   it("counts only Markdown files other than README.md as rules", () => {

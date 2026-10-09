@@ -4,7 +4,6 @@ paths:
   - "**/*.jsx"
   - "**/*.tsx"
 stages:
-  - plan
   - execute
   - review
 measured:

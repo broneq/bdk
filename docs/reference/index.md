@@ -10,7 +10,7 @@ The workflow plugin.
 - [Agents](./bdk/agents.md): the subagents the skills start, with their models and tools.
 - [CLI](./bdk/cli.md): every `bdk` command, as `--help` prints it.
 - [Settings](./bdk/settings.md): every key of `.bdk/settings.yaml`, with its type and default.
-- [Rules](./bdk/rules.md): every rule of the rule pack, with its id for `rules.disabled`.
+- [Rules](./bdk/rules.md): every rule of the rule pack, with the id a `rules` entry names to switch it off or narrow it.
 - [Hooks](./bdk/hooks.md): what runs at session start and before Bash commands.
 
 ## The other plugins

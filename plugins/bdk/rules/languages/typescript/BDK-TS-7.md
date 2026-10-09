@@ -6,7 +6,6 @@ paths:
   - "**/*.cts"
   - "**/*.tsx"
 stages:
-  - plan
   - execute
   - review
 measured:

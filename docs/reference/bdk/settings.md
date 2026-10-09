@@ -117,23 +117,44 @@ languages:
 
 ## `rules` {#rules}
 
-Type: mapping of the keys below
+Type: mapping of names to values · Default: `{}`
 
-Which rules of the BDK rule pack and of `.bdk/rules/` apply.
+The project's own rules and changes to the rules of the BDK rule pack, each by its rule id; an id starting with `BDK-` changes the pack rule of that id.
+
+| Key | Type | Required or default | Description |
+|---|---|---|---|
+| `<id>` | mapping of the keys below | Required | A rule: a project rule holds `text` or `file`; an entry whose id starts with `BDK-` sets only `enabled`, `paths` or `stages` of that pack rule. |
+| `<id>.text` | string |  | The rule text, Markdown; a project rule holds exactly one of `text` and `file`. |
+| `<id>.file` | string |  | Markdown file holding the rule text, relative to the project root (to the directory of the global settings file in the global layer); a leading `---` frontmatter block is skipped. |
+| `<id>.kind` | one of `house`, `knowledge` |  | `house` (a choice among valid alternatives, the default) or `knowledge` (a fact about a library, language or tool). |
+| `<id>.paths` | list of strings |  | Globs, relative to the project root, of the files the rule governs; `["**"]` when absent. |
+| `<id>.stages` | list of enums |  | Stages whose roles read the rule, among `design`, `plan`, `execute` and `review`; `[execute, review]` when absent. |
+| `<id>.source` | string |  | Where the fact of a `knowledge` rule is documented. |
+| `<id>.verified` | string |  | The date (`YYYY-MM-DD`) the fact of a `knowledge` rule was last checked. |
+| `<id>.enabled` | boolean |  | `false` switches the rule off, so no role reads it; `true` when absent. |
 
 ```yaml
 rules:
-  # Rules of the rule pack that no role reads in this project
-  disabled:
-    - BDK-DP-2
-    - BDK-REACT-10
+  # A rule: a project rule holds `text` or `file`
+  API-1:
+    # Globs, relative to the project root, of the files the rule governs
+    paths:
+      - src/api/**
+    # The rule text, Markdown
+    text: Every handler under `src/api/` parses its request body with the schema in
+      `src/api/schemas/`.
+  GATEWAY-1:
+    # Stages whose roles read the rule, among `design`, `plan`, `execute` and `review`
+    stages:
+      - design
+      - plan
+      - review
+    # Markdown file holding the rule text, relative to the project root (to the directory of the global settings file in the global layer)
+    file: docs/conventions/gateway.md
+  BDK-DP-2:
+    # `false` switches the rule off, so no role reads it
+    enabled: false
 ```
-
-### `rules.disabled` {#rules-disabled}
-
-Type: list of strings · Default: `[]`
-
-Rules of the rule pack that no role reads in this project.
 
 ## `models` {#models}
 

@@ -7,6 +7,7 @@ import { setCommand } from "./commands/set.ts";
 import { showCommand } from "./commands/show.ts";
 import type { ConfigDeps } from "./use-cases/load.ts";
 
+export { RULE_KINDS, RULE_STAGES } from "./domain/settings.ts";
 export type { Settings } from "./domain/settings.ts";
 export type { Problem } from "./domain/validate.ts";
 export { loadConfig } from "./use-cases/load.ts";
