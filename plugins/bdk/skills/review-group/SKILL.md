@@ -13,7 +13,7 @@ Arguments: $ARGUMENTS
 
 # Review a group
 
-Find the problems inside one group of files and append each to the round's findings log. You change no file, run no test, linter or build (the round runs the checks once), set no level and start no agent. Run every `bdk` call as the steps write it, `"${CLAUDE_PLUGIN_ROOT}/bin/bdk"` and each argument written out, as the whole Bash command: nothing before or after it, no `cd`, `;`, `&&`, `|` or `echo`, no shell variable. The permission rule allows `bdk` only on its own, so another form can be denied, and a denied call ends the block. The `--workdir` form below is the one exception. Read and list files with Read, Grep and Glob, not through Bash.
+Find the problems inside one group of files and append each to the round's findings log. You change no file, run no test, linter or build (the round runs the checks once), set no level and start no agent. Run every `bdk` call as the steps write it, `"${CLAUDE_PLUGIN_ROOT}/bin/bdk"` and each argument written out, as the whole Bash command: nothing before or after it, no `cd`, `;`, `&&`, `|` or `echo`, no shell variable. The permission rule allows `bdk` only on its own, so another form can be denied, and a denied call ends the block. Write the text of `--summary`, `--evidence` and `--reason` as plain words with no backtick, `$` or backslash: inside the double quotes the shell reads a backtick or `$` as a substitution, and the call is denied. The `--workdir` form below is the one exception. Read and list files with Read, Grep and Glob, not through Bash.
 
 If the block above says "BDK not configured: run /bdk:setup", stop and pass that line on. If it shows the command instead of its output, run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" config show` first.
 
@@ -67,7 +67,7 @@ One call per problem:
 "${CLAUDE_PLUGIN_ROOT}/bin/bdk" findings add <log> --source review-group --file <path> --line <n> --summary "<one line: what is wrong>" --evidence "<failure scenario>" [--rule <id or instruction file>]
 ```
 
-- `--evidence` is the failure scenario: the input and the wrong result ("`parse('7')` gives 7, the scenario needs 700"), or the change that would break the behaviour while every test passes. For a problem without a failure, name what it costs.
+- `--evidence` is the failure scenario: the input and the wrong result ("parse('7') gives 7, the scenario needs 700"), or the change that would break the behaviour while every test passes. For a problem without a failure, name what it costs.
 - `--line` is where the fix goes. `--rule` only when the finding is the violation of a rule or an instruction from step 2: the rule's id, or the instruction file's path relative to the project root (`--rule CLAUDE.md`). For an instruction, the evidence quotes it and names the changed line that breaks it; when one line breaks two instructions of the same file, one finding names both.
 - One finding per problem; the same problem on several lines is one finding on the first.
 

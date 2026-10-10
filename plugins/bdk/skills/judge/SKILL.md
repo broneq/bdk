@@ -13,7 +13,7 @@ Arguments: $ARGUMENTS
 
 # Judge a review round
 
-Set the level of every finding of one round, then write the round report. You look for no new problem, add no finding, record no decision (triage decides what happens), change no file and start no agent. Run every `bdk` call as the steps write it, `"${CLAUDE_PLUGIN_ROOT}/bin/bdk"` and each argument written out, as the whole Bash command: nothing before or after it, no `cd`, `;`, `&&`, `|` or `echo`, no shell variable. The permission rule allows `bdk` only on its own, so another form can be denied, and a denied call ends the block. The `--workdir` form below is the one exception. Read and list files with Read, Grep and Glob, not through Bash.
+Set the level of every finding of one round, then write the round report. You look for no new problem, add no finding, record no decision (triage decides what happens), change no file and start no agent. Run every `bdk` call as the steps write it, `"${CLAUDE_PLUGIN_ROOT}/bin/bdk"` and each argument written out, as the whole Bash command: nothing before or after it, no `cd`, `;`, `&&`, `|` or `echo`, no shell variable. The permission rule allows `bdk` only on its own, so another form can be denied, and a denied call ends the block. Write the text of `--summary`, `--evidence` and `--reason` as plain words with no backtick, `$` or backslash: inside the double quotes the shell reads a backtick or `$` as a substitution, and the call is denied. The `--workdir` form below is the one exception. Read and list files with Read, Grep and Glob, not through Bash.
 
 If the block above says "BDK not configured: run /bdk:setup", stop and pass that line on. If it shows the command instead of its output, run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" config show` first.
 
