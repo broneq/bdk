@@ -8,7 +8,7 @@ flowchart TB
   J --> D(["decided<br/>/bdk:triage: you, or<br/>policy.gates.review auto"])
   D -->|"fix"| X["fix part, built,<br/>reviewed next round"]
   D -->|"accept"| A["closed: not a problem<br/>or accepted as is"]
-  D -->|"defer"| L["later: optionally<br/>a GitHub issue"]
+  D -->|"defer"| L["later: listed in the<br/>pull request body,<br/>optionally a GitHub issue"]
 ```
 
 ## Where findings come from
@@ -40,7 +40,7 @@ The Change owes a scenario's test when the scenario is in its spec deltas, or a 
 
 ## Decisions
 
-`/bdk:triage` gives each judged finding one decision: `fix`, `accept` or `defer` (a deferred finding can carry a GitHub issue, an existing one or one BDK creates). The policy below is what BDK recommends; with `policy.gates.review: auto` it decides that way without asking.
+`/bdk:triage` gives each judged finding one decision: `fix`, `accept` or `defer` (a deferred finding can carry a GitHub issue, an existing one or one BDK creates). `/bdk:auto-review` lists every deferred finding under `## Deferred` of `review/result.md`, and `/bdk:close` copies that list into a `Deferred` part of the pull request body, so its reviewer sees what the review left for later. The policy below is what BDK recommends; with `policy.gates.review: auto` it decides that way without asking.
 
 | Level | Recommended decision | In the last round the budget allows |
 |---|---|---|
