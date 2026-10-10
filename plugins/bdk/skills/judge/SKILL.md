@@ -35,9 +35,9 @@ Done when you have the list (it may be empty: go to step 4).
 
 ## 2. Read what the product must do
 
-Read `proposal.md` and the scenarios under `specs/` of the Change: a level depends on whether the product breaks them. When a finding says a test is missing, also read the `Acceptance scenarios` and `Verified by` lines of the plan parts under `plan/parts/` (step 3 tells an owed test from an optional one by them). Read a rule a finding cites in the rules of `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" rules for --stage review --files <file>` for its file. A `rule` that is a path (`CLAUDE.md`, `src/AGENTS.md`, `.claude/rules/testing.md`) cites a project instruction: read that file, under `--workdir` when given.
+Read `proposal.md` and the scenarios under `specs/` of the Change: a level depends on whether the product breaks them. When a finding says a test is missing, also read the `Acceptance scenarios` and `Verified by` lines of the plan parts under `plan/parts/` (step 3 tells an owed test from an optional one by them). Read a rule a finding cites in the rules of `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" rules for --stage review --files <file>` for its file. A `rule` that is a path (`CLAUDE.md`, `src/AGENTS.md`, `.claude/rules/testing.md`) cites a project instruction: read that file, under `--workdir` when given. For an `e2e-check` finding, read the path file its evidence names (`<round-dir>/e2e/<process>--<path>.md`): its `Proposal:` line, `## Steps`, `## Expected` and `## Observed`.
 
-Done when you know the scenarios, the intent, and each rule and instruction file a finding cites.
+Done when you know the scenarios, the intent, each rule and instruction file a finding cites, and each path file an `e2e-check` finding names.
 
 ## 3. Judge each finding
 
@@ -48,12 +48,14 @@ For each finding, once: read the code at its `file` and `line`, and its evidence
 
 | Level | When |
 |---|---|
-| `blocker` | The product breaks a spec scenario or the intent of the Change; the spec deltas would not describe the product after archive (source `spec-conformance`, the problem holds); a check is red (source `check`); a security hole; data loss; a regression of existing behaviour |
+| `blocker` | The product breaks a spec scenario or the intent of the Change; the spec deltas would not describe the product after archive (source `spec-conformance`, the problem holds); an E2E path fails (source `e2e-check`, the observation holds); a check is red (source `check`); a security hole; data loss; a regression of existing behaviour |
 | `should-fix` | The product works, but the change breaks a rule or a project instruction, or has a concrete maintenance cost the finding names; or a scenario the Change owes has no test |
 | `nice-to-have` | An improvement whose absence costs nothing concrete, including a test no scenario the Change owes asks for |
 | `not-a-problem` | The failure scenario does not hold; out of the Change's scope; already handled; or it repeats an earlier finding of the log (name that id) |
 
 A `spec-conformance` finding compares the spec text with the product. Check both sides: read the spec location its evidence names (the delta under `openspec/changes/<change>/specs/`, and the main spec under `openspec/specs/` for a modified requirement) and trace the evidence's input through the code. It holds when they disagree: a scenario or a SHALL sentence the code breaks, or behaviour a user can observe that no delta or main spec describes. A holding one is a `blocker` even when the product works (an undocumented error message): `/bdk:close` refuses to archive the Change while it is open, so leaving it would stop the run there. When the spec already says what the product does, it is `not-a-problem`.
+
+An `e2e-check` finding is a path the E2E tester drove and saw fail; its `file` and `line` are the proposal line the path comes from. Trace the input of the path file's `## Steps` through the code: the finding holds when the code gives what `## Observed` says (the crash, the text, the exit code). A holding one is a `blocker`: `/bdk:close` refuses to archive the Change while an E2E path fails, so a lower level would stop the run there. That stays so when the spec deltas or `design.md` word the promise more narrowly than the proposal line, or leave the path's input out ("malformed entries are unspecified"), and for a `break` path held to the baseline (`Expected from: baseline`): the proposal line is the intent, and a narrower delta or design is a gap in them, not leave to break the promise. Whether the round fixes the code or the user narrows the proposal is triage's and the fix planner's call, not yours. When the code does not give what the file observed, it is `not-a-problem`.
 
 A finding that a test is missing names behaviour, often not its scenario: find the scenario yourself. The Change owes a scenario's test when the scenario is in its spec deltas, or a plan part names it under `Acceptance scenarios` or `Verified by`. The finding holds when no test would fail if that behaviour broke; a test that covers it at another level makes it `not-a-problem`. With the behaviour present it is `should-fix`, never `nice-to-have`, however the evidence words it ("only a test is missing"): the plan's acceptance is unmet, and a regression of the scenario would pass every check. With the behaviour broken it is a `blocker`. A test gap no owed scenario asks for (an input class no scenario writes out, a helper's branch) is `nice-to-have`.
 
