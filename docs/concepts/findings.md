@@ -29,12 +29,14 @@ Reviewers only report: they change no code and decide nothing.
 
 | Level | When |
 |---|---|
-| `blocker` | the product breaks a spec scenario or the intent of the Change; the specs would not describe the product after archive (a spec check finding that holds, even when the product works: close would refuse it, as it refuses a delta OpenSpec does not accept); a check is red; a security hole; data loss; a regression |
+| `blocker` | the product breaks a spec scenario or the intent of the Change; the specs would not describe the product after archive (a spec check finding that holds, even when the product works: close would refuse it, as it refuses a delta OpenSpec does not accept); an E2E path fails (an E2E finding that holds: close refuses every failed path); a check is red; a security hole; data loss; a regression |
 | `should-fix` | the product works, but the change breaks a rule or a project instruction, or has a concrete maintenance cost; or a scenario the Change owes has no test |
 | `nice-to-have` | an improvement whose absence costs nothing concrete, including a test no owed scenario asks for |
 | `not-a-problem` | the failure scenario does not hold, it is out of the Change's scope, already handled, or a duplicate |
 
 A rule broken alone is never a `blocker`. A finding whose failure does not hold is `not-a-problem`, not a lower level.
+
+An E2E finding is a path the E2E tester saw fail, placed at the proposal line it comes from. It stays a `blocker` when the spec deltas or the design word that promise more narrowly than the proposal, or leave its input out: the proposal is the intent, so the review fixes the product (or you narrow the proposal at a manual review gate) instead of shipping a broken promise or stopping at close.
 
 The Change owes a scenario's test when the scenario is in its spec deltas, or a plan part names it under `Acceptance scenarios` or `Verified by`. A missing test of such a scenario is `should-fix` while the behaviour is right, however the reviewer words it, so the review loop adds the test (a fix part may be a test alone, for behaviour already there); with the behaviour broken it is a `blocker`.
 
