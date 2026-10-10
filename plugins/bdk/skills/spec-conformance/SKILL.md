@@ -2,7 +2,7 @@
 name: spec-conformance
 description: 'Checks on the bdk:verifier agent that the spec deltas of an OpenSpec Change describe the product after the Change - against the code and the E2E results - and writes close/spec-conformance.md with a PASS or FAIL verdict; with --round it runs as a worker of a review round, writes the round''s report and logs each problem as a finding the review loop fixes. Use when a Change is about to be archived, when /bdk:close checks its specs, when a review round checks the specs, or when asked whether the specs still match what the product does.'
 argument-hint: "[<change>] [--base <ref>] [--round <round dir>]"
-allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(git diff *) Bash(git log *) Bash(git show *) Bash(git symbolic-ref *) Bash(git rev-parse *) Read Grep Glob Write Agent
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(git diff *) Bash(git log *) Bash(git show *) Bash(git symbolic-ref *) Bash(git rev-parse *) Bash(openspec validate *) Read Grep Glob Write Agent
 ---
 
 Current BDK configuration of this project:
@@ -13,7 +13,7 @@ Arguments: $ARGUMENTS
 
 # Spec conformance
 
-`openspec archive` copies a Change's spec deltas into the main specs, the living documentation of the product. Check that every delta is true of the product after the Change, and that nothing a user can observe is missing from them. You read and report; you never fix the spec or the code, and you never run the product, its tests or a command that writes a project file.
+`openspec archive` copies a Change's spec deltas into the main specs, the living documentation of the product. Check that every delta is true of the product after the Change, and that nothing a user can observe is missing from them. You read and report; you never fix the spec or the code, and you never run the product, its tests or a command that writes a project file. `openspec validate` only reads.
 
 When the block above says `BDK not configured` or `BDK configuration invalid`, reply with that line and stop: write nothing. If it shows the command instead of its output, run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" config show` first.
 
@@ -48,11 +48,13 @@ Done when every scenario of the deltas is on your list and you know the files th
 
 ## 3. Check
 
+First run `openspec validate <change> --strict`, on its own, in every run, round check or close. It reports what `openspec archive` would refuse: each `✗ [ERROR]` line it prints (with exit 1) names a delta file and a requirement, such as `tally/spec.md: ADDED "Bad amount" must include at least one scenario`. Keep each error line for problem 7; `Change '<change>' is valid` goes to `Checked`. A command that does not run (not found, denied) is not a problem of the deltas: follow your agent instructions for a failed command.
+
 For each scenario of an added or modified requirement, take its own WHEN, follow it from the entry point through the code, and compute the THEN value by value: the text printed, the exit code, the status and body, what the page shows, the file written. The question is whether the sentence is true of the product, not whether the code is good.
 
 Then read each requirement's own text. A SHALL sentence promises every input it names, and a scenario shows only one example: when a requirement says "a path absolute or relative to the current directory" and its scenario uses `books/2026.json`, compute the absolute case too (`/tmp/ledger.json` joined to the current directory is `<cwd>/tmp/ledger.json`). Do the same for each class the sentence names: absolute and relative, empty and missing, one and many, "any" or "every" command.
 
-These six problems make the main specs wrong after archive. Each one is a `Must address` item:
+These seven problems make the main specs wrong after archive, or stop archive. Each one is a `Must address` item:
 
 1. **Contradicted scenario or requirement.** The code does not produce the THEN for the WHEN, no entry point reaches the scenario, or the code breaks a SHALL sentence for an input it names.
 2. **E2E failure** (not in a round check). An E2E path file starts with `Result: fail`: the product breaks a promise of the proposal that the deltas are about to document. The item names the proposal line of its `Proposal:` line instead of a spec location.
@@ -60,6 +62,7 @@ These six problems make the main specs wrong after archive. Each one is a `Must 
 4. **Dropped scenario.** A modified requirement leaves out a scenario of its main-spec version while the product still behaves that way: archive replaces the whole requirement, so that behaviour would lose its documentation.
 5. **Undocumented behaviour.** The diff adds or changes something a user can observe - a command, an option, an output such as an error message, an exit code, an endpoint, a page, a configuration key - that no delta and no main-spec requirement describes. Internal code (a refactor, a helper, a test) never needs a delta.
 6. **Contradiction after merge.** A delta, merged into its main spec, contradicts another requirement there.
+7. **Delta OpenSpec refuses.** `openspec validate <change> --strict` reported an error: archive cannot merge the deltas, even when the product does what they say. One item per error line, naming the delta file and the requirement the error names; its `Evidence:` is the command and the error line. In a round check this is as much a `Must address` item as at close.
 
 Everything else you notice goes to `Should consider`: wording a test cannot check, a scenario no user can observe, a class or function name inside a requirement. Not a problem: code quality, test coverage, style; reviews own those.
 
@@ -84,10 +87,11 @@ Verdict: FAIL
 ## Checked
 - "Export" / "Two notes": src/export.js:12 prints both notes as a JSON array, exit 0.
 - E2E: `Verdict: PASS`, 2 processes, 7 paths (review/round-1/e2e/verdict.md).
+- `openspec validate add-total --strict`: valid.
 ```
 
-- Each `Must address` item names the spec location (file, requirement, scenario), what the spec says, what the product does, and, when the proposal settles it, which side disagrees with the intent. Its `Evidence:` line is a file and line with what the code does there, or the E2E path file.
-- `Checked` lists each scenario that holds, with where it holds, and states the E2E input: the verdict read with the path of its file under `.bdk/runs/<change>/`, or `no E2E results` when no E2E verdict exists (a `SKIPPED` or `BLOCKED` verdict is stated the same way); in a round check, `E2E: not read (round check)`.
+- Each `Must address` item names the spec location (file, requirement, scenario), what the spec says, what the product does, and, when the proposal settles it, which side disagrees with the intent. Its `Evidence:` line is a file and line with what the code does there, the E2E path file, or the `openspec validate` command with its error line.
+- `Checked` lists each scenario that holds, with where it holds, and states the E2E input: the verdict read with the path of its file under `.bdk/runs/<change>/`, or `no E2E results` when no E2E verdict exists (a `SKIPPED` or `BLOCKED` verdict is stated the same way); in a round check, `E2E: not read (round check)`. It also states the validation: `openspec validate <change> --strict: valid` when it reported no error.
 - `Verdict: FAIL` if and only if `Must address` holds an item. An empty section holds `- None.`
 - IDs: at close, when step 1 found an earlier report, keep the ID of every problem still open, give a new problem the next unused number, and put `Closed: <IDs>` (or `Closed: none`) on the line under the verdict. Then replace the file: there is one report per Change, read by `bdk run status`. A first report has no `Closed:` line.
 
@@ -108,6 +112,7 @@ Skip this step at close. In a round check, the round's judge, triage and fix pla
 - The code breaks what the proposal asks for (a contradicted scenario, a broken requirement sentence, behaviour that is still there, behaviour the proposal does not ask for): the code line, as in the item's `Evidence:`.
 - The delta misses or misstates behaviour the proposal or the design settles, and neither contradicts (an undocumented error message the design gives every command, a dropped scenario): the spec delta file of the capability, at the requirement it belongs to, else the line of its first `## ... Requirements` heading, else line 1 of the proposal.
 - A contradiction after merge with the main spec: the delta.
+- A delta OpenSpec refuses: the delta file the error names, at the heading of the requirement it names (else its first `## ... Requirements` heading); the fix is a delta edit, such as a scenario under that requirement, checked against the code like any other.
 - The proposal settles neither side: the delta, and say so in the evidence; the fix planner leaves it to the user.
 
 Then run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" findings list <round dir>/findings.jsonl` and check that each item has its finding with the source `spec-conformance`.

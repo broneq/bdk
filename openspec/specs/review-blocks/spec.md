@@ -87,7 +87,7 @@ The judge SHALL judge every finding of the log that has no level, once each: it 
 | `nice-to-have` | an improvement whose absence costs nothing concrete |
 | `not-a-problem` | the failure scenario does not hold, the finding is out of the Change's scope or already handled, or it repeats an earlier finding of the log, whose id the reason names |
 
-Of two findings that repeat each other, the judge SHALL level the later one in the log `not-a-problem` and judge the earlier one on its own. A rule violation by itself SHALL NOT be a `blocker`. For a `spec-conformance` finding the judge SHALL check both sides: what the cited spec location says, and what the code does for the input the evidence names; the finding holds when they disagree, and `/bdk:close` would refuse to archive the Change while it is open. The judge SHALL add no finding, record no decision, and leave a finding that already has a level as it is.
+Of two findings that repeat each other, the judge SHALL level the later one in the log `not-a-problem` and judge the earlier one on its own. A rule violation by itself SHALL NOT be a `blocker`. For a `spec-conformance` finding the judge SHALL check both sides: what the cited spec location says, and what the code does for the input the evidence names; the finding holds when they disagree, and `/bdk:close` would refuse to archive the Change while it is open. A `spec-conformance` finding whose evidence is an error of `openspec validate --strict` holds while the delta still has what the error names (a requirement without a scenario), even though the product does what the delta says; it is a `blocker`, because `openspec archive` refuses the Change. The judge SHALL add no finding, record no decision, and leave a finding that already has a level as it is.
 
 #### Scenario: Levels of a mixed round
 
@@ -108,6 +108,11 @@ Of two findings that repeat each other, the judge SHALL level the later one in t
 
 - **WHEN** the log holds an unleveled `spec-conformance` finding that no delta of `add-total` lists the error `tally: not an amount: <text>`, and `bin/tally.js` prints it for `tally add abc`
 - **THEN** its level is `blocker`, not `should-fix`, although the product works
+
+#### Scenario: Delta OpenSpec refuses
+
+- **WHEN** the log holds an unleveled `spec-conformance` finding that the requirement Bad amount of the `add-total` delta has no scenario, quoting `openspec validate add-total --strict`, and the delta still has none, while `bin/tally.js` prints the error the requirement names
+- **THEN** its level is `blocker`, not `nice-to-have` or `not-a-problem`, although the product works
 
 ### Requirement: Project instructions in the review
 

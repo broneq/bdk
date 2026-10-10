@@ -107,16 +107,26 @@ Recorded 2026-10-09: `design-draft-rules` Δ 0.00 (the baseline reads the rule f
 The `spec-conformance-*` cases start from the shared fixture `tally-change.sh` (the Change `add-total` on its branch, with `main` as the base and a main spec to merge into); each scaffold adds one commit with what it tests. The block runs in a `bdk:verifier` agent (opus), reads `git diff` against `main` and writes `close/spec-conformance.md` (on a Mac, see the `git` entry of "Host limits"):
 
 ```bash
-pnpm --filter @bdk/bdk run eval --allow-tools Write "Bash(*/bin/bdk *)" "Bash(git *)" --case 'spec-conformance-*'
+pnpm --filter @bdk/bdk run eval --allow-tools Write "Bash(*/bin/bdk *)" "Bash(git *)" "Bash(openspec validate *)" --case 'spec-conformance-*'
 ```
 
 Three block cases check the spec check inside a review round (#265) on the shared fixture `tally-ledger-path.sh`: `tally-change.sh` plus one commit with the two defects close found in run 1 of the B1 measurement after every review round had passed them (archived Change `v3-208-measure-speed-b1`, design D6). The proposal asks for a one-line error on a bad amount and for a ledger file chosen by `TALLY_LEDGER`, absolute or relative; the delta documents `TALLY_LEDGER` with a relative-path scenario only and lists no error; the code prints `tally: not an amount: <text>` and joins `TALLY_LEDGER` to the current directory. `spec-conformance-round` runs the block with `--round` and grades both findings in `round-1/findings.jsonl`, the round's report and no `close/spec-conformance.md` (it is also matched by `'spec-conformance-*'` above); `judge-spec-conformance` grades both findings `blocker`; `plan-fixes-spec-delta` grades a fix part on the spec delta, one on `bin/tally.js`, and nothing under `## Not planned`. Their grants are those of the `spec-conformance-*`, `judge-*` and `plan-fixes-*` cases:
 
 ```bash
 for c in spec-conformance-round judge-spec-conformance plan-fixes-spec-delta; do
-  pnpm --filter @bdk/bdk run eval --allow-tools Write "Bash(*/bin/bdk *)" "Bash(git *)" --case "$c"
+  pnpm --filter @bdk/bdk run eval --allow-tools Write "Bash(*/bin/bdk *)" "Bash(git *)" "Bash(openspec validate *)" --case "$c"
 done
 ```
+
+Two block cases check a delta OpenSpec refuses (#374) on the shared fixture `tally-delta-refused.sh`: `tally-change.sh` plus one commit that reproduces the stop of the #368 run (archived Change `v3-368-measure-spec-conformance-run`). The proposal asks for a one-line error on a bad amount, the code prints `tally: not an amount: <text>` and exits 1, and the delta adds the requirement Bad amount, which says so, without a scenario: the product does what the delta says, and `openspec validate add-total --strict` fails. `spec-conformance-delta-refused` runs the block with `--round` and grades `Verdict: FAIL` in the round's report and a `spec-conformance` finding on the delta naming the missing scenario (it is also matched by `'spec-conformance-*'` above); `judge-delta-refused` grades that finding `blocker`. The block runs `openspec validate`, so grant it:
+
+```bash
+for c in spec-conformance-delta-refused judge-delta-refused; do
+  pnpm --filter @bdk/bdk run eval --allow-tools Write "Bash(*/bin/bdk *)" "Bash(git *)" "Bash(openspec validate *)" --case "$c"
+done
+```
+
+Recorded 2026-10-10 (Claude Code 2.1.292, with the plugin, 3 runs): `spec-conformance-delta-refused` 0.89 on the skill of `staging/v3` (one run wrote neither a report nor a finding; with a prompt that hinted at the archive, one run logged the finding under `Verdict: PASS`), 1.00 after the change; `judge-delta-refused` 1.00 on the judge of `staging/v3`, so the judge was not changed (design D5); `spec-conformance-round` 1.00 after the change (regression cover).
 
 Two part cases build such a fix, on the shared fixture `tally-spec-fix-part.sh`: `tally-ledger-path.sh` plus round 1 with the error-message finding decided `fix` and fix part `01` in `round-1/fixes/parts/`, whose one task adds the error to the delta and is verified by the next round's spec check. `implement-part-spec-delta` grades `Status: done` (not a plan defect), the error in the delta and `bin/tally.js` unchanged; `conform-part-spec-delta` starts with the part built and an implementer report with no test and grades `Verdict: PASS`. They take the grants of the `*-part-*` cases above and are matched by `'*-part-*'`.
 
@@ -153,14 +163,14 @@ The review stage cases start from the `monthly-report` fixtures. `plan-fixes-jud
 ```bash
 pnpm --filter @bdk/bdk run eval --allow-tools Write "Bash(*/bin/bdk *)" --case 'plan-fixes-*'
 pnpm --filter @bdk/bdk run eval --allow-tools Write "Bash(*/bin/bdk *)" "Bash(npx -y lavish-axi *)" --case 'triage-last-round'
-pnpm --filter @bdk/bdk run eval --ablation none --tag orchestrator --allow-tools Write Edit SendMessage "Bash(*/bin/bdk *)" "Bash(mkdir -p *)" "Bash(cd *)" "Bash(git *)" "Bash(npx -y lavish-axi *)" --case 'auto-review-*'
+pnpm --filter @bdk/bdk run eval --ablation none --tag orchestrator --allow-tools Write Edit SendMessage "Bash(*/bin/bdk *)" "Bash(mkdir -p *)" "Bash(cd *)" "Bash(git *)" "Bash(openspec validate *)" "Bash(npx -y lavish-axi *)" --case 'auto-review-*'
 ```
 
 A review finding that asks for a missing test of behaviour the code already has (#346) runs on the shared fixture `tally-total-untested.sh`: `tally-change.sh` with the BDK schema on `main`, plan part 01 of `add-total` committed with a test of "Total of added amounts" only, and review round 1 judged and triaged, one `should-fix` finding "Spec scenario Empty ledger has no test" decided `fix`; `tally total` already prints `Total: 0.00` for an empty ledger. `plan-fixes-present-behaviour` (block) grades that fix part 02 lists the scenario with ` (behaviour present)` and no code file; `implement-part-present-behaviour` (block) starts from that part written and grades `Status: done`, a passing red run `checks/02-red.json` and the report line ending `; green at first run (behaviour present); green seen`; `auto-review-present-behaviour` (orchestrator, the acceptance signal) runs `/bdk:auto-review` from the triaged round with a budget of two rounds and grades that the lead builds and commits part 02 (`fixes/state.json` `done`, `fixes/result.md` `Status: done`) and round 2 runs. The grants are those of the `*-part-*` cases and of `auto-review-fix-round` (on a Mac, see the `git` entry of "Host limits"):
 
 ```bash
 pnpm --filter @bdk/bdk run eval --allow-tools Write Edit "Bash(*/bin/bdk *)" "Bash(mkdir -p *)" "Bash(cd *)" "Bash(git *)" --case '*-present-behaviour'
-pnpm --filter @bdk/bdk run eval --ablation none --tag orchestrator --allow-tools Write Edit SendMessage "Bash(*/bin/bdk *)" "Bash(mkdir -p *)" "Bash(cd *)" "Bash(git *)" --case 'auto-review-present-behaviour'
+pnpm --filter @bdk/bdk run eval --ablation none --tag orchestrator --allow-tools Write Edit SendMessage "Bash(*/bin/bdk *)" "Bash(mkdir -p *)" "Bash(cd *)" "Bash(git *)" "Bash(openspec validate *)" --case 'auto-review-present-behaviour'
 ```
 
 Recorded 2026-10-09 with Claude Code 2.1.295 (on a Mac with the `git` entry of "Host limits"): before the skill change `plan-fixes-present-behaviour` scored 0.71 (no marker) and `implement-part-present-behaviour` 0.71 (no red run, a free-form report line); after it, `plan-fixes-present-behaviour` WITH 1.00 / W/OUT 0.00 (Δ +1.00, 3 runs per arm), `implement-part-present-behaviour` 1.00 in 3 of 3 runs (`--ablation none`; W/OUT 0.33), `auto-review-present-behaviour` 1.00 in 3 of 4 runs (about $1.20 and 2.5 minutes each); in the fourth (0.25) the main session stopped after `plan-fixes` had written the marked part, because the run refused its Bash calls (its reply named "don't-ask mode"), so no fix pass started; `implement-part-csv`, `implement-part-plan-defect` and `implement-part-model-effort` stayed 1.00 (3 runs each), `plan-fixes-judged-round` 1.00 (2 runs); #264's `auto-review-test-only-fix`, also a test of present behaviour, built and committed its fix part in 2 of 2 runs (0.89 each: its `reply` grader failed because the main session reported the stage blocked over the seeded `monthly-report` cents bug that round 2 did not log).
