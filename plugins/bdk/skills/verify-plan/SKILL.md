@@ -46,12 +46,13 @@ Put into **Must address** what makes an implementer build the wrong thing, fail 
 2. A task without one of the lines `File:`, `Interface:`, `Verified by:`, or a `File:` path missing from the part's `files`.
 3. A path, function, type or command the task names as existing that does not exist as named: a wrong name, a wrong signature, a wrong module. Evidence: the file and line of what does exist, or the search that found nothing.
 4. A scenario of the spec deltas that no part names under `## Acceptance scenarios`, or that two parts name.
-5. A decision of the design that no task carries out.
-6. A part that uses what another part creates (a function, a type, a file) without depending on it, directly or through other parts. Trace two or three concrete inputs through the tasks that change behaviour: the value one part produces must be what the next part reads.
-7. A fact a part needs that only another part states: a signature from an earlier part, a source, a command. The implementer reads only its own part, the specs and the design.
-8. A `Verified by:` line that names commands by exclusion ("every test except ..."), or a command that spends money, needs credentials or reaches a shared or external system.
-9. An interface the plan changes whose callers behave differently and no task covers them. Find the callers with Grep.
-10. A part that breaks a rule selected for its files in step 2. The item names the rule's id and the part; evidence: the rule's sentence and the part's task or `files` that break it.
+5. A marker of a present scenario that is wrong. For each scenario a part lists, trace its WHEN through the code as it is before the Change to the output, comparing it with its THEN. A scenario the code already satisfies completely and the part lists without the suffix ` (behaviour present)` is an item (the implementer would see its test pass before any code and may stop the part as a plan defect); a scenario listed with the suffix that the code does not satisfy completely, or only through what an earlier part builds, is an item. Name the scenario and the part; evidence: the file and line of the code that satisfies it, or the search that found nothing. Also check that the `Verified by:` of a marked scenario ends `; it passes at its first run, the behaviour is present`.
+6. A decision of the design that no task carries out.
+7. A part that uses what another part creates (a function, a type, a file) without depending on it, directly or through other parts. Trace two or three concrete inputs through the tasks that change behaviour: the value one part produces must be what the next part reads.
+8. A fact a part needs that only another part states: a signature from an earlier part, a source, a command. The implementer reads only its own part, the specs and the design.
+9. A `Verified by:` line that names commands by exclusion ("every test except ..."), or a command that spends money, needs credentials or reaches a shared or external system.
+10. An interface the plan changes whose callers behave differently and no task covers them. Find the callers with Grep.
+11. A part that breaks a rule selected for its files in step 2. The item names the rule's id and the part; evidence: the rule's sentence and the part's task or `files` that break it.
 
 Put into **Should consider** the rest: a cut with fewer waves (more than three waves needs a reason), code written into a task, an unclear sentence, a part close to a limit.
 
