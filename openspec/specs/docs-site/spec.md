@@ -324,3 +324,10 @@ The `docs` job of PR CI SHALL fail when, at a viewport width of 1280 px on the b
 #### Scenario: Block label line past its block
 - **WHEN** a pull request adds a block label with a `<br/>` whose first line is wider than its block
 - **THEN** the `docs` job fails and names the page, the block's line, the label line and how far it runs past the block
+
+### Requirement: Diagram fit check runs in parallel
+The diagram fit check SHALL serve the built site on a port the operating system assigns, so that several runs at once on one machine (for example from different worktrees) do not fail on a port in use. It SHALL fail only on a diagram that does not fit or cannot be measured.
+
+#### Scenario: Two runs at once
+- **WHEN** two diagram fit checks are started at the same time on one machine
+- **THEN** both serve the site on different ports and both exit 0 when every diagram fits

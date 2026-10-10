@@ -3,6 +3,7 @@
 // their author's lines"). Mermaid lays a diagram out only in a browser, so this check opens each
 // page with a diagram in Chromium and measures what the reader sees. Run after `docs:build`.
 
+import { once } from "node:events";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -311,8 +312,16 @@ function measureDiagrams(frames: Element[]): DrawnDiagram[] {
 }
 
 async function main(): Promise<void> {
-  const port = 4179;
-  const server = await serve({ root: DOCS, port });
+  // Port 0 lets the OS pick a free port, so runs from several worktrees never collide.
+  const server = await serve({ root: DOCS, port: 0 });
+  if (!server.server.listening) {
+    await once(server.server, "listening");
+  }
+  const address = server.server.address();
+  if (address === null || typeof address === "string") {
+    throw new Error("The docs server has no TCP port");
+  }
+  const port = address.port;
   const browser = await chromium.launch();
   const found: string[] = [];
   try {
