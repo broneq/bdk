@@ -50,6 +50,17 @@
         "ref": "release"
       },
       "category": "development"
+    },
+    {
+      "name": "bdk-explain",
+      "description": "Explains code, a flow or a concept as one self-contained, interactive HTML page opened in your browser, without leaving files in git status. Works alone, without bdk.",
+      "source": {
+        "source": "git-subdir",
+        "url": "broneq/bdk",
+        "path": "plugins/bdk-explain",
+        "ref": "release"
+      },
+      "category": "development"
     }
   ]
 }

@@ -44,6 +44,7 @@ What the stages actually do with them:
 | `.bdk/runs/` | no (git-ignored) | every stage ([run state](/concepts/run-state)) |
 | `.claude/settings.json` | yours to decide | `/bdk:setup` (the permission rules above) |
 | `.gitignore` | yes | `/bdk:setup` (two lines) |
+| `.bdk/tmp/` | no (ignored by its own `.gitignore`) | scratch files of BDK plugins, such as the pages of [`bdk-explain`](./explain.md); delete it at any time |
 
 ## What leaves your machine
 
