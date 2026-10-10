@@ -284,6 +284,17 @@ describe("eval launcher", () => {
     }
   });
 
+  it("keeps the rules for a paid run in the README (spec skill-evals, #403)", () => {
+    const readme = readFileSync(join(EVALS, "README.md"), "utf8");
+    const part = readme
+      .split(/^#{2,3} /m)
+      .find((section) => section.startsWith("Before a paid run\n"));
+    expect(part, "no 'Before a paid run' heading").toBeDefined();
+    for (const flag of ["--runs 1", "--max-cost-usd", "--ablation none"]) {
+      expect(part).toContain(flag);
+    }
+  });
+
   it("warns when no openspec is on PATH", () => {
     const dir = fresh("no-openspec");
     expect(openspecWarning(join(dir, "empty"), join(dir, "home"))).toMatch(/openspec/);

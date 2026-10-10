@@ -9,15 +9,17 @@ Every run is a real model call on your account. Nothing here runs in CI except t
 From the repository root, after `pnpm install`:
 
 ```bash
-# Every case, with and without the plugin, 3 runs per arm
-pnpm --filter @bdk/bdk run eval --allow-tools Write Edit
+# Does a block change the outcome: with and without the plugin, 3 runs per arm
+pnpm --filter @bdk/bdk run eval --allow-tools Write Edit --tag block --max-cost-usd 40
 
 # Probe one case cheaply while writing it: one run, one arm
-pnpm --filter @bdk/bdk run eval --allow-tools Write --case 'sample-*' --runs 1 --ablation none
+pnpm --filter @bdk/bdk run eval --allow-tools Write --case 'sample-*' --runs 1 --ablation none --max-cost-usd 2
 
-# Blocks, and orchestrators (one arm)
-pnpm --filter @bdk/bdk run eval --allow-tools Write Edit --tag block
-pnpm --filter @bdk/bdk run eval --allow-tools Write Edit --tag orchestrator --ablation none
+# Confirm a fix or check a regression: the touched cases, one arm
+pnpm --filter @bdk/bdk run eval --allow-tools Write Edit --case 'plan-*' --ablation none --max-cost-usd 10
+
+# Orchestrators always run one arm
+pnpm --filter @bdk/bdk run eval --allow-tools Write Edit --tag orchestrator --ablation none --max-cost-usd 60
 ```
 
 The `eval` script builds the plugin, then runs `claude plugin eval . --scaffold` with the Claude Code version pinned in the root `package.json` (through `run.ts`); every other argument goes to `claude plugin eval` (`--help` lists them). Useful ones: `--model` and `--judge-model` to pin models when comparing runs, `--max-cost-usd` as a ceiling, `-j 4` for parallel runs, `--no-publish` to keep the report local. Results land in `evals/results/<timestamp>/` (ignored by git) with `report.html`.
@@ -25,6 +27,18 @@ The `eval` script builds the plugin, then runs `claude plugin eval . --scaffold`
 The cases that call OpenSpec (`propose-*`, `design-*`, `plan-*`, `close-*`, `run-*`, `cli-*`, ...) need a global OpenSpec 1.13.2 outside your home directory, the version CI pins: `npm i -g @fission-ai/openspec@1.13.2` with a Node from Homebrew or the system, or a clean `HOME` (see the `openspec` entry of "Host limits"). The script removes every `node_modules/.bin` directory from the `PATH` the run inherits and warns before the run when the `openspec` left on it is missing or lies under your home directory.
 
 Read `WITH`, `W/OUT` and `Δ`: a block whose `Δ` stays near 0 over 3 runs does not change the outcome. `tool_used: Skill` graders are not scored; they show whether the skill fired.
+
+### Before a paid run
+
+Every run spends the account's usage limit; the measuring issues of Phase 6 cost about $70 recorded and an estimated $130-150 in all (#403). Spend it only on a question nothing cheaper answers:
+
+- Check the question first: no merged work answers it already, and the fixture reaches the path under test (a review stage whose fixes touch product code never takes the tests-only path).
+- Probe one case with `--runs 1 --ablation none` before a series; run the full series only to record the result.
+- While iterating on a fix, run only the cases the fix touches, and the full set once at the end, not after every edit.
+- Run both arms only when the question is whether a block changes the outcome (ADR-0003); to confirm a fix or check a regression, pass `--ablation none`.
+- Put `--max-cost-usd` on every command, and give the agent `--model sonnet` unless the case measures the main thread's model.
+- A full unattended `/bdk:run` on a B1-sized fixture ($7-25 a run, "B1-sized fixture") is for discovering defects between blocks. Confirm a fix on a snapshot of a built workspace (about $3) or with the block case that guards it.
+- The issue names a `Budget`, and the Change's design records the total cost and machine time of every paid run, probe, failed and repeated runs included, or names each run whose cost is unknown.
 
 ### Grants
 
@@ -404,6 +418,10 @@ Recorded 2026-10-10 (Claude Code 2.1.296, main thread opus): round 1's verifier 
 ## Free check in CI
 
 `plugins/bdk/tests/evals.test.ts` (part of `pnpm test`) loads every case with `claude plugin eval --max-cost-usd 0`, which checks the case files and the graders against the grants `Write Edit` but starts no run and needs no credential. It also runs every fixture and case scaffold as the harness does, and checks names and tags. Run it alone with `pnpm exec vitest run plugins/bdk/tests/evals.test.ts`.
+
+## Flaky cases
+
+A case that fails in some of its runs is fixed by its cause, not by a count of passing runs: at a 1-in-8 failure rate, 10 runs pass in a row with no fix about a quarter of the time. Run it with `--keep-temp` until a run fails, read the cause in that run's transcript (`config/projects/*/*.jsonl` of the kept workspace), remove it, and then run the series as the check. When the cause is the host and not the skill, record it under "Host limits".
 
 ## Host limits
 
