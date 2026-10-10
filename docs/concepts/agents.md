@@ -68,6 +68,8 @@ flowchart TB
 
 The model and effort of each agent can be overridden with `models.<role>.model` and `models.<role>.effort`, where the role is the agent's name (`lead`, `explorer`, `designer`, `planner`, `verifier`, `implementer`, `conformer`, `reviewer`, `integration-reviewer`, `e2e-tester`, `judge`, `analyst`); every stage that starts the agent passes them, so `models.verifier` sets the verifier of `/bdk:design`, `/bdk:plan`, every review round and `/bdk:close` alike. See [CLI, configuration and hooks](./cli-config-hooks.md#configuration-bdk-settings-yaml).
 
+`/bdk:review-group`, `/bdk:review-integration`, `/bdk:judge`, `/bdk:triage` and `bdk:verifier` run each `bdk` call as a Bash command of its own, with every argument written out: no `cd`, `;`, `&&`, pipe or shell variable around or inside it. The permission rule `/bdk:setup` writes for `bdk` matches only that form; a compound call, or one with a variable in an argument, is refused or asks you. The review blocks under `--workdir` (a pull request reviewed in its own worktree) run `cd <worktree> && bdk ...`, which the skills grant.
+
 ## Sources
 
 - `plugins/bdk/agents/*.md` (frontmatter `model`, `skills`, `tools`)
