@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# tally-e2e-cleared.sh plus a second failed path of round 1 whose observation holds:
+# tally-e2e-cleared.sh (or the fixture named by $1) plus a second failed path of round 1 whose observation holds:
 # `[true, 5]` prints `Total: 6.00` with exit 0. Its finding is levelled blocker and the user
 # deferred it, so close must still refuse it (#391 design D1), next to the cleared one (#396).
 set -euo pipefail
-bash "$(dirname "$0")/../fixtures/tally-e2e-cleared.sh"
+bash "$(dirname "$0")/../fixtures/${1:-tally-e2e-cleared.sh}"
 
 round=.bdk/runs/add-total/review/round-1
 node -e '
