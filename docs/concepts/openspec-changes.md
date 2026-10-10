@@ -47,7 +47,7 @@ You can edit any of them by hand between stages. A stage reads the files as they
 
 ## Closing: from deltas to specs
 
-`/bdk:close` first runs `/bdk:spec-conformance`: a verifier runs `openspec validate --strict` on the Change, so a delta the archive would refuse fails here, and compares the spec deltas with the diff and the E2E verdict. Each review round ran the same check and fixed what it found, so close fails only on what changed after the last round. Only when it passes does `openspec archive` move the Change to `changes/archive/` and merge its deltas into `openspec/specs/`. The archive is committed with the work, so the pull request carries the code and the updated specs together.
+`/bdk:close` first runs `/bdk:spec-conformance`: a verifier runs `openspec validate --strict` on the Change, so a delta the archive would refuse fails here, and compares the spec deltas with the diff and the E2E verdict. A path of the last round's verdict that failed but whose E2E finding the round's judge levelled `not-a-problem` is cleared: the check lists it under `Checked` with the judge's reason, and the pull request names it next to the `FAIL` verdict. Each review round ran the same check and fixed what it found, so close fails only on what changed after the last round. Only when it passes does `openspec archive` move the Change to `changes/archive/` and merge its deltas into `openspec/specs/`. The archive is committed with the work, so the pull request carries the code and the updated specs together.
 
 ## Without spec deltas
 

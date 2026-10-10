@@ -100,7 +100,7 @@ So a review is not a proofreading pass: style a linter can check is left to the 
 
 | Block | Agent | Checks | Leaves alone |
 |---|---|---|---|
-| `/bdk:spec-conformance` | `bdk:verifier` (opus) | each spec delta is true of the product after the Change (each scenario followed from its entry point, each SHALL sentence for the inputs it names), no E2E path failed, removed behaviour is gone, nothing a user can observe (a command, option, output, exit code, endpoint, page, config key) is missing from the specs, and `openspec validate --strict` accepts the deltas, so the archive can merge them | code quality, test coverage, style (reviews own them); running the product or its tests |
+| `/bdk:spec-conformance` | `bdk:verifier` (opus) | each spec delta is true of the product after the Change (each scenario followed from its entry point, each SHALL sentence for the inputs it names), no E2E path failed (a path whose finding the last review round levelled `not-a-problem` is cleared and named), removed behaviour is gone, nothing a user can observe (a command, option, output, exit code, endpoint, page, config key) is missing from the specs, and `openspec validate --strict` accepts the deltas, so the archive can merge them | code quality, test coverage, style (reviews own them); running the product or its tests |
 
 The specs it passes become the main specs, the living documentation, so a gap here is a gap in your documentation. Every review round runs the same check first, so close fails only on what changed after the last round.
 

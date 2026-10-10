@@ -44,7 +44,7 @@ The block SHALL compare every spec delta with the product after the Change and p
 
 - a scenario of an added or modified requirement whose THEN the code does not produce for its WHEN, or that no entry point of the product reaches;
 - a SHALL sentence of an added or modified requirement that the code breaks for an input the sentence covers, although the requirement's scenarios hold: the sentence promises every input it names (a path "absolute or relative", "any" command, an empty value), not only the scenario's example;
-- an E2E path whose result is `Result: fail`: the product breaks a promise of the proposal that the deltas are about to document;
+- an E2E path whose result is `Result: fail`: the product breaks a promise of the proposal that the deltas are about to document. A failed path of a review round's verdict (`review/round-<N>/e2e/verdict.md`) is not an item when that round's findings log (`review/round-<N>/findings.jsonl`) holds at least one `e2e-check` finding whose evidence names the path file and every such finding is levelled `not-a-problem`: the round's judge traced the path through the code and found that the observation does not hold, and close fails only on what changed after the last round. That path SHALL be listed under `Checked` as cleared by the review, with each finding's id and its level reason. A failed path with no such finding, or with one at any other level or unleveled (a `blocker` that triage deferred included), and every failed path of a verdict outside a review round (`.bdk/runs/<change>/e2e/`), SHALL stay an item;
 - a removed requirement whose behaviour the product still has;
 - a modified requirement that drops a scenario of its main-spec version while the product still behaves that way, so archive would lose documented behaviour;
 - behaviour a user can observe (a command, an option, an output such as an error message, an exit code, an endpoint, a page, a configuration key) that the Change adds or changes and that no delta describes;
@@ -89,6 +89,16 @@ Every `Must address` item SHALL name the spec location (file and requirement or 
 
 - **WHEN** `openspec validate add-total --strict` reports that the Change is valid
 - **THEN** the report's `Checked` section says that the validation passed
+
+#### Scenario: E2E failure the review cleared
+
+- **WHEN** the latest verdict is `review/round-1/e2e/verdict.md` with `Verdict: FAIL`, its failed path `see-the-total--empty-ledger.md` has one `e2e-check` finding in `review/round-1/findings.jsonl` levelled `not-a-problem`, and its failed path `see-the-total--boolean-entry.md` has one levelled `blocker` and decided `defer`
+- **THEN** the report starts with `Verdict: FAIL`, a `Must address` item names `see-the-total--boolean-entry.md`, no `Must address` item names `see-the-total--empty-ledger.md`, and `Checked` names `see-the-total--empty-ledger.md` as cleared by the review with its finding id
+
+#### Scenario: Only cleared E2E failures
+
+- **WHEN** every failed path of the latest round verdict has its `e2e-check` findings levelled `not-a-problem`, and every scenario of the deltas holds in the code
+- **THEN** the report starts with `Verdict: PASS` and `Checked` names each cleared path with its finding id
 
 ### Requirement: Report file
 

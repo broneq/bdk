@@ -69,7 +69,7 @@ A process that no `tools.e2e` item reaches is marked `not-driven` with the reaso
 
 ## Reading the result
 
-The evidence lands in `.bdk/runs/<change>/review/round-N/e2e/` when a review round runs the check, and in `.bdk/runs/<change>/e2e/` when you run it alone; `/bdk:close` and `/bdk:spec-conformance` read the latest. A later review round whose fixes changed only test files does not run the check again after a `PASS` or `SKIPPED` verdict: it writes no `e2e/`, so the latest verdict stays the one that checked this product, and its `round.md` says so. `verdict.md` holds the verdict (`PASS`, `FAIL`, `BLOCKED` or `SKIPPED`), then one section per process with one line per path, and the proposal lines that are not a user process:
+The evidence lands in `.bdk/runs/<change>/review/round-N/e2e/` when a review round runs the check, and in `.bdk/runs/<change>/e2e/` when you run it alone; `/bdk:close` and `/bdk:spec-conformance` read the latest; a failed path whose finding the round's judge levelled `not-a-problem` (the code does not give what the tester observed) does not stop close, which names it in the pull request. A later review round whose fixes changed only test files does not run the check again after a `PASS` or `SKIPPED` verdict: it writes no `e2e/`, so the latest verdict stays the one that checked this product, and its `round.md` says so. `verdict.md` holds the verdict (`PASS`, `FAIL`, `BLOCKED` or `SKIPPED`), then one section per process with one line per path, and the proposal lines that are not a user process:
 
 ```markdown
 Verdict: FAIL
