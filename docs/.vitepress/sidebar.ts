@@ -35,6 +35,7 @@ export const USER_SECTIONS: readonly UserSection[] = [
       "configuration",
       "footprint",
       "diagnostics",
+      "explain",
     ],
   },
   {
@@ -67,6 +68,7 @@ export const USER_SECTIONS: readonly UserSection[] = [
       "bdk/rules",
       "bdk/hooks",
       "bdk-craft",
+      "bdk-explain",
       "bdk-skill-kit",
       "git-identity",
     ],

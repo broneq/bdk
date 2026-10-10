@@ -16,5 +16,6 @@ The workflow plugin.
 ## The other plugins
 
 - [bdk-craft](./bdk-craft.md): engineering craft skills (TDD, debugging, refactoring, testing strategy, Mermaid diagrams).
+- [bdk-explain](./bdk-explain.md): explains code, a flow or a concept as an interactive HTML page.
 - [bdk-skill-kit](./bdk-skill-kit.md): the skill validator and authoring guidance.
 - [git-identity](./git-identity.md): GitHub account and commit identity per project.

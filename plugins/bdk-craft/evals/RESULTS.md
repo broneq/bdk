@@ -1,6 +1,6 @@
 # Admission record
 
-Every skill in `skills/` shipped because a with/without run of its cases showed an effect over no plugin. This file is the evidence; `tests/craft-skills.test.ts` fails when `skills/` and the verdicts below disagree.
+Every skill in `skills/` shipped because a with/without run of its cases showed an effect over no plugin. This file is the evidence; `tests/admitted-skills.test.ts` fails when `skills/` and the verdicts below disagree.
 
 ## Rule
 
