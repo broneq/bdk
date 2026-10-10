@@ -135,7 +135,7 @@ End your turn there.
 Every Change is done or waits. Reply with:
 
 1. One line per Change in queue order: the `PR:` and `Base:` lines of its `close/pr.md`; or `waiting` with each blocker that is not merged and its pull request.
-2. Every decision taken without the user, per Change, from files in `.bdk/runs/<change>/` (the same on every branch): the decisions part of the pull request body in `close/pr.md` (`/bdk:close` gathers the proposal's and the design's there) and the bullets under `## Decisions taken without the user` of `review/result.md`. Write `none` when a Change has none.
+2. Every decision taken without the user, per Change, from `.bdk/runs/<change>/close/pr.md` (the same on every branch): the decisions part of its pull request body, where `/bdk:close` gathers the proposal's, the design's and the review's, so read no other file for them and list each once. Write `none` when a Change has none.
 3. Blockers outside the queue that are still open, from step 3.
 4. When a Change waits: that `/bdk:run` continues it after its blockers are merged.
 

@@ -10,7 +10,7 @@ Two kinds of settings decide how autonomous a run is. **Gates and questions** ar
 | `policy.gates.review` | `/bdk:triage` in `/bdk:auto-review` | you decide fix, accept or defer for every finding | the [triage policy](./findings.md#decisions) decides by level |
 | `policy.questions` | `/bdk:propose`, `/bdk:design-draft`, `/bdk:execute`, `/bdk:pr-review` | a stage asks when the intent or a design decision is open, before retrying blocked parts, and before posting a PR review | the recommended answer is taken and recorded in the Change; blocked parts are not retried; the run stops there |
 
-With everything on `auto` and `decide-and-record`, `/bdk:run` goes from an intent to pull requests without asking. Every decision it took is recorded (`## Decided without the user` in the proposal, `Decided without the user:` in the design, `By: policy.gates.design auto` in the gate file), and its final report lists them.
+With everything on `auto` and `decide-and-record`, `/bdk:run` goes from an intent to pull requests without asking. Every decision it took is recorded (`## Decided without the user` in the proposal, `Decided without the user:` in the design, `By: policy.gates.design auto` in the gate file, `## Decisions taken without the user` in `review/result.md`). Each pull request body lists the decisions of its Change, the review's included, and the final report repeats them.
 
 ## Budgets
 

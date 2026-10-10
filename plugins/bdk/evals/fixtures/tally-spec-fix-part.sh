@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # tally-ledger-path.sh plus round 1 of add-total triaged and planned: the spec-conformance finding
 # that no delta lists the bad-amount error is a blocker decided fix, and fix part 01 adds it to the
-# delta, a part that changes spec text only (its check is the next round's spec conformance).
+# delta with its scenario, a part that changes spec text only (its checks are `openspec validate --strict`
+# and the next round's spec conformance).
 set -euo pipefail
 bash "$(dirname "$0")/tally-ledger-path.sh"
 round=.bdk/runs/add-total/review/round-1
@@ -32,10 +33,10 @@ The spec delta of `tally` describes the error `tally add` prints for an amount t
 
 ## Tasks
 
-1. Fix f-4b2e91c07a35: add the requirement Bad amount under `## ADDED Requirements` of the `tally` delta, with a scenario: `tally add abc` prints `tally: not an amount: abc` to stderr, exits 1 and leaves the ledger unchanged
+1. Fix f-4b2e91c07a35: add the requirement Bad amount under `## ADDED Requirements` of the `tally` delta (`tally add` with an amount that is not a number prints `tally: not an amount: <text>` to stderr, exits 1 and leaves the ledger unchanged), with `#### Scenario: Amount that is not a number`: WHEN `tally add abc` runs, THEN it prints `tally: not an amount: abc` to stderr, exits 1 and the ledger is unchanged
    - File: openspec/changes/add-total/specs/tally/spec.md
    - Interface: none
-   - Verified by: the spec check of the next review round
+   - Verified by: `openspec validate add-total --strict` passes; the spec check of the next review round
 MD
 cat > "$round/fixes/index.md" <<'MD'
 # Fixes of round 1

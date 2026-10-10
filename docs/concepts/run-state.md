@@ -84,7 +84,7 @@ openspec/specs/<capability>/spec.md   main specs: openspec archive merges the de
 | `review/round-N/findings.jsonl` | reviewers, spec check, E2E, red checks, judge, triage (append only) | `bdk run status`, `/bdk:auto-review`, `/bdk:plan-fixes` | the [findings](./findings.md), their levels and decisions | the round has no findings |
 | `review/round-N/review.md` | `bdk findings report` | `bdk run status`, `/bdk:auto-review` | marks the round finished | the round counts as unfinished and runs again |
 | `review/round-N/fixes/` | `/bdk:plan-fixes`, then the execute lead | `/bdk:auto-review`, the next round's grouping | the fix parts and their build | the fixes are planned again |
-| `review/result.md` | `/bdk:auto-review` only | `/bdk:run` (decisions for the final report), `/bdk:debug`, `/bdk:close` (deferred findings in the PR) | the review's outcome | the final report loses the review's decisions |
+| `review/result.md` | `/bdk:auto-review` only | `/bdk:close` (the review's decisions taken without the user, and deferred findings, in the PR), `/bdk:debug` | the review's outcome | the pull request body and the final report lose the review's decisions |
 | `close/spec-conformance.md` | `bdk:verifier` (replaced per pass) | `bdk run status`, `/bdk:close` | the check that the specs match the product before the archive | the check runs again |
 | `close/pr.md` | `/bdk:close`, last | `bdk run status` (the Change is done), `/bdk:run` (done; a blocker merged) | the pull request's URL, base and branch | the Change is not done; `/bdk:close` finds the open PR again |
 | `diagnostics.md` | `bdk:analyst` (replaced per run of `/bdk:diagnose-run`) | you | where the run's time and cost went, and its waste, each cited | nothing reads it; run `/bdk:diagnose-run` again |
@@ -168,7 +168,7 @@ flowchart TB
 
 `/bdk:plan-fixes` writes `round-N/fixes/parts/NN.md` and `fixes/index.md`; the execute lead builds those parts (`fixes/state.json`, `fixes/result.md`), and `bdk git groups` of round N+1 groups the review by the same fix parts.
 
-`/bdk:auto-review` sums up every round in `R/review/result.md`; `/bdk:run` reads its decisions taken without the user for the final report.
+`/bdk:auto-review` sums up every round in `R/review/result.md`; `/bdk:close` copies its decisions taken without the user into the pull request body, where `/bdk:run`'s final report reads them.
 
 ## Close
 
@@ -183,6 +183,7 @@ sequenceDiagram
   V->>FS: write close/<br/>spec-conformance.md
   V-->>CL: Verdict line
   CL->>G: archive, commit, push
+  CL->>FS: read decisions of proposal.md,<br/>design.md, review/result.md
   CL->>FS: write close/pr-body.md
   CL->>G: gh pr create
   CL->>FS: write close/pr.md (last)
