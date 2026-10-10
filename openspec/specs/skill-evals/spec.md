@@ -208,13 +208,14 @@ No CI workflow SHALL start a paid eval run. PR CI SHALL find every `plugins/<nam
 
 ### Requirement: B1-sized fixture
 
-The suite SHALL ship a shared fixture of a Change the size of B1, in three states, each a script under `plugins/bdk/evals/fixtures/`:
+The suite SHALL ship a shared fixture of a Change the size of B1, in four states, each a script under `plugins/bdk/evals/fixtures/`:
 
 - `household-book.sh` SHALL build a configured BDK project (`.bdk/settings.yaml` with a test and an e2e tool, `openspec/` with the BDK schema copied from the plugin, a main spec of the product, the product's code with passing tests) holding one active Change, `add-household-book`, with a proposal, spec deltas and a design, and with the design approval records under `.bdk/runs/add-household-book/design/`: the last report `verify-N.md` reading `Verdict: PASS`, and `gate.md` reading `Gate: approved` with a `Report:` line naming that report. It SHALL hold no plan part.
 - `household-book-planned.sh` SHALL build the same project by running `household-book.sh` and adding the Change's plan parts and `.bdk/runs/add-household-book/plan/verify-1.md` reading `Verdict: PASS`, in one more commit.
 - `household-book-queued.sh` SHALL build the planned state by running `household-book-planned.sh` and make it ready for an unattended plan-to-PR run by `/bdk:run` without arguments, adding no commit: a bare repository inside the workspace as `origin` holding `main`, with `origin/HEAD` set; the offline `gh` stand-in at `.git/bdk-eval/bin/gh`; `.bdk/runs/run.json` queueing `add-household-book` from an intent, in `non-interactive` mode with base `main`; and `.bdk/settings.local.yaml` setting both gates to `auto`, `policy.questions` to `decide-and-record` and `execution.lead` to `foreground`.
+- `household-book-uncorrected.sh` SHALL build the queued state by running `household-book-queued.sh` and return the Change to the text run 1 of the B1 measurement started from (archived Change `v3-208-measure-speed-b1`, design D6): spec `ledger` "Options", the design and part 01 SHALL state no error for a missing positional argument and SHALL NOT say that every command checks amounts, dates and months as `ledger add` does; part 04 SHALL read the statement with `join(io.cwd, file)`; the design gate SHALL name `design/verify-2.md` and `design/verify-3.md` SHALL be absent. The difference SHALL be one patch under `plugins/bdk/evals/fixtures/household-book/`, folded into the planned commit and pushed to `origin`, so the tree stays clean and `origin/main` is `main`'s commit.
 
-The plan of the planned state SHALL have 7 parts, 27 tasks and 62 distinct files, SHALL pass `bdk plan check` with the default part limits, SHALL have at most 3 waves, and SHALL name every scenario of the Change's spec deltas in the acceptance scenarios of exactly one part. `plugins/bdk/evals/README.md` SHALL describe the three states and how to start a run by hand at plan, at execute and at plan-to-PR.
+The plan of the planned state SHALL have 7 parts, 27 tasks and 62 distinct files, SHALL pass `bdk plan check` with the default part limits, SHALL have at most 3 waves, and SHALL name every scenario of the Change's spec deltas in the acceptance scenarios of exactly one part. `plugins/bdk/evals/README.md` SHALL describe the four states and how to start a run by hand at plan, at execute and at plan-to-PR.
 
 #### Scenario: Ready to plan
 
@@ -230,6 +231,11 @@ The plan of the planned state SHALL have 7 parts, 27 tasks and 62 distinct files
 
 - **WHEN** `household-book-queued.sh` runs in an empty directory and `bdk run status --json` runs there
 - **THEN** it exits 0, the entry of `add-household-book` reads stage `execute`, `git status --porcelain` prints nothing, `origin/main` is `main`'s commit, and the resolved configuration has `policy.gates.design` and `policy.gates.review` `auto`, `policy.questions` `decide-and-record` and `execution.lead` `foreground`
+
+#### Scenario: Uncorrected state is the queued state before the run-1 correction
+
+- **WHEN** `household-book-uncorrected.sh` runs in an empty directory
+- **THEN** spec `ledger` names no `import needs a file`, part 04 reads `join(io.cwd, file)`, the design gate names `design/verify-2.md`, the Change holds the same scenarios as the queued state, `bdk plan check` passes, the commit subjects equal the queued state's, `git status --porcelain` prints nothing and `origin/main` is `main`'s commit
 
 ### Requirement: plan-draft measured on the B1-sized fixture
 
