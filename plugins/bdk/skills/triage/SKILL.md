@@ -13,7 +13,7 @@ Arguments: $ARGUMENTS
 
 # Triage a review round
 
-Decide every undecided finding of one judged round and record each decision. You add no finding, set no level (the judge did), change no project file, commit nothing and start no agent. Run `bdk` always as `"${CLAUDE_PLUGIN_ROOT}/bin/bdk"`. Run each command on its own, without `;`, `&&`, pipes or `echo`, the Lavish commands too: the result shows the exit code, and a compound command falls outside this skill's grants, so it is denied or asks the user for permission.
+Decide every undecided finding of one judged round and record each decision. You add no finding, set no level (the judge did), change no project file, commit nothing and start no agent. Run every `bdk` call as the steps write it, `"${CLAUDE_PLUGIN_ROOT}/bin/bdk"` and each argument written out, as the whole Bash command, and each Lavish command the same way: nothing before or after it, no `cd`, `;`, `&&`, `|` or `echo`, no shell variable. Any other form falls outside this skill's grants, so it is denied or asks the user for permission; the tool result shows the exit code anyway. Read files with Read, Grep and Glob, not through Bash.
 
 If the block above says "BDK not configured: run /bdk:setup", stop and reply with that line. If it shows the command instead of its output, run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" config show` first.
 
@@ -21,9 +21,9 @@ If the block above says "BDK not configured: run /bdk:setup", stop and reply wit
 
 With a round directory in the arguments or the request (`.bdk/runs/<change>/review/round-<N>/`), use it. With a Change name, use the highest `.bdk/runs/<change>/review/round-<N>/` that holds `review.md`. Otherwise use the highest `.bdk/runs/manual/review/round-<N>/` that holds `review.md`. The log is `<round-dir>/findings.jsonl`.
 
-Run `bdk findings list <log>`. When its counts show an unleveled finding, decide nothing: reply with the unleveled ids and that the round needs the judge (`/bdk:judge <round-dir>`) first, and stop.
+Run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" findings list <log>`. When its counts show an unleveled finding, decide nothing: reply with the unleveled ids and that the round needs the judge (`/bdk:judge <round-dir>`) first, and stop.
 
-Then run `bdk findings list <log> --decision undecided`. These are the findings to decide; a recorded decision stays, unless the user asks to change it: then that finding is decided again. With none, go to step 4.
+Then run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" findings list <log> --decision undecided`. These are the findings to decide; a recorded decision stays, unless the user asks to change it: then that finding is decided again. With none, go to step 4.
 
 Done when you have the undecided findings, each with its level, place, summary, evidence and level reason.
 

@@ -55,6 +55,8 @@ pnpm --filter @bdk/bdk run eval --allow-tools "Bash(*/bin/bdk *)" "Bash(git *)" 
 pnpm --filter @bdk/bdk run eval --allow-tools "Bash(*/bin/bdk *)" "Bash(git *)" --case 'judge-*'
 ```
 
+Every `judge-*`, `review-group-*`, `review-integration-*` and `triage-*` case holds the grader `no-denied-call`, which fails when a tool call of the run is denied. The grant `Bash(*/bin/bdk *)` matches a `bdk` call only as the whole Bash command with literal arguments: a probe on Claude Code 2.1.292 denied `"<root>/bin/bdk" findings list $L ...` even on its own, and a judge that wrote `B=...; L=<log>; "$B" ... $L` lost its report in the #371 measurement. The four skills now forbid that form (archived Change `v3-376-review-evals-compound-bdk-calls`). Recorded 2026-10-10 with Claude Code 2.1.292 (clean `HOME`, the `git` entry of "Host limits", `--ablation none`): `judge-*` with `--model sonnet --runs 3 -j 5` 1.00 on every case, no denied call in 15 runs ($2.34); `review-*` and `triage-*` 1.00 on every case in one run each ($2.45).
+
 The `triage-*` cases start from the shared fixture `monthly-report-judged.sh`: round 1 of `monthly-report` judged, one finding of each level, no decision. The block records decisions only through `bdk findings decide`, so it needs `bdk` and, for the manual cases, `Write` for the page and the Lavish CLI. `triage-lavish` and `triage-ask` put a `lavish-axi` stub into `node_modules` as the `design-draft` cases do; `triage-auto-policy` sets `policy.gates.review: auto` and grades that nothing is asked:
 
 ```bash
