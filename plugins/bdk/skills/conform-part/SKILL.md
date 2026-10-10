@@ -2,7 +2,7 @@
 name: conform-part
 description: 'Checks the uncommitted diff of one implemented plan part of an OpenSpec Change on the bdk:conformer agent - against the execute rules, the project instructions (CLAUDE.md, AGENTS.md, .claude/rules) and the part''s tasks - fixes each violation it can fix without changing behaviour, leaves the rest, runs the part checks, and writes execute/conform-NN.md. Use when a part is implemented and about to be committed, when asked to clean up or check a part against the rules, or when the execute lead conforms a part.'
 argument-hint: "[<change>] <part-id> [--run-dir <path>] [--workdir <path>] [--parts <dir>]"
-allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(mkdir -p *) Bash(cd *) Bash(git -C *) Bash(git status *) Bash(git diff *) Bash(git log *) Bash(git show *) Read Grep Glob Edit Write Agent
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(mkdir -p *) Bash(cd *) Bash(git -C *) Bash(git status *) Bash(git diff *) Bash(git log *) Bash(git show *) Bash(openspec validate *) Read Grep Glob Edit Write Agent
 ---
 
 Current BDK configuration of this project:
@@ -61,9 +61,11 @@ Against three sources:
 2. **Project instructions.** Each instruction a changed line breaks. Cite the file (`CLAUDE.md`).
 3. **Tasks.** For each task: its files hold the change; its `Interface` holds as written - the name, the signature, exported or private; its `Verified by` test exists; and the code does what the task and its requirement text say. Cite it as `task <n>`.
 
+When the diff changes a file under `openspec/changes/<change>/specs/`, run `openspec validate <change> --strict` (with `--workdir`: `cd <workdir> && openspec validate <change> --strict`), whatever the implementer report says about it. Each error on a delta in the part's `files` (a requirement without a `#### Scenario:`, a header OpenSpec does not know) is a violation of the task that changed that delta: `/bdk:close` cannot archive such a delta. An error on a file outside the part's `files` goes to `Left` as `outside the part`. When `openspec` is not found, note `openspec validate: not run, no OpenSpec CLI` for `## Checks`. A part that changed no delta runs no validation.
+
 Leave formatting and anything a linter checks to the linter.
 
-Done when every changed line was checked against all three.
+Done when every changed line was checked against all three, and a changed delta was validated.
 
 ## 5. Fix or leave
 
@@ -72,6 +74,7 @@ Fix a violation when the fix keeps behaviour unchanged: every input gives the sa
 Leave a violation, with the file and line, its source and why you left it, when the fix would:
 
 - change what a user or a caller sees, including a bug fix or a missing behaviour - you never fix a bug: it would land without a test or a review that traced it;
+- add or change spec text, such as the scenario a requirement misses - what a delta says is the implementer's to write from its task;
 - add a feature, or a test of new behaviour;
 - touch a file outside the part's `files`.
 
@@ -107,7 +110,7 @@ Verdict: FAIL
 - checks/conform-03.json: pass
 ```
 
-- `## Checks` names `checks/conform-<part-id>.json: <verdict>` when you ran the checks, else `checks/<part-id>.json: <verdict>, unchanged`.
+- `## Checks` names `checks/conform-<part-id>.json: <verdict>` when you ran the checks, else `checks/<part-id>.json: <verdict>, unchanged`; for a part that changed a delta, also `openspec validate <change> --strict: pass` or `: fail` (or the `not run` line). A validation error on a delta of the part is a `Left` item naming its task, so the verdict is `FAIL`.
 - `Verdict: FAIL` if and only if the check verdict is `fail`, a `Left` item names a task, or the implementer report was missing or not done. A rule or an instruction left does not fail the part by itself: the review reads `Left`.
 - An empty section holds `- None.`
 

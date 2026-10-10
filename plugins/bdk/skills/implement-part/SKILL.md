@@ -2,7 +2,7 @@
 name: implement-part
 description: 'Implements one plan part of an OpenSpec Change on the bdk:implementer agent - checks the task contracts first and stops on a plan defect, writes a test per acceptance scenario and sees it red, builds the tasks inside the part''s files, runs the part checks until green - and writes execute/part-NN.md. Use when asked to implement, build or code one plan part (part 01, 02) of a Change, or when the execute lead runs a part. Not for the whole plan: /bdk:execute builds every part.'
 argument-hint: "[<change>] <part-id> [--run-dir <path>] [--workdir <path>] [--parts <dir>]"
-allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(mkdir -p *) Bash(cd *) Bash(git -C *) Bash(git status *) Bash(git diff *) Bash(git log *) Bash(git show *) Read Grep Glob Edit Write Agent
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(mkdir -p *) Bash(cd *) Bash(git -C *) Bash(git status *) Bash(git diff *) Bash(git log *) Bash(git show *) Bash(openspec validate *) Read Grep Glob Edit Write Agent
 ---
 
 Current BDK configuration of this project:
@@ -96,7 +96,15 @@ It runs the items of the `part` point on the files you changed (against `HEAD`, 
 
 Never run a test, linter or build command yourself, and never one that installs, spends money or reaches the network.
 
-Done when the verdict is `pass` (or `none`: no item runs at `part` on these files, stated in the report), or you have a blocker.
+When the part changed a file under `openspec/changes/<change>/specs/`, validate the Change too: OpenSpec refuses a delta it cannot parse (a requirement without a `#### Scenario:`, a section header it does not know), and `/bdk:close` cannot archive it:
+
+```
+openspec validate <change> --strict
+```
+
+With `--workdir`, run it as `cd <workdir> && openspec validate <change> --strict`. Fix each error on a delta in the part's `files` (a requirement the task adds gets the scenario the task names) and run it again: three runs in all. An error still there after the third run is a blocker of `Kind: other`, with the error as evidence. An error on a file outside the part's `files` is not the part's: note it under `Decisions taken without the user` and go on. When `openspec` is not found, write `openspec validate: not run, no OpenSpec CLI` under `## Checks` and go on: the review round and close check the delta later. A part that changed no delta runs no validation.
+
+Done when the verdict is `pass` (or `none`: no item runs at `part` on these files, stated in the report) and, for a part that changed a delta, no validation error names a delta of the part, or you have a blocker.
 
 ## 7. Write the report
 
@@ -129,7 +137,8 @@ With `Status: blocker`, add before `## Decisions taken without the user`:
 - Proposal: change task 2 to store seconds.
 ```
 
-- `Status: done` only when every acceptance scenario has its test line and the last part check passed.
+- `Status: done` only when every acceptance scenario has its test line, the last part check passed and, for a part that changed a spec delta, the last validation left no error on a delta of the part.
+- `## Checks` names each check run as `checks/<id>.json: <verdict>`, and the last validation as `openspec validate <change> --strict: pass` or `: fail` (or the `not run` line).
 - Each `## Acceptance tests` line ends exactly `; red seen; green seen`, or, for a scenario the part marks ` (behaviour present)`, exactly `; green at first run (behaviour present); green seen`, with nothing between or after; anything to say about a test goes under `## Decisions taken without the user`.
 - `Kind` is `plan-defect` (the part is wrong), `environment` (a tool or configuration is missing) or `other` (checks stay red).
 - An empty section holds `- None.` A blocker found before any edit lists `- None.` under `Changed files`.
