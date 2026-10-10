@@ -13,7 +13,7 @@ import { run } from "../src/shared/cli/index.ts";
 import { files } from "../src/shared/fs/index.ts";
 
 // The B1-sized fixture (spec skill-evals, "B1-sized fixture"; design D6 of v3-243-b1-eval-fixture,
-// D2 of v3-208-measure-speed-b1): what the three states must hold beyond building, so an edit of a part, a spec delta or the
+// D2 of v3-208-measure-speed-b1, D1 of v3-368-measure-spec-conformance-run): what the four states must hold beyond building, so an edit of a part, a spec delta or the
 // default part limits cannot break the fixture silently.
 
 const FIXTURES = join(import.meta.dirname, "..", "evals", "fixtures");
@@ -25,6 +25,7 @@ let scratch: string;
 let ready: string;
 let planned: string;
 let queued: string;
+let uncorrected: string;
 let gap: string;
 
 /** Builds a fixture the way the harness runs a scaffold: empty directory, minimal env. */
@@ -102,8 +103,9 @@ beforeAll(() => {
   ready = build("household-book.sh");
   planned = build("household-book-planned.sh");
   queued = build("household-book-queued.sh");
+  uncorrected = build("household-book-uncorrected.sh");
   gap = build("../plan-draft-household-book-gap/scaffold.sh");
-}, 4 * BUILD_LIMIT_MS);
+}, 5 * BUILD_LIMIT_MS);
 
 afterAll(() => {
   rmSync(scratch, { recursive: true, force: true });
@@ -224,6 +226,49 @@ describe("household-book-queued.sh: ready for an unattended plan-to-PR run", () 
     expect(config.settings.policy.gates).toEqual({ design: "auto", review: "auto" });
     expect(config.settings.policy.questions).toBe("decide-and-record");
     expect(config.settings.execution.lead).toBe("foreground");
+  });
+});
+
+describe("household-book-uncorrected.sh: queued as run 1 of the B1 measurement found it", () => {
+  const OPTIONS = "specs/ledger/spec.md";
+  const IMPORT_PART = `${PARTS}/04.md`;
+  const DESIGN_RUNS = ".bdk/runs/add-household-book/design";
+
+  it("documents no shared argument errors and reads the statement under the current directory", () => {
+    expect(readFileSync(join(queued, CHANGE, OPTIONS), "utf8")).toContain("import needs a file");
+    expect(readFileSync(join(uncorrected, CHANGE, OPTIONS), "utf8")).not.toContain(
+      "import needs a file",
+    );
+    expect(readFileSync(join(uncorrected, CHANGE, "design.md"), "utf8")).not.toContain(
+      "without a positional argument",
+    );
+    const importPart = readFileSync(join(uncorrected, IMPORT_PART), "utf8");
+    expect(importPart).toContain("reads join(io.cwd, file)");
+    expect(importPart).not.toContain("resolve(");
+  });
+
+  it("keeps the design gate on verify-2.md and every scenario of the queued state", () => {
+    expect(readFileSync(join(uncorrected, DESIGN_RUNS, "gate.md"), "utf8")).toBe(
+      "Gate: approved\nBy: user\nReport: design/verify-2.md\n",
+    );
+    expect(existsSync(join(uncorrected, DESIGN_RUNS, "verify-3.md"))).toBe(false);
+    expect(specScenarios(uncorrected)).toEqual(specScenarios(queued));
+  });
+
+  it("passes bdk plan check as the queued state does", async () => {
+    const { code, result } = await planCheck(uncorrected);
+    expect(result.problems).toEqual([]);
+    expect(code).toBe(0);
+  });
+
+  it("folds the difference into the planned commit, pushed, with a clean tree", () => {
+    expect(git(uncorrected, "log", "--format=%s")).toBe(git(queued, "log", "--format=%s"));
+    expect(git(uncorrected, "status", "--porcelain")).toBe("");
+    expect(git(uncorrected, "rev-parse", "origin/main")).toBe(
+      git(uncorrected, "rev-parse", "main"),
+    );
+    expect(existsSync(join(uncorrected, ".bdk/runs/run.json"))).toBe(true);
+    expect(existsSync(join(uncorrected, ".bdk/settings.local.yaml"))).toBe(true);
   });
 });
 
