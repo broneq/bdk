@@ -13,7 +13,7 @@ Arguments: $ARGUMENTS
 
 # Triage a review round
 
-Decide every undecided finding of one judged round and record each decision. You add no finding, set no level (the judge did), change no project file, commit nothing and start no agent. Run every `bdk` call as the steps write it, `"${CLAUDE_PLUGIN_ROOT}/bin/bdk"` and each argument written out, as the whole Bash command, and each Lavish command the same way: nothing before or after it, no `cd`, `;`, `&&`, `|` or `echo`, no shell variable. Any other form falls outside this skill's grants, so it is denied or asks the user for permission; the tool result shows the exit code anyway. Read files with Read, Grep and Glob, not through Bash.
+Decide every undecided finding of one judged round and record each decision. You add no finding, set no level (the judge did), change no project file, commit nothing and start no agent. Run every `bdk` call as the steps write it, `"${CLAUDE_PLUGIN_ROOT}/bin/bdk"` and each argument written out, as the whole Bash command, and each Lavish command the same way: nothing before or after it, no `cd`, `;`, `&&`, `|` or `echo`, no shell variable. Any other form falls outside this skill's grants, so it is denied or asks the user for permission; the tool result shows the exit code anyway. Write the text of `--reason` as plain words with no backtick, `$` or backslash: inside the double quotes the shell reads a backtick or `$` as a substitution, and the call is denied. Read files with Read, Grep and Glob, not through Bash.
 
 If the block above says "BDK not configured: run /bdk:setup", stop and reply with that line. If it shows the command instead of its output, run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" config show` first.
 
