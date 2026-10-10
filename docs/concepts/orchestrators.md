@@ -261,39 +261,25 @@ Triage policy, which decides in auto mode and is the preselected recommendation 
 ## `/bdk:review-round` (lead skill)
 
 ```mermaid
-sequenceDiagram
-  participant L as bdk:lead
-  participant R as reviewer x N,<br/>verifier
-  participant I as integration<br/>reviewer
-  participant E as e2e-tester
-  participant J as judge
-  L->>L: bdk git groups<br/>--record round-N:<br/>groups.json
-  par batches of<br/>execution.max-parallel
-    L->>R: /bdk:review-group<br/>per group
-    R->>R: bdk findings add
-  and
-    L->>R: verifier runs<br/>spec-conformance<br/>--round round-N
-    R->>R: round-N/spec-<br/>conformance.md,<br/>bdk findings add
-  and
-    L->>L: bdk check run round-N<br/>--at review<br/>--changed base<br/>--round N
-    Note over L: appends red checks
+flowchart TB
+  G["bdk:lead: bdk git groups --record<br/>R/review/round-N/groups.json"] --> S3
+  subgraph S3["step 3, in parallel"]
+    direction LR
+    RV["/bdk:review-group per group<br/>bdk:reviewer x N"]
+    CK["bdk check run --at review<br/>--changed base, red checks to the log"]
   end
-  par after the reviewers,<br/>verifier and check run
-    L->>I: /bdk:review-integration
-    I->>I: bdk findings add
-  and
-    opt unless only test files<br/>changed since a PASS
-      L->>E: /bdk:e2e-check
-      E->>E: bdk findings add
-    end
+  S3 -->|"every reviewer returned,<br/>check run ended"| S4
+  subgraph S4["step 4, in parallel"]
+    direction LR
+    VF["/bdk:spec-conformance --round<br/>bdk:verifier, opus<br/>round-N/spec-conformance.md"]
+    IR["/bdk:review-integration<br/>bdk:integration-reviewer, opus"]
+    E2(["/bdk:e2e-check<br/>bdk:e2e-tester, unless only tests<br/>changed since a PASS"])
   end
-  L->>J: /bdk:judge
-  J->>J: bdk findings level,<br/>bdk findings report
-  J-->>L: round-N/review.md
-  L->>L: write<br/>round-N/round.md
+  S4 -->|"all returned"| JD["/bdk:judge: bdk findings level,<br/>bdk findings report: round-N/review.md"]
+  JD --> RM["bdk:lead writes round-N/round.md"]
 ```
 
-`bdk git groups` gets `--rounds R/review`, so a later round covers only what changed since the round before, and `--plan` with the plan parts (round 1) or the fix parts of the round before, so each group is one part. Every finding lands in `round-N/findings.jsonl`. The verifier runs the check `/bdk:close` runs before the archive (`/bdk:spec-conformance`, see below) in every round, so a spec delta that misses an error message, or a requirement the code breaks for an input its scenario does not use, becomes a `blocker` finding the fix pass fixes, instead of a stop at close; it reads no E2E results, because the E2E tester logs its own failures. The integration reviewer and the E2E tester start together once the group reviewers, the verifier and the check run have ended, so your suites and the started product never compete for the same ports or browsers; the integration reviewer reads the group findings, not the E2E verdict, so it never waits for the E2E tester. A later round whose fix commits changed only test files (`testsOnly` in `groups.json`, from file names such as `test/`, `__tests__/`, `*.test.*` or `*_test.*`) runs no E2E check when the last E2E verdict passed or was skipped: the product is the one that verdict checked, so the round writes no `round-N/e2e/` and its `round.md` names the verdict it carries over. A fix that touches any other file, or a last verdict `FAIL` or `BLOCKED`, gets the full check. A worker that fails is started once more with the same prompt; a second failure goes under `Gaps` in `round.md`.
+`bdk git groups` gets `--rounds R/review`, so a later round covers only what changed since the round before, and `--plan` with the plan parts (round 1) or the fix parts of the round before, so each group is one part. Every finding lands in `round-N/findings.jsonl`. Each step starts its agents in one message, in batches of `execution.max-parallel` when they number more. The verifier runs the check `/bdk:close` runs before the archive (`/bdk:spec-conformance`, see below) in every round, so a spec delta that misses an error message, or a requirement the code breaks for an input its scenario does not use, becomes a `blocker` finding the fix pass fixes, instead of a stop at close; it reads no E2E results, because the E2E tester logs its own failures. The verifier, the integration reviewer and the E2E tester start together once the group reviewers and the check run have ended, so your suites and the started product never compete for the same ports or browsers. None of the three reads another's output: the integration reviewer reads the group findings, not the verifier's findings nor the E2E verdict, so it never waits for the slower verifier (about two minutes on opus), and a problem two of them log is a repeat the judge levels `not-a-problem`. A later round whose fix commits changed only test files (`testsOnly` in `groups.json`, from file names such as `test/`, `__tests__/`, `*.test.*` or `*_test.*`) runs no E2E check when the last E2E verdict passed or was skipped: the product is the one that verdict checked, so the round writes no `round-N/e2e/` and its `round.md` names the verdict it carries over. A fix that touches any other file, or a last verdict `FAIL` or `BLOCKED`, gets the full check. A worker that fails is started once more with the same prompt; a second failure goes under `Gaps` in `round.md`.
 
 ## `/bdk:close`
 
