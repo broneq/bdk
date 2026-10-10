@@ -2,11 +2,12 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-// craft-skills spec: bdk-craft ships skills only, and a skill ships only with an
-// `admitted` row in evals/RESULTS.md (design D3, D7 of v3-207-bdk-craft-plugin).
+// Plain-skill plugins admitted by evals (specs craft-skills and explain-plugin): each ships
+// skills only, and a skill ships only with an `admitted` row in its evals/RESULTS.md (design D3,
+// D7 of v3-207-bdk-craft-plugin; D8 of v3-383-explain-plugin).
 
 const root = join(import.meta.dirname, "..");
-const plugin = join(root, "plugins", "bdk-craft");
+const PLUGINS = ["bdk-craft", "bdk-explain"];
 
 interface Verdict {
   skill: string;
@@ -36,7 +37,7 @@ function parseVerdicts(markdown: string): Verdict[] {
     .map((match) => ({ skill: match[1] ?? "", verdict: match[2] ?? "" }));
 }
 
-function casesOf(skill: string): string[] {
+function casesOf(plugin: string, skill: string): string[] {
   const evals = join(plugin, "evals");
   return directories(evals).filter(
     (name) =>
@@ -45,13 +46,15 @@ function casesOf(skill: string): string[] {
   );
 }
 
-describe("bdk-craft plugin", () => {
-  it("has a manifest named bdk-craft", () => {
+describe.each(PLUGINS)("%s plugin", (name) => {
+  const plugin = join(root, "plugins", name);
+
+  it("has a manifest with its directory name", () => {
     const manifest = readJson(join(plugin, ".claude-plugin", "plugin.json")) as Record<
       string,
       unknown
     >;
-    expect(manifest.name).toBe("bdk-craft");
+    expect(manifest.name).toBe(name);
     expect(manifest.version).toMatch(/^\d+\.\d+\.\d+$/);
   });
 
@@ -80,17 +83,18 @@ describe("bdk-craft plugin", () => {
     const marketplace = readJson(join(root, ".claude-plugin", "marketplace.json")) as {
       plugins: { name: string; source: unknown }[];
     };
-    const entry = marketplace.plugins.find((p) => p.name === "bdk-craft");
+    const entry = marketplace.plugins.find((p) => p.name === name);
     expect(entry?.source).toEqual({
       source: "git-subdir",
       url: "broneq/bdk",
-      path: "plugins/bdk-craft",
+      path: `plugins/${name}`,
       ref: "release",
     });
   });
 });
 
-describe("bdk-craft admission record", () => {
+describe.each(PLUGINS)("%s admission record", (name) => {
+  const plugin = join(root, "plugins", name);
   const recordPath = join(plugin, "evals", "RESULTS.md");
   const verdicts = existsSync(recordPath) ? parseVerdicts(readFileSync(recordPath, "utf8")) : [];
   const shipped = directories(join(plugin, "skills"));
@@ -117,7 +121,7 @@ describe("bdk-craft admission record", () => {
   });
 
   it("keeps at least two eval cases per shipped skill", () => {
-    const thin = shipped.filter((skill) => casesOf(skill).length < 2);
+    const thin = shipped.filter((skill) => casesOf(plugin, skill).length < 2);
     expect(thin, "skills with fewer than two cases").toEqual([]);
   });
 

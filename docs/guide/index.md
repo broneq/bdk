@@ -26,6 +26,7 @@ Restart Claude Code, then:
 |---|---|---|
 | `bdk` | The workflow: `/bdk:setup`, `/bdk:propose`, `/bdk:design`, `/bdk:plan`, `/bdk:execute`, `/bdk:auto-review`, `/bdk:close`, the autopilot `/bdk:run`, plus `/bdk:debug` for bugs and `/bdk:pr-review` for any open pull request | [skills](/reference/bdk/skills), [agents](/reference/bdk/agents), [CLI](/reference/bdk/cli), [settings](/reference/bdk/settings), [hooks](/reference/bdk/hooks) |
 | `bdk-craft` | Engineering skills Claude picks up by itself: test-driven development, debugging, refactoring, testing strategy, Mermaid diagrams. Works without `bdk` | [bdk-craft](/reference/bdk-craft) |
+| `bdk-explain` | Answers a question about your code, a flow or a concept with an interactive HTML page in your browser ([guide](./explain.md)). Works without `bdk` | [bdk-explain](/reference/bdk-explain) |
 | `bdk-skill-kit` | A validator and authoring guidance for Agent Skills and subagent files | [bdk-skill-kit](/reference/bdk-skill-kit) |
 | `git-identity` | Binds a project to one GitHub account and one commit identity, so every `gh` call and commit in it uses the right one | [git-identity](/reference/git-identity) |
 
@@ -61,5 +62,6 @@ Each box is a command you can run yourself, one at a time, or let `/bdk:run` run
 4. [Change the configuration](./configuration.md) when the defaults do not fit.
 5. Know [what a run costs and what it touches](./footprint.md).
 6. [Diagnose a finished run](./diagnostics.md): where its time and money went.
+7. [Explain your code as a page](./explain.md) with the `bdk-explain` plugin.
 
 This site documents BDK v3. For BDK v2 (`v2.7.0`), read the [v2 README](https://github.com/broneq/bdk/blob/v2.7.0/README.md).

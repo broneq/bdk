@@ -1,6 +1,7 @@
 {
   "plugins/bdk": "2.7.0",
   "plugins/bdk-craft": "0.1.0",
+  "plugins/bdk-explain": "0.1.0",
   "plugins/bdk-skill-kit": "0.3.0",
   "plugins/git-identity": "0.2.0"
 }

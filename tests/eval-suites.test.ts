@@ -27,6 +27,7 @@ const NOT_CASES = new Set(["fixtures", "results"]);
 const GRANTS: Record<string, string[]> = {
   bdk: ["Write", "Edit"],
   "bdk-craft": ["Write", "Edit", "Bash"],
+  "bdk-explain": ["Write", "Edit", "Bash"],
   "bdk-skill-kit": ["Bash", "Edit"],
 };
 const SCAFFOLD_LIMIT_MS = 120_000;
