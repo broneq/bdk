@@ -13,7 +13,7 @@ Arguments: $ARGUMENTS
 
 # Judge a review round
 
-Set the level of every finding of one round, then write the round report. You look for no new problem, add no finding, record no decision (triage decides what happens), change no file and start no agent. Run `bdk` always as `"${CLAUDE_PLUGIN_ROOT}/bin/bdk"`, each command on its own, without pipes or `&&`.
+Set the level of every finding of one round, then write the round report. You look for no new problem, add no finding, record no decision (triage decides what happens), change no file and start no agent. Run every `bdk` call as the steps write it, `"${CLAUDE_PLUGIN_ROOT}/bin/bdk"` and each argument written out, as the whole Bash command: nothing before or after it, no `cd`, `;`, `&&`, `|` or `echo`, no shell variable. The permission rule allows `bdk` only on its own, so another form can be denied, and a denied call ends the block. The `--workdir` form below is the one exception. Read and list files with Read, Grep and Glob, not through Bash.
 
 If the block above says "BDK not configured: run /bdk:setup", stop and pass that line on. If it shows the command instead of its output, run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" config show` first.
 
@@ -29,13 +29,13 @@ A caller that reviews code outside the working directory (`/bdk:pr-review` revie
 
 With a round directory in the arguments or the request (`.bdk/runs/<change>/review/round-<N>/`), use it. Otherwise use the highest `.bdk/runs/manual/review/round-<N>/` that holds `findings.jsonl` and no `review.md`. The log is `<round-dir>/findings.jsonl`; the Change is `openspec/changes/<change>/`, `<change>` being the directory under `.bdk/runs/`.
 
-Run `bdk findings list <log> --level unleveled`. These are the findings to judge; a finding that already has a level keeps it.
+Run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" findings list <log> --level unleveled`. These are the findings to judge; a finding that already has a level keeps it.
 
 Done when you have the list (it may be empty: go to step 4).
 
 ## 2. Read what the product must do
 
-Read `proposal.md` and the scenarios under `specs/` of the Change: a level depends on whether the product breaks them. When a finding says a test is missing, also read the `Acceptance scenarios` and `Verified by` lines of the plan parts under `plan/parts/` (step 3 tells an owed test from an optional one by them). Read a rule a finding cites in the rules of `bdk rules for --stage review --files <file>` for its file. A `rule` that is a path (`CLAUDE.md`, `src/AGENTS.md`, `.claude/rules/testing.md`) cites a project instruction: read that file, under `--workdir` when given.
+Read `proposal.md` and the scenarios under `specs/` of the Change: a level depends on whether the product breaks them. When a finding says a test is missing, also read the `Acceptance scenarios` and `Verified by` lines of the plan parts under `plan/parts/` (step 3 tells an owed test from an optional one by them). Read a rule a finding cites in the rules of `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" rules for --stage review --files <file>` for its file. A `rule` that is a path (`CLAUDE.md`, `src/AGENTS.md`, `.claude/rules/testing.md`) cites a project instruction: read that file, under `--workdir` when given.
 
 Done when you know the scenarios, the intent, and each rule and instruction file a finding cites.
 
@@ -69,7 +69,7 @@ Done when every finding of step 1 has a level.
 
 ## 4. Write the report
 
-Run `bdk findings list <log> --level unleveled` again: it must list none (a finding added meanwhile is judged as in step 3). Then run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" findings report <log>`. It writes `review.md` in the round directory, which finishes the round, and prints its path and the counts.
+Run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" findings list <log> --level unleveled` again: it must list none (a finding added meanwhile is judged as in step 3). Then run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" findings report <log>`. It writes `review.md` in the round directory, which finishes the round, and prints its path and the counts.
 
 Done when the report exists and counts 0 unleveled.
 
