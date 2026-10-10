@@ -298,13 +298,14 @@ bash "$(dirname "$0")/../fixtures/tiny-ledger.sh"
 
 ### B1-sized fixture
 
-The speed targets and the plan shape are measured on a Change the size of B1 (27 tasks, 62 files; architecture design, "Product requirements", Speed). Three shared fixtures hold one, in three states of the same project: the Node CLI `ledger` (a book in `ledger.json`, `add` and `balance`, 11 passing tests, its main spec), configured for BDK with a `node-test` test tool and a `cli` e2e tool, and the Change `add-household-book`, which grows it into a household book: accounts and transfers, categories and rules, CSV statement import, budgets and recurring entries, list and export, reports. Seven new capabilities and the modified `ledger`, 71 scenarios.
+The speed targets and the plan shape are measured on a Change the size of B1 (27 tasks, 62 files; architecture design, "Product requirements", Speed). Four shared fixtures hold one, in four states of the same project: the Node CLI `ledger` (a book in `ledger.json`, `add` and `balance`, 11 passing tests, its main spec), configured for BDK with a `node-test` test tool and a `cli` e2e tool, and the Change `add-household-book`, which grows it into a household book: accounts and transfers, categories and rules, CSV statement import, budgets and recurring entries, list and export, reports. Seven new capabilities and the modified `ledger`, 71 scenarios.
 
 | Fixture | State | Start a run at |
 |---|---|---|
 | `household-book.sh` | proposal, spec deltas and design; `.bdk/runs/add-household-book/design/verify-1.md` (`FAIL`), `verify-2.md` and `verify-3.md` (`PASS`) and `gate.md` (`Gate: approved`, naming `verify-3.md`); no plan | plan |
 | `household-book-planned.sh` | the same, plus the plan (7 parts, 27 tasks, 62 files, 3 waves: `01`, then `02`-`06`, then `07`) and `plan/verify-1.md` (`Verdict: PASS`), in one more commit | execute |
 | `household-book-queued.sh` | the planned state, no further commit, plus a bare `origin` holding `main`, a local git identity, the offline `gh` stand-in at `.git/bdk-eval/bin/gh`, `.bdk/runs/run.json` queueing `add-household-book`, and `.bdk/settings.local.yaml` with both gates `auto`, `policy.questions: decide-and-record` and `execution.lead: foreground` | plan-to-PR, unattended (`/bdk:run`) |
+| `household-book-uncorrected.sh` | the queued state with the Change as run 1 of the B1 measurement found it, before the correction of `v3-208-measure-speed-b1` design D6: no shared argument errors in spec `ledger` "Options", design D2 or part 01, part 04 reading `join(io.cwd, file)`, the design gate on `verify-2.md`; `household-book/uncorrected.patch`, folded into the planned commit and pushed | plan-to-PR, unattended, with the spec gaps and the path defect a review round must find |
 
 The Change's markdown lives in `fixtures/household-book/` (`change/` mirrors `openspec/changes/add-household-book/`, `runs/` the approval records); the scripts copy it. Every approval report is what `verify-design` or `verify-plan` wrote on these files. `plugins/bdk/tests/household-book.test.ts` checks for free what the planned state must hold: `bdk plan check` passes with 7 parts in 3 waves, 27 tasks, 62 distinct files, every scenario named by exactly one part. After editing a part, a spec delta or the design, run it, and run the verifier again before replacing a report.
 
@@ -357,6 +358,16 @@ The archived Change `v3-208-measure-speed-b1` holds the method of the speed meas
 Recorded 2026-10-08 (main thread opus, agents as their files name): execute 7.8 min, review 11.6 min (two rounds), close 3.0 min; plan-to-PR 22.9 min of machine time, $7.42, against the targets of 15 and 45 min.
 
 Recorded 2026-10-09 after #263 (Claude Code 2.1.295, same method): review round 1 took 192 s, its integration reviewer starting 3 s after the last group reviewer and in the same message as the E2E tester; round 2 228 s, set by its E2E tester (#264); the review stage 8.9 min, execute 6.2 min. The run stopped at close on `spec-conformance` (#265). The archived Change `v3-263-integration-reviewer-early` holds the per-worker times.
+
+`household-book-uncorrected.sh` starts the same run from the Change as run 1 of the B1 measurement found it: the spec gaps and the absolute-path defect that close refused in that run, before the fixture was corrected. A review round's `spec-conformance` worker (#265) must find them, and the fix pass must fix them, before close. Its plan record is the one written for that plan, not a verifier run on it. Build it and run it as the queued state:
+
+```bash
+mkdir -p /tmp/household-book-uncorrected && cd /tmp/household-book-uncorrected && bash <repo>/plugins/bdk/evals/fixtures/household-book-uncorrected.sh
+PATH="$PWD/.git/bdk-eval/bin:$PATH" LEDGER_TODAY=2026-10-08 \
+  claude -p "/bdk:run" --plugin-dir <repo>/plugins/bdk --permission-mode auto --output-format stream-json --verbose > ../uncorrected-run.jsonl
+```
+
+Recorded 2026-10-10 (Claude Code 2.1.296, main thread opus): round 1's verifier found every gap of run 1 (6 findings, all levelled `blocker` and fixed), and rounds 2 and 3 passed the fixes. Close then stopped on a requirement without a scenario that round 1's fix part had added (#373), which the round checks had listed only under Should consider (#374). After one scenario added by hand, a second session opened the PR with `Verdict: PASS`. Plan-to-PR took 38.6 min of machine time and $14.84; the verifier adds about 3 min and $0.75 to each round (#370). The archived Change `v3-368-measure-spec-conformance-run` holds the report.
 
 ## Free check in CI
 
