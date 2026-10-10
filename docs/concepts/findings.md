@@ -16,7 +16,7 @@ flowchart TB
 | Source | Looks at |
 |---|---|
 | `/bdk:review-group` on `bdk:reviewer`, one per group of files | the diff of its group, against the rules for those files (`bdk rules for`), your project instructions on the way to them, and the Change |
-| `/bdk:spec-conformance --round` on `bdk:verifier` | the spec deltas against the product, as `/bdk:close` checks them before the archive: a scenario or requirement the code breaks, behaviour (an error message, an option) no delta describes; the finding sits where the fix goes, in the code or in the delta |
+| `/bdk:spec-conformance --round` on `bdk:verifier` | the spec deltas against the product, as `/bdk:close` checks them before the archive: a scenario or requirement the code breaks, behaviour (an error message, an option) no delta describes, a delta `openspec validate --strict` refuses (a requirement without a scenario); the finding sits where the fix goes, in the code or in the delta |
 | `/bdk:review-integration` on `bdk:integration-reviewer` | the whole diff: what breaks between the groups |
 | `/bdk:e2e-check` on `bdk:e2e-tester` | the running product, along the paths of each user process the proposal adds or changes; a finding points at the proposal line |
 | `bdk check run` | your test, lint and build commands; a red check is a finding |
@@ -29,7 +29,7 @@ Reviewers only report: they change no code and decide nothing.
 
 | Level | When |
 |---|---|
-| `blocker` | the product breaks a spec scenario or the intent of the Change; the specs would not describe the product after archive (a spec check finding that holds, even when the product works: close would refuse it); a check is red; a security hole; data loss; a regression |
+| `blocker` | the product breaks a spec scenario or the intent of the Change; the specs would not describe the product after archive (a spec check finding that holds, even when the product works: close would refuse it, as it refuses a delta OpenSpec does not accept); a check is red; a security hole; data loss; a regression |
 | `should-fix` | the product works, but the change breaks a rule or a project instruction, or has a concrete maintenance cost; or a scenario the Change owes has no test |
 | `nice-to-have` | an improvement whose absence costs nothing concrete, including a test no owed scenario asks for |
 | `not-a-problem` | the failure scenario does not hold, it is out of the Change's scope, already handled, or a duplicate |

@@ -1,42 +1,4 @@
-# bdk-spec-conformance Specification
-
-## Purpose
-Defines the `spec-conformance` block of the `bdk` plugin: in every review round and before a Change is archived, it checks that the Change's spec deltas describe the product after the Change - against the code and the E2E results - so archive never turns a wrong statement into the living documentation.
-
-## Requirements
-
-### Requirement: Block on the verifier agent
-
-`spec-conformance` SHALL be a skill of the `bdk` plugin (`plugins/bdk/skills/spec-conformance/`) whose check runs on the agent `bdk:verifier` (spec `bdk-verifier`), never in the conversation that wrote the Change. When it is invoked anywhere else, such as a user typing `/bdk:spec-conformance` in the main thread, it SHALL start `bdk:verifier` with a prompt naming the skill and its arguments, and with the model `models.verifier` when the configuration sets it, wait for it, and reply with the agent's verdict line and report path, without checking anything itself. The block SHALL get the configuration from its own `bdk config show` block; in a project that is not configured it SHALL stop with the line that command prints and write nothing.
-
-#### Scenario: Typed in the main thread
-
-- **WHEN** a user types `/bdk:spec-conformance add-total` in the main thread
-- **THEN** the skill starts `bdk:verifier` to run `bdk:spec-conformance` for `add-total`, and replies with the verdict line and the path of the report the agent wrote
-
-#### Scenario: Typed in the main thread with a model set
-
-- **WHEN** a user types `/bdk:spec-conformance add-total` in the main thread of a project whose configuration sets `models.verifier: sonnet`
-- **THEN** the skill starts `bdk:verifier` with `model` `sonnet`
-
-#### Scenario: Not configured
-
-- **WHEN** `spec-conformance` runs in a project without `.bdk/settings.yaml`
-- **THEN** it writes no file and its reply says `BDK not configured: run /bdk:setup`
-
-### Requirement: Input
-
-The block SHALL take the name of a Change and, optionally, `--base <ref>`, the branch the Change's code is compared with, and `--round <round dir>`, the directory of a review round it runs in (Requirement "Run inside a review round"). Without a Change name it SHALL use the only Change under `openspec/changes/` other than `archive/`, and stop naming what it found when there is none or several. Without `--base` it SHALL use the branch `origin/HEAD` names, else `main`. It SHALL read the Change's `proposal.md` and every spec delta (`openspec/changes/<change>/specs/**/spec.md`), the main spec under `openspec/specs/` of every capability a delta modifies, removes or renames, the code the Change touches (`git diff <base>...HEAD`) and the code each scenario runs through. With `--round` it SHALL also read the Change's `design.md`, as intent only, to place each finding where its fix goes, never as evidence of what the code does. Without `--round` it SHALL also read the latest E2E results of the Change when there are any: of the files `.bdk/runs/<change>/e2e/verdict.md` and `.bdk/runs/<change>/review/round-<N>/e2e/verdict.md`, the one modified last, with the path files next to it.
-
-#### Scenario: No E2E results
-
-- **WHEN** the Change has no `e2e/verdict.md`, neither in `.bdk/runs/<change>/` nor in any review round
-- **THEN** the block checks the deltas against the code alone and its report says under `Checked` that no E2E results were read
-
-#### Scenario: Latest E2E results
-
-- **WHEN** `review/round-1/e2e/verdict.md` says `Verdict: FAIL` and the later `review/round-2/e2e/verdict.md` says `Verdict: PASS`
-- **THEN** the block reads the round 2 results, and its report names `review/round-2/e2e/verdict.md` under `Checked`
+## MODIFIED Requirements
 
 ### Requirement: What the block checks
 
@@ -90,20 +52,6 @@ Every `Must address` item SHALL name the spec location (file and requirement or 
 - **WHEN** `openspec validate add-total --strict` reports that the Change is valid
 - **THEN** the report's `Checked` section says that the validation passed
 
-### Requirement: Report file
-
-Without `--round`, the block SHALL write one file, `.bdk/runs/<change>/close/spec-conformance.md`, in the verifier report body (spec `bdk-verifier`), and change no other file. When that file already exists from an earlier run, the block SHALL read it first, keep the ID of every problem still open, give a new problem the next unused number, write `Closed: <IDs>` under the verdict line, and replace the file. Its reply SHALL be at most three lines: the verdict line, the report path, and the `Must address` IDs.
-
-#### Scenario: Rerun after a fix
-
-- **WHEN** `close/spec-conformance.md` holds `M1` and `M2`, the Change fixed `M1`, and the block runs again
-- **THEN** the new `close/spec-conformance.md` holds `Closed: M1` under the verdict line and keeps `M2` with its ID
-
-#### Scenario: Read by the run status
-
-- **WHEN** the block wrote `close/spec-conformance.md` starting with `Verdict: PASS`
-- **THEN** `bdk run status` no longer derives the step `spec-conformance` of row 9 for that Change
-
 ### Requirement: Run inside a review round
 
 With `--round <round dir>`, the block SHALL run the same check as a worker of a review round, so that what close would refuse is found while the review loop can still fix it:
@@ -132,7 +80,7 @@ Its reply SHALL be at most three lines: the verdict line, the report path, and t
 
 ### Requirement: Eval cases of spec conformance in the review round
 
-The suite SHALL hold the block cases `spec-conformance-round`, `judge-spec-conformance` and `plan-fixes-spec-delta`, tagged `block`, built from the shared fixture `tally-ledger-path`: the `tally-change` fixture plus a commit whose proposal asks for a short error on a bad amount and a ledger file chosen by `TALLY_LEDGER` (absolute or relative), whose delta documents `TALLY_LEDGER` with a relative-path scenario only and lists no error, and whose code prints `tally: not an amount: <text>` and joins `TALLY_LEDGER` to the current directory. `spec-conformance-round` SHALL grade both findings in the round log and no `close/spec-conformance.md`; `judge-spec-conformance` SHALL grade the level `blocker` for both findings when they are given unleveled; `plan-fixes-spec-delta` SHALL grade, from both findings decided `fix`, fix parts whose `files` hold the spec delta and `bin/tally.js`, an `index.md` with nothing under `## Not planned`, and a task for the error-message finding that names a `#### Scenario:` with WHEN and THEN and `openspec validate add-total --strict`. The block cases `implement-part-spec-delta` and `conform-part-spec-delta` SHALL start from the shared fixture `tally-spec-fix-part` (`tally-ledger-path` plus round 1 with the error-message finding decided `fix` and fix part `01`, whose one task adds the error to the delta with a scenario, verified by `openspec validate add-total --strict` and the next round's spec check): `implement-part-spec-delta` SHALL grade `Status: done`, the error in the delta under a requirement with a `#### Scenario:`, the validation named under the report's `## Checks`, and `bin/tally.js` unchanged; `conform-part-spec-delta`, with the part built and a report with no test, SHALL grade `Verdict: PASS`; `conform-part-spec-invalid`, with the part built but the added requirement left without a scenario, SHALL grade `Verdict: FAIL`, a `Left` item naming task 1 and no edit of the delta. The orchestrator case `auto-review-first-round` SHALL grade that the round lead starts `bdk:verifier` for `spec-conformance` with `--round` and `run_in_background: false`, and that `round-1/spec-conformance.md` exists.
+The suite SHALL hold the block cases `spec-conformance-round`, `judge-spec-conformance` and `plan-fixes-spec-delta`, tagged `block`, built from the shared fixture `tally-ledger-path`: the `tally-change` fixture plus a commit whose proposal asks for a short error on a bad amount and a ledger file chosen by `TALLY_LEDGER` (absolute or relative), whose delta documents `TALLY_LEDGER` with a relative-path scenario only and lists no error, and whose code prints `tally: not an amount: <text>` and joins `TALLY_LEDGER` to the current directory. `spec-conformance-round` SHALL grade both findings in the round log and no `close/spec-conformance.md`; `judge-spec-conformance` SHALL grade the level `blocker` for both findings when they are given unleveled; `plan-fixes-spec-delta` SHALL grade, from both findings decided `fix`, fix parts whose `files` hold the spec delta and `bin/tally.js` and an `index.md` with nothing under `## Not planned`. The block cases `implement-part-spec-delta` and `conform-part-spec-delta` SHALL start from the shared fixture `tally-spec-fix-part` (`tally-ledger-path` plus round 1 with the error-message finding decided `fix` and fix part `01`, whose one task adds the error to the delta, verified by the next round's spec check): `implement-part-spec-delta` SHALL grade `Status: done`, the error in the delta and `bin/tally.js` unchanged; `conform-part-spec-delta`, with the part built and a report with no test, SHALL grade `Verdict: PASS`. The orchestrator case `auto-review-first-round` SHALL grade that the round lead starts `bdk:verifier` for `spec-conformance` with `--round` and `run_in_background: false`, and that `round-1/spec-conformance.md` exists.
 
 The suite SHALL also hold the block cases `spec-conformance-delta-refused` and `judge-delta-refused`, tagged `block`, on the shared fixture `tally-delta-refused`: the `tally-change` fixture plus a commit whose proposal asks for a short error on a bad amount, whose code prints `tally: not an amount: <text>` and exits 1, and whose delta adds the requirement Bad amount saying so without a scenario, so `openspec validate add-total --strict` fails while the product does what the delta says; round 1 waits with an empty log. `spec-conformance-delta-refused` SHALL grade, for `--round`, `Verdict: FAIL` in the round's report and a `spec-conformance` finding on the delta naming the missing scenario; `judge-delta-refused` SHALL grade the level `blocker` for that finding given unleveled.
 
@@ -154,9 +102,4 @@ The suite SHALL also hold the block cases `spec-conformance-delta-refused` and `
 #### Scenario: Spec-delta fix planned
 
 - **WHEN** `plan-fixes-spec-delta` runs with the plugin
-- **THEN** a fix part under `round-1/fixes/parts/` lists `openspec/changes/add-total/specs/tally/spec.md` in `files` with a task that names a `#### Scenario:` for the error and `openspec validate add-total --strict`, and `round-1/fixes/index.md` holds `- None.` under `## Not planned`
-
-#### Scenario: Invalid delta fails the conform
-
-- **WHEN** `conform-part-spec-invalid` runs with the plugin, with the Bash grants the eval README names for it
-- **THEN** `execute/conform-01.md` starts with `Verdict: FAIL` and names task 1 under `## Left`
+- **THEN** a fix part under `round-1/fixes/parts/` lists `openspec/changes/add-total/specs/tally/spec.md` in `files`, and `round-1/fixes/index.md` holds `- None.` under `## Not planned`
