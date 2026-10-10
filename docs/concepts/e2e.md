@@ -20,7 +20,7 @@ Every path names the proposal line it comes from. A `break` path whose outcome t
 
 ## When it runs
 
-- In every review round of `/bdk:auto-review`, after the reviewers and your checks of the `review` point have ended, so your suites and the started product never compete for the same ports or browsers. A broken path becomes a finding, usually a `blocker` ([findings](./findings.md)).
+- In every review round of `/bdk:auto-review`, after the reviewers and your checks of the `review` point have ended, together with the spec check and the integration reviewer, so your suites and the started product never compete for the same ports or browsers. A broken path becomes a finding, usually a `blocker` ([findings](./findings.md)).
 - `/bdk:diagnose-bug` in `/bdk:debug` starts the product the same way, through a `tools.e2e` item, to reproduce a bug before any fix.
 - On its own: `/bdk:e2e-check <change>`.
 

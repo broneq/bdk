@@ -81,7 +81,7 @@ One acceptance test is not seen red: the test of a scenario the part marks ` (be
 
 ## Review
 
-A review round runs these blocks in parallel, then the judge:
+A review round runs the group reviewers and your checks in parallel, then the spec check, the integration reviewer and the E2E check together, then the judge:
 
 | Block | Agent | Looks for | Leaves alone |
 |---|---|---|---|
