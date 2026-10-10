@@ -20,7 +20,7 @@ context: |
     edit it, and do not repeat its root causes.
   - Task scope: one GitHub issue per task in the v3.0 milestone with Goal,
     Scope, Input, Acceptance signal, "To resolve in the spec" and Dependencies
-    sections, shown on https://github.com/users/broneq/projects/1. The
+    sections (plus Budget when the task pays for model runs), shown on https://github.com/users/broneq/projects/1. The
     Dependencies section names each dependency, and each one on an open issue
     is a GitHub "blocked by" relation; an issue without dependencies says
     "None." (CLAUDE.md, SDLC "Dependencies").
@@ -53,6 +53,7 @@ rules:
     - A living spec is never written under docs/.
   design:
     - Each decision records the alternatives considered and why they lost; cite the ADR or decision ID when a choice follows from an existing decision.
+    - A design that reports a paid measurement (eval runs, an unattended /bdk:run) records the total cost in USD and machine time of every paid run the Change made, probe, failed and repeated runs included, or names each run whose cost is unknown (spec skill-evals, "Paid measurement discipline").
   tasks:
     - Code tasks are test-first - the failing test is its own step before the implementation step.
     - A skill is built or rewritten with /skill-creator, and its eval case is its own step before the skill text. A CLI helper, hook or workflow is added only for a problem an eval or a measurement showed; the task names that problem.

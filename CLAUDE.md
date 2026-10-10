@@ -63,7 +63,7 @@ Every piece of work is a GitHub issue, an OpenSpec Change and a PR into `staging
   ITEM=$(gh project item-list 1 --owner broneq --format json -L 500 -q ".items[] | select(.content.number==N) | .id")
   gh project item-edit --project-id PVT_kwHOAYCCG84Bkk4V --id "$ITEM" --field-id PVTSSF_lAHOAYCCG84Bkk4VzhjU_Ws --single-select-option-id <phase-option-id>
   ```
-  The issue body holds the task's scope (Goal, Scope, Input, Acceptance signal, To resolve in the spec, Dependencies).
+  The issue body holds the task's scope (Goal, Scope, Input, Acceptance signal, To resolve in the spec, Dependencies). An issue that pays for model runs (evals, an unattended `/bdk:run` on a fixture) also holds a `Budget` section: the most it may spend and why the question needs a paid run - check that no merged work answers it already and that the fixture reaches the path under test (`plugins/bdk/evals/README.md`, "Before a paid run").
 - **Dependencies.** Analyse the dependencies of every new issue before or right after creating it. Read the open issues of the milestone and the last closed ones (`gh issue list --milestone v3.0 --state open -L 200`, `gh issue list --milestone v3.0 --state closed -L 30`) and look for: work the new issue needs merged first, an open issue that changes the same files or specs in a conflicting way, and open issues that need the new one first. Many issues have none: then the `Dependencies` section says `None.`; it is never left out. Each dependency on an open issue is named in that section and set as a GitHub "blocked by" relation; a closed one is only named. One relation shows on both issues, so set each once, from the new issue (tested with gh 2.101.0):
   ```bash
   gh issue create ... --blocked-by 200,201 --blocking 300     # at creation
