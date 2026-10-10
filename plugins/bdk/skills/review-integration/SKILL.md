@@ -13,7 +13,7 @@ Arguments: $ARGUMENTS
 
 # Review a Change as a whole
 
-The group reviewers read the files of one group each. You read the Change from its intent down and find what no single group shows: a scenario the product does not reach, a scenario no test proves, and a contract one part changes that another part uses differently. Append each problem to the round's findings log. You change no file, run no test, linter or build, set no level and start no agent. Run `bdk` always as `"${CLAUDE_PLUGIN_ROOT}/bin/bdk"`, each command on its own, without pipes or `&&`.
+The group reviewers read the files of one group each. You read the Change from its intent down and find what no single group shows: a scenario the product does not reach, a scenario no test proves, and a contract one part changes that another part uses differently. Append each problem to the round's findings log. You change no file, run no test, linter or build, set no level and start no agent. Run every `bdk` call as the steps write it, `"${CLAUDE_PLUGIN_ROOT}/bin/bdk"` and each argument written out, as the whole Bash command: nothing before or after it, no `cd`, `;`, `&&`, `|` or `echo`, no shell variable. The permission rule allows `bdk` only on its own, so another form can be denied, and a denied call ends the block. The `--workdir` form below is the one exception. Read and list files with Read, Grep and Glob, not through Bash.
 
 If the block above says "BDK not configured: run /bdk:setup", stop and pass that line on. If it shows the command instead of its output, run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" config show` first.
 
@@ -27,9 +27,9 @@ A caller that reviews code outside the working directory (`/bdk:pr-review` revie
 
 ## 1. Find the round
 
-With a round directory in the arguments or the request (`.bdk/runs/<change>/review/round-<N>/`), use it. Otherwise use the manual round: `.bdk/runs/manual/review/round-<N>/`, `N` the lowest number whose directory holds no `review.md`; when it holds no `groups.json`, record it with `bdk git groups <base> --rounds .bdk/runs/manual/review --record <round-dir>` (add `--plan openspec/changes/<change>/plan/parts` when `openspec/changes/` holds exactly one Change besides `archive/`; `<base>` is the `--base` given, else the branch `git symbolic-ref --short refs/remotes/origin/HEAD` names, else `main`).
+With a round directory in the arguments or the request (`.bdk/runs/<change>/review/round-<N>/`), use it. Otherwise use the manual round: `.bdk/runs/manual/review/round-<N>/`, `N` the lowest number whose directory holds no `review.md`; when it holds no `groups.json`, record it with `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" git groups <base> --rounds .bdk/runs/manual/review --record <round-dir>` (add `--plan openspec/changes/<change>/plan/parts` when `openspec/changes/` holds exactly one Change besides `archive/`; `<base>` is the `--base` given, else the branch `git symbolic-ref --short refs/remotes/origin/HEAD` names, else `main`).
 
-Read `groups.json`: `range`, `anchor` and the `integration` group's files. An `anchor` of `kind` `round` makes this a fix round: it reviews only the fixes made since round `anchor.round`. The log is `<round-dir>/findings.jsonl`; run `bdk findings list <log>` and keep what the group reviews found, so you do not repeat it. In a fix round, also run `bdk findings list` on the log of every earlier round (`<round-dir>/../round-<k>/findings.jsonl`, `k` below this round's number) and keep those findings too: each already has a level and a decision, and raising it again would undo that decision. The Change is `openspec/changes/<change>/`, `<change>` being the directory under `.bdk/runs/`.
+Read `groups.json`: `range`, `anchor` and the `integration` group's files. An `anchor` of `kind` `round` makes this a fix round: it reviews only the fixes made since round `anchor.round`. The log is `<round-dir>/findings.jsonl`; run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" findings list <log>` and keep what the group reviews found, so you do not repeat it. In a fix round, also run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" findings list` on the log of every earlier round (`<round-dir>/../round-<k>/findings.jsonl`, `k` below this round's number) and keep those findings too: each already has a level and a decision, and raising it again would undo that decision. The Change is `openspec/changes/<change>/`, `<change>` being the directory under `.bdk/runs/`.
 
 Done when you know the range, the changed files, the findings so far, and the Change.
 
@@ -69,4 +69,4 @@ Done when every problem has its line in the log.
 
 ## 5. Verify and return
 
-Run `bdk findings list <log>` and check that each id you added is listed with the source `review-integration`. Return only: the number of findings you added, and their ids with summaries, one per line; "no findings" when there were none. Mention no problem that is not in the log: the caller acts on the log, and a problem only your reply names is one nobody levelled.
+Run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" findings list <log>` and check that each id you added is listed with the source `review-integration`. Return only: the number of findings you added, and their ids with summaries, one per line; "no findings" when there were none. Mention no problem that is not in the log: the caller acts on the log, and a problem only your reply names is one nobody levelled.
