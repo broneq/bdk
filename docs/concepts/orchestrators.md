@@ -152,11 +152,13 @@ flowchart TB
   IMP --> RED["acceptance tests,<br/>written first<br/>bdk check run NN-red<br/>--at part --kind test<br/>each red for<br/>the right reason,<br/>green if marked<br/>behaviour present"]
   RED --> BUILD["build the tasks"]
   BUILD --> PC["part checks<br/>bdk check run NN<br/>--at part --changed HEAD<br/>red: fix, run again<br/>3 runs in all"]
-  PC -->|"R/execute/part-NN.md"| RI{{"part report"}}
+  PC --> OV["a spec delta changed:<br/>openspec validate<br/>&lt;change&gt; --strict<br/>error: fix, run again<br/>3 runs in all"]
+  OV -->|"R/execute/part-NN.md"| RI{{"part report"}}
   RI -->|"plan-defect or environment"| PB["part blocked"]
-  RI -->|"other: checks still red,<br/>or no report"| RETRY
+  RI -->|"other: checks or validation<br/>still red, or no report"| RETRY
   RI -->|"done: checks green"| CONF["Agent bdk:conformer<br/>/bdk:conform-part<br/>fixes what keeps behaviour"]
-  CONF --> CC["conform checks, only<br/>after an edit<br/>bdk check run conform-NN<br/>--at part --changed HEAD<br/>red after a fix:<br/>that fix undone"]
+  CONF --> CV["a spec delta changed:<br/>openspec validate<br/>&lt;change&gt; --strict<br/>error: its task left"]
+  CV --> CC["conform checks, only<br/>after an edit<br/>bdk check run conform-NN<br/>--at part --changed HEAD<br/>red after a fix:<br/>that fix undone"]
   CC -->|"R/execute/conform-NN.md"| RC{{"conform verdict"}}
   RC -->|"FAIL: a check red, a task<br/>left, or no report"| RETRY{{"attempts left?<br/>policy.budgets.part-attempts,<br/>default 3"}}
   RETRY -->|"yes (the last one on<br/>policy.escalation.model<br/>and .effort)"| IMP
@@ -192,9 +194,11 @@ sequenceDiagram
   Note over I,B: acceptance tests must be red
   I->>I: build the tasks
   I->>B: bdk check run NN --at part<br/>--changed HEAD (up to 3 runs)
+  I->>I: a delta changed: openspec<br/>validate --strict (up to 3 runs)
   I-->>L: R/execute/part-NN.md
   L->>F: part NN, --run-dir, --workdir
   F->>B: bdk rules for<br/>--stage execute
+  F->>F: a delta changed: openspec<br/>validate --strict, an error left
   F->>F: fix what keeps behaviour,<br/>leave the rest
   F->>B: bdk check run<br/>conform-NN (only<br/>after an edit)
   F-->>L: R/execute/conform-NN.md
@@ -212,6 +216,8 @@ Every check of the execute stage is a `bdk check run`, which runs your `tools.te
 | `conform-NN` | `bdk:conformer`, [`/bdk:conform-part`](/reference/bdk/skills#conform-part) step 5, only when it edited a file | `part`, the files changed against `HEAD` | a fix that broke it is undone; still red, the verdict is `FAIL` and the lead retries the part. With no edit it runs nothing and names `NN` unchanged |
 | `merge-NN` | `bdk:implementer`, [`/bdk:resolve-conflict`](/reference/bdk/skills#resolve-conflict), only after a merge conflict | `part`, the conflicted files and the `files` of each part behind them | fix and run again, three runs in all; still red, one more resolve on `policy.escalation.model`, then the merge is aborted and the part blocked |
 | `wave-N` | `bdk:lead`, [`/bdk:execute-waves`](/reference/bdk/skills#execute-waves) step 7, once every part of the wave is on the Change branch | `wave`, the files changed since the wave's base | `/bdk:resolve-conflict --wave N` repairs what two parts broke together and the lead commits it; still red, one more repair on `policy.escalation.model`, then the wave is blocked and no later wave starts |
+
+**A part that changes a spec delta.** OpenSpec refuses a delta it cannot parse, such as a requirement without a scenario, and `/bdk:close` cannot archive it. So when a part's diff changes a file under `openspec/changes/<change>/specs/` (a review fix part may), the implementer runs `openspec validate <change> --strict` after its part checks and fixes what it reports, three runs in all, and the conformer runs it again whatever the implementer reports: an error on a delta of the part is left under its task, so the verdict is `FAIL` and the lead retries the part. Both reports name the run under `## Checks`. It is the one command besides `bdk check run` the execute workers run; without an `openspec` command they write `not run` and go on, and the review round and close read the delta later.
 
 **Which files a run covers.** `--changed <ref>` hands the run the files git reports changed against `<ref>`, untracked ones included. An item whose `command` holds `{files}` gets the changed files its `paths` match, and is skipped when none matches; an item with `paths` and no `{files}` runs its whole command only when one of its files changed; any other item runs its whole command ([configuration](/guide/configuration#examples)). A part that runs in a worktree runs its checks there, on the Change branch as it was when the wave started plus this part; the wave check is the first run on all the parts of a wave together.
 
