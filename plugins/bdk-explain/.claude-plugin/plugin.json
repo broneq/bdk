@@ -1,0 +1,10 @@
+{
+  "name": "bdk-explain",
+  "description": "Explains code, a flow or a concept as one self-contained, interactive HTML page opened in your browser, without leaving files in git status. Works alone, without bdk.",
+  "version": "0.1.0",
+  "author": {
+    "name": "broneq"
+  },
+  "repository": "https://github.com/broneq/bdk",
+  "license": "MIT"
+}

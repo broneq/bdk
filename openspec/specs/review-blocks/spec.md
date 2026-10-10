@@ -83,9 +83,11 @@ The judge SHALL judge every finding of the log that has no level, once each: it 
 | Level | When |
 |---|---|
 | `blocker` | the product breaks a spec scenario or the intent of the Change; the spec deltas would not describe the product after archive (a `spec-conformance` finding whose problem holds); a check is red; a security hole; data loss; a regression of existing behaviour |
-| `should-fix` | the product works, but the change breaks a rule or a project instruction, or has a concrete maintenance cost that the finding names |
-| `nice-to-have` | an improvement whose absence costs nothing concrete |
+| `should-fix` | the product works, but the change breaks a rule or a project instruction, or has a concrete maintenance cost that the finding names; or a scenario the Change owes has no test |
+| `nice-to-have` | an improvement whose absence costs nothing concrete, including a test that no scenario the Change owes asks for |
 | `not-a-problem` | the failure scenario does not hold, the finding is out of the Change's scope or already handled, or it repeats an earlier finding of the log, whose id the reason names |
+
+The Change SHALL be taken to owe a scenario's test when the scenario is in the Change's spec deltas, or a plan part of the Change names it under `Acceptance scenarios` or `Verified by`. A finding that such a scenario has no test SHALL hold when the judge finds no test that would fail if the scenario's behaviour broke; it SHALL be `should-fix` while the product does what the scenario says, and `blocker` when the product breaks the scenario.
 
 Of two findings that repeat each other, the judge SHALL level the later one in the log `not-a-problem` and judge the earlier one on its own. A rule violation by itself SHALL NOT be a `blocker`. For a `spec-conformance` finding the judge SHALL check both sides: what the cited spec location says, and what the code does for the input the evidence names; the finding holds when they disagree, and `/bdk:close` would refuse to archive the Change while it is open. A `spec-conformance` finding whose evidence is an error of `openspec validate --strict` holds while the delta still has what the error names (a requirement without a scenario), even though the product does what the delta says; it is a `blocker`, because `openspec archive` refuses the Change. The judge SHALL add no finding, record no decision, and leave a finding that already has a level as it is.
 
@@ -113,6 +115,16 @@ Of two findings that repeat each other, the judge SHALL level the later one in t
 
 - **WHEN** the log holds an unleveled `spec-conformance` finding that the requirement Bad amount of the `add-total` delta has no scenario, quoting `openspec validate add-total --strict`, and the delta still has none, while `bin/tally.js` prints the error the requirement names
 - **THEN** its level is `blocker`, not `nice-to-have` or `not-a-problem`, although the product works
+
+#### Scenario: Scenario of the Change without a test
+
+- **WHEN** the log holds an unleveled finding that the scenario `Empty ledger` of the `add-total` delta has no test, part 01 lists it under `Acceptance scenarios`, and `tally total` prints `Total: 0.00` without a ledger
+- **THEN** its level is `should-fix`, not `nice-to-have`
+
+#### Scenario: Test gap no scenario asks for
+
+- **WHEN** the log holds an unleveled finding that no test covers `tally total` on a ledger of negative amounts, and no scenario of the delta or a plan part names that case
+- **THEN** its level is `nice-to-have`
 
 ### Requirement: Project instructions in the review
 
@@ -161,6 +173,7 @@ The suite SHALL also hold the block case `judge-previous-repeat`, tagged `block`
 
 The suite SHALL also hold the block case `judge-spec-conformance`, tagged `block`, on the shared fixture `tally-ledger-path` (spec `bdk-spec-conformance`, Requirement "Eval cases of spec conformance in the review round"); it SHALL grade that both unleveled `spec-conformance` findings, the error message no delta lists and the `TALLY_LEDGER` path the code breaks, are leveled `blocker`.
 
+The suite SHALL also hold the block case `judge-scenario-no-test`, tagged `block`, on the shared fixture `tally-total-untested` with round 1 holding three unleveled findings and no report, none naming its scenario: no test covers `tally total` without a ledger, nor `tally --help`, whose scenarios `Empty ledger` and `Help` the delta holds, part 01 lists and the code does; and no test covers `tally total` on negative amounts, which no scenario asks for. It SHALL grade that the first two are leveled `should-fix` and the third `nice-to-have`, that the round report is written, and that no project file was edited.
 
 The suite SHALL also hold the block case `review-integration-outside-fix-scope`, tagged `block`, on the `monthly-report` fixture with round 1 triaged (the parse bug of amounts with fewer than two decimals decided `accept`, a test gap decided `fix`), the fix pass committed (only `src/parse.test.js` changed) and round 2 recorded with `p03` and `integration` groups and an empty log. It SHALL grade that round 2's log holds a `review-integration` finding naming the cents and dollars seam with evidence saying it lies outside the fix scope, that no finding repeats the accepted parse bug, and that no project file was edited.
 
@@ -183,6 +196,11 @@ The suite SHALL also hold the block case `review-integration-outside-fix-scope`,
 
 - **WHEN** `judge-spec-conformance` runs with the plugin, with the Bash grants the eval README names for the review cases
 - **THEN** both `spec-conformance` findings have the latest level `blocker`
+
+#### Scenario: Scenario without a test levelled to be fixed
+
+- **WHEN** `judge-scenario-no-test` runs with the plugin, 3 times, with the Bash grants the eval README names for the review cases
+- **THEN** in each run the findings on `Empty ledger` and `Help` have the latest level `should-fix` and the negative-amounts finding `nice-to-have`
 
 #### Scenario: Defect outside the fix scope is logged
 
