@@ -30,7 +30,7 @@ tools:
       command: pnpm vitest related --run {files}
       when:
         - part
-      # Globs of the files the command checks, matched like rule paths. The command gets only the changed files they match, and is skipped when files changed and none matches
+      # Globs of the files the command checks, matched like rule paths. The command gets only the files they match (the picked tests of a test item at `part`, the changed files otherwise), and is skipped when it gets files and none matches
       paths:
         - src/**/*.ts
   # Commands that lint the project
@@ -65,43 +65,43 @@ tools:
 
 Type: list of items, each with an `id`; layers merge items by `id` · Default: `[]`
 
-Commands that run the project's tests; `bdk check run` runs them, each by its `id`.
+Commands that run the project's tests; `bdk check plan` prints each as a line the agent runs, named by its `id`.
 
 | Key | Type | Required or default | Description |
 |---|---|---|---|
 | `<id>.id` | string | Required | Names the command; other layers and `bdk config set` address it by this id. |
 | `<id>.command` | string | Required | Shell command run from the project root. A `{files}` in it is replaced by the changed files, and the command is skipped when there are none. |
 | `<id>.when` | list of `part`, `wave`, `review` |  | Check points the command runs at: `part` after each plan part, `wave` after each wave of execute, `review` in each review round; every point when absent. |
-| `<id>.timeout` | integer, 1 to 86400 |  | Seconds before `bdk check run` stops the command; 600 when absent. |
-| `<id>.paths` | list of strings |  | Globs of the files the command checks, matched like rule paths. The command gets only the changed files they match, and is skipped when files changed and none matches; every file when absent. |
+| `<id>.timeout` | integer, 1 to 86400 |  | Seconds the agent's Bash call of the command may run, capped by `env.BASH_MAX_TIMEOUT_MS` of `.claude/settings.json` (600 s by default); 600 when absent. |
+| `<id>.paths` | list of strings |  | Globs of the files the command checks, matched like rule paths. The command gets only the files they match (the picked tests of a test item at `part`, the changed files otherwise), and is skipped when it gets files and none matches; every file when absent. |
 
 ### `tools.lint` {#tools-lint}
 
 Type: list of items, each with an `id`; layers merge items by `id` · Default: `[]`
 
-Commands that lint the project; `bdk check run` runs them, each by its `id`.
+Commands that lint the project; `bdk check plan` prints each as a line the agent runs, named by its `id`.
 
 | Key | Type | Required or default | Description |
 |---|---|---|---|
 | `<id>.id` | string | Required | Names the command; other layers and `bdk config set` address it by this id. |
 | `<id>.command` | string | Required | Shell command run from the project root. A `{files}` in it is replaced by the changed files, and the command is skipped when there are none. |
 | `<id>.when` | list of `part`, `wave`, `review` |  | Check points the command runs at: `part` after each plan part, `wave` after each wave of execute, `review` in each review round; every point when absent. |
-| `<id>.timeout` | integer, 1 to 86400 |  | Seconds before `bdk check run` stops the command; 600 when absent. |
-| `<id>.paths` | list of strings |  | Globs of the files the command checks, matched like rule paths. The command gets only the changed files they match, and is skipped when files changed and none matches; every file when absent. |
+| `<id>.timeout` | integer, 1 to 86400 |  | Seconds the agent's Bash call of the command may run, capped by `env.BASH_MAX_TIMEOUT_MS` of `.claude/settings.json` (600 s by default); 600 when absent. |
+| `<id>.paths` | list of strings |  | Globs of the files the command checks, matched like rule paths. The command gets only the files they match (the picked tests of a test item at `part`, the changed files otherwise), and is skipped when it gets files and none matches; every file when absent. |
 
 ### `tools.build` {#tools-build}
 
 Type: list of items, each with an `id`; layers merge items by `id` · Default: `[]`
 
-Commands that build the project; `bdk check run` runs them, each by its `id`.
+Commands that build the project; `bdk check plan` prints each as a line the agent runs, named by its `id`.
 
 | Key | Type | Required or default | Description |
 |---|---|---|---|
 | `<id>.id` | string | Required | Names the command; other layers and `bdk config set` address it by this id. |
 | `<id>.command` | string | Required | Shell command run from the project root. A `{files}` in it is replaced by the changed files, and the command is skipped when there are none. |
 | `<id>.when` | list of `part`, `wave`, `review` |  | Check points the command runs at: `part` after each plan part, `wave` after each wave of execute, `review` in each review round; every point when absent. |
-| `<id>.timeout` | integer, 1 to 86400 |  | Seconds before `bdk check run` stops the command; 600 when absent. |
-| `<id>.paths` | list of strings |  | Globs of the files the command checks, matched like rule paths. The command gets only the changed files they match, and is skipped when files changed and none matches; every file when absent. |
+| `<id>.timeout` | integer, 1 to 86400 |  | Seconds the agent's Bash call of the command may run, capped by `env.BASH_MAX_TIMEOUT_MS` of `.claude/settings.json` (600 s by default); 600 when absent. |
+| `<id>.paths` | list of strings |  | Globs of the files the command checks, matched like rule paths. The command gets only the files they match (the picked tests of a test item at `part`, the changed files otherwise), and is skipped when it gets files and none matches; every file when absent. |
 
 ### `tools.e2e` {#tools-e2e}
 

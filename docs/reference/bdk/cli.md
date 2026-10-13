@@ -10,7 +10,7 @@ The plugin ships the `bdk` command line; its skills run it. Each block is what t
 Usage: bdk <group> [<verb>] [arguments] [flags]
 
 Command groups:
-  check        Run the project's test, lint and build commands
+  check        Plan the project's test, lint and build commands and record their result
   config       Show, check and set the BDK configuration
   diagnostics  Count a run from the host transcripts: time, tokens, cost share and waste
   findings     Record findings, levels and decisions of a review round; list them folded; write the report
@@ -34,10 +34,11 @@ Run bdk <group> --help for the commands of a group.
 ```text
 Usage: bdk check <verb> [arguments] [flags]
 
-Run the project's test, lint and build commands
+Plan the project's test, lint and build commands and record their result
 
 Commands:
-  run  Run the configured test, lint and build commands and write checks/<id>.json
+  plan    Resolve the configured test, lint and build commands into lines to run; runs none of them
+  record  Record the exit codes of a planned check's lines and write checks/<id>.json
 
 Flags:
   --help, -h  Show help
@@ -47,30 +48,56 @@ Flags:
 Run bdk check <verb> --help for the arguments and flags of a command.
 ```
 
-### `bdk check run` {#check-run}
+### `bdk check plan` {#check-plan}
 
 ```text
-Usage: bdk check run <run-dir> <id> [flags]
+Usage: bdk check plan <run-dir> <id> [flags]
 
-Run the configured test, lint and build commands and write checks/<id>.json
+Resolve the configured test, lint and build commands into lines to run; runs none of them
 
 Arguments:
   <run-dir>  The Change's run directory, such as .bdk/runs/<change>; must exist
-  <id>       Kebab-case name of the result, such as a part id or round-2
+  <id>       Kebab-case name of the check, such as a part id or round-2
 
 Flags:
-  --at <value>       Check point: part, wave or review; runs only the items whose when holds it, and items without when
+  --at <value>       Check point: part, wave or review; plans only the items whose when holds it, and items without when
   --changed <value>  A git revision; adds the files changed against it (and untracked files) to the run's files
-  --scope <value>    A file to check, relative to the project root; a {files} command gets the files its paths match (repeatable)
+  --scope <value>    A file of the run, relative to the project root; a {files} command gets the files its paths match (repeatable)
+  --tests <value>    A test file to run, relative to the project root; test items then take only these, lint and build items the run's files (repeatable)
   --kind <value>     Only this kind: test, lint or build; all three when absent (repeatable)
-  --round <value>    Append red checks as findings to review/round-<n>/findings.jsonl
   --help, -h         Show help
   --version          Print the bdk version
   --json             Print the result as one JSON document
 
 Exit codes:
   0  success
-  1  a check is red (failed or timed out); the result is printed
+  2  usage error
+  3  environment error
+  4  internal error
+```
+
+### `bdk check record` {#check-record}
+
+```text
+Usage: bdk check record <run-dir> <id> [flags]
+
+Record the exit codes of a planned check's lines and write checks/<id>.json
+
+Arguments:
+  <run-dir>  The Change's run directory, as given to bdk check plan
+  <id>       The id of the plan, as given to bdk check plan
+
+Flags:
+  --exit <value>       <kind>-<tool>=<code>: the exit code the Bash tool reported for that check's line (repeatable)
+  --timed-out <value>  <kind>-<tool>: a check whose line the Bash tool ended at its timeout (repeatable)
+  --round <value>      Append red checks as findings to review/round-<n>/findings.jsonl
+  --help, -h           Show help
+  --version            Print the bdk version
+  --json               Print the result as one JSON document
+
+Exit codes:
+  0  success
+  1  a check is red (failed, timed out or not run); the result is printed
   2  usage error
   3  environment error
   4  internal error

@@ -64,7 +64,7 @@ The lead SHALL be the only writer of `<run dir>/state.json`, in the schema of sp
 #### Scenario: Resume before the wave check
 
 - **WHEN** `state.json` marks parts `01` and `02` of wave 1 `done` and wave 1 `pending` with a base, and `/bdk:execute` runs again
-- **THEN** no implementer starts for wave 1, the lead runs `bdk check run <run dir> wave-1 --at wave --changed <base>`, and only then starts wave 2
+- **THEN** no implementer starts for wave 1, the lead runs the wave check (`bdk check plan <run dir> wave-1 --at wave --changed <base>`, each printed line, `bdk check record <run dir> wave-1`), and only then starts wave 2
 
 ### Requirement: Result and blockers
 
@@ -93,7 +93,7 @@ The lead SHALL write `<run dir>/execute/result.md`, replacing an earlier one: th
 
 ### Requirement: Wave check
 
-Before it starts the first part of a wave, the lead SHALL record the wave's base, `git rev-parse HEAD` on the Change branch, in `state.json` as `waves.<n>.base` with `status` `pending`, unless the state already holds a base for that wave. After every part of the wave is `done` and committed, the lead SHALL run `bdk check run <run dir> wave-<n> --at wave --changed <base>` in the main checkout. A `pass` or `none` verdict SHALL mark the wave `done`. On `fail` the lead SHALL start `bdk:implementer` running `repair-wave` with the arguments `<change> <n> --base <base> --run-dir <absolute run dir>` (plus `--parts <dir>` when it runs other parts), with `model` `models.implementer.model` and `effort` `models.implementer.effort`, each when set. On `Status: done` it SHALL commit the changed files on the Change branch with a message that names the wave, and mark the wave `done`; otherwise it SHALL run `repair-wave` once more on `policy.escalation.model` and `policy.escalation.effort`, committing on `Status: done`, and when that also fails, mark the wave `blocked` with the report's kind and evidence as `reason`, keep its uncommitted changes, and start no later wave. A wave with a blocked part SHALL get no wave check.
+Before it starts the first part of a wave, the lead SHALL record the wave's base, `git rev-parse HEAD` on the Change branch, in `state.json` as `waves.<n>.base` with `status` `pending`, unless the state already holds a base for that wave. After every part of the wave is `done` and committed, the lead SHALL run the check run `wave-<n>` in the main checkout (spec `bdk-cli/check`): `bdk check plan <run dir> wave-<n> --at wave --changed <base>`, then each printed line as its own Bash call with the printed Bash timeout, one after another and character for character, then `bdk check record <run dir> wave-<n>` with the exit code each call reported. A `pass` or `none` verdict SHALL mark the wave `done`. On `fail` the lead SHALL start `bdk:implementer` running `repair-wave` with the arguments `<change> <n> --base <base> --run-dir <absolute run dir>` (plus `--parts <dir>` when it runs other parts), with `model` `models.implementer.model` and `effort` `models.implementer.effort`, each when set. On `Status: done` it SHALL commit the changed files on the Change branch with a message that names the wave, and mark the wave `done`; otherwise it SHALL run `repair-wave` once more on `policy.escalation.model` and `policy.escalation.effort`, committing on `Status: done`, and when that also fails, mark the wave `blocked` with the report's kind and evidence as `reason`, keep its uncommitted changes, and start no later wave. A wave with a blocked part SHALL get no wave check.
 
 On a new execute run, a wave whose parts are all `done` and whose state is not `done` SHALL get its wave check (and repair) before any later wave starts. The uncommitted changes of a repair that failed stay in the main checkout for the user; the next run stops on them as on any uncommitted change (spec "Branch and working tree").
 
@@ -111,6 +111,11 @@ On a new execute run, a wave whose parts are all `done` and whose state is not `
 
 - **WHEN** `checks/wave-1.json` stays red after two `repair-wave` runs
 - **THEN** `state.json` marks wave 1 `blocked`, no part of wave 2 starts, and `execute/result.md` starts with `Status: blocked` and names `execute/wave-1.md`
+
+#### Scenario: Wave check commands in the lead's transcript
+
+- **WHEN** the `tools.test` item `unit` has `command: pnpm test` and `when: [wave, review]`, and wave 1 is merged
+- **THEN** the lead's transcript holds the Bash call `pnpm test </dev/null > <run dir>/checks/wave-1/test-unit.txt 2>&1` between `bdk check plan` and `bdk check record`, and `checks/wave-1.json` holds `pnpm test`, its `cwd` and its exit code
 
 ### Requirement: One part goes to implement-part
 

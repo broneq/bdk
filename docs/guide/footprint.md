@@ -22,7 +22,7 @@ BDK is worth its cost on a change with behaviour to specify and check. A typo, a
 
 ## What it may do without asking
 
-`/bdk:setup` adds these rules to `.claude/settings.json`, so the stages run their commands without a prompt each time: `Bash(bdk *)` and `Bash(*/bin/bdk *)`, `Bash(openspec *)`, `Bash(git *)`, `Bash(gh *)`, and your project's test, lint, build and E2E commands. `git *` includes `git push`, and `gh *` includes `gh pr create`. Claude Code asks you before it writes these rules; narrow or remove any of them in `.claude/settings.json` and the stages ask instead.
+`/bdk:setup` adds these rules to `.claude/settings.json`, so the stages run their commands without a prompt each time: `Bash(bdk *)` and `Bash(*/bin/bdk *)`, `Bash(openspec *)`, `Bash(git *)`, `Bash(gh *)`, your project's test, lint, build and E2E commands, and `Edit(.bdk/runs/**)`, so an agent running a check command can write its output file under `.bdk/runs/`. When a check item's `timeout` is above 600 seconds it also sets `env.BASH_MAX_TIMEOUT_MS`, the cap of one Bash call ([long checks](/guide/configuration#long-checks)). `git *` includes `git push`, and `gh *` includes `gh pr create`. Claude Code asks you before it writes these rules; narrow or remove any of them in `.claude/settings.json` and the stages ask instead.
 
 What the stages actually do with them:
 
@@ -41,8 +41,8 @@ What the stages actually do with them:
 | `openspec/config.yaml`, `openspec/schemas/bdk/` | yes | `/bdk:setup` |
 | `openspec/changes/<change>/` | yes, with the Change | propose, design, plan |
 | `openspec/changes/archive/`, `openspec/specs/` | yes | `/bdk:close` (the archive and the merged specs) |
-| `.bdk/runs/` | no (git-ignored) | every stage ([run state](/concepts/run-state)) |
-| `.claude/settings.json` | yours to decide | `/bdk:setup` (the permission rules above) |
+| `.bdk/runs/` | no (git-ignored) | every stage ([run state](/concepts/run-state)); the checks write `checks/<id>/plan.json`, one output file per command and `checks/<id>.json` |
+| `.claude/settings.json` | yours to decide | `/bdk:setup` (the permission rules above, and `env.BASH_MAX_TIMEOUT_MS` for a long check) |
 | `.gitignore` | yes | `/bdk:setup` (two lines) |
 | `.bdk/tmp/` | no (ignored by its own `.gitignore`) | scratch files of BDK plugins, such as the pages of [`bdk-explain`](./explain.md); delete it at any time |
 
@@ -52,7 +52,7 @@ What the stages actually do with them:
 - `gh` talks to GitHub: issues read, a pull request opened, a review posted.
 - `npx` downloads `lavish-axi` (the decision pages) from npm when a stage first needs it; the browser E2E check installs Playwright from npm into the run directory when your project has none.
 
-The `bdk` command line itself makes no network calls; the project commands it runs for you (`bdk check run`) do whatever they do.
+The `bdk` command line itself makes no network calls; it runs none of your project's commands: `bdk check plan` prints them and the agents run them, and they do whatever they do.
 
 ## Sources
 

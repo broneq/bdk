@@ -1,8 +1,7 @@
-// An in-memory file system and a fake shell for the check slice tests.
+// An in-memory file system and a fake git for the check slice tests.
 
 import type { Entry, Files } from "../../shared/fs/index.ts";
 import { GitError } from "../../shared/git/index.ts";
-import type { Shell, ShellOptions, ShellOutcome } from "../../shared/shell/index.ts";
 
 export const ROOT = "/work/app";
 export const RUN = ".bdk/runs/v3-1-x";
@@ -28,26 +27,6 @@ export function memory(initial: Record<string, string>): Files & {
     writeText: (path, text) => data.set(path, text),
     appendText: (path, text) => data.set(path, (data.get(path) ?? "") + text),
   };
-}
-
-export interface Script {
-  readonly output: string;
-  readonly outcome: ShellOutcome;
-}
-
-/** A shell that writes each command's scripted output; an unscripted command exits 0 silently. */
-export function fakeShell(
-  files: Files,
-  scripts: Readonly<Record<string, Script>> = {},
-): Shell & { readonly calls: (ShellOptions & { readonly command: string })[] } {
-  const calls: (ShellOptions & { readonly command: string })[] = [];
-  const shell = (command: string, options: ShellOptions): Promise<ShellOutcome> => {
-    calls.push({ command, ...options });
-    const script = scripts[command] ?? { output: "", outcome: { kind: "exit", code: 0 } };
-    files.writeText(options.output, script.output);
-    return Promise.resolve(script.outcome);
-  };
-  return Object.assign(shell, { calls });
 }
 
 /** A git that answers by its arguments joined with spaces; an unscripted call exits 128. */

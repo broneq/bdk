@@ -1,5 +1,5 @@
 ---
-description: "/bdk:cli sends work to the stage skill instead of driving writing bdk commands: asked to carry issue 42 through every stage, the session names /bdk:run and runs no bdk findings, config set or check run command."
+description: "/bdk:cli sends work to the stage skill instead of driving writing bdk commands: asked to carry issue 42 through every stage, the session names /bdk:run and runs no bdk findings, config set or check record command."
 tags: [block]
 max_turns: 25
 allowed_tools: [Read, Glob, Grep, Skill, Bash]

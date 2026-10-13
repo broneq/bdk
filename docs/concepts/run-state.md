@@ -39,7 +39,7 @@ openspec/specs/<capability>/spec.md   main specs: openspec archive merges the de
     execute/conform-NN.md             /bdk:conform-part
     execute/wave-N.md                 /bdk:repair-wave
     execute/result.md                 execute lead
-    checks/<id>.json, checks/<id>/    bdk check run
+    checks/<id>.json, checks/<id>/    bdk check plan, record
     e2e/<process>--<path>.md          /bdk:e2e-check run alone (and verdict.md)
     review/round-N/groups.json        bdk git groups --record
     review/round-N/findings.jsonl     reviewers, spec check, e2e, checks, judge, triage
@@ -74,7 +74,7 @@ openspec/specs/<capability>/spec.md   main specs: openspec archive merges the de
 | `execute/conform-NN.md` | `bdk:conformer` | the lead (commits only on `PASS`), the implementer's retry | the gate before a part's commit | the part is conformed again |
 | `execute/wave-N.md` | `bdk:implementer` repairing a red wave check | the lead (commits the repair only on `Status: done`), `/bdk:execute` (a wave blocker) | what two parts broke together and how it was repaired | the lead runs the wave check again on the next `/bdk:execute` |
 | `execute/result.md` | the execute lead | `/bdk:execute`, `/bdk:debug` | the stage's outcome and its blockers | `/bdk:execute` resumes from `state.json` |
-| `checks/<id>.json`, `checks/<id>/` | `bdk check run` | implementers (the output of a red check), `/bdk:plan-fixes`, the round summary | the record of every test, lint and build run, with its check point, the revision it compared against, and its output | nothing reads it to decide |
+| `checks/<id>.json`, `checks/<id>/` | `bdk check plan` (`checks/<id>/plan.json`), the agent's run of each line (`checks/<id>/<kind>-<tool>.txt`), `bdk check record` (`checks/<id>.json`) | implementers (the output of a red check), `/bdk:plan-fixes`, the round summary | the record of every test, lint and build run, with its check point, the revision it compared against, and its output | nothing reads it to decide |
 | `review/round-N/e2e/` (`e2e/` when run alone): `<process>--<path>.md`, screenshots and video, `verdict.md` | `bdk:e2e-tester` | the review round, `/bdk:spec-conformance`, `/bdk:close` (the verdict goes into the PR body) | the evidence of each path on the running product; absent in a later round that carried the last verdict over because its fixes changed only test files | spec conformance has no E2E evidence |
 | `review/round-N/groups.json` | `bdk git groups` | the round's reviewers and its E2E decision (`testsOnly`), and the next round, which reviews only the commits after this round's head | the reviewed range, its test files and its groups | the next round falls back to the whole branch |
 | `review/round-N/spec-conformance.md` | `bdk:verifier` in the round (`/bdk:spec-conformance --round`) | `round.md`, you | the spec check of the round; its problems are also findings in the round's log | the round's spec check runs again with the round |
@@ -135,7 +135,7 @@ sequenceDiagram
     L->>L: commit the part
     L->>R: write state.json<br/>(part done or blocked)
     opt every part of the wave done
-      L->>R: bdk check run wave-N:<br/>checks/wave-N.json
+      L->>R: bdk check plan wave-N, each line,<br/>bdk check record: checks/wave-N.json
       opt red wave check
         L->>I: /bdk:repair-wave N
         I->>R: execute/wave-N.md
@@ -154,7 +154,7 @@ sequenceDiagram
 
 ```mermaid
 flowchart TB
-  W["/bdk:review-group x N: add<br/>/bdk:spec-conformance --round: add<br/>/bdk:review-integration: add<br/>/bdk:e2e-check: add<br/>bdk check run: red checks<br/>/bdk:judge: level<br/>/bdk:triage: decide"]
+  W["/bdk:review-group x N: add<br/>/bdk:spec-conformance --round: add<br/>/bdk:review-integration: add<br/>/bdk:e2e-check: add<br/>bdk check record --round: red checks<br/>/bdk:judge: level<br/>/bdk:triage: decide"]
   W -->|"append"| F[("round-N/<br/>findings.jsonl")]
   F -->|"report"| REP[("round-N/<br/>review.md")]
   F -->|"list --decision fix"| PF["/bdk:plan-fixes"]

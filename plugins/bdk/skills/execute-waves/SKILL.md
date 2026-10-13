@@ -99,10 +99,16 @@ Done when every part of the wave is `done`, or one is `blocked`.
 Each part's own check covers the files it changed; two parts green alone can be red together, when a later one changes what an earlier one built. With every part of the wave committed on the Change branch, run:
 
 ```
-"${CLAUDE_PLUGIN_ROOT}/bin/bdk" check run <run dir> wave-<n> --at wave --changed <base>
+"${CLAUDE_PLUGIN_ROOT}/bin/bdk" check plan <run dir> wave-<n> --at wave --changed <base>
 ```
 
-with `<base>` from `waves.<n>.base` in the state. It runs the items of the `wave` point, such as the project's whole test suite, on what the wave changed.
+with `<base>` from `waves.<n>.base` in the state. It runs nothing: it plans the items of the `wave` point, such as the project's whole test suite, on what the wave changed, and prints, per check, a header with its Bash timeout and the line to run indented under it. Run each printed line as its own Bash call from the project root, character for character, with the `timeout` of its header, one after another (never in parallel and never in the background), and add nothing to it (no `cd`, pipe, `tail` or `echo`); the Bash tool reports the exit code (a result that shows no `Exit code` line is code 0), and a non-zero code is a result, not an error. Then record the codes:
+
+```
+"${CLAUDE_PLUGIN_ROOT}/bin/bdk" check record <run dir> wave-<n> --exit <kind>-<tool>=<code> ...
+```
+
+one `--exit` per line with its code, or `--timed-out <kind>-<tool>` for a line the tool ended at its timeout. It writes `checks/wave-<n>.json` and prints the verdict. A line the host refuses to run is recorded without a code (`not-run`, so the verdict is `fail`), and the repair below meets it as an environment blocker.
 
 - Verdict `pass` or `none`: mark the wave `done` and write the state.
 - Verdict `fail`: start one foreground Agent call (`run_in_background: false`), `subagent_type: "bdk:implementer"`, prompt `Run the skill bdk:repair-wave with the arguments: <change> <n> --base <base> --run-dir <run dir>`, `model` `models.implementer.model` and `effort` `models.implementer.effort`, each when set. Read `<run dir>/execute/wave-<n>.md`.

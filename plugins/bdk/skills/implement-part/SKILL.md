@@ -62,13 +62,13 @@ Done when every task passed the check, or you stopped on a defect.
 
 For each acceptance scenario, write a test that encodes its WHEN and its THEN, in the project's test conventions, inside the part's `files`. Name the scenario in the test's name or a nearby line, so a reader finds it.
 
-Run them before any code of the tasks:
+Run them before any code of the tasks, as a check (see "How to run a check" below) with the id `<part-id>-red`, on the test items of the part point and on these tests only:
 
 ```
-"${CLAUDE_PLUGIN_ROOT}/bin/bdk" check run <run-dir> <part-id>-red --at part --kind test --scope <test file> --scope <test file>
+"${CLAUDE_PLUGIN_ROOT}/bin/bdk" check plan <run-dir> <part-id>-red --at part --kind test --tests <test file> --tests <test file>
 ```
 
-`--at part` runs only the test items meant for a part (`when` holds `part`, or no `when`), so a whole suite kept for the wave or the review does not run here. See each acceptance test fail: the lines printed under a red check are only its last 20, and when they do not show every acceptance test failing (`(last 20 lines; ...)` under them says they are cut), read the output file with Read and find each test's own failure there. Each test must fail because the behaviour is missing (a missing export, a wrong value), not because the test is broken (a syntax error, a wrong import path, a typo in the fixture). Fix a broken test and run again. A test whose failure you did not read is not seen red: run the red check again, never infer it. A verdict `none` means no `tools.test` item runs at `part` on these files (none is configured for that point, or the `paths` of each skip them): go to step 7 with `Kind: environment` and the line `no tools.test item runs at part on these files; add one with /bdk:setup`.
+`--at part` plans only the test items meant for a part (`when` holds `part`, or no `when`), so a whole suite kept for the wave or the review does not run here. See each acceptance test fail: the lines `bdk check record` prints under a red check are only its last 20, and when they do not show every acceptance test failing (`(last 20 lines; ...)` under them says they are cut), read the output file with Read and find each test's own failure there. Each test must fail because the behaviour is missing (a missing export, a wrong value), not because the test is broken (a syntax error, a wrong import path, a typo in the fixture). Fix a broken test and run the check again. A test whose failure you did not read is not seen red: run the red check again, never infer it. A plan with nothing to run (`nothing to run`) means no `tools.test` item runs at `part` on these tests (none is configured for that point, or the `paths` of each skip them): go to step 7 with `Kind: environment` and the line `no tools.test item runs at part on these files; add one with /bdk:setup`.
 
 A scenario the part lists with the suffix ` (behaviour present)` is the exception: its author traced the code and found the behaviour already there, so the part only adds the missing test, and that test must **pass** in this run. Run the red check for it all the same, with the other acceptance tests: its passing run is the only evidence that the behaviour is present, and your report line claims it. Find the test's own pass in the output, as you would a failure. The part and the code must agree; when they do not, the plan is wrong, and a retry cannot change that: stop and go to step 7 with `Kind: plan-defect`, having written no code:
 
@@ -87,13 +87,21 @@ Done when every task is built.
 
 ## 6. Run the part checks
 
+First pick the tests of the part, the ones that show it works and broke nothing:
+
+- the acceptance tests of step 4;
+- the existing tests of the modules you changed: the test file next to a changed source file, or the tests that import it (Grep for its module name in the test files);
+- the end-to-end specs of the flows the part touched, when the project has them (`e2e/`, `tests/e2e/`, `*.spec.ts` of Playwright): a spec that drives a page, command or endpoint whose code you changed.
+
+Pick only files that exist. No E2E spec for a flow is fine: then no E2E item runs, which is the point (a change to `src/checkout.ts` runs `e2e/checkout.spec.ts`, not every spec, and a part with no E2E spec runs no E2E suite). Then run the check with the id `<part-id>` (see "How to run a check" below):
+
 ```
-"${CLAUDE_PLUGIN_ROOT}/bin/bdk" check run <run-dir> <part-id> --at part --changed HEAD
+"${CLAUDE_PLUGIN_ROOT}/bin/bdk" check plan <run-dir> <part-id> --at part --changed HEAD --tests <test file> --tests <test file>
 ```
 
-It runs the items of the `part` point on the files you changed (against `HEAD`, untracked files included): the parts before this one are committed, so the changes are this part's. On `fail`, read the output file of each red check, fix the cause in the part's files, and run again: three runs in all. A verdict still `fail` after the third run is a blocker of `Kind: other`, with the output path as evidence. A tool that cannot run at all (command not found) is `Kind: environment`.
+Test items run the picked tests; lint and build items run on the files you changed (against `HEAD`, untracked files included): the parts before this one are committed, so the changes are this part's. On `fail`, read the output file of each red check, fix the cause in the part's files, and run the check again (plan, lines, record): three runs in all. A verdict still `fail` after the third run is a blocker of `Kind: other`, with the output path as evidence. A tool that cannot run at all (command not found) is `Kind: environment`.
 
-Never run a test, linter or build command yourself, and never one that installs, spends money or reaches the network.
+Never run a test, linter or build command other than a line `bdk check plan` printed, and never one that installs, spends money or reaches the network.
 
 When the part changed a file under `openspec/changes/<change>/specs/`, validate the Change too: OpenSpec refuses a delta it cannot parse (a requirement without a `#### Scenario:`, a section header it does not know), and `/bdk:close` cannot archive it:
 
@@ -103,7 +111,17 @@ openspec validate <change> --strict
 
 Fix each error on a delta in the part's `files` (a requirement the task adds gets the scenario the task names) and run it again: three runs in all. An error still there after the third run is a blocker of `Kind: other`, with the error as evidence. An error on a file outside the part's `files` is not the part's: note it under `Decisions taken without the user` and go on. When `openspec` is not found, write `openspec validate: not run, no OpenSpec CLI` under `## Checks` and go on: the review round and close check the delta later. A part that changed no delta runs no validation.
 
-Done when the verdict is `pass` (or `none`: no item runs at `part` on these files, stated in the report) and, for a part that changed a delta, no validation error names a delta of the part, or you have a blocker.
+Done when the recorded verdict is `pass` (or `none`: no item runs at `part` on these files, stated in the report) and, for a part that changed a delta, no validation error names a delta of the part, or you have a blocker.
+
+## How to run a check
+
+A check is three steps, each its own Bash call, one after another:
+
+1. `bdk check plan <run-dir> <id> ...` with the flags the step gives. It runs nothing; it prints, per check, a header with its Bash timeout, the line to run indented under it, and at the end the `bdk check record` call to make.
+2. Each printed line, as its own Bash call from the project root, character for character, with the `timeout` its header gives, one after another (never in parallel and never in the background). Do not add `cd`, a pipe, `tail`, `echo` or anything else to it: the line already writes the whole output to the file it names, and a longer call is refused by the permission check. The Bash tool reports the exit code (a result that shows no `Exit code` line is code 0); a non-zero code is a result, not an error, so go on to the next line.
+3. `bdk check record <run-dir> <id> --exit <kind>-<tool>=<code> ...` with the code the tool reported for each line, or `--timed-out <kind>-<tool>` for a line the tool ended at its timeout. It writes `checks/<id>.json` and prints the verdict and the last lines of each red check. A line you did not run is `not-run`, and the verdict is `fail`.
+
+A note under a header (a timeout above the Bash cap, a command whose redirect binds only to its last part) goes into the report under `Decisions taken without the user`. A line the host refuses to run is `Kind: environment`, with the refusal as evidence.
 
 ## 7. Write the report
 
@@ -122,6 +140,9 @@ Status: done
 ## Checks
 - checks/03-red.json: fail
 - checks/03.json: pass
+  - test/export.test.js: acceptance tests
+  - test/notes.test.js: imports src/notes.js, changed
+  - e2e/export.spec.ts: drives the export page
 
 ## Decisions taken without the user
 - The private helper is named `serializeNote`; the task leaves the name open.
@@ -136,10 +157,10 @@ With `Status: blocker`, add before `## Decisions taken without the user`:
 - Proposal: change task 2 to store seconds.
 ```
 
-- `Status: done` only when every acceptance scenario has its test line, the last part check passed and, for a part that changed a spec delta, the last validation left no error on a delta of the part.
-- `## Checks` names each check run as `checks/<id>.json: <verdict>`, and the last validation as `openspec validate <change> --strict: pass` or `: fail` (or the `not run` line).
+- `Status: done` only when every acceptance scenario has its test line, the last part check passed (`bdk check record` printed `verdict: pass`) and, for a part that changed a spec delta, the last validation left no error on a delta of the part.
+- `## Checks` names each check run as `checks/<id>.json: <verdict>`, the last part check's line followed by one indented line per test it picked (`  - <path>: <why, in a few words>`), and the last validation as `openspec validate <change> --strict: pass` or `: fail` (or the `not run` line).
 - Each `## Acceptance tests` line ends exactly `; red seen; green seen`, or, for a scenario the part marks ` (behaviour present)`, exactly `; green at first run (behaviour present); green seen`, with nothing between or after; anything to say about a test goes under `## Decisions taken without the user`.
-- `Kind` is `plan-defect` (the part is wrong), `environment` (a tool or configuration is missing) or `other` (checks stay red).
+- `Kind` is `plan-defect` (the part is wrong), `environment` (a tool or configuration is missing, or the host refused a check line) or `other` (checks stay red).
 - An empty section holds `- None.` A blocker found before any edit lists `- None.` under `Changed files`.
 
 Done when the report exists and its first line is the status.

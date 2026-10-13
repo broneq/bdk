@@ -14,7 +14,7 @@ const count = (fallback: number, description: string) =>
 /** The user-facing text of a key; the settings Reference is generated from it. */
 const about = (description: string) => ({ description });
 
-/** The check points of `bdk check run --at` (spec `bdk-cli/check`). */
+/** The check points of `bdk check plan --at` (spec `bdk-cli/check`). */
 export const CHECK_POINTS = ["part", "wave", "review"] as const;
 
 const Check = z.strictObject({
@@ -40,20 +40,24 @@ const Check = z.strictObject({
         "Check points the command runs at: `part` after each plan part, `wave` after each wave of execute, `review` in each review round; every point when absent.",
       ),
     ),
-  /** Seconds, at most a day (a longer timer overflows); `bdk check run` defaults it. */
+  /** Seconds, at most a day (a longer timer overflows); `bdk check plan` defaults it. */
   timeout: z
     .int()
     .min(1)
     .max(86_400)
     .optional()
-    .meta(about("Seconds before `bdk check run` stops the command; 600 when absent.")),
+    .meta(
+      about(
+        "Seconds the agent's Bash call of the command may run, capped by `env.BASH_MAX_TIMEOUT_MS` of `.claude/settings.json` (600 s by default); 600 when absent.",
+      ),
+    ),
   paths: z
     .array(text)
     .min(1, "must hold at least one glob")
     .optional()
     .meta(
       about(
-        "Globs of the files the command checks, matched like rule paths. The command gets only the changed files they match, and is skipped when files changed and none matches; every file when absent.",
+        "Globs of the files the command checks, matched like rule paths. The command gets only the files they match (the picked tests of a test item at `part`, the changed files otherwise), and is skipped when it gets files and none matches; every file when absent.",
       ),
     ),
 });
@@ -264,7 +268,11 @@ const checks = (what: string) =>
   z
     .array(Check)
     .default([])
-    .meta(about(`Commands that ${what}; \`bdk check run\` runs them, each by its \`id\`.`));
+    .meta(
+      about(
+        `Commands that ${what}; \`bdk check plan\` prints each as a line the agent runs, named by its \`id\`.`,
+      ),
+    );
 
 export const SettingsSchema = z
   .strictObject({

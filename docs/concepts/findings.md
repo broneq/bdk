@@ -19,7 +19,7 @@ flowchart TB
 | `/bdk:spec-conformance --round` on `bdk:verifier` | the spec deltas against the product, as `/bdk:close` checks them before the archive: a scenario or requirement the code breaks, behaviour (an error message, an option) no delta describes, a delta `openspec validate --strict` refuses (a requirement without a scenario); the finding sits where the fix goes, in the code or in the delta |
 | `/bdk:review-integration` on `bdk:integration-reviewer` | the whole diff: what breaks between the groups |
 | `/bdk:e2e-check` on `bdk:e2e-tester` | the running product, along the paths of each user process the proposal adds or changes; a finding points at the proposal line |
-| `bdk check run` | your test, lint and build commands; a red check is a finding |
+| `bdk check record --round` | your test, lint and build commands, run by the round's lead; a red or not-run check is a finding |
 
 Reviewers only report: they change no code and decide nothing.
 

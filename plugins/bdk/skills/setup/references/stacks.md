@@ -14,7 +14,7 @@ Read a script's body: the runner it starts decides the `id` and the form on chan
 ## Items
 
 - `id`: the runner or checker in kebab-case (`vitest`, `jest`, `playwright`, `pytest`, `eslint`, `prettier`, `tsc`, `ruff`), never the package manager; unique in its group. A typecheck goes into `lint`; a formatter's check mode (`prettier --check`) too, never its write mode.
-- `command`: one command line, as the project runs it. Where the runner takes a list of files, add a second item whose `command` holds the literal `{files}` (`bdk check run` puts the changed files there) and whose `id` is the runner's with `-changed` (`vitest-changed`), or names the related-tests mode (`vitest-related` for `vitest related --run {files}`). When unsure the form works, leave the second item out: a wrong one runs the wrong thing.
+- `command`: one command line, as the project runs it. Where the runner takes a list of files, add a second item whose `command` holds the literal `{files}` (`bdk check plan` puts the files there: the tests the agent picked for a test item, the changed files for a lint or build item) and whose `id` is the runner's with `-changed` (`vitest-changed`), or names the related-tests mode (`vitest-related` for `vitest related --run {files}`). When unsure the form works, leave the second item out: a wrong one runs the wrong thing.
 - `when`: the check points the item runs at, by [the points table](#check-points). Write it on every item.
 - `paths` on a `{files}` item: the files its tool reads, so a changed Markdown or YAML file never reaches it: `**/*.<ext>` for a linter or test runner on source files, the test files for a runner that takes only tests (`**/*.test.js` for `node --test`), the spec files for an E2E runner (`e2e/**/*.spec.ts`).
 - A Playwright or Cypress suite is a `tools.test` item (its own `id`); it is not `tools.e2e`, which says how to start the product.
@@ -75,7 +75,7 @@ An item holding `scoped` (an earlier v3 wrote it) becomes two items: the item ke
 
 ## Paths in a repository of several packages
 
-`paths` (globs, `*` stays in one directory, `**` spans directories) tells `bdk check run` which changed files an item owns. Besides the `{files}` items of [Items](#items), write it on an item only when its command covers a part of the repository. Leave it out when the item covers the whole repository: a single-package repository, or one root command that runs every package (`pnpm -r test`). A root config change then still reaches the item.
+`paths` (globs, `*` stays in one directory, `**` spans directories) tells `bdk check plan` which of the picked tests or changed files an item owns. Besides the `{files}` items of [Items](#items), write it on an item only when its command covers a part of the repository. Leave it out when the item covers the whole repository: a single-package repository, or one root command that runs every package (`pnpm -r test`). A root config change then still reaches the item.
 
 | Layout | Test and build item | Lint item |
 |---|---|---|

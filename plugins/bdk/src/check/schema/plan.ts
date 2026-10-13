@@ -1,35 +1,34 @@
-// The result of `bdk check run`, in `checks/<id>.json` and under `--json` (spec `bdk-cli/check`,
-// "Result file").
+// The plan of `bdk check plan`, in `checks/<id>/plan.json` and under `--json` (spec `bdk-cli/check`,
+// "Plan the checks").
 
 import { z } from "zod";
 
 import { KINDS, POINTS } from "../domain/plan.ts";
-import { STATUSES, VERDICTS } from "../domain/verdict.ts";
 
-export const runResult = z.object({
-  version: z.literal(2),
+export const checkPlan = z.object({
+  version: z.literal(1),
   id: z.string(),
   at: z.enum(POINTS).nullable(),
   changed: z.string().nullable(),
   scope: z.array(z.string()).nullable(),
-  verdict: z.enum(VERDICTS),
+  tests: z.array(z.string()).nullable(),
+  cwd: z.string(),
   checks: z.array(
     z.object({
       kind: z.enum(KINDS),
       tool: z.string(),
       command: z.string(),
       scoped: z.boolean(),
-      status: z.enum(STATUSES),
-      exit: z.number().int().nullable(),
       timeout: z.number().int().positive(),
+      "bash-timeout": z.number().int().positive(),
       output: z.string(),
-      tail: z.array(z.string()).nullable(),
+      line: z.string(),
+      notes: z.array(z.string()),
     }),
   ),
   skipped: z.array(
     z.object({ kind: z.enum(KINDS), tool: z.string(), reason: z.enum(["paths", "no-files"]) }),
   ),
-  findings: z.object({ log: z.string(), ids: z.array(z.string()) }).nullable(),
 });
 
-export type RunResult = z.infer<typeof runResult>;
+export type CheckPlan = z.infer<typeof checkPlan>;

@@ -31,7 +31,7 @@ Which skill calls which command. Every skill that reads the configuration also r
 | `bdk run status` | `/bdk:run`, `/bdk:execute`, `/bdk:auto-review`, `/bdk:close` |
 | `bdk plan check` | `/bdk:plan`, `/bdk:plan-draft`, `/bdk:verify-plan`, `/bdk:plan-fixes`, `/bdk:diagnose-bug`, `/bdk:execute-waves`, `/bdk:repair-wave` |
 | `bdk rules for` | `/bdk:design-draft`, `/bdk:verify-design` (stage `design`); `/bdk:plan-draft`, `/bdk:verify-plan` (stage `plan`); `/bdk:implement-part`, `/bdk:conform-part` (stage `execute`); `/bdk:review-group`, `/bdk:judge` (stage `review`) |
-| `bdk check run` | `/bdk:implement-part`, `/bdk:conform-part`, `/bdk:repair-wave`, `/bdk:execute-waves` (the wave check), `/bdk:review-round` |
+| `bdk check plan`, `bdk check record` | `/bdk:implement-part`, `/bdk:conform-part`, `/bdk:repair-wave`, `/bdk:execute-waves` (the wave check), `/bdk:review-round`; between the two, the agent runs each printed command line itself |
 | `bdk git groups` | `/bdk:review-round`, `/bdk:pr-review-round`; `/bdk:review-group` and `/bdk:review-integration` for a manual round |
 | `bdk git scope` | no skill (`bdk git groups` uses the same range logic) |
 | `bdk findings add` | `/bdk:review-group`, `/bdk:review-integration`, `/bdk:e2e-check` |
@@ -56,11 +56,11 @@ flowchart TB
   end
   subgraph R2[" "]
     direction LR
-    S2["/bdk:execute"] --- C2["bdk run status, bdk plan check,<br/>bdk rules for, bdk check run"]
+    S2["/bdk:execute"] --- C2["bdk run status, bdk plan check,<br/>bdk rules for, bdk check plan,<br/>bdk check record"]
   end
   subgraph R3[" "]
     direction LR
-    S3["/bdk:auto-review"] --- C3["bdk run status, bdk git groups,<br/>bdk rules for, bdk check run,<br/>bdk findings add, bdk findings level,<br/>bdk findings decide, bdk findings list,<br/>bdk findings report,<br/>bdk plan check"]
+    S3["/bdk:auto-review"] --- C3["bdk run status, bdk git groups,<br/>bdk rules for, bdk check plan,<br/>bdk check record,<br/>bdk findings add, bdk findings level,<br/>bdk findings decide, bdk findings list,<br/>bdk findings report,<br/>bdk plan check"]
   end
   subgraph R4[" "]
     direction LR
@@ -133,7 +133,7 @@ The same as a list, key by key; types, defaults and allowed values are in the [s
 
 | Key | Read by |
 |---|---|
-| `tools.test`, `tools.lint`, `tools.build` | `bdk check run` (in `/bdk:implement-part`, `/bdk:conform-part`, `/bdk:repair-wave`, `/bdk:execute-waves`, `/bdk:review-round`, each at its check point); `/bdk:setup` writes them |
+| `tools.test`, `tools.lint`, `tools.build` | `bdk check plan` (in `/bdk:implement-part`, `/bdk:conform-part`, `/bdk:repair-wave`, `/bdk:execute-waves`, `/bdk:review-round`, each at its check point); `/bdk:setup` writes them |
 | `tools.e2e` | `/bdk:e2e-check`, `/bdk:diagnose-bug`; `/bdk:setup` writes it |
 | `languages`, `rules` | `bdk rules for` (in the design, plan, execute and review blocks above) |
 | `policy.gates.design` | `/bdk:design` (design gate), `/bdk:debug` (fix gate) |

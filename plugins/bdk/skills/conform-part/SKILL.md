@@ -79,13 +79,16 @@ Leave a violation, with the file and line, its source and why you left it, when 
 
 Example: a task asks that a title be trimmed, and the code does not trim it. Trimming changes the output: leave it as `task 2` with the line, not fixed.
 
-Then, when you edited at least one file, run the checks of the part point on the changed files:
+Then, when you edited at least one file, run the checks of the part point. Pick the tests: the ones indented under the part check's line under `## Checks` of the implementer's report `<run-dir>/execute/part-<part-id>.md`, plus the existing tests of each module you edited that the line misses (the test file next to it, or the tests that import it). Run the check with the id `conform-<part-id>`, as three steps, each its own Bash call:
 
-```
-"${CLAUDE_PLUGIN_ROOT}/bin/bdk" check run <run-dir> conform-<part-id> --at part --changed HEAD
-```
+1. ```
+   "${CLAUDE_PLUGIN_ROOT}/bin/bdk" check plan <run-dir> conform-<part-id> --at part --changed HEAD --tests <test file> --tests <test file>
+   ```
+   It runs nothing and prints, per check, a header with its Bash timeout and the line to run indented under it.
+2. Each printed line as its own Bash call from the project root, character for character, with the `timeout` of its header, one after another (never in parallel and never in the background); add nothing to it (no `cd`, pipe, `tail` or `echo`). The Bash tool reports the exit code (a result that shows no `Exit code` line is code 0); a non-zero code is a result, so go on.
+3. `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" check record <run-dir> conform-<part-id> --exit <kind>-<tool>=<code> ...`, one `--exit` per line with the code the tool reported, or `--timed-out <kind>-<tool>` for a line the tool ended at its timeout. It writes `checks/conform-<part-id>.json` and prints the verdict and the last lines of each red check.
 
-When a check is red after your fixes, your fix broke it: undo that fix by editing it back, move the item to `Left`, and run again.
+Never run a test, linter or build command other than a printed line. When a check is red after your fixes, your fix broke it: undo that fix by editing it back, move the item to `Left`, and run the check again (plan, lines, record).
 
 When you edited nothing, run no check: the code is what the implementer's last check `<run-dir>/checks/<part-id>.json` saw. Read its `verdict` for the report.
 
@@ -107,9 +110,11 @@ Verdict: FAIL
 
 ## Checks
 - checks/conform-03.json: pass
+  - test/export.test.js: the implementer's
+  - test/notes.test.js: imports src/notes.js, edited
 ```
 
-- `## Checks` names `checks/conform-<part-id>.json: <verdict>` when you ran the checks, else `checks/<part-id>.json: <verdict>, unchanged`; for a part that changed a delta, also `openspec validate <change> --strict: pass` or `: fail` (or the `not run` line). A validation error on a delta of the part is a `Left` item naming its task, so the verdict is `FAIL`.
+- `## Checks` names `checks/conform-<part-id>.json: <verdict>` followed by one indented line per test it picked (`  - <path>: <why>`), when you ran the checks, else `checks/<part-id>.json: <verdict>, unchanged`; for a part that changed a delta, also `openspec validate <change> --strict: pass` or `: fail` (or the `not run` line). A validation error on a delta of the part is a `Left` item naming its task, so the verdict is `FAIL`.
 - `Verdict: FAIL` if and only if the check verdict is `fail`, a `Left` item names a task, or the implementer report was missing or not done. A rule or an instruction left does not fail the part by itself: the review reads `Left`.
 - An empty section holds `- None.`
 
