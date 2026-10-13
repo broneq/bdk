@@ -61,6 +61,16 @@
         "ref": "release"
       },
       "category": "development"
+    },
+    {
+      "name": "capitan",
+      "description": "Turns a session into an orchestrator that delegates every task to its own agent, git worktree and Herdr workspace.",
+      "source": {
+        "source": "github",
+        "repo": "broneq/capitan",
+        "ref": "release"
+      },
+      "category": "productivity"
     }
   ]
 }

@@ -28,6 +28,7 @@ Restart Claude Code, then:
 | `bdk-craft` | Engineering skills Claude picks up by itself: test-driven development, debugging, refactoring, testing strategy, Mermaid diagrams. Works without `bdk` | [bdk-craft](/reference/bdk-craft) |
 | `bdk-explain` | Answers a question about your code, a flow or a concept with an interactive HTML page in your browser ([guide](./explain.md)). Works without `bdk` | [bdk-explain](/reference/bdk-explain) |
 | `bdk-skill-kit` | A validator and authoring guidance for Agent Skills and subagent files | [bdk-skill-kit](/reference/bdk-skill-kit) |
+| `capitan` | Turns a session into an orchestrator that delegates every task to its own agent, git worktree and Herdr workspace. Works without `bdk` | [broneq/capitan](https://github.com/broneq/capitan) |
 | `git-identity` | Binds a project to one GitHub account and one commit identity, so every `gh` call and commit in it uses the right one | [git-identity](/reference/git-identity) |
 
 Each plugin installs and works on its own. You need `bdk` for the workflow; the others are optional.
