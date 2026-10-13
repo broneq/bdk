@@ -57,6 +57,7 @@ openspec/specs/<capability>/spec.md   main specs: openspec archive merges the de
     debug/reproduction.md, diagnosis.md, scratch/   /bdk:diagnose-bug
     debug/gate.md, result.md          /bdk:debug
     diagnostics.md                    /bdk:diagnose-run (after the run)
+  setup/project-map.md                /bdk:explore-project (in /bdk:setup)
   pr-<N>/                             /bdk:pr-review
     pr.md, previous.json (--verify), result.md, worktree/, review/round-k/{groups.json, previous.json, findings.jsonl, review.md, review.json, posted.md}
 ```
@@ -67,6 +68,7 @@ openspec/specs/<capability>/spec.md   main specs: openspec archive merges the de
 |---|---|---|---|---|
 | `run.json` | `/bdk:run` only | `/bdk:run` to continue the queue, `bdk run status`, `/bdk:execute`, `/bdk:auto-review` and `/bdk:close` to check the queued stage | the queue and its current Change | `/bdk:run` without arguments asks what to run; the stages skip their queue check |
 | `state.json` | the execute lead only | the lead on a restart, `bdk run status` | each part's status (`pending`, `done`, `blocked`) and attempts, and each started wave's base commit and wave check status | every part counts as pending again, so the next `/bdk:execute` builds the done parts again too |
+| `setup/project-map.md` | `/bdk:explore-project` | `/bdk:setup` | how the project builds, tests and runs: rules, hooks, wrappers, suite setup, side effects, CI | rewritten by the next `/bdk:setup` run |
 | `design/explore.md` | `/bdk:explore` | `/bdk:design-draft`, `/bdk:verify-design` | the code map the design is grounded in | not regenerated once `design.md` exists; the drafter reads the code itself |
 | `design/verify-N.md`, `plan/verify-N.md` | `bdk:verifier` (a new number per pass) | `bdk run status` (the last one's `Verdict:` line), the drafter (a `FAIL` puts it in fix mode), `/bdk:plan` (needs the last design report to pass) | the check's verdict with evidence; their count is the `policy.budgets.verifier` budget | the previous report becomes the last one |
 | `design/gate.md` | `/bdk:design` only, on approval | `/bdk:design` (nothing left to run), `/bdk:run` (the design is approved) | the record of who approved which verified design | the gate is asked again |

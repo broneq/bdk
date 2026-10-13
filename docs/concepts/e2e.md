@@ -45,6 +45,8 @@ tools:
 | `http` | sends the requests with `curl` | status, headers that matter, body |
 | `browser` | drives a browser with small Playwright scripts it writes and runs one at a time (or with `chrome-devtools-mcp`, by `tools.e2e.<id>.browser`), then replays each path once with video on | what the page shows, a screenshot at each expected outcome, a video |
 
+When your E2E suite starts the server itself (a Playwright `globalSetup` without `webServer`, a Cypress or pytest setup, a wrapper script that builds and starts the app), setup takes `start`, `ready` and `env` from that setup: the command, port, profile and local backend your tests use, never a `dev` script that needs a cloud deployment or secrets.
+
 Before it starts a server, the tester checks the `ready` URL: when something already answers on that port, it does not start or drive anything and reports the run as blocked, so it never tests the wrong process. It stops everything it started when it is done.
 
 ## A run

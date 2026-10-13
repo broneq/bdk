@@ -10,18 +10,19 @@ Every orchestrator runs in the main thread, starts with a `!` block that runs `b
 
 ```mermaid
 flowchart TB
-  S1["read the state: bdk config show"] --> S2["detect the stack and the E2E entry<br/>from manifests and scripts"]
+  S1["read the state: bdk config show"] --> SX["/bdk:explore-project<br/>Agent bdk:explorer, sonnet"]
+  SX -->|".bdk/runs/setup/project-map.md"| S2["detect the stack, wrappers and the E2E entry<br/>from the map, manifests and scripts"]
   S2 --> S3(["ask only open questions<br/>AskUserQuestion, at most 4"])
   S3 --> S4["write .bdk/settings.yaml"]
   S4 --> S5["bdk config check until exit 0"]
   S5 --> S6["permission allow rules<br/>.claude/settings.json"]
   S6 --> S7["openspec init, bdk openspec install,<br/>the project schema, or schema: bdk"]
-  S7 --> S8["gitignore .bdk/runs/<br/>and settings.local.yaml"]
+  S7 --> S8["gitignore .bdk/runs/, settings.local.yaml<br/>and what /.bdk/ hid"]
   S8 --> S9["Playwright for a browser item,<br/>when you agreed in the questions"]
-  S9 --> S10["bdk config show, npx -y lavish-axi --version,<br/>report with the decision surface"]
+  S9 --> S10["bdk config show, npx -y lavish-axi --version,<br/>report: sources, left-out tools,<br/>decision surface"]
 ```
 
-A re-run keeps every value a layer sets and fills only what is missing; an argument such as "add the e2e entry" limits the run to that change.
+Setup runs on `opus` (its `model` frontmatter), whatever the session model; the map comes from `bdk:explorer`, which `models.explorer` sets. A re-run keeps every value a layer sets and fills only what is missing; an argument such as "add the e2e entry" limits the run to that change.
 
 ## `/bdk:propose`
 

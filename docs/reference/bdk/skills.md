@@ -126,6 +126,14 @@ Started by: you, or Claude when your request matches the description below.
 
 Maps the code an OpenSpec Change touches - modules, entry points, data, boundaries, conventions, tests and gaps, each with file:line - into the run file design/explore.md, on the bdk:explorer agent. Use when a Change is about to be designed, when asked what code a proposal touches, or when /bdk:design needs the code map.
 
+## `/bdk:explore-project` {#explore-project}
+
+`/bdk:explore-project`
+
+Started by: you, or Claude when your request matches the description below.
+
+Maps how a project builds, tests, lints and runs - its rules and hooks, manifests, test and E2E suites with their wrappers and server setup, side effects, CI - each fact with file:line, into the run file .bdk/runs/setup/project-map.md, on the bdk:explorer agent. Any stack. Use when /bdk:setup needs the map, or when asked how a project runs its checks before configuring tooling.
+
 ## `/bdk:implement-part` {#implement-part}
 
 `/bdk:implement-part [<change>] <part-id> [--run-dir <path>] [--parts <dir>]`

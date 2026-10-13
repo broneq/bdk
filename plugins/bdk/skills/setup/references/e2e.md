@@ -16,8 +16,20 @@ Check the rows top down; the first that matches wins. A plugin's `bin/` launcher
 
 ## Web app
 
-- `start`: a Playwright `webServer.command` (or Cypress `baseUrl` with its dev script) when present; else the `dev` script, then `start`, through the package manager (`pnpm dev`).
+- `start`: a Playwright `webServer.command` (or Cypress `baseUrl` with its dev script) when present; else the `dev` script, then `start`, through the package manager (`pnpm dev`). When the suite starts the server itself, [Suite owns the server](#suite-owns-the-server) decides instead.
 - `ready`: the Playwright `webServer.url` (or `use.baseURL`) when present; else `http://localhost:<port>`, the port from the script's `--port`, then the framework config (`server.port` in `vite.config.*`), then the default: Vite and SvelteKit 5173, Next and Nuxt 3000, Create React App 3000, Angular 4200, Astro 4321.
+
+## Suite owns the server
+
+The project's E2E suite may start the product itself: a Playwright `globalSetup` or Cypress `setupNodeEvents` that spawns the server and no `webServer`, a pytest fixture or Testcontainers class that starts it, or a wrapper script that builds and starts it before the runner. The map names it under `Tests` with the command, port, profile and environment it uses. That start is the one known to work locally, so:
+
+- `start`: the server command that setup runs, as a command line from the project root (`pnpm exec next dev --port 3100`, `java -jar target/<app>.jar --spring.profiles.active=e2e`, `./mvnw spring-boot:run -Dspring-boot.run.profiles=e2e`); a build the setup runs first goes before it (`./mvnw -q -DskipTests package && java -jar ...`).
+- `env`: the variables that setup sets for it with non-secret values (`BACKEND_MODE: memory`, `SPRING_PROFILES_ACTIVE: e2e`).
+- `ready`: the URL the suite drives (`use.baseURL`, Cypress `baseUrl`, the port the setup waits on).
+- Never take a `dev` or `start` script the map shows needs a cloud deployment, secrets or a shared database while the suite runs locally without them.
+- When the setup also starts a service the server needs that no one command starts (a database container, an emulator), prefer a project script that starts both (`dev:local`, `e2e:serve`, `docker compose up`). With none, ask in step 4, recommending the server command above, and name the service in the report as needed before `start`.
+
+This is not an open question when the setup file settles the command and port: write it without asking.
 
 ## HTTP API
 
@@ -43,7 +55,7 @@ Never write it. The E2E tester then drives the browser with Playwright; a user w
 
 For each `browser` item, the E2E tester runs Playwright: the project's own `@playwright/test` or `playwright` when it resolves from the web app's package, else Playwright 1.63.0 it installs for each run into a scratch directory. It launches the Chromium Playwright installed, else the system Chrome.
 
-Detect, in step 2, whatever the user later answers (the report needs both):
+Detect, in step 3, whatever the user later answers (the report needs both):
 
 - Project Playwright: `@playwright/test` or `playwright` in `dependencies` or `devDependencies` of the web app's `package.json`.
 - A browser: run this once; it prints the Chromium builds Playwright installed and the system Chrome, if any:
@@ -52,9 +64,9 @@ Detect, in step 2, whatever the user later answers (the report needs both):
   node -e "const fs=require('fs'),os=require('os'),path=require('path');const dir=process.env.PLAYWRIGHT_BROWSERS_PATH||path.join(os.homedir(),{darwin:'Library/Caches',linux:'.cache',win32:'AppData/Local'}[process.platform]||'.cache','ms-playwright');let builds=[];try{builds=fs.readdirSync(dir).filter((n)=>/^chromium(_headless_shell)?-/.test(n))}catch{}const chrome=['/Applications/Google Chrome.app','/usr/bin/google-chrome','/usr/bin/google-chrome-stable','C:/Program Files/Google/Chrome/Application/chrome.exe'].find((f)=>fs.existsSync(f));console.log(JSON.stringify({builds,chrome:chrome||null}))"
   ```
 
-Ask, in step 3, only when the web app's package is a Node package (it has a `package.json`) and it has no Playwright, or no build and no Chrome were found: "Install Playwright for the E2E tester?", recommended first "Install @playwright/test 1.63.0 (and Chromium)", second "Do not install; the tester installs Playwright for each run". Among the E2E questions this one goes first. A web app without `package.json` (Django templates, Rails) gets no question: the tester's own install covers it.
+Ask, in step 4, only when the web app's package is a Node package (it has a `package.json`) and it has no Playwright, or no build and no Chrome were found: "Install Playwright for the E2E tester?", recommended first "Install @playwright/test 1.63.0 (and Chromium)", second "Do not install; the tester installs Playwright for each run". Among the E2E questions this one goes first. A web app without `package.json` (Django templates, Rails) gets no question: the tester's own install covers it.
 
-Install, in step 9, after a yes, with the package manager of the lockfile, in the web app's package:
+Install, in step 10, after a yes, with the package manager of the lockfile, in the web app's package:
 
 | Package manager | Add the package | Install Chromium (when no build was found) |
 |---|---|---|
@@ -77,4 +89,4 @@ Only a variable the start command needs that the project documents (`.env.exampl
 
 ## When to ask
 
-Ask (step 3 of the skill) only when two candidates compete for `start`, or when the port is a framework default and the code or config suggests another one. The Playwright question is in [Playwright](#playwright). A library is not a question: report "E2E skipped: the project has nothing to run (no UI, server or CLI)".
+Ask (step 4 of the skill) only when two candidates compete for `start` (a suite that owns the server settles it, [Suite owns the server](#suite-owns-the-server)), or when the port is a framework default and the code or config suggests another one. The Playwright question is in [Playwright](#playwright). A library is not a question: report "E2E skipped: the project has nothing to run (no UI, server or CLI)".

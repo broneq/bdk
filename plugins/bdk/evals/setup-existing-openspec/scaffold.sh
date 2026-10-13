@@ -36,3 +36,7 @@ MD
 
 git add .
 git -c user.name="BDK eval" -c user.email="eval@example.invalid" commit --quiet -m "chore: openspec and the v2 ignore rule"
+
+# Local scratch content the v2 rule hid, untracked: it must stay ignored once the rule goes.
+mkdir -p .bdk/notes
+printf 'local notes\n' > .bdk/notes/todo.md

@@ -41,9 +41,9 @@ What the stages actually do with them:
 | `openspec/config.yaml`, `openspec/schemas/bdk/` | yes | `/bdk:setup` |
 | `openspec/changes/<change>/` | yes, with the Change | propose, design, plan |
 | `openspec/changes/archive/`, `openspec/specs/` | yes | `/bdk:close` (the archive and the merged specs) |
-| `.bdk/runs/` | no (git-ignored) | every stage ([run state](/concepts/run-state)); the checks write `checks/<id>/plan.json`, one output file per command and `checks/<id>.json` |
+| `.bdk/runs/` | no (git-ignored) | every stage ([run state](/concepts/run-state)); the checks write `checks/<id>/plan.json`, one output file per command and `checks/<id>.json`; `/bdk:setup` keeps its project map in `.bdk/runs/setup/` |
 | `.claude/settings.json` | yours to decide | `/bdk:setup` (the permission rules above, and `env.BASH_MAX_TIMEOUT_MS` for a long check) |
-| `.gitignore` | yes | `/bdk:setup` (two lines) |
+| `.gitignore` | yes | `/bdk:setup` (two lines, plus one per local path under `.bdk/` that a BDK v2 `/.bdk/` rule hid) |
 | `.bdk/tmp/` | no (ignored by its own `.gitignore`) | scratch files of BDK plugins, such as the pages of [`bdk-explain`](./explain.md); delete it at any time |
 
 ## What leaves your machine
