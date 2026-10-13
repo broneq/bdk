@@ -17,7 +17,7 @@ It leaves alone: how to build it and in which order (design and plan decide that
 
 | Block | Agent | Works from | Produces or checks | Leaves alone |
 |---|---|---|---|---|
-| `/bdk:explore` | `bdk:explorer` (haiku) | the proposal, then the code its nouns lead to, one level of callers and callees, their tests | a code map: what the Change touches, the patterns in use, the tests, the gaps, each with a file and line | any approach or recommendation: facts only |
+| `/bdk:explore` | `bdk:explorer` (sonnet) | the proposal, then the code its nouns lead to, one level of callers and callees, their tests, the script and setup files behind your test command, your `CLAUDE.md` and `AGENTS.md`, the hooks of `.claude/settings.json`, your build, test and run docs | a code map: what the Change touches, the patterns in use (a hook, wrapper or setup step that changes how a command runs included), the tests, the gaps, each with a file and line | any approach or recommendation: facts only |
 | `/bdk:design-draft` | `bdk:designer`; its questions reach you through the main conversation | the proposal and the map; the code itself when there is no map; the [rules](./rules.md) of stage `design` | the spec deltas with runnable scenarios, and `design.md` with each decision, its alternatives and why they lost | code, plan parts |
 | `/bdk:verify-design` | `bdk:verifier` (opus) | the proposal, the deltas, the design, the map, the code, the rules of stage `design` | every claim about the code, scenario runnability, coverage of the proposal, decisions with real alternatives, concrete risks, readiness for a plan, the design rules kept | wording, style, a choice among valid alternatives the design argued |
 

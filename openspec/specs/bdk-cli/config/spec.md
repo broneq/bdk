@@ -311,7 +311,7 @@ Every agent the `bdk` plugin ships (`plugins/bdk/agents/<name>.md`) SHALL be a r
 #### Scenario: Role not set
 
 - **WHEN** the configuration sets no `models.explorer`
-- **THEN** the `Agent` call with `subagent_type: "bdk:explorer"` has neither `model` nor `effort`, and the explorer runs on `haiku`, the model of its frontmatter
+- **THEN** the `Agent` call with `subagent_type: "bdk:explorer"` has neither `model` nor `effort`, and the explorer runs on `sonnet`, the model of its frontmatter
 
 #### Scenario: Implementer with model and effort
 

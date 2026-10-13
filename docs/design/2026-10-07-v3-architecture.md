@@ -276,7 +276,7 @@ Names are working names. Models are defaults that configuration overrides per ro
 
 | Block | Agent (default model) | Does |
 |---|---|---|
-| `explore` | `bdk:explorer` (haiku) | Maps the code a proposal touches |
+| `explore` | `bdk:explorer` (sonnet) | Maps the code a proposal touches |
 | `design-draft` | main thread | Approaches, questions (Lavish or policy), specs and design |
 | `verify-design`, `verify-plan` | `bdk:verifier` (opus) | Checks the design or plan against the code; continued with `SendMessage` across iterations |
 | `plan-draft` | main thread | Parts with tasks as contracts, `depends-on`, `isolation`, acceptance scenarios from the specs |

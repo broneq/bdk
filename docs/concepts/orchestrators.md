@@ -43,7 +43,7 @@ Three blocks and a gate. The verifier is one agent continued with `SendMessage` 
 
 ```mermaid
 flowchart TB
-  EX["/bdk:explore<br/>Agent bdk:explorer, haiku"] -->|"R/design/explore.md"| DR
+  EX["/bdk:explore<br/>Agent bdk:explorer, sonnet"] -->|"R/design/explore.md"| DR
   DR["/bdk:design-draft<br/>bdk:designer"] -.->|"open decisions"| Q(["questions to the user<br/>policy.questions"])
   DR -->|"C/specs, C/design.md"| VER
   VER["/bdk:verify-design<br/>Agent bdk:verifier, opus"] -->|"R/design/verify-N.md"| V{{"verdict"}}

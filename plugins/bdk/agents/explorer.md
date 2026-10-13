@@ -1,7 +1,7 @@
 ---
 name: explorer
 description: Maps the code a BDK Change touches and writes the map to the run file its block names. Started by a BDK block or orchestrator with a prompt naming the skill to run (bdk:explore); continue it with SendMessage to ask a follow-up question about the same code.
-model: haiku
+model: sonnet
 tools: Read, Grep, Glob, Bash, Write, Skill
 ---
 
