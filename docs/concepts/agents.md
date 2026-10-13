@@ -12,7 +12,7 @@ The main thread (an orchestrator, or a block a user typed) starts leads and sing
 flowchart TB
   O["orchestrators<br/>(main thread)"]
   O -->|"Skill"| MB["main-thread blocks"]
-  O -->|"Agent"| AG["explorer, sonnet<br/>designer, session model<br/>planner, session model<br/>verifier, opus"]
+  O -->|"Agent"| AG["explorer, sonnet (setup map, code map)<br/>designer, session model<br/>planner, session model<br/>verifier, opus"]
   D["/bdk:diagnose-run<br/>(main thread, step 0)"]
   D -->|"Agent"| AN["analyst, sonnet"]
   O -->|"Agent, background"| LEADS
@@ -38,12 +38,13 @@ flowchart TB
   style S3 fill:transparent,stroke:transparent
 ```
 
-`bdk:reviewer`, `bdk:integration-reviewer`, `bdk:judge` and `bdk:e2e-tester` have their skill preloaded through the `skills:` frontmatter; the other agents call the skill their prompt names with the `Skill` tool. A block with an agent of its own (`/bdk:explore`, `/bdk:design-draft`, `/bdk:verify-design`, `/bdk:plan-draft`, `/bdk:verify-plan`, `/bdk:implement-part`, `/bdk:conform-part`, `/bdk:repair-wave`, `/bdk:spec-conformance`, `/bdk:diagnose-run`) starts that agent when it runs in the main thread, instead of doing the work (its step 0), so the author never checks its own work. `/bdk:diagnose-run` has no orchestrator: you type it, and its step 0 starts `bdk:analyst`. `/bdk:review-group`, `/bdk:review-integration`, `/bdk:judge` and `/bdk:e2e-check` have no step 0: in a round the lead starts their agents, and typed by a user they run in the main thread, like the main-thread blocks of the table below.
+`bdk:reviewer`, `bdk:integration-reviewer`, `bdk:judge` and `bdk:e2e-tester` have their skill preloaded through the `skills:` frontmatter; the other agents call the skill their prompt names with the `Skill` tool. A block with an agent of its own (`/bdk:explore-project`, `/bdk:explore`, `/bdk:design-draft`, `/bdk:verify-design`, `/bdk:plan-draft`, `/bdk:verify-plan`, `/bdk:implement-part`, `/bdk:conform-part`, `/bdk:repair-wave`, `/bdk:spec-conformance`, `/bdk:diagnose-run`) starts that agent when it runs in the main thread, instead of doing the work (its step 0), so the author never checks its own work. `/bdk:diagnose-run` has no orchestrator: you type it, and its step 0 starts `bdk:analyst`. `/bdk:review-group`, `/bdk:review-integration`, `/bdk:judge` and `/bdk:e2e-check` have no step 0: in a round the lead starts their agents, and typed by a user they run in the main thread, like the main-thread blocks of the table below.
 
 ## Roles
 
 | Block | Role | Runs on (default model) | Writes | Reads |
 |---|---|---|---|---|
+| `/bdk:explore-project` | author (project map) | `bdk:explorer` (sonnet) | `.bdk/runs/setup/project-map.md` | rules and hooks, manifests, scripts, test and CI configs |
 | `/bdk:explore` | author (map) | `bdk:explorer` (sonnet) | `R/design/explore.md` | proposal, code |
 | `/bdk:design-draft` | author | `bdk:designer` (session's model) | `C/specs/**/spec.md`, `C/design.md` | proposal, explore map, last `verify-N.md` |
 | `/bdk:verify-design` | verifier | `bdk:verifier` (opus) | `R/design/verify-N.md` | proposal, specs, design, explore map, code |

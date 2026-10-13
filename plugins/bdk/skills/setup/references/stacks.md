@@ -9,7 +9,7 @@ How to turn a project's files into `languages` and the `tools.test`, `tools.lint
 - Ruby: `bundle exec <tool>`.
 - A direct binary only when no script or package manager wraps it.
 
-Read a script's body: the runner it starts decides the `id` and the form on changed files, not the script's name. Script names to look for: `test`, `test:unit`, `test:integration`, `test:e2e`, `lint`, `format:check`, `typecheck`, `build`.
+Read a script's body: the runner it starts decides the `id` and the form on changed files, not the script's name; a script around the runner is a [wrapper](#wrapper-scripts). Script names to look for: `test`, `test:unit`, `test:integration`, `test:e2e`, `lint`, `format:check`, `typecheck`, `build`.
 
 ## Items
 
@@ -18,6 +18,17 @@ Read a script's body: the runner it starts decides the `id` and the form on chan
 - `when`: the check points the item runs at, by [the points table](#check-points). Write it on every item.
 - `paths` on a `{files}` item: the files its tool reads, so a changed Markdown or YAML file never reaches it: `**/*.<ext>` for a linter or test runner on source files, the test files for a runner that takes only tests (`**/*.test.js` for `node --test`), the spec files for an E2E runner (`e2e/**/*.spec.ts`).
 - A Playwright or Cypress suite is a `tools.test` item (its own `id`); it is not `tools.e2e`, which says how to start the product.
+
+## Wrapper scripts
+
+A wrapper is a script that starts a test runner with something around it: a time budget, a server, a container, an environment, a retry, a build first (`scripts/run-e2e.sh`, `node scripts/test-budget.mjs`, `make e2e`, `./gradlew e2eTest` with a task that starts the app). The map names it under `Tests`. It decides the items:
+
+- The item runs the wrapper as the project calls it (`pnpm test:e2e`, `bash scripts/run-e2e.sh`, `scripts/e2e.sh`), never the runner it wraps. Its `id` stays the runner's (`playwright`, `cypress`).
+- When a rule or a hook forbids calling the runner directly, no item runs it directly, a `{files}` item included.
+- A `{files}` item goes through the wrapper only when the wrapper passes extra arguments on to the runner (`"$@"`, `process.argv.slice(2)`, `%*`): `<wrapper> {files}`, `paths` on the spec files, `when: [part]`. Cypress takes files as `--spec`: `<wrapper> --spec {files}`. When it passes nothing on, write no `{files}` item and say in the report that the suite runs whole.
+- `when` as the suite it runs ([Check points](#check-points)): the main test script `[wave, review]`, an E2E, integration or heavy suite `[review]`. A rule that runs a suite only for some changes (a heavy suite after a change under one folder) gives `[review]`, and the report names the rule: `when` has no condition.
+- `timeout`: when the wrapper, a rule or the CI job gives the suite a budget over 600 seconds (the default), write a `timeout` above it (`timeout 900` gives `timeout: 960`).
+- A script with a side effect beyond the check (a `build` that deploys or publishes, a test script that needs a secret or a remote service) gets no item; the report says why, and a side-effect-free form the project runs (`next build` alone) may take its place.
 
 ## By project file
 
