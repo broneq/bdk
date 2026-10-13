@@ -29,9 +29,9 @@ Which skill calls which command. Every skill that reads the configuration also r
 | `bdk config check`, `bdk config set` | `/bdk:setup` |
 | `bdk openspec install` | `/bdk:setup` |
 | `bdk run status` | `/bdk:run`, `/bdk:execute`, `/bdk:auto-review`, `/bdk:close` |
-| `bdk plan check` | `/bdk:plan`, `/bdk:plan-draft`, `/bdk:verify-plan`, `/bdk:plan-fixes`, `/bdk:diagnose-bug`, `/bdk:execute-waves` |
+| `bdk plan check` | `/bdk:plan`, `/bdk:plan-draft`, `/bdk:verify-plan`, `/bdk:plan-fixes`, `/bdk:diagnose-bug`, `/bdk:execute-waves`, `/bdk:repair-wave` |
 | `bdk rules for` | `/bdk:design-draft`, `/bdk:verify-design` (stage `design`); `/bdk:plan-draft`, `/bdk:verify-plan` (stage `plan`); `/bdk:implement-part`, `/bdk:conform-part` (stage `execute`); `/bdk:review-group`, `/bdk:judge` (stage `review`) |
-| `bdk check run` | `/bdk:implement-part`, `/bdk:conform-part`, `/bdk:resolve-conflict`, `/bdk:execute-waves` (the wave check), `/bdk:review-round` |
+| `bdk check run` | `/bdk:implement-part`, `/bdk:conform-part`, `/bdk:repair-wave`, `/bdk:execute-waves` (the wave check), `/bdk:review-round` |
 | `bdk git groups` | `/bdk:review-round`, `/bdk:pr-review-round`; `/bdk:review-group` and `/bdk:review-integration` for a manual round |
 | `bdk git scope` | no skill (`bdk git groups` uses the same range logic) |
 | `bdk findings add` | `/bdk:review-group`, `/bdk:review-integration`, `/bdk:e2e-check` |
@@ -108,7 +108,7 @@ flowchart TB
   end
   subgraph R4[" "]
     direction LR
-    S4["/bdk:execute"] --- C4["execution.lead<br/>models.lead<br/>execution.max-parallel<br/>policy.budgets.part-attempts<br/>policy.escalation.model<br/>policy.escalation.effort<br/>tools.test, tools.lint, tools.build<br/>languages, rules<br/>models.implementer<br/>models.conformer<br/>policy.questions (retry)"]
+    S4["/bdk:execute"] --- C4["execution.lead<br/>models.lead<br/>policy.budgets.part-attempts<br/>policy.escalation.model<br/>policy.escalation.effort<br/>tools.test, tools.lint, tools.build<br/>languages, rules<br/>models.implementer<br/>models.conformer<br/>policy.questions (retry)"]
   end
   subgraph R5[" "]
     direction LR
@@ -133,7 +133,7 @@ The same as a list, key by key; types, defaults and allowed values are in the [s
 
 | Key | Read by |
 |---|---|
-| `tools.test`, `tools.lint`, `tools.build` | `bdk check run` (in `/bdk:implement-part`, `/bdk:conform-part`, `/bdk:resolve-conflict`, `/bdk:execute-waves`, `/bdk:review-round`, each at its check point); `/bdk:setup` writes them |
+| `tools.test`, `tools.lint`, `tools.build` | `bdk check run` (in `/bdk:implement-part`, `/bdk:conform-part`, `/bdk:repair-wave`, `/bdk:execute-waves`, `/bdk:review-round`, each at its check point); `/bdk:setup` writes them |
 | `tools.e2e` | `/bdk:e2e-check`, `/bdk:diagnose-bug`; `/bdk:setup` writes it |
 | `languages`, `rules` | `bdk rules for` (in the design, plan, execute and review blocks above) |
 | `policy.gates.design` | `/bdk:design` (design gate), `/bdk:debug` (fix gate) |
@@ -145,7 +145,7 @@ The same as a list, key by key; types, defaults and allowed values are in the [s
 | `policy.escalation.model`, `policy.escalation.effort` | `/bdk:execute-waves` |
 | `plan.part.max-tasks`, `plan.part.max-files`, `plan.part.max-bytes` | `bdk plan check`, `/bdk:plan-draft`, `/bdk:plan-fixes`, `/bdk:diagnose-bug` |
 | `execution.lead` | `/bdk:execute`, `/bdk:auto-review`, `/bdk:pr-review` |
-| `execution.max-parallel` | `/bdk:execute-waves`, `/bdk:review-round`, `/bdk:pr-review-round` |
+| `execution.max-parallel` | `/bdk:review-round`, `/bdk:pr-review`, `/bdk:pr-review-round` |
 | `models.<role>.model`, `models.<role>.effort` for the roles `lead`, `explorer`, `designer`, `planner`, `verifier`, `implementer`, `conformer`, `reviewer`, `integration-reviewer`, `e2e-tester`, `judge`, `analyst` | the `Agent` call that starts that role (`model` and `effort`) |
 | `hooks.subagent-git` | `bdk hooks pre-tool-use` |
 
@@ -185,7 +185,7 @@ flowchart TB
   C -->|"yes"| DENY["deny: leave the changes in the tree,<br/>the lead or the main thread commits"]
 ```
 
-Without the guard, the rule still holds by instruction: the `implementer`, `conformer` and other worker agents are told never to run `git commit`, `add`, `stash`, `reset`, `merge` and the like, and `/bdk:execute-waves` stops when a worker wrote outside its work directory.
+Without the guard, the rule still holds by instruction: the `implementer`, `conformer` and other worker agents are told never to run `git commit`, `add`, `stash`, `reset`, `merge` and the like, and `/bdk:execute-waves` stops when a commit it did not make shows in `git log`.
 
 ## Sources
 

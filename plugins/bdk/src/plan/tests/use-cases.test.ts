@@ -42,7 +42,6 @@ function part(id: string, deps: string[], files: string[], tasks = 2): string {
     "---",
     `id: "${id}"`,
     `depends-on: [${deps.map((dep) => `"${dep}"`).join(", ")}]`,
-    "isolation: worktree",
     "files:",
     ...files.map((file) => `  - ${file}`),
     "---",

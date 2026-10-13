@@ -111,7 +111,7 @@ artifacts:
 
   - id: plan
     generates: "plan/parts/*.md"
-    description: The work cut into parts, one file per part, with dependencies, isolation, files, acceptance scenarios and tasks
+    description: The work cut into parts, one file per part, with dependencies, files, acceptance scenarios and tasks
     template: part.md
     instruction: |
       Cut the work into parts and write one file per part,
@@ -123,14 +123,10 @@ artifacts:
       - `id`: the file stem, quoted (`"01"`). Unquoted, YAML reads 01 as 1.
       - `depends-on`: ids of the parts that must be done first, `[]` when none.
         Depend only on what this part really needs from another part; every
-        extra edge makes the run slower.
-      - `isolation`: `worktree` when the part can run in its own git worktree
-        in parallel with others (the default), `shared` when it cannot, for
-        example because it changes generated or global state; a `shared` part
-        runs alone.
+        extra edge adds a wave, and each wave runs the whole wave check.
       - `files`: every file the part creates, changes or deletes, as exact
         repository-relative paths, tests included. No globs, no directories.
-        Parts that run in parallel must not share a file.
+      No other key: the parts run one after another in the Change checkout.
 
       Body:
       - **Goal**: what works after this part, in one or two sentences.

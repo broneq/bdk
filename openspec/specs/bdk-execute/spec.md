@@ -1,7 +1,7 @@
 # bdk-execute Specification
 
 ## Purpose
-Defines the execute stage of the `bdk` plugin: the thin orchestrator `/bdk:execute`, which starts one `bdk:lead` agent and passes its result or blocker on, and the lead skill `execute-waves`, which runs the plan parts of a Change in parallel waves, commits and merges them, and is the only writer of the part state.
+Defines the execute stage of the `bdk` plugin: the thin orchestrator `/bdk:execute`, which starts one `bdk:lead` agent and passes its result or blocker on, and the lead skill `execute-waves`, which builds the plan parts of a Change one at a time in the main checkout, in plan order, commits each part on the Change branch, runs a wave check after each wave, and is the only writer of the part state.
 
 ## Requirements
 
@@ -28,64 +28,19 @@ The `bdk` plugin SHALL ship the skills `execute` (`skills/execute/`, the user co
 - **WHEN** the project layer sets `execution.lead: foreground`
 - **THEN** the `Agent` call that starts `bdk:lead` does not run in the background
 
-### Requirement: Waves and batches
-
-The lead SHALL take the waves from `bdk plan check <change plan/parts dir> --json`. It SHALL stop before any part runs when a part has no wave or a `shared-not-alone` problem is reported, naming the problems and `/bdk:plan <change>`; every other problem (part limits, overlapping files) SHALL be recorded in the result and SHALL NOT stop the stage. It SHALL run the waves in order, skipping parts that `state.json` marks `done`. Within a wave it SHALL start at most `execution.max-parallel` part agents at once, as foreground `Agent` calls in one message; a wave with more parts SHALL run in batches in ascending part order. A part SHALL be implemented by `bdk:implementer` running `implement-part`, then conformed by `bdk:conformer` running `conform-part`, each started with a prompt naming its skill and the arguments `<change> <part-id> --run-dir <absolute run dir>`, plus `--workdir <worktree>` for a part that runs in a worktree, and with `model` set to `models.implementer` or `models.conformer` when the configuration sets it.
-
-#### Scenario: Two worktree parts in one wave
-
-- **WHEN** parts `01` and `02` both have no dependency and `isolation: worktree`
-- **THEN** the lead starts both implementers in one message, then both conformers in one message, and each implementer prompt names its own `--workdir`
-
-#### Scenario: Wave larger than the limit
-
-- **WHEN** a wave holds parts `01` to `07` and `execution.max-parallel` is 5
-- **THEN** the lead starts the implementers of parts `01` to `05` in one message and those of `06` and `07` after them
-
-#### Scenario: Plan with a cycle
-
-- **WHEN** `bdk plan check --json` reports a `cycle` problem between parts `02` and `03`
-- **THEN** no agent starts, `state.json` is unchanged, and the result names the cycle and `/bdk:plan`
-
-### Requirement: Branch and worktrees
-
-Before the first part, the lead SHALL require a working tree without changes other than ignored files and stop otherwise, naming the changed paths, with one exception: when `state.json` records at least one attempt of the part that runs next in the main checkout and every changed path lies within that part's `files`, the changes SHALL be kept as that part's earlier work and the part SHALL continue from them. When the current branch is the base branch (the default branch of `origin`, else `main`) or no branch, it SHALL create and switch to a branch named after the Change; when that branch exists already, it SHALL stop.
-
-A part SHALL run in the main checkout when it has `isolation: shared`, or when it is the only part of its wave that `state.json` does not mark `done` and neither its worktree directory `<run dir>/worktrees/<part-id>` nor its branch `bdk/<change>/part-<part-id>` exists. The count SHALL be taken per wave, never per batch of `execution.max-parallel`. The lead SHALL NOT change the part file's `isolation`. Every other part SHALL run in a git worktree at `<run dir>/worktrees/<part-id>` on the branch `bdk/<change>/part-<part-id>`: an existing worktree directory SHALL be reused, an existing branch SHALL be checked out into a new worktree, and otherwise the branch SHALL be made from the Change branch's current commit. Worker agents SHALL NOT change git history; only the lead commits, merges and removes worktrees.
-
-#### Scenario: Change branch from the base
-
-- **WHEN** `/bdk:execute add-totals` starts on `main` with a clean tree
-- **THEN** the parts are committed and merged on a new branch `add-totals`, and `main` keeps its commit
-
-#### Scenario: A wave with one part runs in the main checkout
-
-- **WHEN** the waves are `1: 01 02` and `2: 03`, every part has `isolation: worktree`, and no part has run before
-- **THEN** parts `01` and `02` run in worktrees and are merged, part `03` runs with no `--workdir`, no worktree or branch `bdk/<change>/part-03` is made, part `03` is committed directly on the Change branch with no merge commit, and `plan/parts/03.md` still says `isolation: worktree`
-
-#### Scenario: The worktree of a broken run is reused
-
-- **WHEN** parts `01` and `02` are `done` and merged, part `03` is `pending` with 1 attempt, and `<run dir>/worktrees/03` on the branch `bdk/<change>/part-03` holds its earlier work
-- **THEN** part `03` runs with `--workdir <run dir>/worktrees/03`, the earlier work is kept, and the part is merged into the Change branch and its worktree removed
-
-#### Scenario: Earlier work in the main checkout is kept
-
-- **WHEN** parts `01` and `02` are `done` and merged, part `03` is `blocked` with 1 attempt, and the main checkout holds uncommitted changes only in files of part `03`
-- **THEN** the lead does not stop on uncommitted changes, part `03` runs in the main checkout from those changes, and its commit lands on the Change branch
-
-#### Scenario: Changes outside the next part still stop the stage
-
-- **WHEN** part `03` has 1 attempt and the main checkout holds an uncommitted change to a file outside part `03`'s `files`
-- **THEN** no agent starts and the result names the changed paths
-
 ### Requirement: Retries and escalation
 
-A part SHALL get at most `policy.budgets.part-attempts` implementer runs in one execute run; the last run within the budget SHALL use the model `policy.escalation.model` and the effort `policy.escalation.effort`, or `models.implementer.effort` when `policy.escalation.effort` is not set, and no effort when neither is set. A part SHALL be retried when its implementer reports `Status: blocker` with `Kind: other`, or its conformer reports `Verdict: FAIL`, or either agent returns no report; a retry SHALL run the implementer on the same work directory and then the conformer again. A blocker of `Kind: plan-defect` or `Kind: environment` SHALL NOT be retried: the part SHALL be marked `blocked` at once. A part whose budget is spent SHALL be marked `blocked` with the last report's reason. After a wave with a blocked part the lead SHALL merge the parts of that wave that are done and SHALL NOT start a later wave. The second `resolve-conflict` run of a part SHALL use the same escalated model and effort.
+A part SHALL get at most `policy.budgets.part-attempts` implementer runs in one execute run; the last run within the budget SHALL use the model `policy.escalation.model` and the effort `policy.escalation.effort`, or `models.implementer.effort` when `policy.escalation.effort` is not set, and no effort when neither is set. A part SHALL be retried when its implementer reports `Status: blocker` with `Kind: other`, or its conformer reports `Verdict: FAIL`, or either agent returns no report; a retry SHALL run the implementer on the same files and then the conformer again, before any later part starts. A blocker of `Kind: plan-defect` or `Kind: environment` SHALL NOT be retried: the part SHALL be marked `blocked` at once. A part whose budget is spent SHALL be marked `blocked` with the last report's reason. When a part is blocked, the lead SHALL start no later part, of its wave or of a later one, and SHALL leave the part's uncommitted work in the main checkout. The second `repair-wave` run of a wave SHALL use the same escalated model and effort.
 
 #### Scenario: Plan defect stops the part
 
 - **WHEN** the implementer of part `02` reports `Status: blocker` and `Kind: plan-defect`
-- **THEN** no second implementer starts for part `02`, `state.json` marks `02` `blocked` with 1 attempt and a reason naming the plan defect, and no later wave starts
+- **THEN** no second implementer starts for part `02`, `state.json` marks `02` `blocked` with 1 attempt and a reason naming the plan defect, and no later part starts
+
+#### Scenario: Blocked part stops its wave
+
+- **WHEN** wave 1 holds parts `01` and `02`, and part `01` is blocked with `Kind: environment`
+- **THEN** no implementer of part `02` starts, `state.json` marks `02` `pending`, and part `01`'s changes stay uncommitted in the main checkout
 
 #### Scenario: Escalation on the last attempt
 
@@ -97,18 +52,9 @@ A part SHALL get at most `policy.budgets.part-attempts` implementer runs in one 
 - **WHEN** `policy.budgets.part-attempts` is 1, `policy.escalation.model` is `sonnet` and `policy.escalation.effort` is `low`
 - **THEN** the first and only implementer of each part starts with `model` `sonnet` and `effort` `low`
 
-### Requirement: Commits and merge-back
-
-When a part's conformer reports `Verdict: PASS`, the lead SHALL commit the part's changes: in its worktree for a part that runs in a worktree, on the Change branch in the main checkout for a part that runs there, with a message that follows the style of the project's recent commits and names the part. A part committed in the main checkout SHALL NOT be merged. After every part of a wave is done or blocked, the lead SHALL merge the branch of each done part that ran in a worktree into the Change branch, in ascending part order, as a merge commit, then remove its worktree and branch. When a merge stops on conflicts, the lead SHALL start `bdk:implementer` running `resolve-conflict` with the arguments `<change> <part-id> --run-dir <absolute run dir>` in the main checkout. On `Status: done` it SHALL check that no unmerged path and no conflict marker is left, stage the resolved files and commit the merge; otherwise it SHALL run `resolve-conflict` once more on `policy.escalation.model`, and when that also fails, abort the merge, keep the part's branch and worktree, and mark the part `blocked` with the reason `merge conflict`.
-
-#### Scenario: Merge conflict resolved
-
-- **WHEN** parts `01` and `02` of one wave both added a function at the end of `src/ledger.js`, and merging part `02` after part `01` stops on a conflict
-- **THEN** `resolve-conflict` runs for part `02`, the lead commits the merge, the Change branch holds both functions, and no worktree of the Change is left
-
 ### Requirement: Part state
 
-The lead SHALL be the only writer of `<run dir>/state.json`, in the schema of spec `bdk-cli/run`: every part of the plan with `status` `pending`, `done` or `blocked`, `attempts` counting every implementer run of the part across execute runs, and a `reason` for a blocked part; and every wave that has started with its `base`, its `status` `pending`, `done` or `blocked`, and a `reason` for a blocked wave. A part SHALL become `done` only after its conformer reported `Verdict: PASS`; its state SHALL be written before the next batch starts. A wave SHALL become `done` only after its wave check (spec "Wave check"). On a new execute run the lead SHALL start from `state.json`: done parts are skipped, and pending and blocked parts run again with a fresh budget. A done worktree part whose branch is not yet merged into the Change branch SHALL be merged before the next wave.
+The lead SHALL be the only writer of `<run dir>/state.json`, in the schema of spec `bdk-cli/run`: every part of the plan with `status` `pending`, `done` or `blocked`, `attempts` counting every implementer run of the part across execute runs, and a `reason` for a blocked part; and every wave that has started with its `base`, its `status` `pending`, `done` or `blocked`, and a `reason` for a blocked wave. A part SHALL become `done` only after its conformer reported `Verdict: PASS` and its commit; its state SHALL be written before the next part starts. A wave SHALL become `done` only after its wave check (spec "Wave check"). On a new execute run the lead SHALL start from `state.json`: done parts are skipped, and pending and blocked parts run again with a fresh budget.
 
 #### Scenario: Resume after a break
 
@@ -122,9 +68,9 @@ The lead SHALL be the only writer of `<run dir>/state.json`, in the schema of sp
 
 ### Requirement: Result and blockers
 
-The lead SHALL write `<run dir>/execute/result.md`, replacing an earlier one: the first line `Status: done` (every part done and merged, every wave `done`) or `Status: blocked`; then `## Waves` (each wave with its parts and its wave check: `checks/wave-<n>.json` with its verdict, and `execute/wave-<n>.md` when it was repaired), `## Parts` (one line per part: status, attempts, its last report, and its commit or merge), `## Blockers` (one line per blocked part or wave: kind, evidence and the command that unblocks it), and `## Decisions taken without the user` (plan problems that did not stop the stage, escalations, merge resolutions, wave repairs). An empty section SHALL hold `- None.` The lead SHALL reply with the status line and the result path only.
+The lead SHALL write `<run dir>/execute/result.md`, replacing an earlier one: the first line `Status: done` (every part done and committed, every wave `done`) or `Status: blocked`; then `## Waves` (each wave with its parts and its wave check: `checks/wave-<n>.json` with its verdict, and `execute/wave-<n>.md` when it was repaired), `## Parts` (one line per part: status, attempts, its last report, and its commit), `## Blockers` (one line per blocked part or wave: kind, evidence and the command that unblocks it), and `## Decisions taken without the user` (plan problems that did not stop the stage, escalations, wave repairs). An empty section SHALL hold `- None.` The lead SHALL reply with the status line and the result path only.
 
-`/bdk:execute` SHALL reply with the result's status line, the result path, and on `Status: done` the next stage `/bdk:auto-review <change>`. On `Status: blocked` it SHALL name each blocker with its command. With `policy.questions: stop` it SHALL ask the user whether to retry the blocked parts or stop, and on a retry continue the same lead with `SendMessage`; with `policy.questions: decide-and-record` it SHALL stop and record that it did not retry. It SHALL NOT fix a part, a plan or a merge itself.
+`/bdk:execute` SHALL reply with the result's status line, the result path, and on `Status: done` the next stage `/bdk:auto-review <change>`. On `Status: blocked` it SHALL name each blocker with its command. With `policy.questions: stop` it SHALL ask the user whether to retry the blocked parts or stop, and on a retry continue the same lead with `SendMessage`; with `policy.questions: decide-and-record` it SHALL stop and record that it did not retry. It SHALL NOT fix a part, a plan or a wave itself.
 
 #### Scenario: Blocker reaches the main thread
 
@@ -138,7 +84,7 @@ The lead SHALL write `<run dir>/execute/result.md`, replacing an earlier one: th
 
 ### Requirement: Parts of another directory
 
-`execute-waves` SHALL take `--parts <dir>`, an absolute directory of part files in the plan part format, such as the fix parts of a review round. With it, the lead SHALL take the waves from `bdk plan check <dir> --json`, SHALL pass `--parts <dir>` to every `implement-part`, `conform-part` and `resolve-conflict` it starts, SHALL keep the part state in `state.json` and write the result to `result.md` in the directory that holds `<dir>` (never in `<dir>`, where `bdk plan check` reports any other `.md` file), and SHALL leave `<run dir>/state.json` and `<run dir>/execute/result.md` unchanged. Part reports and check results SHALL stay under `<run dir>/execute/` and `<run dir>/checks/`. Without `--parts` the parts SHALL be `openspec/changes/<change>/plan/parts/` and the state and result SHALL be as before.
+`execute-waves` SHALL take `--parts <dir>`, an absolute directory of part files in the plan part format, such as the fix parts of a review round. With it, the lead SHALL take the waves from `bdk plan check <dir> --json`, SHALL pass `--parts <dir>` to every `implement-part`, `conform-part` and `repair-wave` it starts, SHALL keep the part state in `state.json` and write the result to `result.md` in the directory that holds `<dir>` (never in `<dir>`, where `bdk plan check` reports any other `.md` file), and SHALL leave `<run dir>/state.json` and `<run dir>/execute/result.md` unchanged. Part reports and check results SHALL stay under `<run dir>/execute/` and `<run dir>/checks/`. Without `--parts` the parts SHALL be `openspec/changes/<change>/plan/parts/` and the state and result SHALL be as before.
 
 #### Scenario: Fix pass of a review round
 
@@ -147,23 +93,23 @@ The lead SHALL write `<run dir>/execute/result.md`, replacing an earlier one: th
 
 ### Requirement: Wave check
 
-Before it starts the first part of a wave, the lead SHALL record the wave's base, `git rev-parse HEAD` on the Change branch, in `state.json` as `waves.<n>.base` with `status` `pending`, unless the state already holds a base for that wave. After every part of the wave is `done` and on the Change branch (merged, or committed in the main checkout), the lead SHALL run `bdk check run <run dir> wave-<n> --at wave --changed <base>` in the main checkout. A `pass` or `none` verdict SHALL mark the wave `done`. On `fail` the lead SHALL start `bdk:implementer` running `resolve-conflict` with the arguments `<change> --wave <n> --base <base> --run-dir <absolute run dir>` (plus `--parts <dir>` when it runs other parts), with `model` and `effort` as for a conflict. On `Status: done` it SHALL commit the changed files on the Change branch with a message that names the wave, and mark the wave `done`; otherwise it SHALL run `resolve-conflict` once more on `policy.escalation.model` and `policy.escalation.effort`, committing on `Status: done`, and when that also fails, mark the wave `blocked` with the report's kind and evidence as `reason`, keep its uncommitted changes, and start no later wave. A wave with a blocked part SHALL get no wave check.
+Before it starts the first part of a wave, the lead SHALL record the wave's base, `git rev-parse HEAD` on the Change branch, in `state.json` as `waves.<n>.base` with `status` `pending`, unless the state already holds a base for that wave. After every part of the wave is `done` and committed, the lead SHALL run `bdk check run <run dir> wave-<n> --at wave --changed <base>` in the main checkout. A `pass` or `none` verdict SHALL mark the wave `done`. On `fail` the lead SHALL start `bdk:implementer` running `repair-wave` with the arguments `<change> <n> --base <base> --run-dir <absolute run dir>` (plus `--parts <dir>` when it runs other parts), with `model` `models.implementer.model` and `effort` `models.implementer.effort`, each when set. On `Status: done` it SHALL commit the changed files on the Change branch with a message that names the wave, and mark the wave `done`; otherwise it SHALL run `repair-wave` once more on `policy.escalation.model` and `policy.escalation.effort`, committing on `Status: done`, and when that also fails, mark the wave `blocked` with the report's kind and evidence as `reason`, keep its uncommitted changes, and start no later wave. A wave with a blocked part SHALL get no wave check.
 
-On a new execute run, a wave whose parts are all `done` and whose state is not `done` SHALL get its wave check (and repair) before any later wave starts. The uncommitted changes of a repair that failed stay in the main checkout for the user; the next run stops on them as on any uncommitted change (spec "Branch and worktrees").
+On a new execute run, a wave whose parts are all `done` and whose state is not `done` SHALL get its wave check (and repair) before any later wave starts. The uncommitted changes of a repair that failed stay in the main checkout for the user; the next run stops on them as on any uncommitted change (spec "Branch and working tree").
 
 #### Scenario: Green wave
 
-- **WHEN** wave 1 holds parts `01` and `02`, both are merged, and the `tools.test` item `unit` (`when: [wave, review]`) passes
+- **WHEN** wave 1 holds parts `01` and `02`, both are committed, and the `tools.test` item `unit` (`when: [wave, review]`) passes
 - **THEN** `checks/wave-1.json` holds `test unit` with `at` `wave` and the `changed` ref of `waves.1.base`, `state.json` marks wave 1 `done`, and wave 2 starts
 
 #### Scenario: Red wave repaired
 
-- **WHEN** `checks/wave-1.json` fails after parts `01` and `02` are merged
-- **THEN** `resolve-conflict` runs with `--wave 1 --base <waves.1.base>`, the lead commits its repair on the Change branch, wave 1 is `done`, and wave 2 starts
+- **WHEN** `checks/wave-1.json` fails after parts `01` and `02` are committed
+- **THEN** `repair-wave` runs with the arguments `<change> 1 --base <waves.1.base>`, the lead commits its repair on the Change branch, wave 1 is `done`, and wave 2 starts
 
 #### Scenario: Red wave not repaired
 
-- **WHEN** `checks/wave-1.json` stays red after two `resolve-conflict` runs
+- **WHEN** `checks/wave-1.json` stays red after two `repair-wave` runs
 - **THEN** `state.json` marks wave 1 `blocked`, no part of wave 2 starts, and `execute/result.md` starts with `Status: blocked` and names `execute/wave-1.md`
 
 ### Requirement: One part goes to implement-part
@@ -179,3 +125,57 @@ On a new execute run, a wave whose parts are all `done` and whose state is not `
 
 - **WHEN** the user writes "Implement part 01 of the plan of the change add-csv-export." in a project where BDK is installed
 - **THEN** the main session invokes the skill `implement-part`, not `/bdk:execute`, in each of 6 runs of the eval case `implement-part-csv`
+
+### Requirement: Waves and part order
+
+The lead SHALL take the waves from `bdk plan check <change plan/parts dir> --json`. It SHALL stop before any part runs when a part has no wave, naming the problems and `/bdk:plan <change>`; every other problem (part limits) SHALL be recorded in the result and SHALL NOT stop the stage. It SHALL run the parts one at a time in plan order: the waves in ascending order, and the parts of a wave in ascending part id, skipping parts that `state.json` marks `done`. A part SHALL be implemented by `bdk:implementer` running `implement-part`, then conformed by `bdk:conformer` running `conform-part`, each started as one foreground `Agent` call with a prompt naming its skill and the arguments `<change> <part-id> --run-dir <absolute run dir>`, and with `model` set to `models.implementer` or `models.conformer` when the configuration sets it. The next part SHALL start only after the part before it is committed. The lead SHALL NOT read `execution.max-parallel`.
+
+#### Scenario: Parts of one wave in order
+
+- **WHEN** parts `01` and `02` both have no dependency and part `03` depends on `01`
+- **THEN** the lead runs the implementer and the conformer of `01`, commits `01`, then runs `02` the same way and commits it, then runs `03`, and no two part agents run at the same time
+
+#### Scenario: Plan with a cycle
+
+- **WHEN** `bdk plan check --json` reports a `cycle` problem between parts `02` and `03`
+- **THEN** no agent starts, `state.json` is unchanged, and the result names the cycle and `/bdk:plan`
+
+#### Scenario: Plan written with isolation
+
+- **WHEN** part `01` still holds `isolation: worktree` and `bdk plan check --json` reports a `frontmatter` problem of part `01` naming `isolation`
+- **THEN** no agent starts and the result names the problem and `/bdk:plan`
+
+### Requirement: Branch and working tree
+
+Before the first part, the lead SHALL require a working tree without changes other than ignored files and stop otherwise, naming the changed paths, with one exception: when `state.json` records at least one attempt of the part that runs next and every changed path lies within that part's `files`, the changes SHALL be kept as that part's earlier work and the part SHALL continue from them. When the current branch is the base branch (the default branch of `origin`, else `main`) or no branch, it SHALL create and switch to a branch named after the Change; when that branch exists already, it SHALL stop.
+
+Every part SHALL run in the main checkout, on the Change branch. The lead SHALL NOT create a git worktree or a part branch and SHALL NOT merge; it SHALL pass no `--workdir` to a worker. Worker agents SHALL NOT change git history; only the lead commits.
+
+#### Scenario: Change branch from the base
+
+- **WHEN** `/bdk:execute add-totals` starts on `main` with a clean tree
+- **THEN** the parts are committed on a new branch `add-totals`, and `main` keeps its commit
+
+#### Scenario: No worktree for a multi-part plan
+
+- **WHEN** the waves are `1: 01 02` and `2: 03` and no part has run before
+- **THEN** every implementer and conformer prompt holds no `--workdir`, no `git worktree` command runs, no branch `bdk/add-totals/part-*` exists, and the Change branch holds one commit per part with no merge commit
+
+#### Scenario: Earlier work in the main checkout is kept
+
+- **WHEN** parts `01` and `02` are `done`, part `03` is `blocked` with 1 attempt, and the main checkout holds uncommitted changes only in files of part `03`
+- **THEN** the lead does not stop on uncommitted changes, part `03` runs from those changes, and its commit lands on the Change branch
+
+#### Scenario: Changes outside the next part still stop the stage
+
+- **WHEN** part `03` has 1 attempt and the main checkout holds an uncommitted change to a file outside part `03`'s `files`
+- **THEN** no agent starts and the result names the changed paths
+
+### Requirement: Commits
+
+When a part's conformer reports `Verdict: PASS`, the lead SHALL commit the part's changes on the Change branch in the main checkout, with a message that follows the style of the project's recent commits and names the part, before the next part starts. A worker that committed, or a change the lead finds outside the part's `files` after its conformer, SHALL stop the stage with a blocker naming the paths.
+
+#### Scenario: One commit per part
+
+- **WHEN** parts `01`, `02` and `03` all pass their conformer
+- **THEN** the Change branch gains three commits, in the order `01`, `02`, `03`, each naming its part, and no merge commit

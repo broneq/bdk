@@ -4,14 +4,9 @@
 
 import { parse } from "yaml";
 
-export const ISOLATIONS = ["worktree", "shared"] as const;
-export type Isolation = (typeof ISOLATIONS)[number];
-
 export interface Part {
   /** The file stem, `01` for `01.md`. */
   readonly id: string;
-  /** Null when `isolation` is missing or invalid. */
-  readonly isolation: Isolation | null;
   /** Empty when `depends-on` is missing or invalid. */
   readonly dependsOn: readonly string[];
   /** The distinct paths of `files`, in their first order; empty when `files` is invalid. */
@@ -97,7 +92,7 @@ export function readPart(id: string, text: string): Part {
   };
   const found = frontmatter(text.split(/\r?\n/));
   if ("fault" in found) {
-    return { ...measures, isolation: null, dependsOn: [], files: [], faults: [found.fault] };
+    return { ...measures, dependsOn: [], files: [], faults: [found.fault] };
   }
   const { data } = found;
   const faults: string[] = [];
@@ -111,15 +106,11 @@ export function readPart(id: string, text: string): Part {
   if (deps === undefined) faults.push("depends-on is missing; use [] for none");
   else if (!isStrings(deps)) faults.push("depends-on is not a list of quoted part ids");
 
-  const isolation = ISOLATIONS.find((name) => name === data.isolation) ?? null;
-  if (isolation === null) {
-    const was =
-      data.isolation === undefined
-        ? "missing"
-        : typeof data.isolation === "string"
-          ? data.isolation
-          : JSON.stringify(data.isolation);
-    faults.push(`isolation is ${was}, not worktree or shared`);
+  // A plan written for parallel worktrees must not pass and keep telling its reader so.
+  if ("isolation" in data) {
+    faults.push(
+      "isolation is no longer a part key: parts run one after another in the main checkout; remove it",
+    );
   }
 
   const listed = data.files;
@@ -137,7 +128,6 @@ export function readPart(id: string, text: string): Part {
 
   return {
     ...measures,
-    isolation,
     dependsOn: isStrings(deps) ? [...new Set(deps)] : [],
     files,
     faults,

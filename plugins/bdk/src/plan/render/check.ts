@@ -22,7 +22,6 @@ export function renderCheck(result: CheckResult): string {
   if (parts.length > 0) {
     const rows = parts.map((part) => [
       part.id,
-      part.isolation ?? "-",
       `tasks ${String(part.tasks)}/${String(limits.maxTasks)}`,
       `files ${String(part.files)}/${String(limits.maxFiles)}`,
       `bytes ${String(part.bytes)}/${String(limits.maxBytes)}`,

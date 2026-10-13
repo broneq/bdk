@@ -15,7 +15,6 @@ describe("renderCheck", () => {
       parts: [
         {
           id: "01",
-          isolation: "worktree",
           dependsOn: [],
           tasks: 4,
           files: 9,
@@ -24,7 +23,6 @@ describe("renderCheck", () => {
         },
         {
           id: "02",
-          isolation: "shared",
           dependsOn: ["01"],
           tasks: 6,
           files: 3,
@@ -33,7 +31,6 @@ describe("renderCheck", () => {
         },
         {
           id: "03",
-          isolation: null,
           dependsOn: ["01", "02"],
           tasks: 2,
           files: 12,
@@ -49,7 +46,7 @@ describe("renderCheck", () => {
         {
           check: "frontmatter",
           parts: ["03"],
-          message: "isolation is missing, not worktree or shared",
+          message: "files is empty",
         },
         { check: "max-tasks", parts: ["02"], message: "6 tasks, above plan.part.max-tasks 5" },
       ],
@@ -61,11 +58,11 @@ describe("renderCheck", () => {
         "  1: 01",
         "  2: 02",
         "parts:",
-        "  01  worktree  tasks 4/5  files 9/10   bytes 5120/8192  wave 1  depends-on -",
-        "  02  shared    tasks 6/5  files 3/10   bytes 900/8192   wave 2  depends-on 01",
-        "  03  -         tasks 2/5  files 12/10  bytes 1300/8192  wave -  depends-on 01,02",
+        "  01  tasks 4/5  files 9/10   bytes 5120/8192  wave 1  depends-on -",
+        "  02  tasks 6/5  files 3/10   bytes 900/8192   wave 2  depends-on 01",
+        "  03  tasks 2/5  files 12/10  bytes 1300/8192  wave -  depends-on 01,02",
         "problems:",
-        "  frontmatter 03: isolation is missing, not worktree or shared",
+        "  frontmatter 03: files is empty",
         "  max-tasks 02: 6 tasks, above plan.part.max-tasks 5",
         "",
       ].join("\n"),
@@ -80,7 +77,6 @@ describe("renderCheck", () => {
         parts: [
           {
             id: "01",
-            isolation: "worktree",
             dependsOn: [],
             tasks: 1,
             files: 1,
@@ -92,7 +88,7 @@ describe("renderCheck", () => {
         problems: [],
       }),
     ).toBe(
-      "plan: 1 part, 1 wave, ok\nwaves:\n  1: 01\nparts:\n  01  worktree  tasks 1/5  files 1/10  bytes 10/8192  wave 1  depends-on -\n",
+      "plan: 1 part, 1 wave, ok\nwaves:\n  1: 01\nparts:\n  01  tasks 1/5  files 1/10  bytes 10/8192  wave 1  depends-on -\n",
     );
   });
 

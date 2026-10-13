@@ -40,7 +40,7 @@ Maps the code a BDK Change touches and writes the map to the run file its block 
 
 Model: `sonnet` · Tools: `Read`, `Edit`, `Write`, `Bash`, `Grep`, `Glob`, `Skill`
 
-Implements one plan part of a BDK Change test-first - acceptance tests seen red, the tasks, the part checks green - and writes the part report, or stops on a plan defect; also resolves the merge conflict a part left when the execute lead merged it. Started by the execute lead, or by the implement-part or resolve-conflict block, with a prompt naming the skill (bdk:implement-part or bdk:resolve-conflict) and its arguments.
+Implements one plan part of a BDK Change test-first - acceptance tests seen red, the tasks, the part checks green - and writes the part report, or stops on a plan defect; also repairs a red wave check after the parts of a wave are committed. Started by the execute lead, or by the implement-part or repair-wave block, with a prompt naming the skill (bdk:implement-part or bdk:repair-wave) and its arguments.
 
 ## `integration-reviewer` {#integration-reviewer}
 
@@ -58,7 +58,7 @@ Sets the level of every finding of a BDK review round by the product's behaviour
 
 Model: `sonnet` · Tools: `Read`, `Write`, `Edit`, `Bash`, `Grep`, `Glob`, `Skill`, `Agent`
 
-Runs one long mechanical stage of BDK (the execute stage of a Change, a fix pass or one review round of a Change, the review of a pull request) in a fresh context - starts the stage's worker agents, commits and merges their work, writes the stage's state and result, and returns one result line. Started by a BDK orchestrator such as /bdk:execute, /bdk:auto-review or /bdk:pr-review with a prompt naming the stage skill (bdk:execute-waves, bdk:review-round, bdk:pr-review-round) and its arguments; continue it with SendMessage after a blocker.
+Runs one long mechanical stage of BDK (the execute stage of a Change, a fix pass or one review round of a Change, the review of a pull request) in a fresh context - starts the stage's worker agents, commits their work, writes the stage's state and result, and returns one result line. Started by a BDK orchestrator such as /bdk:execute, /bdk:auto-review or /bdk:pr-review with a prompt naming the stage skill (bdk:execute-waves, bdk:review-round, bdk:pr-review-round) and its arguments; continue it with SendMessage after a blocker.
 
 ## `planner` {#planner}
 

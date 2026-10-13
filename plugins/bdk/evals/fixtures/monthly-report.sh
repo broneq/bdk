@@ -146,7 +146,6 @@ cat > "$CHANGE/plan/parts/01.md" <<'MD'
 ---
 id: "01"
 depends-on: []
-isolation: worktree
 files:
   - src/parse.js
   - src/parse.test.js
@@ -174,7 +173,6 @@ cat > "$CHANGE/plan/parts/02.md" <<'MD'
 ---
 id: "02"
 depends-on: ["01"]
-isolation: worktree
 files:
   - src/report.js
   - src/report.test.js

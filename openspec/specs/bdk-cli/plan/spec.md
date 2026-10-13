@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Defines `bdk plan check`, the read-only command that checks the plan parts of a Change against the part limits of the configuration, finds `depends-on` cycles, layers the parts into waves and reports overlapping files within a wave and a `shared` part that does not run alone, so `/bdk:plan` and `plan-draft` get these answers without counting by hand.
+Defines `bdk plan check`, the read-only command that checks the plan parts of a Change against the part limits of the configuration, finds `depends-on` cycles, and layers the parts into waves, so `/bdk:plan` and `plan-draft` get these answers without counting by hand.
 
 ## Requirements
 
@@ -14,7 +14,7 @@ The part limits SHALL come from the resolved configuration of the project around
 
 #### Scenario: Plan without problems
 
-- **WHEN** `bdk plan check openspec/changes/x/plan/parts` runs in a configured project whose parts are within the limits, acyclic and free of overlaps
+- **WHEN** `bdk plan check openspec/changes/x/plan/parts` runs in a configured project whose parts are within the limits and acyclic
 - **THEN** stdout holds the summary, the waves in order and one line per part, no problem line, and the exit code is 0
 
 #### Scenario: Plan with a problem
@@ -45,10 +45,9 @@ A part SHALL begin with YAML frontmatter between a first line `---` and the next
 
 - `id`: a string equal to the file stem;
 - `depends-on`: a list of strings, the ids of other parts;
-- `isolation`: `worktree` or `shared`;
 - `files`: a non-empty list of strings, each a relative path that has no `..` segment, does not end with `/` and holds no `*` or `?`.
 
-A missing frontmatter, frontmatter that is not a YAML mapping, and every key that breaks these rules SHALL each be a `frontmatter` problem of that part, naming the key. A part with a `frontmatter` problem SHALL still be listed and measured, and SHALL get no wave.
+A missing frontmatter, frontmatter that is not a YAML mapping, and every key that breaks these rules SHALL each be a `frontmatter` problem of that part, naming the key. The key `isolation` SHALL also be a `frontmatter` problem, whose message says that parts run one after another in the main checkout and to remove the key: a plan written for parallel worktrees would otherwise pass and mislead its reader. A part with a `frontmatter` problem SHALL still be listed and measured, and SHALL get no wave.
 
 #### Scenario: Unquoted id
 
@@ -59,6 +58,11 @@ A missing frontmatter, frontmatter that is not a YAML mapping, and every key tha
 
 - **WHEN** part `02` lists `src/**/*.ts` in `files`
 - **THEN** the result holds a `frontmatter` problem of part `02` naming `files` and that path
+
+#### Scenario: Isolation left from an earlier plan
+
+- **WHEN** `01.md` has the frontmatter line `isolation: worktree`
+- **THEN** the result holds a `frontmatter` problem of part `01` naming `isolation` and saying to remove it, and part `01` has no wave
 
 #### Scenario: Stray file
 
@@ -111,37 +115,18 @@ Waves SHALL be computed from `depends-on`: a part without dependencies is in wav
 - **WHEN** part `02` depends on `09` and no `09.md` exists
 - **THEN** the result holds an `unknown-dependency` problem of part `02` naming `09`, and part `02` has no wave
 
-### Requirement: Overlap and shared parts within a wave
-
-A path listed in `files` by two or more parts of the same wave SHALL be an `overlap` problem naming those parts, the wave and the path, one problem per path. A part with `isolation: shared` in a wave with any other part SHALL be a `shared-not-alone` problem naming the `shared` part, the wave and the other parts of that wave.
-
-#### Scenario: Overlapping files
-
-- **WHEN** parts `02` and `03` are both in wave 2 and both list `src/api/routes.ts`
-- **THEN** the result holds an `overlap` problem naming parts `02` and `03`, wave 2 and `src/api/routes.ts`
-
-#### Scenario: Same file in different waves
-
-- **WHEN** part `01` in wave 1 and part `02` in wave 2 both list `src/a.ts`
-- **THEN** the result holds no `overlap` problem
-
-#### Scenario: Shared part with company
-
-- **WHEN** part `03` has `isolation: shared` and parts `02` and `03` are both in wave 2
-- **THEN** the result holds a `shared-not-alone` problem of part `03` naming wave 2 and part `02`
-
 ### Requirement: Check output
 
 The text output SHALL be, in this order:
 
 1. A summary line `plan: <n> parts, <w> waves, ok` without problems, or `plan: <n> parts, <w> waves, <p> problems` with them (`part`, `wave`, `problem` in the singular for one).
 2. `waves:` followed by one line `  <wave>: <ids separated by spaces>` per wave, or `waves: none` when no part has a wave.
-3. `parts:` followed by one line per part: its id, its isolation (`-` when not readable), `tasks <n>/<limit>`, `files <n>/<limit>`, `bytes <n>/<limit>`, `wave <wave>` (`-` without one) and `depends-on <ids separated by commas>` (`-` when empty).
+3. `parts:` followed by one line per part: its id, `tasks <n>/<limit>`, `files <n>/<limit>`, `bytes <n>/<limit>`, `wave <wave>` (`-` without one) and `depends-on <ids separated by commas>` (`-` when empty).
 4. Only with problems: `problems:` followed by one line per problem: its check, the part ids it names separated by commas (left out when it names none), a colon and its message.
 
-Problems SHALL be ordered by check in the order `no-parts`, `name`, `frontmatter`, `no-tasks`, `max-tasks`, `max-files`, `max-bytes`, `unknown-dependency`, `cycle`, `overlap`, `shared-not-alone`, and within a check by their first part id, then their message.
+Problems SHALL be ordered by check in the order `no-parts`, `name`, `frontmatter`, `no-tasks`, `max-tasks`, `max-files`, `max-bytes`, `unknown-dependency`, `cycle`, and within a check by their first part id, then their message.
 
-`--json` SHALL print one object: `ok` (true when there is no problem), `limits` (`maxTasks`, `maxFiles`, `maxBytes`), `parts` (each `id`, `isolation` or null, `dependsOn`, `tasks`, `files`, `bytes`, `wave` or null, in id order), `waves` (each `wave` and its `parts`, in wave order) and `problems` (each `check`, `parts` and `message`, in the order above).
+`--json` SHALL print one object: `ok` (true when there is no problem), `limits` (`maxTasks`, `maxFiles`, `maxBytes`), `parts` (each `id`, `dependsOn`, `tasks`, `files`, `bytes`, `wave` or null, in id order), `waves` (each `wave` and its `parts`, in wave order) and `problems` (each `check`, `parts` and `message`, in the order above).
 
 #### Scenario: Text a model reads
 

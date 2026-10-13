@@ -38,7 +38,7 @@ flowchart TB
   style S3 fill:transparent,stroke:transparent
 ```
 
-`bdk:reviewer`, `bdk:integration-reviewer`, `bdk:judge` and `bdk:e2e-tester` have their skill preloaded through the `skills:` frontmatter; the other agents call the skill their prompt names with the `Skill` tool. A block with an agent of its own (`/bdk:explore`, `/bdk:design-draft`, `/bdk:verify-design`, `/bdk:plan-draft`, `/bdk:verify-plan`, `/bdk:implement-part`, `/bdk:conform-part`, `/bdk:resolve-conflict`, `/bdk:spec-conformance`, `/bdk:diagnose-run`) starts that agent when it runs in the main thread, instead of doing the work (its step 0), so the author never checks its own work. `/bdk:diagnose-run` has no orchestrator: you type it, and its step 0 starts `bdk:analyst`. `/bdk:review-group`, `/bdk:review-integration`, `/bdk:judge` and `/bdk:e2e-check` have no step 0: in a round the lead starts their agents, and typed by a user they run in the main thread, like the main-thread blocks of the table below.
+`bdk:reviewer`, `bdk:integration-reviewer`, `bdk:judge` and `bdk:e2e-tester` have their skill preloaded through the `skills:` frontmatter; the other agents call the skill their prompt names with the `Skill` tool. A block with an agent of its own (`/bdk:explore`, `/bdk:design-draft`, `/bdk:verify-design`, `/bdk:plan-draft`, `/bdk:verify-plan`, `/bdk:implement-part`, `/bdk:conform-part`, `/bdk:repair-wave`, `/bdk:spec-conformance`, `/bdk:diagnose-run`) starts that agent when it runs in the main thread, instead of doing the work (its step 0), so the author never checks its own work. `/bdk:diagnose-run` has no orchestrator: you type it, and its step 0 starts `bdk:analyst`. `/bdk:review-group`, `/bdk:review-integration`, `/bdk:judge` and `/bdk:e2e-check` have no step 0: in a round the lead starts their agents, and typed by a user they run in the main thread, like the main-thread blocks of the table below.
 
 ## Roles
 
@@ -49,10 +49,10 @@ flowchart TB
 | `/bdk:verify-design` | verifier | `bdk:verifier` (opus) | `R/design/verify-N.md` | proposal, specs, design, explore map, code |
 | `/bdk:plan-draft` | author | `bdk:planner` (session's model) | `C/plan/parts/NN.md` | proposal, specs, design, code, last `verify-N.md` |
 | `/bdk:verify-plan` | verifier | `bdk:verifier` (opus) | `R/plan/verify-N.md` | parts, specs, design, code |
-| `/bdk:execute-waves` | lead | `bdk:lead` (sonnet) | `R/state.json`, `R/execute/result.md`, commits, merges | parts, worker reports |
+| `/bdk:execute-waves` | lead | `bdk:lead` (sonnet) | `R/state.json`, `R/execute/result.md`, commits | parts, worker reports |
 | `/bdk:implement-part` | author (code) | `bdk:implementer` (sonnet) | product code and tests, `R/execute/part-NN.md` | part, specs, design, rules, `CLAUDE.md` |
 | `/bdk:conform-part` | verifier that fixes without changing behaviour | `bdk:conformer` (sonnet) | `R/execute/conform-NN.md`, behaviour-neutral edits | diff, rules, instructions, tasks |
-| `/bdk:resolve-conflict` | author | `bdk:implementer` (sonnet) | conflicted files, `R/execute/merge-NN.md` | both sides, parts |
+| `/bdk:repair-wave` | author | `bdk:implementer` (sonnet) | the files of a wave's parts, `R/execute/wave-N.md` | red wave check, the wave's parts and diff |
 | `/bdk:review-round` | lead | `bdk:lead` (sonnet) | `round-N/groups.json`, `round.md` | worker replies |
 | `/bdk:review-group` | verifier | `bdk:reviewer` (sonnet) | finding events | group files, part, scenarios, review rules, project instructions |
 | `/bdk:review-integration` | verifier | `bdk:integration-reviewer` (opus) | finding events | whole Change, group findings |

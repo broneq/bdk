@@ -7,7 +7,7 @@ Verdict: FAIL
   Evidence: openspec/changes/add-csv-export/specs/ledger-export/spec.md:40-43; parts/01.md:16-21 and parts/02.md:17-19 list only the other five scenarios.
 - M3 Part 02, task 1: design D2's error path (on a read or parse error, or when the value is not an array, write `ledger: cannot read <file>` to stderr, print nothing to stdout, set exit code 2) is not covered by any task. Task 1 covers only the success path ("exit 0").
   Evidence: design.md:23; parts/02.md:23-26; a grep for `cannot read|exit 2|Missing input file` in plan/ finds nothing.
-- M4 Part 02 front matter: the part imports `toCsv` from `src/csv.js`, which part 01 creates, but it has `depends-on: []`. Both parts therefore run in wave 1 in separate worktrees, so `src/csv.js` does not exist when part 02 runs and its `test/cli.test.js` fails.
+- M4 Part 02 front matter: the part imports `toCsv` from `src/csv.js`, which part 01 creates, but it has `depends-on: []`. Both parts are therefore in wave 1 and nothing orders part 02 after part 01; the plan only works because the ids happen to sort that way.
   Evidence: parts/02.md:3 `depends-on: []`, parts/02.md:25 "imports toCsv from src/csv.js"; parts/01.md:6 creates src/csv.js; `bdk plan check` output `1: 01 02`.
 
 ## Should consider

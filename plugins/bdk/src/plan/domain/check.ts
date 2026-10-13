@@ -1,9 +1,9 @@
 // The plan checks of `bdk plan check` (spec `bdk-cli/plan`, "Part limits", "Dependencies and
-// waves", "Overlap and shared parts within a wave"; design D6): pure rules over the parts read
-// from one directory. Waves are longest-path layers of `depends-on`; the CLI reports a `shared`
-// part with company and never moves it, because which part goes first is a plan decision.
+// waves"; design D6): pure rules over the parts read from one directory. Waves are longest-path
+// layers of `depends-on`; the parts run one at a time in wave order, so a file several parts of
+// one wave list is no problem.
 
-import type { Isolation, Part } from "./part.ts";
+import type { Part } from "./part.ts";
 
 /** Every check, in the order problems are listed. */
 export const CHECKS = [
@@ -16,8 +16,6 @@ export const CHECKS = [
   "max-bytes",
   "unknown-dependency",
   "cycle",
-  "overlap",
-  "shared-not-alone",
 ] as const;
 export type Check = (typeof CHECKS)[number];
 
@@ -45,7 +43,7 @@ export const PROBLEMS: Readonly<Record<Check, ProblemDoc>> = {
   frontmatter: {
     meaning:
       "The frontmatter of a part breaks a rule; the message names the key. The part gets no wave until it is fixed.",
-    fix: 'Fix the key the message names: `id` is the quoted file stem (`"01"`), `depends-on` a list of quoted part ids (`[]` for none), `isolation` is `worktree` or `shared`, and `files` lists exact repository-relative file paths, with no glob, directory, absolute path or `..`.',
+    fix: 'Fix the key the message names: `id` is the quoted file stem (`"01"`), `depends-on` a list of quoted part ids (`[]` for none), and `files` lists exact repository-relative file paths, with no glob, directory, absolute path or `..`. Remove `isolation`: every part runs in the main checkout, one after another.',
   },
   "no-tasks": {
     meaning: "The part has no numbered task under its `## Tasks` heading.",
@@ -53,7 +51,7 @@ export const PROBLEMS: Readonly<Record<Check, ProblemDoc>> = {
   },
   "max-tasks": {
     meaning: "The part has more tasks than `plan.part.max-tasks` allows.",
-    fix: "Split the part in two; parts that share no file and do not depend on each other run in the same wave. Raise `plan.part.max-tasks` only when your agents handle bigger parts well.",
+    fix: "Split the part in two; parts that do not depend on each other share a wave. Raise `plan.part.max-tasks` only when your agents handle bigger parts well.",
   },
   "max-files": {
     meaning:
@@ -74,16 +72,6 @@ export const PROBLEMS: Readonly<Record<Check, ProblemDoc>> = {
       "Parts depend on each other in a cycle, or a part depends on itself, so no order can build them. They get no wave.",
     fix: "Remove the edge that is not needed: `depends-on` lists only the parts whose output a part uses. When two parts truly need each other, move what both need into a part of its own that both depend on, or merge them.",
   },
-  overlap: {
-    meaning:
-      "Two or more parts of one wave list the same file. They would change it in parallel, in separate worktrees, and conflict when merged.",
-    fix: "Move the changes to that file into one part, or make one part depend on the other so that they run in different waves.",
-  },
-  "shared-not-alone": {
-    meaning:
-      "A `shared` part runs in a wave with other parts. A shared part works in the main checkout and changes state outside its files (a lockfile, generated code, a migration sequence) that a parallel part could change too. The check names it and never moves it: which part goes first is a plan decision.",
-    fix: "Add `depends-on` edges so that the shared part has a wave of its own, or set it to `worktree` when it changes nothing outside its `files`.",
-  },
 };
 
 export interface Problem {
@@ -101,7 +89,6 @@ export interface Limits {
 
 export interface PartSummary {
   readonly id: string;
-  readonly isolation: Isolation | null;
   readonly dependsOn: readonly string[];
   readonly tasks: number;
   readonly files: number;
@@ -246,29 +233,6 @@ export function checkPlan(
     waves[slot] = { wave: at, parts: [...(waves[slot]?.parts ?? []), part.id] };
   }
 
-  for (const { wave: at, parts: ids } of waves) {
-    const listers = new Map<string, string[]>();
-    for (const id of ids) {
-      for (const path of partOf.get(id)?.files ?? []) {
-        listers.set(path, [...(listers.get(path) ?? []), id]);
-      }
-    }
-    for (const [path, by] of [...listers].sort(([a], [b]) => (a < b ? -1 : 1))) {
-      if (by.length > 1)
-        add("overlap", by, `${path} is listed by ${list(by)} in wave ${String(at)}`);
-    }
-    if (ids.length < 2) continue;
-    for (const id of ids) {
-      if (partOf.get(id)?.isolation !== "shared") continue;
-      const others = ids.filter((other) => other !== id);
-      add(
-        "shared-not-alone",
-        [id],
-        `shared part ${id} runs in wave ${String(at)} with ${list(others)}`,
-      );
-    }
-  }
-
   const order = (problem: Problem): number => CHECKS.indexOf(problem.check);
   problems.sort(
     (a, b) =>
@@ -280,7 +244,6 @@ export function checkPlan(
   return {
     parts: parts.map((part) => ({
       id: part.id,
-      isolation: part.isolation,
       dependsOn: part.dependsOn,
       tasks: part.tasks,
       files: part.files.length,

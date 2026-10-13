@@ -3,7 +3,6 @@
 import { z } from "zod";
 
 import { CHECKS } from "../domain/check.ts";
-import { ISOLATIONS } from "../domain/part.ts";
 
 const count = z.number().int().nonnegative();
 const id = z.string().regex(/^\d{2}$/);
@@ -18,7 +17,6 @@ export const checkResult = z.object({
   parts: z.array(
     z.object({
       id,
-      isolation: z.enum(ISOLATIONS).nullable(),
       dependsOn: z.array(z.string()),
       tasks: count,
       files: count,

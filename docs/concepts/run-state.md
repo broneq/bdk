@@ -37,10 +37,8 @@ openspec/specs/<capability>/spec.md   main specs: openspec archive merges the de
     plan/verify-N.md                  /bdk:verify-plan
     execute/part-NN.md                /bdk:implement-part
     execute/conform-NN.md             /bdk:conform-part
-    execute/merge-NN.md               /bdk:resolve-conflict
-    execute/wave-N.md                 /bdk:resolve-conflict --wave
+    execute/wave-N.md                 /bdk:repair-wave
     execute/result.md                 execute lead
-    worktrees/NN/                     execute lead (git worktree per part)
     checks/<id>.json, checks/<id>/    bdk check run
     e2e/<process>--<path>.md          /bdk:e2e-check run alone (and verdict.md)
     review/round-N/groups.json        bdk git groups --record
@@ -76,7 +74,6 @@ openspec/specs/<capability>/spec.md   main specs: openspec archive merges the de
 | `execute/conform-NN.md` | `bdk:conformer` | the lead (commits only on `PASS`), the implementer's retry | the gate before a part's commit | the part is conformed again |
 | `execute/wave-N.md` | `bdk:implementer` repairing a red wave check | the lead (commits the repair only on `Status: done`), `/bdk:execute` (a wave blocker) | what two parts broke together and how it was repaired | the lead runs the wave check again on the next `/bdk:execute` |
 | `execute/result.md` | the execute lead | `/bdk:execute`, `/bdk:debug` | the stage's outcome and its blockers | `/bdk:execute` resumes from `state.json` |
-| `worktrees/NN/` | the execute lead | the lead on a restart (it reuses the work in it) | an isolated checkout per part of a wave with two or more parts to run (a part alone in its wave runs in the main checkout); removed after the merge, kept for a blocked part | the part's earlier work in it is lost |
 | `checks/<id>.json`, `checks/<id>/` | `bdk check run` | implementers (the output of a red check), `/bdk:plan-fixes`, the round summary | the record of every test, lint and build run, with its check point, the revision it compared against, and its output | nothing reads it to decide |
 | `review/round-N/e2e/` (`e2e/` when run alone): `<process>--<path>.md`, screenshots and video, `verdict.md` | `bdk:e2e-tester` | the review round, `/bdk:spec-conformance`, `/bdk:close` (the verdict goes into the PR body) | the evidence of each path on the running product; absent in a later round that carried the last verdict over because its fixes changed only test files | spec conformance has no E2E evidence |
 | `review/round-N/groups.json` | `bdk git groups` | the round's reviewers and its E2E decision (`testsOnly`), and the next round, which reviews only the commits after this round's head | the reviewed range, its test files and its groups | the next round falls back to the whole branch |
@@ -123,8 +120,9 @@ sequenceDiagram
   participant F as conformer
   participant R as files in R
   L->>R: read C/plan/parts, state.json
-  loop each wave N, until one is blocked
+  loop each wave N, until a part<br/>or a wave is blocked
     L->>R: write state.json<br/>(wave N base)
+    Note over L,R: each part of the wave in turn,<br/>in the main checkout
     L->>R: write state.json (attempts)
     L->>I: part NN
     I->>R: checks/NN-red.json, checks/NN.json
@@ -134,15 +132,12 @@ sequenceDiagram
     F->>R: checks/conform-NN.json
     F->>R: execute/conform-NN.md
     L->>R: read part-NN.md, conform-NN.md
+    L->>L: commit the part
     L->>R: write state.json<br/>(part done or blocked)
-    opt merge conflict
-      L->>I: /bdk:resolve-conflict NN
-      I->>R: execute/merge-NN.md
-    end
-    opt no part of the wave blocked
+    opt every part of the wave done
       L->>R: bdk check run wave-N:<br/>checks/wave-N.json
       opt red wave check
-        L->>I: /bdk:resolve-conflict<br/>--wave N
+        L->>I: /bdk:repair-wave N
         I->>R: execute/wave-N.md
         L->>L: commit the repair
       end
@@ -221,7 +216,6 @@ flowchart TB
 | You changed the design by hand after it was approved | Run `/bdk:design <change>`: a new verification is written, and the gate asks again because its `Report:` no longer names the last report. |
 | You want a review round again from scratch | Delete `review/round-N/review.md` of the last round, or the whole round directory, and run `/bdk:auto-review <change>`. |
 | `/bdk:run` was given a new queue while one is unfinished | It refuses and shows the queue: finish it with `/bdk:run`, or delete `run.json` to drop it. |
-| A worktree of a blocked part is in the way | Leave it until the part is done: the lead reuses the work in it and removes it after the merge. |
 | A part blocked in the main checkout left uncommitted files | Leave them: the next `/bdk:execute` continues the part from them, as long as every changed path is one of that part's `files`. |
 
 Approve a gate by running its command, not by writing `gate.md` yourself: the file records an approval, it does not grant one.

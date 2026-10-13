@@ -87,7 +87,7 @@ A fenced code block with the language `mermaid` in a site page SHALL render as a
 
 #### Scenario: Lifeline behind a message label
 - **WHEN** a reader opens `docs/concepts/run-state.md` on the site, in the light or the dark theme, at desktop or phone width
-- **THEN** in the Execute diagram the message `read C/plan/parts, state.json`, which spans the implementer and conformer lifelines, and the frame condition `[merge conflict]`, which a lifeline runs under, read without a line through their letters, and the lines continue on both sides of the text
+- **THEN** in the Execute diagram the message `read C/plan/parts, state.json`, which spans the implementer and conformer lifelines, and the frame condition `[red wave check]`, which a lifeline runs under, read without a line through their letters, and the lines continue on both sides of the text
 
 #### Scenario: Source of a diagram that does not parse
 - **WHEN** a reader opens a site page whose `mermaid` block has a syntax error, in the light or the dark theme, at desktop or phone width
@@ -233,22 +233,22 @@ The `bdk` CLI Reference page SHALL list, under the entry of `bdk plan check`, ev
 
 #### Scenario: Every problem kind has an entry
 - **WHEN** the generator renders the `bdk` CLI Reference page
-- **THEN** the page holds one row under `bdk plan check` for each problem kind the command reports, from `no-parts` to `shared-not-alone`, each with what it means and what to do
+- **THEN** the page holds one row under `bdk plan check` for each problem kind the command reports, from `no-parts` to `cycle`, each with what it means and what to do
 
 #### Scenario: Problem kind added without its text
 - **WHEN** a contributor adds a problem kind to `bdk plan check` without its text
 - **THEN** `pnpm check` fails
 
 ### Requirement: The Concepts explain how a plan is cut
-The Concepts SHALL explain how a plan is cut: what a part, `depends-on`, a wave and `isolation` (`worktree`, `shared`) mean, how waves follow from `depends-on`, that the plan aims at the fewest waves, and what to look at when reviewing a part file. The section SHALL link to the problem list of `bdk plan check` in the Reference, and the plan stage of the Guide's workflow page SHALL link to it.
+The Concepts SHALL explain how a plan is cut: what a part, `depends-on` and a wave mean, how waves follow from `depends-on`, that the parts run one at a time in the main checkout in plan order, that the plan aims at the fewest waves because the wave check runs once per wave, and what to look at when reviewing a part file. The section SHALL link to the problem list of `bdk plan check` in the Reference, and the plan stage of the Guide's workflow page SHALL link to it.
 
 #### Scenario: Reviewing a plan
 - **WHEN** a reader of the plan stage in `docs/guide/workflow.md` follows its link about parts and waves
-- **THEN** they reach the section of `docs/concepts/stages.md` that explains parts, waves, `depends-on` and `isolation`, and links to the problems of `bdk plan check` in the Reference
+- **THEN** they reach the section of `docs/concepts/stages.md` that explains parts, waves and `depends-on`, and links to the problems of `bdk plan check` in the Reference
 
 ### Requirement: The Concepts show where execute runs the checks
 
-The Concepts page of the orchestrators SHALL show, in the execute diagrams, every run of `bdk check run` in the execute stage: the red acceptance tests and the part checks of `/bdk:implement-part`, the checks of `/bdk:conform-part`, the checks of `/bdk:resolve-conflict` after a conflicted merge, and the wave check of the execute lead with its repair. Its text SHALL say which files a check on changed files covers, which check point each run uses, and that the checks of the `review` point run only in `/bdk:auto-review`. The execute stage of the Concepts and of the Guide SHALL link to it.
+The Concepts page of the orchestrators SHALL show, in the execute diagrams, every run of `bdk check run` in the execute stage: the red acceptance tests and the part checks of `/bdk:implement-part`, the checks of `/bdk:conform-part`, and the wave check of the execute lead with its repair by `/bdk:repair-wave`. Its text SHALL say which files a check on changed files covers, which check point each run uses, and that the checks of the `review` point run only in `/bdk:auto-review`. The execute stage of the Concepts and of the Guide SHALL link to it.
 
 #### Scenario: Where the tests of a part run
 
@@ -257,8 +257,8 @@ The Concepts page of the orchestrators SHALL show, in the execute diagrams, ever
 
 #### Scenario: What execute does not check
 
-- **WHEN** a reader looks for what runs the checks on a wave merged into the Change branch
-- **THEN** the page says that the execute lead runs the checks of the `wave` point on the files changed since the wave's base, repairs a red wave with `/bdk:resolve-conflict --wave`, and leaves the `review` point to `/bdk:auto-review`
+- **WHEN** a reader looks for what runs the checks on a wave committed on the Change branch
+- **THEN** the page says that the execute lead runs the checks of the `wave` point on the files changed since the wave's base, repairs a red wave with `/bdk:repair-wave`, and leaves the `review` point to `/bdk:auto-review`
 
 ### Requirement: Diagrams fit the content column
 At a viewport width of 1280 px, every Mermaid diagram of a site page SHALL render at a scale of at least 0.8 of its natural width, so its 14 px labels show at 11.2 px or more, and its frame SHALL NOT scroll sideways. At a viewport width of 390 px no diagram SHALL be a left-to-right chain wider than two screens. The `docs` job of PR CI SHALL fail when a diagram of the built site renders below that scale or its frame scrolls sideways at 1280 px, and SHALL name the page, the block's line, the rendered scale and the widest natural width that fits. The check SHALL measure each diagram only once Mermaid has laid it out; a diagram it cannot measure (not drawn, or drawn with no natural width) or that shows a Mermaid error SHALL fail the check, named by its page and the block's line, never pass it.
@@ -298,9 +298,13 @@ Every Mermaid diagram of a Concepts page SHALL show what the BDK skills, agents,
 - **WHEN** a reader opens the slice graph of "The `bdk` CLI" in `docs/concepts/cli-config-hooks.md`
 - **THEN** it shows one node for each slice of `plugins/bdk/src/slices.ts`, `diagnostics` included, and one edge for each import it lists
 
+#### Scenario: Parts in sequence in the execute diagrams
+- **WHEN** a reader opens the execute diagrams of `docs/concepts/orchestrators.md` and the Execute sequence of `docs/concepts/run-state.md`
+- **THEN** they show the parts run one at a time in the main checkout, each committed before the next, and no worktree, part branch, merge or `/bdk:resolve-conflict`
+
 #### Scenario: Waves in the execute diagrams
 - **WHEN** a reader opens the Execute sequence and the run-status decision of `docs/concepts/run-state.md`
-- **THEN** the sequence shows the lead's `bdk check run wave-N`, the repair by `/bdk:resolve-conflict --wave` writing `execute/wave-N.md` and the lead committing it, and the decision keeps the stage at execute while a wave is not done or blocked
+- **THEN** the sequence shows the lead's `bdk check run wave-N`, the repair by `/bdk:repair-wave` writing `execute/wave-N.md` and the lead committing it, and the decision keeps the stage at execute while a wave is not done or blocked
 
 #### Scenario: A run diagnosed after the fact
 - **WHEN** a reader looks in `docs/concepts/orchestrators.md` for what `/bdk:diagnose-run` runs

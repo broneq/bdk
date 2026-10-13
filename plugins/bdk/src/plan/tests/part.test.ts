@@ -5,7 +5,7 @@ import { countTasks, partId, readPart } from "../domain/part.ts";
 // Part files and their measures, spec `bdk-cli/plan`, "Part files" and "Part limits".
 
 const front = (id: string, extra = ""): string =>
-  `---\nid: ${id}\ndepends-on: []\nisolation: worktree\nfiles:\n  - src/a.ts\n${extra}---\n`;
+  `---\nid: ${id}\ndepends-on: []\nfiles:\n  - src/a.ts\n${extra}---\n`;
 
 const TASKS = "\n## Tasks\n\n1. first\n2. second\n";
 
@@ -24,7 +24,6 @@ describe("readPart", () => {
     const text = `${front('"01"')}\n# Part 01: x\n${TASKS}`;
     expect(readPart("01", text)).toEqual({
       id: "01",
-      isolation: "worktree",
       dependsOn: [],
       files: ["src/a.ts"],
       tasks: 2,
@@ -41,7 +40,7 @@ describe("readPart", () => {
   it("reports a missing frontmatter", () => {
     const part = readPart("01", `# Part 01${TASKS}`);
     expect(part.faults).toEqual(["has no frontmatter between --- lines"]);
-    expect(part).toMatchObject({ isolation: null, dependsOn: [], files: [], tasks: 2 });
+    expect(part).toMatchObject({ dependsOn: [], files: [], tasks: 2 });
   });
 
   it("reports frontmatter that is not YAML or not a mapping", () => {
@@ -55,23 +54,25 @@ describe("readPart", () => {
     expect(readPart("01", front('"02"')).faults).toEqual([
       'id is "02", not the quoted file stem "01"',
     ]);
-    expect(
-      readPart("01", "---\ndepends-on: []\nisolation: shared\nfiles: [a]\n---\n").faults,
-    ).toEqual(['id is missing, not the quoted file stem "01"']);
+    expect(readPart("01", "---\ndepends-on: []\nfiles: [a]\n---\n").faults).toEqual([
+      'id is missing, not the quoted file stem "01"',
+    ]);
   });
 
-  it("checks depends-on and isolation", () => {
-    const text = '---\nid: "02"\ndepends-on: [01]\nisolation: parallel\nfiles: [a]\n---\n';
-    expect(readPart("02", text).faults).toEqual([
-      "depends-on is not a list of quoted part ids",
-      "isolation is parallel, not worktree or shared",
-    ]);
+  it("checks depends-on", () => {
+    const text = '---\nid: "02"\ndepends-on: [01]\nfiles: [a]\n---\n';
+    expect(readPart("02", text).faults).toEqual(["depends-on is not a list of quoted part ids"]);
     const missing = readPart("02", '---\nid: "02"\nfiles: [a]\n---\n');
-    expect(missing.faults).toEqual([
-      "depends-on is missing; use [] for none",
-      "isolation is missing, not worktree or shared",
-    ]);
-    expect(missing.isolation).toBeNull();
+    expect(missing.faults).toEqual(["depends-on is missing; use [] for none"]);
+  });
+
+  it("rejects isolation, whatever its value", () => {
+    for (const value of ["worktree", "shared", "x"]) {
+      const text = `---\nid: "01"\ndepends-on: []\nisolation: ${value}\nfiles: [a]\n---\n`;
+      expect(readPart("01", text).faults).toEqual([
+        "isolation is no longer a part key: parts run one after another in the main checkout; remove it",
+      ]);
+    }
   });
 
   it("keeps the readable keys of a part with faults", () => {
@@ -79,7 +80,7 @@ describe("readPart", () => {
       "02",
       '---\nid: "02"\ndepends-on: ["01"]\nisolation: x\nfiles: [a]\n---\n',
     );
-    expect(part).toMatchObject({ dependsOn: ["01"], files: ["a"], isolation: null });
+    expect(part).toMatchObject({ dependsOn: ["01"], files: ["a"] });
   });
 
   it("checks every path in files", () => {
@@ -87,7 +88,6 @@ describe("readPart", () => {
       "---",
       'id: "01"',
       "depends-on: []",
-      "isolation: worktree",
       "files:",
       "  - src/**/*.ts",
       "  - src/api/",
@@ -114,7 +114,7 @@ describe("readPart", () => {
   });
 
   it("rejects files that is missing, empty or not a list of strings", () => {
-    const base = '---\nid: "01"\ndepends-on: []\nisolation: worktree\n';
+    const base = '---\nid: "01"\ndepends-on: []\n';
     expect(readPart("01", `${base}---\n`).faults).toEqual(["files is missing"]);
     expect(readPart("01", `${base}files: []\n---\n`).faults).toEqual(["files is empty"]);
     expect(readPart("01", `${base}files: src/a.ts\n---\n`).faults).toEqual([

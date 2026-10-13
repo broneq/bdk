@@ -107,12 +107,11 @@ describe("shipped files", () => {
     const frontmatter = /^---\n([\s\S]*?)\n---\n/.exec(part)?.[1] ?? "";
     expect(frontmatter).toMatch(/^id: "\d\d"$/m);
     expect(frontmatter).toMatch(/^depends-on: \[.*\]$/m);
-    expect(frontmatter).toMatch(/^isolation: (worktree|shared)$/m);
+    expect(frontmatter).not.toMatch(/^isolation:/m);
     expect(frontmatter).toMatch(/^files:$/m);
     expect([...frontmatter.matchAll(/^(\S[^:]*):/gm)].map((match) => match[1])).toEqual([
       "id",
       "depends-on",
-      "isolation",
       "files",
     ]);
   });
@@ -225,7 +224,6 @@ describe("a Change made with the schema", () => {
         "---",
         'id: "01"',
         "depends-on: []",
-        "isolation: worktree",
         "files:",
         "  - src/main.ts",
         "---",

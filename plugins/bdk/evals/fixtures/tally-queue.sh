@@ -33,7 +33,6 @@ MD
 ---
 id: "01"
 depends-on: []
-isolation: shared
 files: [bin/tally.js]
 ---
 

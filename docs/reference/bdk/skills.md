@@ -48,7 +48,7 @@ Commits the user's changes with a message in the project's own convention (commi
 
 ## `/bdk:conform-part` {#conform-part}
 
-`/bdk:conform-part [<change>] <part-id> [--run-dir <path>] [--workdir <path>] [--parts <dir>]`
+`/bdk:conform-part [<change>] <part-id> [--run-dir <path>] [--parts <dir>]`
 
 Started by: you, or Claude when your request matches the description below.
 
@@ -108,7 +108,7 @@ Uses the product as a user would to confirm that an OpenSpec Change works - list
 
 Started by: you, or Claude when your request matches the description below.
 
-Runs the execute stage of an OpenSpec Change - starts one bdk:lead agent that builds every part of the verified plan in parallel waves (implement-part, conform-part, commits, worktree merges, a wave check after each wave, state.json), waits for its result, and passes the result or a blocker on. Use when a whole Change or its whole plan should be built, when asked to "execute", "build" or "implement" a Change or its plan, or when /bdk:run reaches the execute stage. Not for one part (part 01, 02): implement-part builds a single part.
+Runs the execute stage of an OpenSpec Change - starts one bdk:lead agent that builds every part of the verified plan one at a time in the main checkout, wave by wave (implement-part, conform-part, a commit per part, a wave check after each wave, state.json), waits for its result, and passes the result or a blocker on. Use when a whole Change or its whole plan should be built, when asked to "execute", "build" or "implement" a Change or its plan, or when /bdk:run reaches the execute stage. Not for one part (part 01, 02): implement-part builds a single part.
 
 ## `/bdk:execute-waves` {#execute-waves}
 
@@ -116,7 +116,7 @@ Runs the execute stage of an OpenSpec Change - starts one bdk:lead agent that bu
 
 Started by: other BDK skills only. It is not in the `/` menu.
 
-The execute stage of an OpenSpec Change, run by the bdk:lead agent that /bdk:execute starts (and /bdk:auto-review for the fix parts of a review round) - takes the waves of the plan parts from bdk plan check, runs each part through implement-part and conform-part in parallel batches (parts that share a wave in their own git worktrees, a part alone in its wave in the main checkout), retries and escalates within the budget, commits each part, merges the worktrees in part order with resolve-conflict on a conflict, runs the wave check after each wave and has resolve-conflict --wave repair a red one, and writes state.json and execute/result.md. Not for users: /bdk:execute is the command.
+The execute stage of an OpenSpec Change, run by the bdk:lead agent that /bdk:execute starts (and /bdk:auto-review for the fix parts of a review round) - takes the waves of the plan parts from bdk plan check, builds the parts one at a time in plan order in the main checkout through implement-part and conform-part, retries and escalates within the budget, commits each part on the Change branch, stops at the first blocked part, runs the wave check after each wave and has repair-wave repair a red one, and writes state.json and execute/result.md. Not for users: /bdk:execute is the command.
 
 ## `/bdk:explore` {#explore}
 
@@ -128,7 +128,7 @@ Maps the code an OpenSpec Change touches - modules, entry points, data, boundari
 
 ## `/bdk:implement-part` {#implement-part}
 
-`/bdk:implement-part [<change>] <part-id> [--run-dir <path>] [--workdir <path>] [--parts <dir>]`
+`/bdk:implement-part [<change>] <part-id> [--run-dir <path>] [--parts <dir>]`
 
 Started by: you, or Claude when your request matches the description below.
 
@@ -156,7 +156,7 @@ Runs the plan stage of an OpenSpec Change - drafts the plan parts with plan-draf
 
 Started by: you, or Claude when your request matches the description below.
 
-Writes the plan of a BDK Change - plan parts openspec/changes/CHANGE/plan/parts/NN.md with depends-on, isolation, files, acceptance scenarios from the spec deltas and tasks as contracts (File, Interface, Verified by) - cut into few waves and checked with bdk plan check; after a failed plan verification, fixes what its Must address names. Use when a Change has its specs and design and needs an implementation plan, or when plan/verify-N.md failed.
+Writes the plan of a BDK Change - plan parts openspec/changes/CHANGE/plan/parts/NN.md with depends-on, files, acceptance scenarios from the spec deltas and tasks as contracts (File, Interface, Verified by) - cut into few waves and checked with bdk plan check; after a failed plan verification, fixes what its Must address names. Use when a Change has its specs and design and needs an implementation plan, or when plan/verify-N.md failed.
 
 ## `/bdk:plan-fixes` {#plan-fixes}
 
@@ -190,13 +190,13 @@ Started by: you, or Claude when your request matches the description below.
 
 Opens a BDK Change from an intent or a GitHub issue - runs openspec new change with the BDK schema and writes proposal.md with the capabilities the design stage works from. Use when starting a feature or fix in a BDK project, when asked to "start a change", "propose" or "open a change for issue #N", or when /bdk:run reaches the propose stage.
 
-## `/bdk:resolve-conflict` {#resolve-conflict}
+## `/bdk:repair-wave` {#repair-wave}
 
-`/bdk:resolve-conflict [<change>] <part-id> [--run-dir <path>] [--parts <dir>] | [<change>] --wave <n> --base <commit> [--run-dir <path>] [--parts <dir>]`
+`/bdk:repair-wave [<change>] <wave> --base <commit> [--run-dir <path>] [--parts <dir>]`
 
 Started by: you, or Claude when your request matches the description below.
 
-Resolves the merge conflict a plan part left when the execute lead merged its branch into the Change branch, or repairs a red wave check after every part of a wave is on the Change branch, on the bdk:implementer agent - reads both sides and the parts that wanted them, edits the files to keep what both meant, runs the checks, and writes execute/merge-NN.md or execute/wave-N.md, leaving the commit to the lead. Use when merging a part of a Change stopped on conflicts, when a wave check (checks/wave-N.json) is red, or when the execute lead hands over either.
+Repairs a red wave check of an OpenSpec Change on the bdk:implementer agent, after every part of the wave is committed on the Change branch - reads the red checks and the parts of the wave, finds which part broke which, edits the parts' files so both parts' intent holds, runs the wave check again, and writes execute/wave-N.md, leaving the commit to the lead. Use when a wave check (checks/wave-N.json) is red, or when the execute lead hands one over.
 
 ## `/bdk:review-group` {#review-group}
 

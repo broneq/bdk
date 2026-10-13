@@ -1,8 +1,8 @@
 ---
 name: conform-part
 description: 'Checks the uncommitted diff of one implemented plan part of an OpenSpec Change on the bdk:conformer agent - against the execute rules, the project instructions (CLAUDE.md, AGENTS.md, .claude/rules) and the part''s tasks - fixes each violation it can fix without changing behaviour, leaves the rest, runs the part checks, and writes execute/conform-NN.md. Use when a part is implemented and about to be committed, when asked to clean up or check a part against the rules, or when the execute lead conforms a part.'
-argument-hint: "[<change>] <part-id> [--run-dir <path>] [--workdir <path>] [--parts <dir>]"
-allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(mkdir -p *) Bash(cd *) Bash(git -C *) Bash(git status *) Bash(git diff *) Bash(git log *) Bash(git show *) Bash(openspec validate *) Read Grep Glob Edit Write Agent
+argument-hint: "[<change>] <part-id> [--run-dir <path>] [--parts <dir>]"
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(mkdir -p *) Bash(git status *) Bash(git diff *) Bash(git log *) Bash(git show *) Bash(openspec validate *) Read Grep Glob Edit Write Agent
 ---
 
 Current BDK configuration of this project:
@@ -13,7 +13,7 @@ Arguments: $ARGUMENTS
 
 # Conform a part
 
-Check what one implemented part changed against the rules, the project instructions and the part's tasks. Fix what you can fix without changing behaviour; leave the rest, with evidence. You never fix a bug, never add a feature or a test of new behaviour, and never edit outside the part. Run `bdk` always as `"${CLAUDE_PLUGIN_ROOT}/bin/bdk"`, each command on its own, without pipes or `&&` (except the `cd` of step 1 for a work directory).
+Check what one implemented part changed against the rules, the project instructions and the part's tasks. Fix what you can fix without changing behaviour; leave the rest, with evidence. You never fix a bug, never add a feature or a test of new behaviour, and never edit outside the part. Run `bdk` always as `"${CLAUDE_PLUGIN_ROOT}/bin/bdk"`, each command on its own, without pipes or `&&`.
 
 When the block above says `BDK not configured` or `BDK configuration invalid`, reply with that line and stop: write nothing. If it shows the command instead of its output, run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" config show` first.
 
@@ -28,7 +28,6 @@ Done when you are `bdk:conformer`, or the agent has answered.
 - Change: the first argument when two are given. Without one, take the only directory under `openspec/changes/` other than `archive/`; with none or several, name what you found and stop.
 - Part: `<part-id>.md` in `--parts <dir>` when given (the execute lead passes the absolute directory of a review round's fix parts), else in `openspec/changes/<change>/plan/parts/`. Without a part id, or when the file is missing, list the parts there and stop. A fix part's tasks name the findings they fix; read each in the round's log `<parts dir>/../../findings.jsonl` (`bdk findings list <log>`) for its failure scenario.
 - Run directory: `--run-dir <path>` when given, else `.bdk/runs/<change>/`. Run `mkdir -p <run-dir>/execute`.
-- Work directory: `--workdir <path>` when given (the execute lead passes the worktree of a part that runs in its own worktree), else the working directory. A subagent cannot change its working directory, so with `--workdir`: give every Read, Edit, Write, Glob and Grep call an absolute path under the work directory, read the part, the specs and the design there too, run git as `git -C <workdir> <command>` (`git -C /work/app/.bdk/runs/add-csv-export/worktrees/02 status --porcelain`; the host refuses `cd` followed by `git`), and every other Bash command as `cd <workdir> && <one command>`, never a longer chain: a session that grants commands one by one denies the whole chain. Read files with Read and list them with Glob, not with `cat`, `head`, `ls` or `find`. Never read or edit the same paths in the main checkout: that is another part's tree.
 - Implementer report: `<run-dir>/execute/part-<part-id>.md`. When it is missing or its first line is not `Status: done`, write the report of step 6 with `Verdict: FAIL` and one `Left` item naming that, change nothing, and reply.
 
 Done when you know the part, the run directory, and that the part was implemented.
@@ -61,7 +60,7 @@ Against three sources:
 2. **Project instructions.** Each instruction a changed line breaks. Cite the file (`CLAUDE.md`).
 3. **Tasks.** For each task: its files hold the change; its `Interface` holds as written - the name, the signature, exported or private; its `Verified by` test exists; and the code does what the task and its requirement text say. Cite it as `task <n>`.
 
-When the diff changes a file under `openspec/changes/<change>/specs/`, run `openspec validate <change> --strict` (with `--workdir`: `cd <workdir> && openspec validate <change> --strict`), whatever the implementer report says about it. Each error on a delta in the part's `files` (a requirement without a `#### Scenario:`, a header OpenSpec does not know) is a violation of the task that changed that delta: `/bdk:close` cannot archive such a delta. An error on a file outside the part's `files` goes to `Left` as `outside the part`. When `openspec` is not found, note `openspec validate: not run, no OpenSpec CLI` for `## Checks`. A part that changed no delta runs no validation.
+When the diff changes a file under `openspec/changes/<change>/specs/`, run `openspec validate <change> --strict`, whatever the implementer report says about it. Each error on a delta in the part's `files` (a requirement without a `#### Scenario:`, a header OpenSpec does not know) is a violation of the task that changed that delta: `/bdk:close` cannot archive such a delta. An error on a file outside the part's `files` goes to `Left` as `outside the part`. When `openspec` is not found, note `openspec validate: not run, no OpenSpec CLI` for `## Checks`. A part that changed no delta runs no validation.
 
 Leave formatting and anything a linter checks to the linter.
 
@@ -86,7 +85,7 @@ Then, when you edited at least one file, run the checks of the part point on the
 "${CLAUDE_PLUGIN_ROOT}/bin/bdk" check run <run-dir> conform-<part-id> --at part --changed HEAD
 ```
 
-With `--workdir`, run it as `cd <workdir> && "${CLAUDE_PLUGIN_ROOT}/bin/bdk" check run <run-dir> conform-<part-id> --at part --changed HEAD`, so git reads the worktree. When a check is red after your fixes, your fix broke it: undo that fix by editing it back, move the item to `Left`, and run again.
+When a check is red after your fixes, your fix broke it: undo that fix by editing it back, move the item to `Left`, and run again.
 
 When you edited nothing, run no check: the code is what the implementer's last check `<run-dir>/checks/<part-id>.json` saw. Read its `verdict` for the report.
 

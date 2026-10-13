@@ -34,7 +34,7 @@ A design fails verification for: a false claim about the code, a requirement wit
 | `/bdk:plan-draft` | `bdk:planner` | the proposal, the deltas, the design, the code the design names with its callers and tests, and the [rules](./rules.md) of stage `plan` | plan parts: the exact files of each part, the scenarios it makes true (a scenario the code already satisfies is marked ` (behaviour present)`), and tasks with the file, the interface and what verifies it | code, specs, the design, and any product choice the design left open (named as a design gap instead) |
 | `/bdk:verify-plan` | `bdk:verifier` (opus) | every part, the deltas, the design, `bdk plan check`, the rules of stage `plan` for each part's files | every named symbol and path exists as written, each scenario is owned by exactly one part, the ` (behaviour present)` markers match the code, every design decision is carried out, dependencies between parts, callers of a changed interface, the plan rules kept by each part | style of the parts beyond these |
 
-The plan cuts the work so that one agent builds a part without coming back, and so that independent parts run in parallel. Each part carries every fact it needs, because its implementer reads only the part, the specs and the design. A task never guesses a signature: every path and function it names comes from a file the planner read. Parts are held to `plan.part.max-tasks`, `plan.part.max-files` and `plan.part.max-bytes`.
+The plan cuts the work so that one agent builds a part without coming back, in an order where each part finds what it uses already built. Each part carries every fact it needs, because its implementer reads only the part, the specs and the design. A task never guesses a signature: every path and function it names comes from a file the planner read. Parts are held to `plan.part.max-tasks`, `plan.part.max-files` and `plan.part.max-bytes`.
 
 ### How a plan is cut
 
@@ -43,8 +43,7 @@ A plan is a directory of part files, `openspec/changes/<change>/plan/parts/01.md
 | Key | What it means |
 |---|---|
 | `id` | The file stem, quoted: `"02"` for `02.md`. |
-| `depends-on` | The parts whose output this part uses, such as `["01"]`; `[]` when none. The part starts only after they are merged. |
-| `isolation` | `worktree`: the part is built in its own git worktree, in parallel with the other parts of its wave; when it is the only part of its wave left to build, it is built in the main checkout instead, since there is nothing to isolate it from. `shared`: the part changes state outside its files that a parallel part could change too (a lockfile, generated code, a migration sequence), so it is built in the main checkout, alone in its wave. |
+| `depends-on` | The parts whose output this part uses, such as `["01"]`; `[]` when none. The part is built only after they are committed. |
 | `files` | Every file the part creates or changes, tests included, as exact repository-relative paths. |
 
 **Waves** follow from `depends-on` alone. A part with no dependency is in wave 1; any other part is one wave after its latest dependency. For example, with `02` and `03` depending on `01`, and `04` on `02`:
@@ -55,14 +54,14 @@ A plan is a directory of part files, `openspec/changes/<change>/plan/parts/01.md
 | 2 | `02`, `03` | both depend on `01` only |
 | 3 | `04` | depends on `02`, which is in wave 2 |
 
-The parts of a wave run in parallel and the next wave starts when they are merged, so the number of waves, not the number of parts, decides how long the build takes. The planner aims at the fewest waves the dependencies allow: `depends-on` lists only what a part really uses, and two parts of one wave never list the same file, so they never conflict when merged.
+The execute lead builds the parts one at a time in your checkout, in plan order: wave 1 first, the parts of a wave in ascending id, each committed on the Change branch before the next starts, so each part builds on the ones before it, and two parts of one wave may change the same file. After the last part of a wave, the lead runs the wave check, the checks of the `wave` point (such as the whole test suite and the type check) on everything the wave changed. The planner aims at the fewest waves the dependencies allow, since each wave runs that check once: `depends-on` lists only what a part really uses.
 
 **When you review a plan**, read each part file for:
 
 - `## Goal`: what works after the part, in one or two sentences.
 - `## Acceptance scenarios`: the spec scenarios the part makes true. Each scenario of the deltas belongs to exactly one part.
 - `## Tasks`: numbered contracts, each with the `File` it changes, the `Interface` it adds or changes, and what verifies it (`Verified by`). A task names real paths and signatures; it holds no code.
-- The frontmatter: does `depends-on` name only parts whose output this one needs, and is `shared` kept for parts that really change state outside their files? Every extra edge and every shared part adds a wave.
+- The frontmatter: does `depends-on` name only parts whose output this one needs? Every extra edge adds a wave. A part has no other key: one that still holds `isolation` from an older plan is a `frontmatter` problem.
 
 `bdk plan check <dir>` prints the waves, a row per part with its size against the limits, and the problems it finds. What each problem means and what to do about it: [the problems of `bdk plan check`](/reference/bdk/cli#plan-check-problems).
 
@@ -72,8 +71,9 @@ The parts of a wave run in parallel and the next wave starts when they are merge
 |---|---|---|---|---|
 | `/bdk:implement-part` | `bdk:implementer` (sonnet) | the part, its scenarios, the design, the [rules](./rules.md) for its files, your `CLAUDE.md` and `AGENTS.md`, the code each task builds on | acceptance tests first, seen red for the right reason, then the code, then your checks green and a changed spec delta valid (`openspec validate --strict`) | files outside the part, code no task asks for, git history (the lead commits) |
 | `/bdk:conform-part` | `bdk:conformer` (sonnet) | the diff, the part, its scenarios, the rules, your project instructions | each changed line against the rules, the instructions and the tasks: the interface as specified, the test that verifies it, the code doing what the requirement says, a changed spec delta that OpenSpec accepts; fixes only what keeps behaviour (a name, a comment, dead code) | bugs and missing features (they need a test and a review), formatting a linter checks |
+| `/bdk:repair-wave` | `bdk:implementer` (sonnet) | a red wave check, the parts of the wave, their diff since the wave's base, their scenarios | the files of the wave's parts edited so both parts' intent holds, the wave check green again | git history (the lead commits the repair), files outside the wave's parts |
 
-Your test, lint and build commands run inside each part, not after the stage: the implementer runs the new acceptance tests red before any code and all checks green after it, the conformer runs them again after its fixes, and a merge conflict is checked once resolved. Nothing checks a wave once it is merged; the first check of the whole project is the first round of review. [Where execute runs your checks](./orchestrators.md#where-execute-runs-your-checks) lists each run.
+Your test, lint and build commands run inside each part, not after the stage: the implementer runs the new acceptance tests red before any code and all checks green after it, the conformer runs them again after its fixes, and the lead runs the wave check once every part of a wave is committed; `/bdk:repair-wave` repairs a red one. The slow suites of the `review` point run first in the first round of review. [Where execute runs your checks](./orchestrators.md#where-execute-runs-your-checks) lists each run.
 
 A part whose tasks contradict each other or their scenario is a plan defect: the implementer stops and says so instead of picking a side.
 

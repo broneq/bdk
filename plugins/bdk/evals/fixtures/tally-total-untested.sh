@@ -28,7 +28,6 @@ cat > openspec/changes/add-total/plan/parts/01.md <<'MD'
 ---
 id: "01"
 depends-on: []
-isolation: shared
 files:
   - bin/tally.js
   - test/total.test.js

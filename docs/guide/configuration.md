@@ -278,7 +278,7 @@ models:
 
 ### Parallel work
 
-[`execution.max-parallel`](/reference/bdk/settings#execution-max-parallel) (10) is how many part agents the execute lead runs at once. [`execution.lead`](/reference/bdk/settings#execution-lead) `foreground` runs the lead agents in your session instead of the background.
+[`execution.max-parallel`](/reference/bdk/settings#execution-max-parallel) (10) is how many read-only agents a lead starts at once: the reviewers of a review round, and the pull requests `/bdk:pr-review` reviews together. The execute lead builds one part at a time in your checkout, whatever it says. [`execution.lead`](/reference/bdk/settings#execution-lead) `foreground` runs the lead agents in your session instead of the background.
 
 ### Rules
 
