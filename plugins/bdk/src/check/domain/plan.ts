@@ -1,6 +1,6 @@
-// Which commands a check run runs and how each command line is composed (spec `bdk-cli/check`,
-// "Run the checks"; design D4 of v3-183-check-run, D1-D4 of v3-275-scoped-check-files, D1-D4 of
-// v3-317-test-groups).
+// Which commands a check plan holds and how each command line and the line the agent runs are
+// composed (spec `bdk-cli/check`, "Plan the checks"; design D4 of v3-183-check-run, D1-D4 of
+// v3-275-scoped-check-files, D1-D4 of v3-317-test-groups, D3-D5 of v3-408-check-plan-record).
 
 import { minimatch } from "minimatch";
 
@@ -16,6 +16,9 @@ const FILES = "{files}";
 
 /** Seconds a command may run when its entry sets no `timeout`. */
 export const DEFAULT_TIMEOUT = 600;
+
+/** The Bash tool's cap on one call, in milliseconds, when `BASH_MAX_TIMEOUT_MS` is not set. */
+export const DEFAULT_BASH_CAP = 600_000;
 
 /** A `tools.<kind>` item of the resolved configuration. */
 export interface Entry {
@@ -51,6 +54,8 @@ export interface Selection {
   readonly at?: Point | undefined;
   /** The run's files, deduplicated and sorted; null when the run has none. */
   readonly files: readonly string[] | null;
+  /** The picked tests of `--tests`, deduplicated and sorted; null without them. */
+  readonly tests?: readonly string[] | null | undefined;
 }
 
 export interface Plan {
@@ -87,15 +92,17 @@ function filesOf(entry: Entry, files: readonly string[]): readonly string[] {
 }
 
 /**
- * The checks to run, in kind order and, inside a kind, in the order the entries resolve, and the
+ * The checks to plan, in kind order and, inside a kind, in the order the entries resolve, and the
  * entries the run skips. An entry outside the `--at` point is neither. The replacement is a
  * function, so a `$&` or `$'` in a path stays literal.
  */
 export function planChecks(tools: Tools, selection: Selection): Plan {
-  const { kinds, at, files } = selection;
+  const { kinds, at, tests = null } = selection;
   const checks: Planned[] = [];
   const skipped: Skipped[] = [];
   for (const kind of KINDS.filter((each) => kinds === undefined || kinds.includes(each))) {
+    // A test entry takes the picked tests when there are any, every other entry the run's files.
+    const files = kind === "test" && tests !== null ? tests : selection.files;
     for (const entry of tools[kind]) {
       if (at !== undefined && entry.when !== undefined && !entry.when.includes(at)) continue;
       const scoped = entry.command.includes(FILES);
@@ -119,4 +126,61 @@ export function planChecks(tools: Tools, selection: Selection): Plan {
 
 function planned(kind: Kind, entry: Entry, command: string, scoped: boolean): Planned {
   return { kind, tool: entry.id, command, scoped, timeout: entry.timeout ?? DEFAULT_TIMEOUT };
+}
+
+/**
+ * The line the agent runs for a planned command: the command as written, stdin closed, both
+ * output streams into its output file. It holds no `cd`, variable, quoted text of its own or
+ * group, which the permission check of the Bash tool refuses (design D3 of v3-408).
+ */
+export function lineOf(command: string, output: string): string {
+  return `${command} </dev/null > ${quote(output)} 2>&1`;
+}
+
+/** The Bash tool's cap from `BASH_MAX_TIMEOUT_MS`; the default when it is unset or not a positive integer. */
+export function bashCap(value: string | undefined): number {
+  if (value === undefined || !/^[1-9][0-9]*$/.test(value)) return DEFAULT_BASH_CAP;
+  return Number(value);
+}
+
+/** The timeout of the agent's Bash call, in milliseconds: the command's, at most the cap. */
+export function bashTimeout(timeout: number, cap: number): number {
+  return Math.min(timeout * 1000, cap);
+}
+
+/**
+ * True when the command holds a shell list or pipe operator (`&&`, `||`, `;`, `|`) outside
+ * quotes, so a redirect after it binds only to its last part.
+ */
+export function isCompound(command: string): boolean {
+  let quote: string | null = null;
+  for (let i = 0; i < command.length; i += 1) {
+    const char = command[i];
+    if (quote !== null) {
+      if (char === quote) quote = null;
+      else if (char === "\\" && quote === '"') i += 1;
+      continue;
+    }
+    if (char === "\\") i += 1;
+    else if (char === "'" || char === '"') quote = char;
+    else if (char === ";" || char === "|") return true;
+    else if (char === "&" && command[i + 1] === "&") return true;
+  }
+  return false;
+}
+
+/** The notes of a planned command: a timeout above the Bash cap, a compound command. */
+export function notesOf(command: string, timeout: number, cap: number): readonly string[] {
+  const notes: string[] = [];
+  if (timeout * 1000 > cap) {
+    notes.push(
+      `its timeout of ${String(timeout)} s exceeds the Bash cap of ${String(cap / 1000)} s; set env.BASH_MAX_TIMEOUT_MS to "${String(timeout * 1000)}" in .claude/settings.json`,
+    );
+  }
+  if (isCompound(command)) {
+    notes.push(
+      "it holds a shell list or pipe, so only its last part writes to the output file; a project script keeps the command whole",
+    );
+  }
+  return notes;
 }

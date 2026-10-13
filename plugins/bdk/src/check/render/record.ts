@@ -1,23 +1,28 @@
-// The text of `bdk check run`, written for a model reading a Bash result: one line per check,
-// the point and revision first, the tail of each red one indented under it, one line per skipped entry, then the verdict and
-// where the result is.
+// The text of `bdk check record`, written for a model reading a Bash result: one line per check,
+// the point and revision first, the tail of each red one indented under it, one line per skipped
+// entry, then the verdict and where the result is (spec `bdk-cli/check`, "Record text output").
 
 import { TAIL_LINES } from "../domain/verdict.ts";
-import type { RunResult } from "../schema/run.ts";
+import type { RecordResult } from "../schema/record.ts";
+import { skipReason } from "./skip.ts";
 
-export function renderRun(result: RunResult, resultFile: string): string {
+export function renderRecord(result: RecordResult, resultFile: string): string {
   const lines: string[] = [];
   const at = result.at === null ? [] : [`at ${result.at}`];
   const changed = result.changed === null ? [] : [`changed against ${result.changed}`];
   if (at.length + changed.length > 0) lines.push([...at, ...changed].join(", "));
   const named = [...result.checks, ...result.skipped];
-  const status = Math.max(0, ...result.checks.map((check) => check.status.length));
+  const status = Math.max(4, ...result.checks.map((check) => check.status.length));
   const name = Math.max(0, ...named.map((entry) => `${entry.kind} ${entry.tool}`.length));
   for (const check of result.checks) {
     const scope = check.scoped ? "scoped" : "full  ";
     lines.push(
       `${check.status.padEnd(status)}  ${`${check.kind} ${check.tool}`.padEnd(name)}  ${scope}  ${check.output}`,
     );
+    if (check.status === "not-run") {
+      lines.push(`    no exit code was given for it; run its line, then record again`);
+      continue;
+    }
     const tail = check.tail ?? [];
     for (const line of tail) lines.push(`    | ${line}`);
     // A full tail may be cut: a model reading only it misses a failure printed above it (#262).
@@ -26,11 +31,9 @@ export function renderRun(result: RunResult, resultFile: string): string {
     }
   }
   for (const entry of result.skipped) {
-    const why =
-      entry.reason === "paths"
-        ? "no changed file matches its paths"
-        : "no changed file for its {files}";
-    lines.push(`${"skip".padEnd(status)}  ${`${entry.kind} ${entry.tool}`.padEnd(name)}  ${why}`);
+    lines.push(
+      `${"skip".padEnd(status)}  ${`${entry.kind} ${entry.tool}`.padEnd(name)}  ${skipReason(entry)}`,
+    );
   }
   if (named.length === 0) lines.push("no check configured for this run");
   const red = result.checks.filter((check) => check.status !== "pass").length;

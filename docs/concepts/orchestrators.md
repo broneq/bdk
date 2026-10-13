@@ -137,7 +137,7 @@ flowchart TB
   W5 --> PB{{"part blocked?"}}
   PB -->|"no: committed,<br/>parts left in the wave"| W5
   PB -->|"yes: stop, its work<br/>left uncommitted"| RES
-  PB -->|"no: wave built"| WC["wave check<br/>bdk check run wave-N<br/>--at wave --changed base<br/>red: /bdk:repair-wave,<br/>lead commits the repair"]
+  PB -->|"no: wave built"| WC["wave check<br/>bdk check plan wave-N<br/>--at wave --changed base,<br/>each line a Bash call,<br/>bdk check record<br/>red: /bdk:repair-wave,<br/>lead commits the repair"]
   WC --> NW{{"wave check<br/>blocked?"}}
   NW -->|"no, waves left"| W3
   NW -->|"yes, or no wave left"| RES["write R/execute/result.md<br/>Status: done or blocked"]
@@ -150,22 +150,23 @@ Each part goes through these attempts. The checks each worker runs are in the bo
 ```mermaid
 flowchart TB
   IMP["Agent bdk:implementer<br/>/bdk:implement-part<br/>attempts + 1<br/>in state.json"]
-  IMP --> RED["acceptance tests,<br/>written first<br/>bdk check run NN-red<br/>--at part --kind test<br/>each red for<br/>the right reason,<br/>green if marked<br/>behaviour present"]
+  IMP --> RED["acceptance tests,<br/>written first<br/>bdk check plan NN-red<br/>--at part --kind test<br/>--tests the new tests,<br/>each line a Bash call,<br/>bdk check record<br/>each red for<br/>the right reason,<br/>green if marked<br/>behaviour present"]
   RED --> BUILD["build the tasks"]
-  BUILD --> PC["part checks<br/>bdk check run NN<br/>--at part --changed HEAD<br/>red: fix, run again<br/>3 runs in all"]
+  BUILD --> PC["pick the tests:<br/>acceptance, of changed<br/>modules, E2E of<br/>touched flows<br/>bdk check plan NN<br/>--at part --changed HEAD<br/>--tests the picked tests,<br/>each line a Bash call,<br/>bdk check record<br/>red: fix, run again<br/>3 runs in all"]
   PC --> OV["a spec delta changed:<br/>openspec validate<br/>&lt;change&gt; --strict<br/>error: fix, run again<br/>3 runs in all"]
   OV -->|"R/execute/part-NN.md"| RI{{"part report"}}
   RI -->|"plan-defect or environment"| PB["part blocked"]
-  RI -->|"other: checks or validation<br/>still red, or no report"| RETRY
-  RI -->|"done: checks green"| CONF["Agent bdk:conformer<br/>/bdk:conform-part<br/>fixes what keeps behaviour"]
+  RI -->|"other: checks or<br/>validation still red,<br/>or no report"| RETRY
+  RI -->|"done: checks green"| CONF["Agent bdk:conformer<br/>/bdk:conform-part<br/>fixes what keeps<br/>behaviour"]
   CONF --> CV["a spec delta changed:<br/>openspec validate<br/>&lt;change&gt; --strict<br/>error: its task left"]
-  CV --> CC["conform checks, only<br/>after an edit<br/>bdk check run conform-NN<br/>--at part --changed HEAD<br/>red after a fix:<br/>that fix undone"]
+  CV --> CC["conform checks, only<br/>after an edit<br/>bdk check plan conform-NN<br/>--at part --changed HEAD<br/>--tests the picked tests,<br/>each line a Bash call,<br/>bdk check record<br/>red after a fix:<br/>that fix undone"]
   CC -->|"R/execute/conform-NN.md"| RC{{"conform verdict"}}
-  RC -->|"FAIL: a check red, a task<br/>left, or no report"| RETRY{{"attempts left?<br/>policy.budgets.part-attempts,<br/>default 3"}}
+  RC -->|"FAIL: a check red,<br/>a task left,<br/>or no report"| RETRY{{"attempts left?<br/>policy.budgets.part-attempts,<br/>default 3"}}
   RETRY -->|"yes (the last one on<br/>policy.escalation.model<br/>and .effort)"| IMP
   RETRY -->|"no"| PB
   RC -->|"PASS"| COM["lead commits the part,<br/>state.json: done"]
 ```
+
 
 One part, step by step inside its two worker agents:
 
@@ -178,37 +179,41 @@ sequenceDiagram
   L->>I: part NN,<br/>--run-dir
   I->>B: bdk rules for --stage execute
   I->>I: check the task contracts<br/>(a plan defect stops here)
-  I->>B: bdk check run NN-red<br/>--at part --kind test
+  I->>B: bdk check plan NN-red<br/>--at part --kind test --tests
+  I->>I: each printed line<br/>as its own Bash call
+  I->>B: bdk check record NN-red<br/>--exit kind-tool=code
   Note over I,B: acceptance tests must be red
-  I->>I: build the tasks
-  I->>B: bdk check run NN --at part<br/>--changed HEAD (up to 3 runs)
+  I->>I: build the tasks, pick the tests
+  I->>B: bdk check plan NN --at part<br/>--changed HEAD --tests,<br/>lines, record (up to 3 runs)
   I->>I: a delta changed: openspec<br/>validate --strict (up to 3 runs)
   I-->>L: R/execute/part-NN.md
   L->>F: part NN, --run-dir
   F->>B: bdk rules for<br/>--stage execute
   F->>F: a delta changed: openspec<br/>validate --strict, an error left
   F->>F: fix what keeps behaviour,<br/>leave the rest
-  F->>B: bdk check run<br/>conform-NN (only<br/>after an edit)
+  F->>B: bdk check plan conform-NN,<br/>lines, record (only<br/>after an edit)
   F-->>L: R/execute/conform-NN.md
   L->>L: git add -A, git commit
 ```
 
 ### Where execute runs your checks
 
-Every check of the execute stage is a `bdk check run`, which runs your `tools.test`, `tools.lint` and `tools.build` commands (the [`tools`](/reference/bdk/settings#tools) items) and writes their output and the result under `R/checks/`. No agent runs a test, linter or build command itself. Each run names its check point with `--at`, and runs only the items whose `when` holds that point, plus the items without `when` ([check points](/guide/configuration#a-web-app-with-a-browser-e2e-check)). Four runs, in this order:
+Every check of the execute stage runs your `tools.test`, `tools.lint` and `tools.build` commands (the [`tools`](/reference/bdk/settings#tools) items) in three steps. `bdk check plan` picks the items and prints, for each, the line to run: your command as configured, stdin closed, its whole output into a file under `R/checks/<id>/` (`npm run test:e2e -- e2e/checkout.spec.ts </dev/null > .bdk/runs/<change>/checks/02/test-playwright.txt 2>&1`), with the Bash timeout of the call. The agent that needs the check runs each line as its own Bash call, so its transcript shows your real command, how long it ran and its exit code. Then `bdk check record` takes each exit code and writes the result `R/checks/<id>.json` and prints the last lines of each red check. No agent runs a test, linter or build command other than a printed line. Each check names its check point with `--at`, and runs only the items whose `when` holds that point, plus the items without `when` ([check points](/guide/configuration#a-web-app-with-a-browser-e2e-check)). Four checks, in this order:
 
 | Run | Who, when | Point, files | When it is red |
 |---|---|---|---|
-| `NN-red`<br/>test only | `bdk:implementer`, [`/bdk:implement-part`](/reference/bdk/skills#implement-part) step 4, before any code | `part`, the new acceptance tests | expected: each test must fail because the behaviour is missing, its own failure seen, in the output file when the last 20 lines printed under the red check do not show it; a broken test is fixed and run again. No `tools.test` item at `part` for these files blocks the part (`environment`) |
-| `NN` | `bdk:implementer`, step 6, once the tasks are built | `part`, the files changed against `HEAD` | fix and run again, three runs in all; still red, the run ends as a blocker (`other`) and the lead retries the part. No `Status: done` without a green run |
-| `conform-NN` | `bdk:conformer`, [`/bdk:conform-part`](/reference/bdk/skills#conform-part) step 5, only when it edited a file | `part`, the files changed against `HEAD` | a fix that broke it is undone; still red, the verdict is `FAIL` and the lead retries the part. With no edit it runs nothing and names `NN` unchanged |
-| `wave-N` | `bdk:lead`, [`/bdk:execute-waves`](/reference/bdk/skills#execute-waves) step 6, once every part of the wave is committed on the Change branch | `wave`, the files changed since the wave's base | `bdk:implementer` with [`/bdk:repair-wave`](/reference/bdk/skills#repair-wave) repairs what two parts broke together and the lead commits it; still red, one more repair on `policy.escalation.model`, then the wave is blocked and no later wave starts |
+| `NN-red`<br/>test only | `bdk:implementer`, [`/bdk:implement-part`](/reference/bdk/skills#implement-part) step 4, before any code | `part`, the new acceptance tests (`--tests`) | expected: each test must fail because the behaviour is missing, its own failure seen, in the output file when the last 20 lines printed under the red check do not show it; a broken test is fixed and run again. No `tools.test` item at `part` for these files blocks the part (`environment`) |
+| `NN` | `bdk:implementer`, step 6, once the tasks are built | `part`: test items the tests it picked (the acceptance tests, the existing tests of the modules it changed, the E2E specs of the flows it touched); lint and build items the files changed against `HEAD` | fix and run again, three runs in all; still red, the run ends as a blocker (`other`) and the lead retries the part. No `Status: done` without a green run |
+| `conform-NN` | `bdk:conformer`, [`/bdk:conform-part`](/reference/bdk/skills#conform-part) step 5, only when it edited a file | `part`: test items the implementer's picked tests plus those of the modules it edited; lint and build items the files changed against `HEAD` | a fix that broke it is undone; still red, the verdict is `FAIL` and the lead retries the part. With no edit it runs nothing and names `NN` unchanged |
+| `wave-N` | `bdk:lead`, [`/bdk:execute-waves`](/reference/bdk/skills#execute-waves) step 6, once every part of the wave is committed on the Change branch | `wave`, the files changed since the wave's base, test items too (no picked tests: the wave runs whole suites) | `bdk:implementer` with [`/bdk:repair-wave`](/reference/bdk/skills#repair-wave) repairs what two parts broke together and the lead commits it; still red, one more repair on `policy.escalation.model`, then the wave is blocked and no later wave starts |
 
-**A part that changes a spec delta.** OpenSpec refuses a delta it cannot parse, such as a requirement without a scenario, and `/bdk:close` cannot archive it. So when a part's diff changes a file under `openspec/changes/<change>/specs/` (a review fix part may), the implementer runs `openspec validate <change> --strict` after its part checks and fixes what it reports, three runs in all, and the conformer runs it again whatever the implementer reports: an error on a delta of the part is left under its task, so the verdict is `FAIL` and the lead retries the part. Both reports name the run under `## Checks`. It is the one command besides `bdk check run` the execute workers run; without an `openspec` command they write `not run` and go on, and the review round and close read the delta later.
+**A part that changes a spec delta.** OpenSpec refuses a delta it cannot parse, such as a requirement without a scenario, and `/bdk:close` cannot archive it. So when a part's diff changes a file under `openspec/changes/<change>/specs/` (a review fix part may), the implementer runs `openspec validate <change> --strict` after its part checks and fixes what it reports, three runs in all, and the conformer runs it again whatever the implementer reports: an error on a delta of the part is left under its task, so the verdict is `FAIL` and the lead retries the part. Both reports name the run under `## Checks`. It is the one command besides the printed check lines the execute workers run; without an `openspec` command they write `not run` and go on, and the review round and close read the delta later.
 
-**Which files a run covers.** `--changed <ref>` hands the run the files git reports changed against `<ref>`, untracked ones included. An item whose `command` holds `{files}` gets the changed files its `paths` match, and is skipped when none matches; an item with `paths` and no `{files}` runs its whole command only when one of its files changed; any other item runs its whole command ([configuration](/guide/configuration#examples)). A part's checks cover the files it changed against `HEAD`, the commit of the part before it; the wave check is the first run on all the parts of a wave together.
+**Which files a check covers.** `--changed <ref>` hands the check the files git reports changed against `<ref>`, untracked ones included. `--tests <path>` hands test items the tests the agent picked instead, so what runs follows what the part should prove, not only what it changed: a change to `src/checkout.ts` runs `e2e/checkout.spec.ts` when the implementer picks it, and a part that picks no E2E spec runs no E2E suite. An item whose `command` holds `{files}` gets the files its `paths` match, and is skipped when none matches; an item with `paths` and no `{files}` runs its whole command only when one of its files changed; any other item runs its whole command ([configuration](/guide/configuration#examples)). A part's checks cover the files it changed against `HEAD`, the commit of the part before it; the wave check is the first run on all the parts of a wave together.
 
-**Where a slow suite runs.** Keep the fast checks of the changed files at `part`, the main test suite and the type check at `wave`, and the slow suites, a whole Playwright suite and the build at `review`: the first round of [`/bdk:auto-review`](#bdk-auto-review) runs them (`bdk check run round-N --at review`), where a red check is a `blocker` finding. A Change you take from `/bdk:execute` straight to a pull request has passed its part and wave checks only.
+**Long commands.** The Bash tool ends a call after 600 seconds unless `BASH_MAX_TIMEOUT_MS` raises its cap. An item with a longer `timeout` gets a note in the plan naming the value to set, and `/bdk:setup` sets `env.BASH_MAX_TIMEOUT_MS` in `.claude/settings.json` for it ([configuration](/guide/configuration#long-checks)).
+
+**Where a slow suite runs.** Keep the fast checks of the changed files at `part`, the main test suite and the type check at `wave`, and the slow suites, a whole Playwright suite and the build at `review`: the first round of [`/bdk:auto-review`](#bdk-auto-review) runs them (`bdk check plan round-N --at review`, the lines, `bdk check record --round N`), where a red check is a `blocker` finding. A Change you take from `/bdk:execute` straight to a pull request has passed its part and wave checks only.
 
 ## `/bdk:auto-review`
 
@@ -249,13 +254,13 @@ Triage policy, which decides in auto mode and is the preselected recommendation 
 
 ```mermaid
 flowchart TB
-  G["bdk:lead: bdk git groups --record<br/>R/review/round-N/groups.json"] --> S3
+  G["bdk:lead: bdk git groups --record<br/>R/review/round-N/groups.json"] --> CP["bdk check plan round-N<br/>--at review --changed base"] --> S3
   subgraph S3["step 3, in parallel"]
     direction LR
     RV["/bdk:review-group per group<br/>bdk:reviewer x N"]
-    CK["bdk check run --at review<br/>--changed base, red checks to the log"]
+    CK["each printed line<br/>a Bash call of the lead"]
   end
-  S3 -->|"every reviewer returned,<br/>check run ended"| S4
+  S3 -->|"every reviewer returned,<br/>every line ended"| CR["bdk check record round-N<br/>--round N: red checks to the log"] --> S4
   subgraph S4["step 4, in parallel"]
     direction LR
     VF["/bdk:spec-conformance --round<br/>bdk:verifier, opus<br/>round-N/spec-conformance.md"]
@@ -266,7 +271,7 @@ flowchart TB
   JD --> RM["bdk:lead writes round-N/round.md"]
 ```
 
-`bdk git groups` gets `--rounds R/review`, so a later round covers only what changed since the round before, and `--plan` with the plan parts (round 1) or the fix parts of the round before, so each group is one part. Every finding lands in `round-N/findings.jsonl`. Each step starts its agents in one message, in batches of `execution.max-parallel` when they number more. The verifier runs the check `/bdk:close` runs before the archive (`/bdk:spec-conformance`, see below) in every round, so a spec delta that misses an error message, or a requirement the code breaks for an input its scenario does not use, becomes a `blocker` finding the fix pass fixes, instead of a stop at close; it reads no E2E results, because the E2E tester logs its own failures. The verifier, the integration reviewer and the E2E tester start together once the group reviewers and the check run have ended, so your suites and the started product never compete for the same ports or browsers. None of the three reads another's output: the integration reviewer reads the group findings, not the verifier's findings nor the E2E verdict, so it never waits for the slower verifier (about two minutes on opus), and a problem two of them log is a repeat the judge levels `not-a-problem`. A later round whose fix commits changed only test files (`testsOnly` in `groups.json`, from file names such as `test/`, `__tests__/`, `*.test.*` or `*_test.*`) runs no E2E check when the last E2E verdict passed or was skipped: the product is the one that verdict checked, so the round writes no `round-N/e2e/` and its `round.md` names the verdict it carries over. A fix that touches any other file, or a last verdict `FAIL` or `BLOCKED`, gets the full check. A worker that fails is started once more with the same prompt; a second failure goes under `Gaps` in `round.md`.
+`bdk git groups` gets `--rounds R/review`, so a later round covers only what changed since the round before, and `--plan` with the plan parts (round 1) or the fix parts of the round before, so each group is one part. Every finding lands in `round-N/findings.jsonl`. Each step starts its agents in one message, in batches of `execution.max-parallel` when they number more. The verifier runs the check `/bdk:close` runs before the archive (`/bdk:spec-conformance`, see below) in every round, so a spec delta that misses an error message, or a requirement the code breaks for an input its scenario does not use, becomes a `blocker` finding the fix pass fixes, instead of a stop at close; it reads no E2E results, because the E2E tester logs its own failures. The verifier, the integration reviewer and the E2E tester start together once the group reviewers have returned and the check run is recorded, so your suites and the started product never compete for the same ports or browsers. None of the three reads another's output: the integration reviewer reads the group findings, not the verifier's findings nor the E2E verdict, so it never waits for the slower verifier (about two minutes on opus), and a problem two of them log is a repeat the judge levels `not-a-problem`. A later round whose fix commits changed only test files (`testsOnly` in `groups.json`, from file names such as `test/`, `__tests__/`, `*.test.*` or `*_test.*`) runs no E2E check when the last E2E verdict passed or was skipped: the product is the one that verdict checked, so the round writes no `round-N/e2e/` and its `round.md` names the verdict it carries over. A fix that touches any other file, or a last verdict `FAIL` or `BLOCKED`, gets the full check. A worker that fails is started once more with the same prompt; a second failure goes under `Gaps` in `round.md`.
 
 ## `/bdk:close`
 

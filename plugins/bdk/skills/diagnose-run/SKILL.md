@@ -42,7 +42,7 @@ Done when you have the command's output.
 
 ## 3. Read the run files
 
-Read `.bdk/runs/<change>/`: the stage results (`debug/result.md`, `design/verify-N.md`, `plan/verify-N.md`, `execute/result.md`, `execute/part-NN.md`, `execute/conform-NN.md`, `review/result.md`, `review/round-N/review.md`, `close/*.md`), `state.json` (part attempts, blocked reasons) and `checks/*.json` (check verdicts). They say which verifier passes failed, which parts took more than one attempt and why, which review rounds held blockers, and which checks failed.
+Read `.bdk/runs/<change>/`: the stage results (`debug/result.md`, `design/verify-N.md`, `plan/verify-N.md`, `execute/result.md`, `execute/part-NN.md`, `execute/conform-NN.md`, `review/result.md`, `review/round-N/review.md`, `close/*.md`), `state.json` (part attempts, blocked reasons) and `checks/*.json` (check verdicts; each check names its command, `cwd`, exit code and output file, and `checks/<id>/plan.json` the line the agent was told to run). A check is three kinds of call in a transcript: `bdk check plan`, one Bash call per printed line (the real command, with its wall time and exit code) and `bdk check record`; a line missing from the transcript, or run with something added to it, is where to look first. They say which verifier passes failed, which parts took more than one attempt and why, which review rounds held blockers, and which checks failed.
 
 Done when you know the retries and blockers of the run, each with its file and line.
 

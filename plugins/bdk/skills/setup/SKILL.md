@@ -89,10 +89,13 @@ Run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" config check`. Exit 1 lists problems as `<f
 Edit the project's `.claude/settings.json` (create it as `{"permissions": {"allow": []}}` when missing). Claude Code asks the user to approve every write to this file; when the write is refused, list the rules in the report for the user to add. Add to `permissions.allow` each of these that is missing, keeping every other entry and key:
 
 - `Bash(bdk *)` and `Bash(*/bin/bdk *)` (skills call the launcher by its plugin path), `Bash(openspec *)`, `Bash(git *)`, `Bash(gh *)`;
+- `Edit(.bdk/runs/**)`: the agents run each check command themselves as `<command> </dev/null > <output file> 2>&1`, and the output file under `.bdk/runs/` is a write the host asks about without it;
 - `Bash(<command>)` for each `tools.test`, `tools.lint` and `tools.build` command without `{files}`, and each `tools.e2e` `start` and command `ready` (a URL needs no rule);
 - `Bash(<prefix> *)` for each command holding `{files}`, `<prefix>` being the command before `{files}` (`pnpm vitest run {files}` gives `Bash(pnpm vitest run *)`).
 
-Done when every rule is in the file and the JSON parses.
+When a `tools.test`, `tools.lint` or `tools.build` item has a `timeout` above 600, also set `env.BASH_MAX_TIMEOUT_MS` in the same file to the largest such `timeout` times 1000, as a string (`"timeout": 1500` gives `"BASH_MAX_TIMEOUT_MS": "1500000"`), unless the file already sets a larger value. The Bash tool cuts a call at 600 s by default, and the agent's call of a check command must last as long as the item's `timeout`. Keep every other key of `env`.
+
+Done when every rule (and the `env` key a long item needs) is in the file and the JSON parses.
 
 ## 7. OpenSpec with the BDK schema
 

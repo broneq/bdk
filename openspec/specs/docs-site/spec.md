@@ -248,7 +248,7 @@ The Concepts SHALL explain how a plan is cut: what a part, `depends-on` and a wa
 
 ### Requirement: The Concepts show where execute runs the checks
 
-The Concepts page of the orchestrators SHALL show, in the execute diagrams, every run of `bdk check run` in the execute stage: the red acceptance tests and the part checks of `/bdk:implement-part`, the checks of `/bdk:conform-part`, and the wave check of the execute lead with its repair by `/bdk:repair-wave`. Its text SHALL say which files a check on changed files covers, which check point each run uses, and that the checks of the `review` point run only in `/bdk:auto-review`. The execute stage of the Concepts and of the Guide SHALL link to it.
+The Concepts page of the orchestrators SHALL show, in the execute diagrams, every check run of the execute stage (`bdk check plan`, the agent's own Bash call of each printed line, `bdk check record`): the red acceptance tests and the part checks of `/bdk:implement-part`, the checks of `/bdk:conform-part`, and the wave check of the execute lead with its repair by `/bdk:repair-wave`. Its text SHALL say that the agent runs the configured command itself, which tests the agent picks for a test item and which changed files a lint or build item covers, which check point each run uses, and that the checks of the `review` point run only in `/bdk:auto-review`. The execute stage of the Concepts and of the Guide SHALL link to it.
 
 #### Scenario: Where the tests of a part run
 
@@ -304,7 +304,7 @@ Every Mermaid diagram of a Concepts page SHALL show what the BDK skills, agents,
 
 #### Scenario: Waves in the execute diagrams
 - **WHEN** a reader opens the Execute sequence and the run-status decision of `docs/concepts/run-state.md`
-- **THEN** the sequence shows the lead's `bdk check run wave-N`, the repair by `/bdk:repair-wave` writing `execute/wave-N.md` and the lead committing it, and the decision keeps the stage at execute while a wave is not done or blocked
+- **THEN** the sequence shows the lead's wave check (`bdk check plan wave-N`, each line, `bdk check record`), the repair by `/bdk:repair-wave` writing `execute/wave-N.md` and the lead committing it, and the decision keeps the stage at execute while a wave is not done or blocked
 
 #### Scenario: A run diagnosed after the fact
 - **WHEN** a reader looks in `docs/concepts/orchestrators.md` for what `/bdk:diagnose-run` runs

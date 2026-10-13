@@ -18,7 +18,7 @@ Questions you answer with a read command:
 - How long a finished run took, what it cost per stage and agent, and what the detectors flag in its transcripts: `bdk diagnostics report [<change>]`. For the analysed report, with the run files and fixes, use `/bdk:diagnose-run`.
 - The state of a Change is `openspec status --change <name>`, not a `bdk` command.
 
-Commands that write belong to a stage skill; call one yourself only when the user asks for exactly that: `bdk config set` (user's request), `bdk findings add`, `bdk findings level` and `bdk findings decide` (review, judge, triage), `bdk findings report` (rewrites review.md), `bdk check run` (execute, review), `bdk openspec install` (`/bdk:setup`). The host runs `bdk hooks session-start` and `bdk hooks pre-tool-use`; never call them.
+Commands that write belong to a stage skill; call one yourself only when the user asks for exactly that: `bdk config set` (user's request), `bdk findings add`, `bdk findings level` and `bdk findings decide` (review, judge, triage), `bdk findings report` (rewrites review.md), `bdk check record` (execute, review; `bdk check plan` only writes a plan, the lines it prints are the check), `bdk openspec install` (`/bdk:setup`). The host runs `bdk hooks session-start` and `bdk hooks pre-tool-use`; never call them.
 
 The CLI never runs a stage. For work, not a question, use the skill: `/bdk:run` for an intent or issues to pull requests, `/bdk:propose`, `/bdk:design`, `/bdk:plan`, `/bdk:execute`, `/bdk:auto-review`, `/bdk:close` for one stage, `/bdk:debug` for a bug, `/bdk:pr-review` for a pull request, `/bdk:diagnose-run` to analyse a finished run.
 

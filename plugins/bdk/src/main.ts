@@ -18,7 +18,6 @@ import { run } from "./shared/cli/index.ts";
 import type { Group } from "./shared/cli/index.ts";
 import { files } from "./shared/fs/index.ts";
 import { git } from "./shared/git/index.ts";
-import { shell } from "./shared/shell/index.ts";
 import { readStdin } from "./shared/stdin/index.ts";
 
 /** Replaced by `build.ts` with the `plugin.json` version. */
@@ -28,11 +27,7 @@ declare const __BDK_VERSION__: string;
 const deps = { files, cwd: process.cwd(), home: homedir(), env: process.env };
 
 const GROUPS: readonly Group[] = [
-  checkGroup({
-    ...deps,
-    shell: (command, options) => shell(command, options),
-    git: (cwd, args) => git(cwd, args),
-  }),
+  checkGroup({ ...deps, git: (cwd, args) => git(cwd, args) }),
   configGroup(deps),
   findingsGroup({ files }),
   runGroup(deps),

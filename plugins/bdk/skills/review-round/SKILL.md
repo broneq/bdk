@@ -1,6 +1,6 @@
 ---
 name: review-round
-description: 'One review round of an OpenSpec Change, run by the bdk:lead agent that /bdk:auto-review starts - records the round scope and groups with bdk git groups (a later round covers only the fix commits), runs one bdk:reviewer per group and bdk check run --at review in parallel, then spec-conformance on bdk:verifier, bdk:integration-reviewer and bdk:e2e-tester together (no E2E tester in a later round whose fixes changed only test files after a passing E2E verdict), then bdk:judge, and writes round.md next to the review.md of the judge. Not for users: /bdk:auto-review is the command.'
+description: 'One review round of an OpenSpec Change, run by the bdk:lead agent that /bdk:auto-review starts - records the round scope and groups with bdk git groups (a later round covers only the fix commits), plans the review checks with bdk check plan, runs one bdk:reviewer per group and the printed check lines in parallel, records them with bdk check record, then spec-conformance on bdk:verifier, bdk:integration-reviewer and bdk:e2e-tester together (no E2E tester in a later round whose fixes changed only test files after a passing E2E verdict), then bdk:judge, and writes round.md next to the review.md of the judge. Not for users: /bdk:auto-review is the command.'
 argument-hint: "<change> --run-dir <absolute path> --round <N>"
 user-invocable: false
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(git symbolic-ref *) Bash(git rev-parse *) Read Write Glob Agent
@@ -52,18 +52,32 @@ Done when `groups.json` exists and you hold its groups.
 
 ## 3. Groups and checks in parallel
 
-In one message:
+First plan the round's checks, in a Bash call of its own:
+
+```
+"${CLAUDE_PLUGIN_ROOT}/bin/bdk" check plan <run dir> round-<N> --at review --changed <base>
+```
+
+with `<base>` of step 2. It runs nothing: it plans the items of the `review` point, such as the whole and slow suites, and prints, per check, a header with its Bash timeout and the line to run indented under it. Then, in one message:
 
 - one Agent call per group other than `integration`: `subagent_type: "bdk:reviewer"`, `run_in_background: false`, prompt `Review group <id> of the round <round dir>`, `model` `models.reviewer.model` and `effort` `models.reviewer.effort`, each when set;
-- one Bash call: `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" check run <run dir> round-<N> --at review --changed <base> --round <N>`, with `<base>` of step 2. It runs the items of the `review` point, such as the whole and slow suites, and exits 1 when a check is red and has then appended the red checks to the log; that is a result, not an error.
+- one Bash call per printed line, in plan order: the line character for character, with the `timeout` of its header, in the foreground. Add nothing to it (no `cd`, pipe, `tail` or `echo`): the line writes the whole output to the file it names, and a longer call is refused by the permission check. The Bash tool reports each exit code (a result that shows no `Exit code` line is code 0); a non-zero code is a result, not an error.
 
-Start every Agent call in the foreground, with `run_in_background: false` (a call without it may start in the background): you end when your turn ends, and a background worker would report to nobody. Never read or poll a worker's task output file and never sleep to wait for one; a foreground call returns the worker's reply. When the reviewers number more than `execution.max-parallel`, start them in batches of that size, in their order, the check run with the first batch.
+When every line has ended, record the check run with the code each call reported:
+
+```
+"${CLAUDE_PLUGIN_ROOT}/bin/bdk" check record <run dir> round-<N> --round <N> --exit <kind>-<tool>=<code> ...
+```
+
+one `--exit` per line, or `--timed-out <kind>-<tool>` for a line the tool ended at its timeout. It exits 1 when a check is red and has then appended the red checks to the log; that is a result, not an error. A line the host refused is recorded without a code (`not-run`) and so becomes a finding of the round.
+
+Start every Agent call in the foreground, with `run_in_background: false` (a call without it may start in the background): you end when your turn ends, and a background worker would report to nobody. Never read or poll a worker's task output file and never sleep to wait for one; a foreground call returns the worker's reply. When the reviewers number more than `execution.max-parallel`, start them in batches of that size, in their order, the check lines with the first batch.
 
 A group with no files, or a round whose `groups` is empty (nothing changed since the anchor), gets no reviewer; the checks still run.
 
 A worker that returns an error or an empty reply is started once more with the same prompt. When the second run also fails, note it under `Gaps`.
 
-Done when every reviewer has returned and the check run has ended.
+Done when every reviewer has returned and the check run is recorded.
 
 ## 4. Spec check, integration and E2E
 
@@ -123,7 +137,7 @@ Report: review.md
 - None.
 ```
 
-- The counts per group come from each worker's reply; the checks verdict from the check run's output; the spec conformance line is the first line of `<round dir>/spec-conformance.md` (`missing` when the verifier wrote none, also a gap); the E2E line is the first line of `<round dir>/e2e/verdict.md`, where the E2E tester writes its evidence when given the round's log.
+- The counts per group come from each worker's reply; the checks verdict from the output of `bdk check record`; the spec conformance line is the first line of `<round dir>/spec-conformance.md` (`missing` when the verifier wrote none, also a gap); the E2E line is the first line of `<round dir>/e2e/verdict.md`, where the E2E tester writes its evidence when given the round's log.
 - A round that carried the verdict over (step 4) has this E2E line instead, with the count of `tests` and the carried file and its first line:
 
   ```markdown

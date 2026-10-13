@@ -72,17 +72,33 @@ tools:
       driver: browser
 ```
 
-Each item is one command. `{files}` in a command becomes the files that changed, as paths from the project root, and the command runs in the project root; with no changed file the item is skipped. `when` says at which check points the item runs:
+Each item is one command, run in the project root. `{files}` in a command becomes a list of paths from the project root: in a test item, the tests the agent picked for a part (its acceptance tests, the existing tests of the modules it changed, the E2E specs of the flows it touched); in a lint or build item, and in a test item at the wave and review points, the files that changed. With no such file the item is skipped, so a part that picked no E2E spec runs no E2E item. `when` says at which check points the item runs:
 
 | Point | When | On what |
 |---|---|---|
-| `part` | after each plan part of `/bdk:execute` | the files the part changed |
+| `part` | after each plan part of `/bdk:execute` | test items: the tests the agent picked; lint and build items: the files the part changed |
 | `wave` | after each wave of `/bdk:execute`, on the Change branch | what the wave changed |
 | `review` | in each review round of `/bdk:auto-review` | the Change against its base branch |
 
 An item without `when` runs at every point. Keep the fast checks of the changed files at `part`, the main test suite and the type check at `wave`, and the slow suites, the whole Playwright suite and the build at `review`; [where execute runs your checks](/concepts/orchestrators#where-execute-runs-your-checks) shows each point in the flow.
 
-A heavy suite that needs ports, browsers or a database is your project's to run: BDK starts the command and waits for it. When your test script already guards the machine (a lock, a fixed port per instance, a busy exit), keep that in the script; BDK runs the checks of one Change one after another and never starts the E2E check while a check run is on.
+A heavy suite that needs ports, browsers or a database is your project's to run: the agent runs the command as its own Bash call and waits for it. When your test script already guards the machine (a lock, a fixed port per instance, a busy exit), keep that in the script; BDK runs the checks of one Change one after another and never starts the E2E check while a check run is on.
+
+#### Long checks
+
+The agents run each check command themselves, as `<command> </dev/null > <output file> 2>&1` in a Bash call of their own, so the transcript shows your command, its time and its exit code. Two settings in `.claude/settings.json` let such a call through, and `/bdk:setup` writes both:
+
+- the allow rule `Edit(.bdk/runs/**)`, so the write of the output file under `.bdk/runs/` needs no approval, next to the `Bash(<command>)` rule of each command;
+- `env.BASH_MAX_TIMEOUT_MS`, when an item's `timeout` is above 600 seconds: the Bash tool ends a call after 600 seconds by default, and this raises its cap. `bdk check plan` prints a note naming the value when an item's `timeout` is above the cap.
+
+```json
+{
+  "permissions": { "allow": ["Bash(pnpm test:e2e)", "Edit(.bdk/runs/**)"] },
+  "env": { "BASH_MAX_TIMEOUT_MS": "1500000" }
+}
+```
+
+A command that chains several steps (`pnpm codegen && pnpm build`) writes only its last step's output to the file; make it a project script instead.
 
 `scoped` was removed. An item that still holds it fails `bdk config check`; run `/bdk:setup` again, which rewrites it into two items: the whole command with `when: [wave, review]`, and an `<id>-changed` item with the `{files}` command and `when: [part]`.
 

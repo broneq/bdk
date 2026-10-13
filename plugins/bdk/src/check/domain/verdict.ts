@@ -1,13 +1,15 @@
-// The result of a check from its command's outcome (spec `bdk-cli/check`, "Result file",
-// "Output files", "Red checks as findings").
+// The result of a check from the outcome the agent reports for its call (spec `bdk-cli/check`,
+// "Record the checks", "Result file", "Output files", "Red checks as findings").
 
 import type { Kind } from "./plan.ts";
 
-/** How a command ended; a signal exit already counts as 128 plus its number. */
+/** How the agent's call of a command ended, as the Bash tool reported it; `none` when no one said. */
 export type Outcome =
-  { readonly kind: "exit"; readonly code: number } | { readonly kind: "timeout" };
+  | { readonly kind: "exit"; readonly code: number }
+  | { readonly kind: "timeout" }
+  | { readonly kind: "none" };
 
-export const STATUSES = ["pass", "fail", "timeout"] as const;
+export const STATUSES = ["pass", "fail", "timeout", "not-run"] as const;
 export type Status = (typeof STATUSES)[number];
 
 export const VERDICTS = ["pass", "fail", "none"] as const;
@@ -18,6 +20,7 @@ export const TAIL_LINES = 20;
 
 export function statusOf(outcome: Outcome): Status {
   if (outcome.kind === "timeout") return "timeout";
+  if (outcome.kind === "none") return "not-run";
   return outcome.code === 0 ? "pass" : "fail";
 }
 
@@ -26,8 +29,27 @@ export function verdictOf(statuses: readonly Status[]): Verdict {
   return statuses.every((status) => status === "pass") ? "pass" : "fail";
 }
 
+const TRAILER = /(?:^|\n)(?:exit [0-9]+|timeout [0-9]+)\n?$/;
+
+/** True when the output already ends with an exit or timeout line, as a second record leaves it. */
+export function hasTrailer(output: string): boolean {
+  return TRAILER.test(output);
+}
+
+/** The output without the exit or timeout line a record appended, for its tail. */
+export function bodyOf(output: string): string {
+  const match = TRAILER.exec(output);
+  return match === null
+    ? output
+    : output.slice(0, match.index + (match[0].startsWith("\n") ? 1 : 0));
+}
+
 /** The text appended to an output file so its last line says how the command ended. */
-export function trailer(output: string, outcome: Outcome, timeout: number): string {
+export function trailer(
+  output: string,
+  outcome: Exclude<Outcome, { kind: "none" }>,
+  timeout: number,
+): string {
   const line =
     outcome.kind === "timeout" ? `timeout ${String(timeout)}` : `exit ${String(outcome.code)}`;
   return `${output === "" || output.endsWith("\n") ? "" : "\n"}${line}\n`;
@@ -59,7 +81,9 @@ export function finding(
     summary:
       check.status === "timeout"
         ? `${what} timed out after ${String(check.timeout)} s`
-        : `${what} failed with exit ${String(check.exit)}`,
+        : check.status === "not-run"
+          ? `${what} was not run`
+          : `${what} failed with exit ${String(check.exit)}`,
     evidence: output,
   };
 }

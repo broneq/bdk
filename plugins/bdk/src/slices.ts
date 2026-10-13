@@ -10,7 +10,7 @@ export const SLICES: Readonly<
 > = {
   check: {
     imports: ["config", "findings"],
-    why: "bdk check run reads tools.* through loadConfig and appends red checks through addFinding",
+    why: "bdk check plan reads tools.* through loadConfig and bdk check record appends red checks through addFinding",
   },
   config: { imports: [], why: "leaf: the configuration every other slice may read" },
   diagnostics: {
@@ -54,6 +54,5 @@ export const SHARED: Readonly<
   },
   fs: { admitted: "os-boundary", why: "file system" },
   git: { admitted: "os-boundary", why: "child processes: the git executable" },
-  shell: { admitted: "os-boundary", why: "child processes: command lines through /bin/sh" },
   stdin: { admitted: "os-boundary", why: "standard input, read for an explicit - argument" },
 };

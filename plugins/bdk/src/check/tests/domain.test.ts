@@ -1,8 +1,27 @@
 import { describe, expect, it } from "vitest";
 
-import { DEFAULT_TIMEOUT, nulPaths, planChecks, quote, scopeOf } from "../domain/plan.ts";
+import {
+  bashCap,
+  bashTimeout,
+  DEFAULT_TIMEOUT,
+  isCompound,
+  lineOf,
+  notesOf,
+  nulPaths,
+  planChecks,
+  quote,
+  scopeOf,
+} from "../domain/plan.ts";
 import type { Kind, Point, Tools } from "../domain/plan.ts";
-import { finding, statusOf, tailOf, trailer, verdictOf } from "../domain/verdict.ts";
+import {
+  bodyOf,
+  finding,
+  hasTrailer,
+  statusOf,
+  tailOf,
+  trailer,
+  verdictOf,
+} from "../domain/verdict.ts";
 
 // Pure rules of spec `bdk-cli/check`, "Run the checks", "Output files", "Red checks as findings".
 
@@ -183,6 +202,77 @@ describe("planChecks with paths", () => {
   });
 });
 
+describe("picked tests", () => {
+  const tools: Tools = {
+    test: [
+      { id: "unit", command: "vitest related --run {files}", paths: ["src/**"] },
+      { id: "e2e", command: "npm run test:e2e -- {files}", paths: ["e2e/**/*.spec.ts"] },
+    ],
+    lint: [{ id: "eslint", command: "eslint {files}" }],
+    build: [],
+  };
+
+  it("gives test entries the picked tests and every other entry the run's files", () => {
+    const plan = planChecks(tools, {
+      files: ["src/checkout.ts"],
+      tests: ["e2e/checkout.spec.ts", "src/checkout.test.ts"],
+    });
+    expect(plan.checks.map((check) => check.command)).toEqual([
+      "vitest related --run src/checkout.test.ts",
+      "npm run test:e2e -- e2e/checkout.spec.ts",
+      "eslint src/checkout.ts",
+    ]);
+    expect(plan.skipped).toEqual([]);
+  });
+
+  it("skips a test entry none of the picked tests is for", () => {
+    const plan = planChecks(tools, { files: ["src/checkout.ts"], tests: ["src/checkout.test.ts"] });
+    expect(plan.skipped).toEqual([{ kind: "test", tool: "e2e", reason: "paths" }]);
+  });
+
+  it("gives test entries the run's files without picked tests", () => {
+    const plan = planChecks(tools, { files: ["src/a.ts"], tests: null });
+    expect(plan.checks[0]?.command).toBe("vitest related --run src/a.ts");
+  });
+});
+
+describe("the line the agent runs", () => {
+  it("closes stdin and sends both streams to the output file", () => {
+    expect(lineOf("npm run test:e2e -- e2e/a.spec.ts", ".bdk/runs/x/checks/02/test-e2e.txt")).toBe(
+      "npm run test:e2e -- e2e/a.spec.ts </dev/null > .bdk/runs/x/checks/02/test-e2e.txt 2>&1",
+    );
+    expect(lineOf("make", "/tmp/a b/out.txt")).toBe("make </dev/null > '/tmp/a b/out.txt' 2>&1");
+  });
+
+  it("caps the Bash timeout and reads the cap from BASH_MAX_TIMEOUT_MS", () => {
+    expect(bashCap(undefined)).toBe(600_000);
+    expect(bashCap("abc")).toBe(600_000);
+    expect(bashCap("0")).toBe(600_000);
+    expect(bashCap("1800000")).toBe(1_800_000);
+    expect(bashTimeout(900, 600_000)).toBe(600_000);
+    expect(bashTimeout(900, 1_800_000)).toBe(900_000);
+    expect(bashTimeout(30, 600_000)).toBe(30_000);
+  });
+
+  it("finds a list or pipe outside quotes", () => {
+    expect(isCompound("pnpm codegen && pnpm build")).toBe(true);
+    expect(isCompound("a || b")).toBe(true);
+    expect(isCompound("a; b")).toBe(true);
+    expect(isCompound("a | tail")).toBe(true);
+    expect(isCompound("vitest run 'a;b.ts' \"c|d\"")).toBe(false);
+    expect(isCompound("echo a\\;b")).toBe(false);
+    expect(isCompound("node smoke.js &")).toBe(false);
+  });
+
+  it("notes a timeout above the cap and a compound command", () => {
+    expect(notesOf("vitest run", 900, 600_000)).toEqual([
+      'its timeout of 900 s exceeds the Bash cap of 600 s; set env.BASH_MAX_TIMEOUT_MS to "900000" in .claude/settings.json',
+    ]);
+    expect(notesOf("a && b", 30, 600_000)).toHaveLength(1);
+    expect(notesOf("vitest run", 600, 600_000)).toEqual([]);
+  });
+});
+
 describe("changed files", () => {
   it("reads NUL-separated git paths and drops empty ones", () => {
     expect(nulPaths("src/a.ts\0src/it's a.ts\0")).toEqual(["src/a.ts", "src/it's a.ts"]);
@@ -195,6 +285,7 @@ describe("status and verdict", () => {
     expect(statusOf({ kind: "exit", code: 0 })).toBe("pass");
     expect(statusOf({ kind: "exit", code: 127 })).toBe("fail");
     expect(statusOf({ kind: "timeout" })).toBe("timeout");
+    expect(statusOf({ kind: "none" })).toBe("not-run");
   });
 
   it("fails when any check is red, is none without checks, passes otherwise", () => {
@@ -202,6 +293,7 @@ describe("status and verdict", () => {
     expect(verdictOf(["pass", "pass"])).toBe("pass");
     expect(verdictOf(["pass", "timeout"])).toBe("fail");
     expect(verdictOf(["fail", "pass"])).toBe("fail");
+    expect(verdictOf(["pass", "not-run"])).toBe("fail");
   });
 });
 
@@ -210,6 +302,17 @@ describe("output file", () => {
     expect(trailer("ok\n", { kind: "exit", code: 0 }, 600)).toBe("exit 0\n");
     expect(trailer("no newline", { kind: "exit", code: 2 }, 600)).toBe("\nexit 2\n");
     expect(trailer("", { kind: "timeout" }, 5)).toBe("timeout 5\n");
+  });
+
+  it("knows an output that already ends with an exit or timeout line, and drops it for the tail", () => {
+    expect(hasTrailer("ok\nexit 0\n")).toBe(true);
+    expect(hasTrailer("timeout 900\n")).toBe(true);
+    expect(hasTrailer("ok\n")).toBe(false);
+    expect(hasTrailer("exit code 1\n")).toBe(false);
+    expect(hasTrailer("")).toBe(false);
+    expect(bodyOf("ok\nexit 1\n")).toBe("ok\n");
+    expect(bodyOf("exit 1\n")).toBe("");
+    expect(bodyOf("ok\n")).toBe("ok\n");
   });
 
   it("keeps the last 20 lines of the output", () => {
@@ -243,5 +346,12 @@ describe("finding", () => {
       finding({ kind: "test", tool: "unit", status: "timeout", exit: null, timeout: 30 }, "o.txt")
         .summary,
     ).toBe("test unit timed out after 30 s");
+  });
+
+  it("names a check nobody ran", () => {
+    expect(
+      finding({ kind: "test", tool: "unit", status: "not-run", exit: null, timeout: 30 }, "o.txt")
+        .summary,
+    ).toBe("test unit was not run");
   });
 });

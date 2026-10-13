@@ -52,13 +52,25 @@ Done when the cause is repaired, or you stopped on a contradiction.
 
 ## 4. Check
 
+Run the wave check again with the id `wave-<n>` (see "How to run a check" below):
+
 ```
-"${CLAUDE_PLUGIN_ROOT}/bin/bdk" check run <run-dir> wave-<n> --at wave --changed <base>
+"${CLAUDE_PLUGIN_ROOT}/bin/bdk" check plan <run-dir> wave-<n> --at wave --changed <base>
 ```
 
-On `fail`, read the output of each red check and repair again within the same files; three runs in all. A verdict still `fail` after the third run is `Kind: other` with the output path as evidence. Never run a test, linter or build command yourself.
+On `fail`, read the output file of each red check and repair again within the same files; three runs in all (plan, lines, record). A verdict still `fail` after the third run is `Kind: other` with the output path as evidence. Never run a test, linter or build command other than a line `bdk check plan` printed.
 
 Done when the verdict is `pass` or `none`, or you have a blocker.
+
+## How to run a check
+
+A check is three steps, each its own Bash call, one after another:
+
+1. `bdk check plan <run-dir> <id> ...` with the flags the step gives. It runs nothing; it prints, per check, a header with its Bash timeout, the line to run indented under it, and at the end the `bdk check record` call to make.
+2. Each printed line, as its own Bash call from the project root, character for character, with the `timeout` its header gives, one after another (never in parallel and never in the background). Do not add `cd`, a pipe, `tail`, `echo` or anything else to it: the line already writes the whole output to the file it names, and a longer call is refused by the permission check. The Bash tool reports the exit code (a result that shows no `Exit code` line is code 0); a non-zero code is a result, not an error, so go on to the next line.
+3. `bdk check record <run-dir> <id> --exit <kind>-<tool>=<code> ...` with the code the tool reported for each line, or `--timed-out <kind>-<tool>` for a line the tool ended at its timeout. It writes `checks/<id>.json` and prints the verdict and the last lines of each red check. A line you did not run is `not-run`, and the verdict is `fail`.
+
+A note under a header (a timeout above the Bash cap, a command whose redirect binds only to its last part) goes into the report under `Decisions taken without the user`. A line the host refuses to run is `Kind: other`, with the refusal as evidence.
 
 ## 5. Write the report
 
