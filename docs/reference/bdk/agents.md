@@ -32,7 +32,7 @@ Uses the product as a user would to confirm that one OpenSpec Change works as it
 
 ## `explorer` {#explorer}
 
-Model: `haiku` · Tools: `Read`, `Grep`, `Glob`, `Bash`, `Write`, `Skill`
+Model: `sonnet` · Tools: `Read`, `Grep`, `Glob`, `Bash`, `Write`, `Skill`
 
 Maps the code a BDK Change touches and writes the map to the run file its block names. Started by a BDK block or orchestrator with a prompt naming the skill to run (bdk:explore); continue it with SendMessage to ask a follow-up question about the same code.
 

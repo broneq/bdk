@@ -12,7 +12,7 @@ The main thread (an orchestrator, or a block a user typed) starts leads and sing
 flowchart TB
   O["orchestrators<br/>(main thread)"]
   O -->|"Skill"| MB["main-thread blocks"]
-  O -->|"Agent"| AG["explorer, haiku<br/>designer, session model<br/>planner, session model<br/>verifier, opus"]
+  O -->|"Agent"| AG["explorer, sonnet<br/>designer, session model<br/>planner, session model<br/>verifier, opus"]
   D["/bdk:diagnose-run<br/>(main thread, step 0)"]
   D -->|"Agent"| AN["analyst, sonnet"]
   O -->|"Agent, background"| LEADS
@@ -44,7 +44,7 @@ flowchart TB
 
 | Block | Role | Runs on (default model) | Writes | Reads |
 |---|---|---|---|---|
-| `/bdk:explore` | author (map) | `bdk:explorer` (haiku) | `R/design/explore.md` | proposal, code |
+| `/bdk:explore` | author (map) | `bdk:explorer` (sonnet) | `R/design/explore.md` | proposal, code |
 | `/bdk:design-draft` | author | `bdk:designer` (session's model) | `C/specs/**/spec.md`, `C/design.md` | proposal, explore map, last `verify-N.md` |
 | `/bdk:verify-design` | verifier | `bdk:verifier` (opus) | `R/design/verify-N.md` | proposal, specs, design, explore map, code |
 | `/bdk:plan-draft` | author | `bdk:planner` (session's model) | `C/plan/parts/NN.md` | proposal, specs, design, code, last `verify-N.md` |
