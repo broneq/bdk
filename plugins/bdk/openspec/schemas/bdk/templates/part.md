@@ -1,7 +1,6 @@
 ---
 id: "01"
 depends-on: []
-isolation: worktree
 files:
   - <repository-relative path of a file this part creates, changes or deletes>
 ---

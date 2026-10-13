@@ -87,7 +87,6 @@ Run `openspec new change <change> --schema bdk`. For each artifact run `openspec
 ---
 id: "01"
 depends-on: []
-isolation: shared
 files:
   - bin/tally.js
   - test/tally.test.js

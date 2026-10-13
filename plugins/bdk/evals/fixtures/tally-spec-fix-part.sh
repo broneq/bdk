@@ -16,7 +16,6 @@ cat > "$round/fixes/parts/01.md" <<'MD'
 ---
 id: "01"
 depends-on: []
-isolation: shared
 files:
   - openspec/changes/add-total/specs/tally/spec.md
 ---

@@ -44,9 +44,8 @@ Done when every finding has its cause, the files a fix touches (code and test), 
 
 1. Findings whose fixes touch a common file go into the same part; the rest form parts by file.
 2. Keep each part within `plan.part.max-tasks` and `plan.part.max-files` from the configuration (defaults 5 and 10); split a larger set by file.
-3. One part: `isolation: shared`. Several parts: no two may share a file, and each is `isolation: worktree`, so they run in one wave.
-4. `depends-on: []`: every plan part was built and merged before the review.
-5. Ids continue after the highest two-digit id among `openspec/changes/<change>/plan/parts/*.md` and every part `.bdk/runs/<change>/review/round-*/fixes/parts/NN.md` (Glob both; `index.md` is no part). Plan parts `01` to `03` and no earlier fixes give `04`.
+3. `depends-on: []`: every plan part was built and committed before the review. Several fix parts share one wave and run one after another, in id order.
+4. Ids continue after the highest two-digit id among `openspec/changes/<change>/plan/parts/*.md` and every part `.bdk/runs/<change>/review/round-*/fixes/parts/NN.md` (Glob both; `index.md` is no part). Plan parts `01` to `03` and no earlier fixes give `04`.
 
 Done when each plannable finding is in exactly one part and the parts share no file.
 
@@ -58,7 +57,6 @@ Write `<round-dir>/fixes/parts/NN.md` in the plan part format, the same an imple
 ---
 id: "04"
 depends-on: []
-isolation: shared
 files:
   - src/duration.js
   - src/duration.test.js

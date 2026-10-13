@@ -10,7 +10,7 @@ import { files } from "../src/shared/fs/index.ts";
 
 // Spec `bdk-cli/plan` end to end: the frame, the slice, the config slice and the file system
 // boundary against a temporary configured project, the way `src/main.ts` wires them. Covers
-// the acceptance signal of #185: an oversized part, a cycle and an overlap each reported with
+// the acceptance signal of #185: an oversized part and a cycle each reported with
 // the part id, and the waves printed in order.
 
 const PARTS = "openspec/changes/x/plan/parts";
@@ -32,7 +32,6 @@ function part(
       "---",
       `id: "${id}"`,
       `depends-on: [${deps.map((dep) => `"${dep}"`).join(", ")}]`,
-      "isolation: worktree",
       "files:",
       ...paths.map((path) => `  - ${path}`),
       "---",
@@ -90,7 +89,7 @@ describe("bdk plan check", () => {
     expect((await bdk(["plan", "check", PARTS])).stdout).toBe(stdout);
   });
 
-  it("reports an oversized part, a cycle and an overlap with their part ids and exits 1", async () => {
+  it("reports an oversized part and a cycle with their part ids and exits 1, but no shared file", async () => {
     part("01", { pad: 9000 });
     part("02", { deps: ["01"], files: ["src/shared.ts"] });
     part("03", { deps: ["01"], files: ["src/shared.ts", "src/b.ts"] });
@@ -98,13 +97,12 @@ describe("bdk plan check", () => {
     part("05", { deps: ["04"] });
     const { code, stdout } = await bdk(["plan", "check", PARTS]);
     expect(code).toBe(1);
-    expect(stdout).toMatch(/^plan: 5 parts, 2 waves, 3 problems\n/);
+    expect(stdout).toMatch(/^plan: 5 parts, 2 waves, 2 problems\n/);
     expect(stdout).toContain("waves:\n  1: 01\n  2: 02 03\n");
     const problems = stdout.split("problems:\n")[1]?.split("\n") ?? [];
     expect(problems[0]).toMatch(/^ {2}max-bytes 01: \d+ bytes, above plan\.part\.max-bytes 8192$/);
     expect(problems.slice(1)).toEqual([
       "  cycle 04,05: parts 04 and 05 depend on each other in a cycle",
-      "  overlap 02,03: src/shared.ts is listed by 02 and 03 in wave 2",
       "",
     ]);
   });

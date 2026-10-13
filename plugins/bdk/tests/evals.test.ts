@@ -112,7 +112,7 @@ function planDirs(dir: string): string[] {
     .filter((parts) => existsSync(join(dir, parts)));
 }
 
-/** What in `bdk plan check <parts>` stops the execute lead: a part without a wave, a shared part not alone. */
+/** What in `bdk plan check <parts>` stops the execute lead: a part without a wave, an unreadable part. */
 async function unorderable(cwd: string, parts: string): Promise<string[]> {
   let stdout = "";
   await run({
@@ -127,7 +127,7 @@ async function unorderable(cwd: string, parts: string): Promise<string[]> {
   return [
     ...result.parts.filter((part) => part.wave === null).map((part) => `${part.id}: wave null`),
     ...result.problems
-      .filter((problem) => problem.check === "shared-not-alone")
+      .filter((problem) => problem.check === "frontmatter")
       .map((problem) => problem.message),
   ];
 }
@@ -148,9 +148,9 @@ describe("eval suite fixtures", () => {
       expect(stderr).toBe("");
       expect(status).toBe(0);
       expect(readdirSync(dir).length).toBeGreaterThan(0);
-      // The execute lead stops before any part on these problems (execute-waves, step 3); an
-      // overlap stays, since the conflict fixtures hold one on purpose.
-      for (const parts of planDirs(dir)) {
+      // The execute lead stops before any part on these problems (execute-waves, step 2).
+      // diagnose-run replays a recorded run whose plan part still holds the retired `isolation`.
+      for (const parts of file === "diagnose-run.sh" ? [] : planDirs(dir)) {
         expect(await unorderable(dir, parts), `${file}: bdk plan check ${parts}`).toEqual([]);
       }
     },
@@ -279,9 +279,11 @@ describe("eval launcher", () => {
     for (const grant of ["Write", "Edit", "SendMessage", "ToolSearch"]) {
       expect(command).toMatch(new RegExp(` ${grant}\\b`));
     }
-    for (const bash of ["*/bin/bdk *", "mkdir -p *", "cd *", "git *"]) {
+    for (const bash of ["*/bin/bdk *", "mkdir -p *", "git *"]) {
       expect(command).toContain(`"Bash(${bash})"`);
     }
+    // Every part runs in the main checkout (#406): no worker changes directory.
+    expect(command).not.toContain('"Bash(cd *)"');
   });
 
   it("keeps the rules for a paid run in the README (spec skill-evals, #403)", () => {

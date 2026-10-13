@@ -4,14 +4,13 @@ import { CHECKS, PROBLEMS, checkPlan } from "../domain/check.ts";
 import type { Limits } from "../domain/check.ts";
 import type { Part } from "../domain/part.ts";
 
-// The plan checks of spec `bdk-cli/plan`: limits, dependencies, waves, overlap, shared parts.
+// The plan checks of spec `bdk-cli/plan`: limits, dependencies and waves.
 
 const LIMITS: Limits = { maxTasks: 5, maxFiles: 10, maxBytes: 8192 };
 
 function part(id: string, over: Partial<Part> = {}): Part {
   return {
     id,
-    isolation: "worktree",
     dependsOn: [],
     files: [`src/${id}.ts`],
     tasks: 2,
@@ -149,61 +148,26 @@ describe("checkPlan waves", () => {
   });
 
   it("gives a part with a frontmatter fault no wave", () => {
-    const result = checkPlan(
-      [part("01", { faults: ["isolation is x, not worktree or shared"], isolation: null })],
-      [],
-      LIMITS,
-    );
+    const result = checkPlan([part("01", { faults: ["files is empty"] })], [], LIMITS);
     expect(result.problems).toEqual([
-      { check: "frontmatter", parts: ["01"], message: "isolation is x, not worktree or shared" },
+      { check: "frontmatter", parts: ["01"], message: "files is empty" },
     ]);
     expect(result.waves).toEqual([]);
   });
 });
 
 describe("checkPlan within a wave", () => {
-  it("reports a file listed by parts of one wave, one problem per path", () => {
+  it("accepts parts of one wave that list the same file", () => {
     const { problems } = checkPlan(
       [
         part("01", { files: ["src/a.ts"] }),
-        part("02", { dependsOn: ["01"], files: ["src/api/routes.ts", "src/b.ts", "src/a.ts"] }),
-        part("03", { dependsOn: ["01"], files: ["src/b.ts", "src/api/routes.ts"] }),
+        part("02", { dependsOn: ["01"], files: ["src/api/routes.ts", "src/a.ts"] }),
+        part("03", { dependsOn: ["01"], files: ["src/api/routes.ts"] }),
       ],
       [],
       LIMITS,
     );
-    expect(problems).toEqual([
-      {
-        check: "overlap",
-        parts: ["02", "03"],
-        message: "src/api/routes.ts is listed by 02 and 03 in wave 2",
-      },
-      {
-        check: "overlap",
-        parts: ["02", "03"],
-        message: "src/b.ts is listed by 02 and 03 in wave 2",
-      },
-    ]);
-  });
-
-  it("reports a shared part with company and accepts one alone", () => {
-    const { problems } = checkPlan(
-      [
-        part("01", { isolation: "shared" }),
-        part("02", { dependsOn: ["01"] }),
-        part("03", { dependsOn: ["01"], isolation: "shared" }),
-        part("04", { dependsOn: ["01"] }),
-      ],
-      [],
-      LIMITS,
-    );
-    expect(problems).toEqual([
-      {
-        check: "shared-not-alone",
-        parts: ["03"],
-        message: "shared part 03 runs in wave 2 with 02 and 04",
-      },
-    ]);
+    expect(problems).toEqual([]);
   });
 
   it("orders problems by check, then part, then message", () => {
@@ -211,7 +175,7 @@ describe("checkPlan within a wave", () => {
       [
         part("02", { tasks: 0, dependsOn: ["01"], files: ["x"] }),
         part("01", { tasks: 9 }),
-        part("03", { dependsOn: ["01"], files: ["x"], isolation: "shared" }),
+        part("03", { dependsOn: ["03"], files: ["x"] }),
       ],
       ["a.md"],
       LIMITS,
@@ -220,8 +184,7 @@ describe("checkPlan within a wave", () => {
       "name ",
       "no-tasks 02",
       "max-tasks 01",
-      "overlap 02,03",
-      "shared-not-alone 03",
+      "cycle 03",
     ]);
   });
 });

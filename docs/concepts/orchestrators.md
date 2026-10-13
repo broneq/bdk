@@ -80,7 +80,7 @@ The verifier budget is `policy.budgets.verifier` (default 3) passes per run. On 
 flowchart TB
   L0{{"design finished?"}} -->|"no"| LS0["stop: /bdk:design first"]
   L0 -->|"yes"| DRAFT["/bdk:plan-draft<br/>bdk:planner"]
-  DRAFT -->|"C/plan/parts/NN.md"| CHECK["bdk plan check<br/>waves, sizes, overlaps"]
+  DRAFT -->|"C/plan/parts/NN.md"| CHECK["bdk plan check<br/>waves, sizes"]
   DRAFT -.->|"a gap of the design"| LS1["stop: answer it<br/>in /bdk:design"]
   CHECK -->|"exit 1, first time"| DRAFT
   CHECK -->|"exit 1 again"| LS2["stop: limits are<br/>plan.part.max-tasks,<br/>plan.part.max-files,<br/>plan.part.max-bytes"]
@@ -97,7 +97,7 @@ A gap of the design is a choice about what the product does that the specs and t
 
 ## `/bdk:execute` and the `/bdk:execute-waves` lead
 
-`/bdk:execute` is thin: it starts one `bdk:lead` with the stage skill `/bdk:execute-waves` and passes the result on. The lead is the only writer of `state.json` and the only agent that commits and merges.
+`/bdk:execute` is thin: it starts one `bdk:lead` with the stage skill `/bdk:execute-waves` and passes the result on. The lead is the only writer of `state.json` and the only agent that commits. It builds every part in your checkout, on the Change branch, one at a time: no part runs in a git worktree, and nothing is merged.
 
 The stage builds every part of the plan and takes no part id: called with one (`/bdk:execute add-csv-export 01`) or asked for one part, it starts no lead and names [`/bdk:implement-part`](/reference/bdk/skills#implement-part) `<change> <part-id>`, the block that builds one part, uncommitted.
 
@@ -110,7 +110,7 @@ sequenceDiagram
   M->>M: plan parts exist?<br/>bdk run status
   M-)L: Agent: /bdk:execute-waves<br/>(background)
   Note over M: ends its turn, waits
-  L->>L: waves: implement,<br/>conform, commit, merge
+  L->>L: part by part: implement,<br/>conform, commit,<br/>a wave check per wave
   L--)M: R/execute/result.md
   alt Status: done
     M->>U: next: /bdk:auto-review
@@ -123,28 +123,27 @@ sequenceDiagram
   end
 ```
 
-Inside the lead, waves run in order and the parts of a wave run in parallel batches of `execution.max-parallel` (default 10):
+Inside the lead, waves run in order and the parts of a wave one after another, in ascending id, each committed before the next starts:
 
 ```mermaid
 flowchart TB
-  W0["bdk plan check parts --json<br/>waves and isolation"] --> W1{{"wave: null, or<br/>shared-not-alone?"}}
+  W0["bdk plan check parts --json<br/>waves"] --> W1{{"wave: null, or<br/>a frontmatter problem?"}}
   W1 -->|"yes"| BL0["blocked: fix the plan"]
-  W1 -->|"no"| W2["clean tree (or the earlier work<br/>of the next main-checkout part),<br/>Change branch, merge parts<br/>left unmerged by a break"]
+  W1 -->|"no"| W2["clean tree (or the earlier<br/>work of the next part),<br/>Change branch"]
   W2 --> W3["take the next wave<br/>with a part or its check not done,<br/>record its base in state.json"]
-  W3 --> W4["a work directory per part<br/>main checkout: shared, or alone<br/>in its wave with no worktree yet<br/>else: R/worktrees/NN"]
-  W4 --> W5["run the parts in batches<br/>of execution.max-parallel<br/>(next diagram)"]
-  W5 --> W6["merge the done parts that ran<br/>in worktrees, in part order<br/>(git merge --no-ff)"]
-  W6 --> PB{{"a part of<br/>the wave blocked?"}}
-  PB -->|"no"| WC["wave check<br/>bdk check run wave-N<br/>--at wave --changed base<br/>red: /bdk:resolve-conflict --wave,<br/>lead commits the repair"]
-  PB -->|"yes: no wave check"| RES
+  W3 --> W5["next part of the wave,<br/>in ascending id<br/>(next diagram)"]
+  W5 --> PB{{"part blocked?"}}
+  PB -->|"no: committed,<br/>parts left in the wave"| W5
+  PB -->|"yes: stop, its work<br/>left uncommitted"| RES
+  PB -->|"no: wave built"| WC["wave check<br/>bdk check run wave-N<br/>--at wave --changed base<br/>red: /bdk:repair-wave,<br/>lead commits the repair"]
   WC --> NW{{"wave check<br/>blocked?"}}
   NW -->|"no, waves left"| W3
   NW -->|"yes, or no wave left"| RES["write R/execute/result.md<br/>Status: done or blocked"]
 ```
 
-A worktree isolates parts that run at the same time, so only a wave with two or more parts to run uses them. A part that is the only one not done in its wave runs in the main checkout, whatever its `isolation` says: no checkout to make, the project's installed dependencies and warm tool caches, and its commit lands on the Change branch with no merge commit. A part whose worktree or `bdk/<change>/part-NN` branch is left from an earlier run keeps running there, so its earlier work is kept. A part that ran in the main checkout and did not finish leaves its files uncommitted there; the next `/bdk:execute` continues from them, and stops only on changes outside that part's `files`.
+Every part runs where your project is installed: its dependencies, env files, database and ports, and warm tool caches. Each part starts from the commits of the parts before it, so two parts of one wave may change the same file. A blocked part stops the stage at once, before any later part: the next part's `git add -A` would otherwise commit the blocked part's unfinished work. Its files stay uncommitted in your checkout; the next `/bdk:execute` continues the part from them, and stops only on changes outside that part's `files`.
 
-Each part of a batch goes through these attempts; the implementers of a batch start in one message, then its conformers. The checks each worker runs are in the boxes; [Where execute runs your checks](#where-execute-runs-your-checks) has the details:
+Each part goes through these attempts. The checks each worker runs are in the boxes; [Where execute runs your checks](#where-execute-runs-your-checks) has the details:
 
 ```mermaid
 flowchart TB
@@ -166,19 +165,6 @@ flowchart TB
   RC -->|"PASS"| COM["lead commits the part,<br/>state.json: done"]
 ```
 
-Merging a part that ran in a worktree into the Change branch:
-
-```mermaid
-flowchart TB
-  MER["git merge --no-ff bdk/&lt;change&gt;/part-NN"]
-  MER -->|"clean: no check runs"| MC["remove the worktree<br/>and the part branch"]
-  MER -->|"conflict"| RC["Agent bdk:implementer<br/>/bdk:resolve-conflict<br/>resolves, then checks:<br/>bdk check run merge-NN --at part<br/>red: fix, 3 runs in all<br/>writes<br/>R/execute/merge-NN.md"]
-  RC -->|"Status: done,<br/>no markers"| CM["lead: git add, git commit"] --> MC
-  RC -->|"failed"| RC2["/bdk:resolve-conflict again<br/>on policy.escalation.model<br/>and .effort"]
-  RC2 -->|"resolved"| CM
-  RC2 -->|"failed"| AB["git merge --abort<br/>part blocked, worktree kept"]
-```
-
 One part, step by step inside its two worker agents:
 
 ```mermaid
@@ -187,7 +173,7 @@ sequenceDiagram
   participant I as implementer
   participant F as conformer
   participant B as bdk CLI
-  L->>I: part NN,<br/>--run-dir, --workdir
+  L->>I: part NN,<br/>--run-dir
   I->>B: bdk rules for --stage execute
   I->>I: check the task contracts<br/>(a plan defect stops here)
   I->>B: bdk check run NN-red<br/>--at part --kind test
@@ -196,7 +182,7 @@ sequenceDiagram
   I->>B: bdk check run NN --at part<br/>--changed HEAD (up to 3 runs)
   I->>I: a delta changed: openspec<br/>validate --strict (up to 3 runs)
   I-->>L: R/execute/part-NN.md
-  L->>F: part NN, --run-dir, --workdir
+  L->>F: part NN, --run-dir
   F->>B: bdk rules for<br/>--stage execute
   F->>F: a delta changed: openspec<br/>validate --strict, an error left
   F->>F: fix what keeps behaviour,<br/>leave the rest
@@ -207,19 +193,18 @@ sequenceDiagram
 
 ### Where execute runs your checks
 
-Every check of the execute stage is a `bdk check run`, which runs your `tools.test`, `tools.lint` and `tools.build` commands (the [`tools`](/reference/bdk/settings#tools) items) and writes their output and the result under `R/checks/`. No agent runs a test, linter or build command itself. Each run names its check point with `--at`, and runs only the items whose `when` holds that point, plus the items without `when` ([check points](/guide/configuration#a-web-app-with-a-browser-e2e-check)). Five runs, in this order:
+Every check of the execute stage is a `bdk check run`, which runs your `tools.test`, `tools.lint` and `tools.build` commands (the [`tools`](/reference/bdk/settings#tools) items) and writes their output and the result under `R/checks/`. No agent runs a test, linter or build command itself. Each run names its check point with `--at`, and runs only the items whose `when` holds that point, plus the items without `when` ([check points](/guide/configuration#a-web-app-with-a-browser-e2e-check)). Four runs, in this order:
 
 | Run | Who, when | Point, files | When it is red |
 |---|---|---|---|
 | `NN-red`<br/>test only | `bdk:implementer`, [`/bdk:implement-part`](/reference/bdk/skills#implement-part) step 4, before any code | `part`, the new acceptance tests | expected: each test must fail because the behaviour is missing, its own failure seen, in the output file when the last 20 lines printed under the red check do not show it; a broken test is fixed and run again. No `tools.test` item at `part` for these files blocks the part (`environment`) |
 | `NN` | `bdk:implementer`, step 6, once the tasks are built | `part`, the files changed against `HEAD` | fix and run again, three runs in all; still red, the run ends as a blocker (`other`) and the lead retries the part. No `Status: done` without a green run |
 | `conform-NN` | `bdk:conformer`, [`/bdk:conform-part`](/reference/bdk/skills#conform-part) step 5, only when it edited a file | `part`, the files changed against `HEAD` | a fix that broke it is undone; still red, the verdict is `FAIL` and the lead retries the part. With no edit it runs nothing and names `NN` unchanged |
-| `merge-NN` | `bdk:implementer`, [`/bdk:resolve-conflict`](/reference/bdk/skills#resolve-conflict), only after a merge conflict | `part`, the conflicted files and the `files` of each part behind them | fix and run again, three runs in all; still red, one more resolve on `policy.escalation.model`, then the merge is aborted and the part blocked |
-| `wave-N` | `bdk:lead`, [`/bdk:execute-waves`](/reference/bdk/skills#execute-waves) step 7, once every part of the wave is on the Change branch | `wave`, the files changed since the wave's base | `/bdk:resolve-conflict --wave N` repairs what two parts broke together and the lead commits it; still red, one more repair on `policy.escalation.model`, then the wave is blocked and no later wave starts |
+| `wave-N` | `bdk:lead`, [`/bdk:execute-waves`](/reference/bdk/skills#execute-waves) step 6, once every part of the wave is committed on the Change branch | `wave`, the files changed since the wave's base | `bdk:implementer` with [`/bdk:repair-wave`](/reference/bdk/skills#repair-wave) repairs what two parts broke together and the lead commits it; still red, one more repair on `policy.escalation.model`, then the wave is blocked and no later wave starts |
 
 **A part that changes a spec delta.** OpenSpec refuses a delta it cannot parse, such as a requirement without a scenario, and `/bdk:close` cannot archive it. So when a part's diff changes a file under `openspec/changes/<change>/specs/` (a review fix part may), the implementer runs `openspec validate <change> --strict` after its part checks and fixes what it reports, three runs in all, and the conformer runs it again whatever the implementer reports: an error on a delta of the part is left under its task, so the verdict is `FAIL` and the lead retries the part. Both reports name the run under `## Checks`. It is the one command besides `bdk check run` the execute workers run; without an `openspec` command they write `not run` and go on, and the review round and close read the delta later.
 
-**Which files a run covers.** `--changed <ref>` hands the run the files git reports changed against `<ref>`, untracked ones included. An item whose `command` holds `{files}` gets the changed files its `paths` match, and is skipped when none matches; an item with `paths` and no `{files}` runs its whole command only when one of its files changed; any other item runs its whole command ([configuration](/guide/configuration#examples)). A part that runs in a worktree runs its checks there, on the Change branch as it was when the wave started plus this part; the wave check is the first run on all the parts of a wave together.
+**Which files a run covers.** `--changed <ref>` hands the run the files git reports changed against `<ref>`, untracked ones included. An item whose `command` holds `{files}` gets the changed files its `paths` match, and is skipped when none matches; an item with `paths` and no `{files}` runs its whole command only when one of its files changed; any other item runs its whole command ([configuration](/guide/configuration#examples)). A part's checks cover the files it changed against `HEAD`, the commit of the part before it; the wave check is the first run on all the parts of a wave together.
 
 **Where a slow suite runs.** Keep the fast checks of the changed files at `part`, the main test suite and the type check at `wave`, and the slow suites, a whole Playwright suite and the build at `review`: the first round of [`/bdk:auto-review`](#bdk-auto-review) runs them (`bdk check run round-N --at review`), where a red check is a `blocker` finding. A Change you take from `/bdk:execute` straight to a pull request has passed its part and wave checks only.
 
@@ -398,5 +383,5 @@ Every number in the report comes from `bdk diagnostics report`; the analyst neve
 
 ## Sources
 
-- `plugins/bdk/skills/{setup,propose,design,plan,execute,execute-waves,implement-part,conform-part,resolve-conflict,auto-review,review-round,triage,plan-fixes,close,pr-review,pr-review-round,debug,diagnose-bug,diagnose-run}/SKILL.md`
+- `plugins/bdk/skills/{setup,propose,design,plan,execute,execute-waves,implement-part,conform-part,repair-wave,auto-review,review-round,triage,plan-fixes,close,pr-review,pr-review-round,debug,diagnose-bug,diagnose-run}/SKILL.md`
 - `plugins/bdk/agents/*.md`

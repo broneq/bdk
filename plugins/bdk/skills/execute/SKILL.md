@@ -1,6 +1,6 @@
 ---
 name: execute
-description: 'Runs the execute stage of an OpenSpec Change - starts one bdk:lead agent that builds every part of the verified plan in parallel waves (implement-part, conform-part, commits, worktree merges, a wave check after each wave, state.json), waits for its result, and passes the result or a blocker on. Use when a whole Change or its whole plan should be built, when asked to "execute", "build" or "implement" a Change or its plan, or when /bdk:run reaches the execute stage. Not for one part (part 01, 02): implement-part builds a single part.'
+description: 'Runs the execute stage of an OpenSpec Change - starts one bdk:lead agent that builds every part of the verified plan one at a time in the main checkout, wave by wave (implement-part, conform-part, a commit per part, a wave check after each wave, state.json), waits for its result, and passes the result or a blocker on. Use when a whole Change or its whole plan should be built, when asked to "execute", "build" or "implement" a Change or its plan, or when /bdk:run reaches the execute stage. Not for one part (part 01, 02): implement-part builds a single part.'
 argument-hint: "[change-name]"
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(git rev-parse *) Read Glob Grep Agent SendMessage ToolSearch AskUserQuestion
 ---
@@ -13,7 +13,7 @@ Arguments: $ARGUMENTS
 
 # Execute
 
-You start the execute lead and pass its result on; the lead does the stage. You never implement, conform, commit, merge or resolve anything yourself, never edit a file, and never start an implementer or conformer: a part, a plan or a merge that needs fixing goes back to the user or to its own stage.
+You start the execute lead and pass its result on; the lead does the stage. You never implement, conform, commit or repair anything yourself, never edit a file, and never start an implementer or conformer: a part, a plan or a wave that needs fixing goes back to the user or to its own stage.
 
 ## 1. Check the configuration and the Change
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Shared fixture: ledger-totals-planned.sh plus part 03, which depends on parts 01 and 02,
-# so the waves are 1: 01 02 and 2: 03. Every part says `isolation: worktree`; part 03 is
-# alone in its wave. The execute-single-part-wave and execute-resume-* cases start here.
+# so the waves are 1: 01 02 and 2: 03. The execute-main-checkout and execute-resume-* cases
+# start here.
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 bash "$here/ledger-totals-planned.sh"
@@ -27,7 +27,6 @@ cat > "$change/plan/parts/03.md" <<'MD'
 ---
 id: "03"
 depends-on: ["01", "02"]
-isolation: worktree
 files:
   - src/ledger.js
   - src/summary.test.js

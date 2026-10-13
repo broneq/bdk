@@ -42,7 +42,7 @@ Both blocks SHALL take the name of an OpenSpec Change as their argument. Without
 #### Scenario: Parts written
 
 - **WHEN** `/bdk:plan-draft add-csv-export` runs on a Change with proposal, spec deltas and design and no plan
-- **THEN** `openspec/changes/add-csv-export/plan/parts/01.md` exists with the frontmatter keys `id`, `depends-on`, `isolation` and `files`, and every task in it has the lines `File:`, `Interface:` and `Verified by:`
+- **THEN** `openspec/changes/add-csv-export/plan/parts/01.md` exists with the frontmatter keys `id`, `depends-on` and `files` and no `isolation`, and every task in it has the lines `File:`, `Interface:` and `Verified by:`
 
 #### Scenario: Every scenario covered once
 
@@ -76,7 +76,7 @@ Both blocks SHALL take the name of an OpenSpec Change as their argument. Without
 
 ### Requirement: Plan shape for short waves
 
-`plan-draft` SHALL cut the parts so that parts without a dependency between them run in the same wave: a part names in `depends-on` only the parts whose output it uses, a contract that several parts use is put into a small early part, and parts of one wave share no file. A part SHALL be `isolation: shared` only when it changes state outside its `files` that a parallel part could also change (a lockfile, generated code, a migration sequence); every other part SHALL be `worktree`. The plan SHALL have the fewest waves the dependencies allow, and the reply SHALL state the number of waves.
+`plan-draft` SHALL cut the parts so that parts without a dependency between them share a wave: a part names in `depends-on` only the parts whose output it uses, and a contract that several parts use is put into a small early part. The parts run one at a time in the main checkout, so parts of one wave MAY list the same file, and a part SHALL hold no `isolation` key. The plan SHALL have the fewest waves the dependencies allow, since the wave check runs once per wave, and the reply SHALL state the number of waves.
 
 Before it ends, `plan-draft` SHALL run `bdk plan check` on the parts directory and SHALL fix the parts until it exits 0.
 

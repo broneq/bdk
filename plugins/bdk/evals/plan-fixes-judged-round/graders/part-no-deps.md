@@ -5,4 +5,4 @@ pattern: '^depends-on: \[\]$'
 flags: m
 ---
 
-Every plan part is merged before the review.
+Every plan part is committed before the review.

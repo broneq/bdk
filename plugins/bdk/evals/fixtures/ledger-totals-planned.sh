@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # Shared fixture: tiny-ledger configured for BDK with the Change add-totals planned and
-# verified - two worktree parts in one wave that both add a function at the end of
-# src/ledger.js, so merging the second one conflicts - written into the current directory.
-# The execute and resolve-conflict cases start here. See ../README.md, "Shared fixtures".
+# verified - two parts in one wave that both add a function at the end of src/ledger.js, so
+# the second builds on the first - written into the current directory. The execute cases
+# start here. See ../README.md, "Shared fixtures".
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 bash "$here/tiny-ledger-bdk.sh"
 
-# The execute lead commits and merges; a run has no global git identity.
+# The execute lead commits; a run has no global git identity.
 git config user.name "BDK eval"
 git config user.email "eval@example.invalid"
 
@@ -94,14 +94,13 @@ Alternative: a new module `src/totals.js` - lost, the totals belong with `balanc
 
 ## Risks / Trade-offs
 
-- [Both parts change `src/ledger.js`] -> both append after `balance`; the execute lead merges them in part order.
+- [Both parts change `src/ledger.js`] -> both append after `balance`; the execute lead builds them in part order, the second on the first.
 MD
 
 cat > "$change/plan/parts/01.md" <<'MD'
 ---
 id: "01"
 depends-on: []
-isolation: worktree
 files:
   - src/ledger.js
   - src/income.test.js
@@ -130,7 +129,6 @@ cat > "$change/plan/parts/02.md" <<'MD'
 ---
 id: "02"
 depends-on: []
-isolation: worktree
 files:
   - src/ledger.js
   - src/expenses.test.js

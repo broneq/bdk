@@ -6,7 +6,6 @@ Part 02 of a Change `add-login-throttle`, whose part 01 added the store contract
 ---
 id: "02"
 depends-on: ["01"]
-isolation: worktree
 files:
   - src/auth/throttle.ts
   - src/auth/throttle.test.ts
@@ -40,6 +39,6 @@ After five failed logins for one account within 15 minutes, the login endpoint a
 Why it works:
 
 - The part repeats the contract of part 01 (`AttemptStore` and its two methods), so its implementer never opens part 01.
-- Every path in `File:` is in `files`, tests included, and no file is shared with part 03 of the same wave.
+- Every path in `File:` is in `files`, tests included.
 - `Interface:` gives signatures and the wire format, not bodies; the implementer chooses how to build them.
 - Each scenario of the part is named in one `Verified by:` line, and the command is exact.

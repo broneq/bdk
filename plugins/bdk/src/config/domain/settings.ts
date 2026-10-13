@@ -465,8 +465,11 @@ export const SettingsSchema = z
               "Whether the lead agent of `/bdk:execute`, `/bdk:auto-review` and `/bdk:pr-review` runs in the background or in your session.",
             ),
           ),
-        /** Part agents the execute lead runs at once; 10 from the concurrency probe of #200. */
-        "max-parallel": count(10, "Most part agents the execute lead runs at once."),
+        /** Read-only agents a lead starts at once; 10 from the concurrency probe of #200. */
+        "max-parallel": count(
+          10,
+          "Most read-only agents a lead starts at once: the reviewers of a review round, the pull requests `/bdk:pr-review` reviews together. The execute lead builds one part at a time.",
+        ),
       })
       .prefault({})
       .meta({

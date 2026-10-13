@@ -2,13 +2,13 @@
 
 ## Purpose
 
-Defines the execute blocks of the `bdk` plugin: `implement-part`, which builds one plan part of a Change test-first on the agent `bdk:implementer`, and `conform-part`, which checks and fixes that part's diff on the agent `bdk:conformer`, and the report files both leave for the execute lead.
+Defines the execute blocks of the `bdk` plugin: `implement-part`, which builds one plan part of a Change test-first on the agent `bdk:implementer`, `conform-part`, which checks and fixes that part's diff on the agent `bdk:conformer`, and `repair-wave`, which repairs a red wave check on `bdk:implementer`, and the report files they leave for the execute lead.
 
 ## Requirements
 
 ### Requirement: Blocks and agents
 
-The `bdk` plugin SHALL ship the skills `implement-part` (`skills/implement-part/`), `conform-part` (`skills/conform-part/`) and `resolve-conflict` (`skills/resolve-conflict/`) and the agents `bdk:implementer` (`agents/implementer.md`) and `bdk:conformer` (`agents/conformer.md`), each agent with the default model `sonnet` and the tools `Read`, `Edit`, `Write`, `Bash`, `Grep`, `Glob` and `Skill`, and without `Agent`. A caller SHALL start an agent with the `Agent` tool and a prompt naming its skill and arguments; the agent SHALL run that skill with the `Skill` tool. When any of these skills runs anywhere but on its agent, it SHALL start its agent with the same arguments, wait for it, and reply with the agent's first report line and the report path, doing none of the work itself. `bdk:implementer` runs `implement-part` and `resolve-conflict`; `bdk:conformer` runs `conform-part`.
+The `bdk` plugin SHALL ship the skills `implement-part` (`skills/implement-part/`), `conform-part` (`skills/conform-part/`) and `repair-wave` (`skills/repair-wave/`) and the agents `bdk:implementer` (`agents/implementer.md`) and `bdk:conformer` (`agents/conformer.md`), each agent with the default model `sonnet` and the tools `Read`, `Edit`, `Write`, `Bash`, `Grep`, `Glob` and `Skill`, and without `Agent`. A caller SHALL start an agent with the `Agent` tool and a prompt naming its skill and arguments; the agent SHALL run that skill with the `Skill` tool. When any of these skills runs anywhere but on its agent, it SHALL start its agent with the same arguments, wait for it, and reply with the agent's first report line and the report path, doing none of the work itself. `bdk:implementer` runs `implement-part` and `repair-wave`; `bdk:conformer` runs `conform-part`. The plugin SHALL NOT ship a skill `resolve-conflict`.
 
 Each block SHALL get the configuration from its own `bdk config show` block; in a project that is not configured, or whose configuration is invalid, it SHALL stop with the line that command prints, start no agent and write no file.
 
@@ -21,15 +21,6 @@ Each block SHALL get the configuration from its own `bdk config show` block; in 
 
 - **WHEN** `conform-part` runs in a project without `.bdk/settings.yaml`
 - **THEN** it starts no agent, writes no file, and its reply says `BDK not configured: run /bdk:setup`
-
-### Requirement: Input and run directory
-
-`implement-part` and `conform-part` SHALL take `<change> <part-id> [--run-dir <path>] [--workdir <path>]`. The part is `openspec/changes/<change>/plan/parts/<part-id>.md`; the run directory is `--run-dir`, else `.bdk/runs/<change>/`; the work directory is `--workdir`, else the working directory. A subagent cannot change its working directory, so with `--workdir` a block SHALL read and edit only absolute paths under the work directory, SHALL run git as `git -C <workdir> <command>` and every other shell command as `cd <workdir> && <command>`, one command per call, and SHALL read the part, the spec deltas and the design from the work directory. A caller working in another worktree SHALL pass the worktree as `--workdir` and the absolute run directory of the main checkout as `--run-dir`, so the code changes stay in the worktree and the reports land where the execute lead reads them. Without a Change name a block SHALL use the only Change under `openspec/changes/` other than `archive/`; without a part id, or when the part file is missing, it SHALL name what it found and stop.
-
-#### Scenario: Reports in another checkout
-
-- **WHEN** the execute lead runs part `02` with `--workdir /work/app/.bdk/runs/add-csv-export/worktrees/02` and `--run-dir /work/app/.bdk/runs/add-csv-export`
-- **THEN** the part's code changes are in the worktree, the main checkout's files are unchanged, and `execute/part-02.md` and `checks/02.json` are under `/work/app/.bdk/runs/add-csv-export/`
 
 ### Requirement: Limits on what a block changes
 
@@ -159,25 +150,9 @@ After its fixes, `conform-part` SHALL run `bdk check run <run-dir> conform-<part
 - **WHEN** `conform-part` renames a private helper in part `01`
 - **THEN** it runs `bdk check run <run-dir> conform-01 --at part --changed HEAD` after the rename, and `## Checks` names `checks/conform-01.json`
 
-### Requirement: Resolve a merge conflict
-
-`resolve-conflict` SHALL take `<change> <part-id> [--run-dir <path>]`, where `<part-id>` is the part whose branch the execute lead was merging when git stopped on conflicts. It SHALL run in the checkout holding the merge and SHALL stop, changing nothing, when no file is unmerged (`git diff --name-only --diff-filter=U` prints nothing). For each unmerged file it SHALL read both sides and what each side was for - the part `<part-id>` and every part of the Change whose `files` list that file, with their tasks and acceptance scenarios - and SHALL edit the file so it holds what both sides meant, without conflict markers. It SHALL edit only the unmerged files. It SHALL NOT stage, commit, abort or continue the merge, and SHALL NOT change git history or the index; the lead does. It SHALL run `bdk check run <run-dir> merge-<part-id> --at part --scope <path>...` with every unmerged file and every file of the parts it read, and on `fail` fix what the output shows within the unmerged files, at most three runs in all.
-
-It SHALL write `<run-dir>/execute/merge-<part-id>.md`: the first line `Status: done` or `Status: blocker`, then `## Resolved files` (one line per file: what each side added and how the result keeps both), `## Checks` (`checks/merge-<part-id>.json: <verdict>`), `## Blocker` only with `Status: blocker` (`Kind: conflict | other`, `Evidence:`, `Proposal:`), and `## Decisions taken without the user`. When the two sides contradict each other, so that no file keeps both (the same function returning different values for the same input), it SHALL leave that file as it is and report `Kind: conflict`. `Status: done` SHALL require no conflict marker in any resolved file and a `pass` or `none` check verdict. It SHALL reply with the status line and the report path only.
-
-#### Scenario: Two functions added at the same place
-
-- **WHEN** part `01` added `income(entries)` and part `02` added `expenses(entries)` at the end of `src/ledger.js`, and merging part `02` stopped on a conflict in that file
-- **THEN** `src/ledger.js` holds both functions and no conflict marker, the merge is still in progress with nothing staged, `checks/merge-02.json` passes, and `execute/merge-02.md` starts with `Status: done`
-
-#### Scenario: Nothing to resolve
-
-- **WHEN** `resolve-conflict` runs in a checkout with no unmerged file
-- **THEN** it changes no file, writes no report, and its reply says that no merge conflict was found
-
 ### Requirement: Part from another directory
 
-`implement-part`, `conform-part` and `resolve-conflict` SHALL take `--parts <dir>`. With it, the part SHALL be `<dir>/<part-id>.md` instead of `openspec/changes/<change>/plan/parts/<part-id>.md`; everything else, the run directory, the reports, the checks and the work directory, SHALL be as without it.
+`implement-part`, `conform-part` and `repair-wave` SHALL take `--parts <dir>`. With it, the part SHALL be `<dir>/<part-id>.md` instead of `openspec/changes/<change>/plan/parts/<part-id>.md` (for `repair-wave`, the parts of the wave are read from `<dir>`); everything else, the run directory, the reports and the checks, SHALL be as without it.
 
 #### Scenario: Fix part
 
@@ -186,18 +161,18 @@ It SHALL write `<run-dir>/execute/merge-<part-id>.md`: the first line `Status: d
 
 ### Requirement: Repair a red wave check
 
-`resolve-conflict` SHALL also take `<change> --wave <n> --base <commit> [--run-dir <path>] [--parts <dir>]`, started by the execute lead when the wave check `checks/wave-<n>.json` of wave `<n>` is red after every part of the wave is on the Change branch. It SHALL run in the main checkout on the Change branch with no merge in progress. It SHALL read the red checks of `checks/wave-<n>.json` and their output files, the parts of wave `<n>` (the parts directory's parts whose `wave` is `<n>`) with their tasks and acceptance scenarios, and the diff `git diff <commit>` of those parts' files, and SHALL fix the cause within the `files` of the wave's parts, keeping what each part meant. It SHALL NOT change git history or the index. It SHALL run `bdk check run <run-dir> wave-<n> --at wave --changed <commit>` after its fix and, on `fail`, fix again, at most three runs in all.
+`repair-wave` SHALL take `<change> <n> --base <commit> [--run-dir <path>] [--parts <dir>]`, started by the execute lead when the wave check `checks/wave-<n>.json` of wave `<n>` is red after every part of the wave is committed on the Change branch. It SHALL run in the main checkout on the Change branch. It SHALL read the red checks of `checks/wave-<n>.json` and their output files, the parts of wave `<n>` (the parts directory's parts whose wave, from `bdk plan check <parts dir>`, is `<n>`) with their tasks and acceptance scenarios, and the diff `git diff <commit>` of those parts' files, and SHALL fix the cause within the `files` of the wave's parts, keeping what each part meant. It SHALL NOT change git history or the index. It SHALL run `bdk check run <run-dir> wave-<n> --at wave --changed <commit>` after its fix and, on `fail`, fix again, at most three runs in all.
 
 It SHALL write `<run-dir>/execute/wave-<n>.md`, replacing an earlier one: the first line `Status: done` or `Status: blocker`, then `## Repaired` (one line per change: file, which parts it reconciles, what changed), `## Checks` (`checks/wave-<n>.json: <verdict>`), `## Blocker` only with `Status: blocker` (`Kind: conflict` when two parts contradict each other so no file keeps both, `Kind: other` when checks stay red, with `Evidence:` and `Proposal:`), and `## Decisions taken without the user`. `Status: done` SHALL require a `pass` or `none` verdict of its last run. It SHALL reply with the status line and the report path only. When `checks/wave-<n>.json` is missing or its verdict is not `fail`, it SHALL change nothing, write no report, and reply that the wave check is not red.
 
 #### Scenario: Two green parts red together
 
-- **WHEN** part `01` renamed `total()` to `sum()` and updated its callers, part `02` of the same wave added a new caller of `total()`, both parts passed alone, and `checks/wave-1.json` fails with `total is not a function`
-- **THEN** `resolve-conflict add-totals --wave 1 --base <commit>` changes the new caller to `sum()`, `checks/wave-1.json` passes, `execute/wave-1.md` starts with `Status: done`, and nothing is staged or committed
+- **WHEN** part `01` added `summary()` with a test that expects `Balance: 12.5`, part `02` of the same wave then made `balance()` round to cents, its own part check (on its changed files) passed, and `checks/wave-1.json` fails on part `01`'s test
+- **THEN** `repair-wave add-totals 1 --base <commit>` brings the two parts' intent together within their `files`, `checks/wave-1.json` passes, `execute/wave-1.md` starts with `Status: done`, and nothing is staged or committed
 
 #### Scenario: Wave check not red
 
-- **WHEN** `resolve-conflict add-totals --wave 1 --base <commit>` runs and `checks/wave-1.json` has the verdict `pass`
+- **WHEN** `repair-wave add-totals 1 --base <commit>` runs and `checks/wave-1.json` has the verdict `pass`
 - **THEN** it changes no file, writes no report, and its reply says that the wave check is not red
 
 ### Requirement: Eval case of a test of present behaviour
@@ -208,3 +183,12 @@ The suite SHALL hold the block case `implement-part-present-behaviour` on the fi
 
 - **WHEN** `implement-part-present-behaviour` runs with the plugin
 - **THEN** its graders pass: `execute/part-02.md` starts with `Status: done` and holds the green-at-first-run line, and the test file holds a test of the empty ledger
+
+### Requirement: Part and run directory
+
+`implement-part` and `conform-part` SHALL take `<change> <part-id> [--run-dir <path>]`. The part is `openspec/changes/<change>/plan/parts/<part-id>.md`; the run directory is `--run-dir`, else `.bdk/runs/<change>/`. Both SHALL read and edit the code in the working directory, the main checkout, and SHALL take no `--workdir`. Without a Change name a block SHALL use the only Change under `openspec/changes/` other than `archive/`; without a part id, or when the part file is missing, it SHALL name what it found and stop.
+
+#### Scenario: Reports under the run directory
+
+- **WHEN** the execute lead runs part `02` with `--run-dir /work/app/.bdk/runs/add-csv-export`
+- **THEN** the part's code changes are in the working directory, and `execute/part-02.md` and `checks/02.json` are under `/work/app/.bdk/runs/add-csv-export/`

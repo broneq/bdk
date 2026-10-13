@@ -14,7 +14,6 @@ cat > "$parts/01.md" <<'MD'
 ---
 id: "01"
 depends-on: []
-isolation: worktree
 files:
   - src/csv.js
   - src/csv.test.js
@@ -49,7 +48,6 @@ cat > "$parts/02.md" <<'MD'
 ---
 id: "02"
 depends-on: ["01"]
-isolation: worktree
 files:
   - bin/ledger.js
   - test/cli.test.js

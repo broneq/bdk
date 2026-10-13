@@ -9,7 +9,6 @@ cat > "$FIXES/parts/02.md" <<'MD'
 ---
 id: "02"
 depends-on: []
-isolation: shared
 files:
   - test/total.test.js
 ---

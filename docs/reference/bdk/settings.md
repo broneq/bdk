@@ -369,7 +369,7 @@ How the lead agents run.
 execution:
   # Whether the lead agent of `/bdk:execute`, `/bdk:auto-review` and `/bdk:pr-review` runs in the background or in your session (background | foreground, default: background)
   lead: foreground
-  # Most part agents the execute lead runs at once (default: 10)
+  # Most read-only agents a lead starts at once: the reviewers of a review round, the pull requests `/bdk:pr-review` reviews together (default: 10)
   max-parallel: 4
 ```
 
@@ -383,7 +383,7 @@ Whether the lead agent of `/bdk:execute`, `/bdk:auto-review` and `/bdk:pr-review
 
 Type: integer, at least 1 · Default: `10`
 
-Most part agents the execute lead runs at once.
+Most read-only agents a lead starts at once: the reviewers of a review round, the pull requests `/bdk:pr-review` reviews together. The execute lead builds one part at a time.
 
 ## `hooks` {#hooks}
 

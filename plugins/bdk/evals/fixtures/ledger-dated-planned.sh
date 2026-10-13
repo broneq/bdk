@@ -9,7 +9,7 @@ set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 bash "$here/tiny-ledger-bdk.sh"
 
-# The execute lead commits and merges; a run has no global git identity.
+# The execute lead commits; a run has no global git identity.
 git config user.name "BDK eval"
 git config user.email "eval@example.invalid"
 
@@ -104,7 +104,6 @@ cat > "$change/plan/parts/01.md" <<'MD'
 ---
 id: "01"
 depends-on: []
-isolation: worktree
 files:
   - src/ledger.js
   - src/ledger.test.js
@@ -132,7 +131,6 @@ cat > "$change/plan/parts/02.md" <<'MD'
 ---
 id: "02"
 depends-on: []
-isolation: worktree
 files:
   - src/report.js
   - src/report.test.js

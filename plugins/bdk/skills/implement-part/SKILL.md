@@ -1,8 +1,8 @@
 ---
 name: implement-part
 description: 'Implements one plan part of an OpenSpec Change on the bdk:implementer agent - checks the task contracts first and stops on a plan defect, writes a test per acceptance scenario and sees it red, builds the tasks inside the part''s files, runs the part checks until green - and writes execute/part-NN.md. Use when asked to implement, build or code one plan part (part 01, 02) of a Change, or when the execute lead runs a part. Not for the whole plan: /bdk:execute builds every part.'
-argument-hint: "[<change>] <part-id> [--run-dir <path>] [--workdir <path>] [--parts <dir>]"
-allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(mkdir -p *) Bash(cd *) Bash(git -C *) Bash(git status *) Bash(git diff *) Bash(git log *) Bash(git show *) Bash(openspec validate *) Read Grep Glob Edit Write Agent
+argument-hint: "[<change>] <part-id> [--run-dir <path>] [--parts <dir>]"
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(mkdir -p *) Bash(git status *) Bash(git diff *) Bash(git log *) Bash(git show *) Bash(openspec validate *) Read Grep Glob Edit Write Agent
 ---
 
 Current BDK configuration of this project:
@@ -13,7 +13,7 @@ Arguments: $ARGUMENTS
 
 # Implement a part
 
-Build one plan part whole: its acceptance tests first, then its tasks, then its checks green. The part is your contract; when it is wrong, stop and say so instead of working around it. Run `bdk` always as `"${CLAUDE_PLUGIN_ROOT}/bin/bdk"`, each command on its own, without pipes or `&&` (except the `cd` of step 1 for a work directory).
+Build one plan part whole: its acceptance tests first, then its tasks, then its checks green. The part is your contract; when it is wrong, stop and say so instead of working around it. Run `bdk` always as `"${CLAUDE_PLUGIN_ROOT}/bin/bdk"`, each command on its own, without pipes or `&&`.
 
 When the block above says `BDK not configured` or `BDK configuration invalid`, reply with that line and stop: write nothing. If it shows the command instead of its output, run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" config show` first.
 
@@ -27,8 +27,7 @@ Done when you are `bdk:implementer`, or the agent has answered.
 
 - Change: the first argument when two are given. Without one, take the only directory under `openspec/changes/` other than `archive/`; with none or several, name what you found and stop.
 - Part: `<part-id>.md` in `--parts <dir>` when given (the execute lead passes the absolute directory of a review round's fix parts), else in `openspec/changes/<change>/plan/parts/`. Without a part id, or when the file is missing, list the parts there and stop. A fix part's tasks name the findings they fix; read each in the round's log `<parts dir>/../../findings.jsonl` (`bdk findings list <log>`) for its failure scenario.
-- Run directory: `--run-dir <path>` when given (the execute lead passes the absolute path of the main checkout when you work in a worktree), else `.bdk/runs/<change>/`. Run `mkdir -p <run-dir>/execute`. Reports and check results go under the run directory; the code you read and edit is in the working directory.
-- Work directory: `--workdir <path>` when given (the execute lead passes the worktree of a part that runs in its own worktree), else the working directory. A subagent cannot change its working directory, so with `--workdir`: give every Read, Edit, Write, Glob and Grep call an absolute path under the work directory, read the part, the specs and the design there too, run git as `git -C <workdir> <command>` (`git -C /work/app/.bdk/runs/add-csv-export/worktrees/02 status --porcelain`; the host refuses `cd` followed by `git`), and every other Bash command as `cd <workdir> && <one command>`, never a longer chain: a session that grants commands one by one denies the whole chain. Read files with Read and list them with Glob, not with `cat`, `head`, `ls` or `find`. Never read or edit the same paths in the main checkout: that is another part's tree.
+- Run directory: `--run-dir <path>` when given (the execute lead passes an absolute path), else `.bdk/runs/<change>/`. Run `mkdir -p <run-dir>/execute`. Reports and check results go under the run directory; the code you read and edit is in the working directory, the main checkout.
 - An earlier `<run-dir>/execute/part-<part-id>.md` means this is a retry: read it, then continue from the files as they are now. When `<run-dir>/execute/conform-<part-id>.md` says `Verdict: FAIL`, each `Left` item naming a task is work still to do (a test for it first, seen red), and a red conform check is a check to make green.
 
 Done when you know the part file, the run directory and whether this is a retry.
@@ -92,7 +91,7 @@ Done when every task is built.
 "${CLAUDE_PLUGIN_ROOT}/bin/bdk" check run <run-dir> <part-id> --at part --changed HEAD
 ```
 
-It runs the items of the `part` point on the files you changed (against `HEAD`, untracked files included); with `--workdir`, run it as `cd <workdir> && "${CLAUDE_PLUGIN_ROOT}/bin/bdk" check run <run-dir> <part-id> --at part --changed HEAD`, so git reads the worktree. On `fail`, read the output file of each red check, fix the cause in the part's files, and run again: three runs in all. A verdict still `fail` after the third run is a blocker of `Kind: other`, with the output path as evidence. A tool that cannot run at all (command not found) is `Kind: environment`.
+It runs the items of the `part` point on the files you changed (against `HEAD`, untracked files included): the parts before this one are committed, so the changes are this part's. On `fail`, read the output file of each red check, fix the cause in the part's files, and run again: three runs in all. A verdict still `fail` after the third run is a blocker of `Kind: other`, with the output path as evidence. A tool that cannot run at all (command not found) is `Kind: environment`.
 
 Never run a test, linter or build command yourself, and never one that installs, spends money or reaches the network.
 
@@ -102,7 +101,7 @@ When the part changed a file under `openspec/changes/<change>/specs/`, validate 
 openspec validate <change> --strict
 ```
 
-With `--workdir`, run it as `cd <workdir> && openspec validate <change> --strict`. Fix each error on a delta in the part's `files` (a requirement the task adds gets the scenario the task names) and run it again: three runs in all. An error still there after the third run is a blocker of `Kind: other`, with the error as evidence. An error on a file outside the part's `files` is not the part's: note it under `Decisions taken without the user` and go on. When `openspec` is not found, write `openspec validate: not run, no OpenSpec CLI` under `## Checks` and go on: the review round and close check the delta later. A part that changed no delta runs no validation.
+Fix each error on a delta in the part's `files` (a requirement the task adds gets the scenario the task names) and run it again: three runs in all. An error still there after the third run is a blocker of `Kind: other`, with the error as evidence. An error on a file outside the part's `files` is not the part's: note it under `Decisions taken without the user` and go on. When `openspec` is not found, write `openspec validate: not run, no OpenSpec CLI` under `## Checks` and go on: the review round and close check the delta later. A part that changed no delta runs no validation.
 
 Done when the verdict is `pass` (or `none`: no item runs at `part` on these files, stated in the report) and, for a part that changed a delta, no validation error names a delta of the part, or you have a blocker.
 

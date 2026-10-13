@@ -1,6 +1,6 @@
 ---
 name: plan-draft
-description: 'Writes the plan of a BDK Change - plan parts openspec/changes/CHANGE/plan/parts/NN.md with depends-on, isolation, files, acceptance scenarios from the spec deltas and tasks as contracts (File, Interface, Verified by) - cut into few waves and checked with bdk plan check; after a failed plan verification, fixes what its Must address names. Use when a Change has its specs and design and needs an implementation plan, or when plan/verify-N.md failed.'
+description: 'Writes the plan of a BDK Change - plan parts openspec/changes/CHANGE/plan/parts/NN.md with depends-on, files, acceptance scenarios from the spec deltas and tasks as contracts (File, Interface, Verified by) - cut into few waves and checked with bdk plan check; after a failed plan verification, fixes what its Must address names. Use when a Change has its specs and design and needs an implementation plan, or when plan/verify-N.md failed.'
 argument-hint: "[change name]"
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Read Write Edit Glob Grep Agent
 ---
@@ -44,24 +44,23 @@ Done when every scenario is listed and marked present or not, every symbol you w
 
 ## 3. Cut the parts
 
-Wave depth decides how long execute takes: parts of one wave run in parallel, one agent each.
+Execute builds the parts one at a time in the Change checkout, in plan order (waves in order, ascending id within a wave), each on the commits of the parts before it, and runs the whole wave check (the full suite, the type check) once after each wave. Wave depth decides how often that check runs.
 
 1. Find the contracts several parts need (a type, a function signature, a file format). When a later part cannot be tested without them, put them first, in a part as small as it can be.
-2. Split the rest by the files it touches. Parts that share no file and use nothing of each other run in the same wave.
+2. Split the rest by the files it touches and the behaviour it adds. Parts that use nothing of each other share a wave, even when they touch the same file: the later one builds on the earlier one's commit.
 3. Keep a task's tests in the part of the code they test.
 4. `depends-on` lists only the parts whose output this part uses. Every extra edge lengthens the run.
-5. `isolation: shared` only when the part changes state outside its `files` that a parallel part could also change: a lockfile, generated code, a migration sequence. Every other part is `worktree`.
-6. Assign every scenario to exactly one part: the part whose code makes it true. A present scenario goes to the part that owns the test file or the code of its requirement, usually the part that adds the requirement's new scenarios. Write a part that holds only present scenarios only when no other part owns that code or test file.
+5. Assign every scenario to exactly one part: the part whose code makes it true. A present scenario goes to the part that owns the test file or the code of its requirement, usually the part that adds the requirement's new scenarios. Write a part that holds only present scenarios only when no other part owns that code or test file.
 
 Aim for the fewest waves the dependencies allow; a chain longer than three waves needs a reason in the reply. Respect the part limits `plan.part.*` in the configuration (default 5 tasks, 10 files, 8192 bytes): a unit of work over a limit becomes two parts that can share a wave.
 
-Done when each part has its files, dependencies and scenarios, and no two parts of one wave share a file.
+Done when each part has its files, dependencies and scenarios.
 
 ## 4. Write the parts
 
 Write `openspec/changes/<change>/plan/parts/NN.md`, `NN` from `01` in the order the parts can be done. Follow the part format of the project's schema (`openspec/schemas/bdk/templates/part.md`); [a worked part](references/part-example.md) shows a complete one. Read it before writing the first part.
 
-- Frontmatter: `id` quoted (`"01"`), `depends-on` (`[]` when none), `isolation`, `files` as exact repository-relative paths, tests included, no globs or directories.
+- Frontmatter: `id` quoted (`"01"`), `depends-on` (`[]` when none), `files` as exact repository-relative paths, tests included, no globs or directories.
 - `## Goal`: what works after the part, one or two sentences.
 - `## Acceptance scenarios`: the part's scenarios, one per line, as listed in step 2. A present scenario ends with ` (behaviour present)`: `` - `tally` / Requirement: Total / Scenario: Empty ledger (behaviour present) ``. The implementer then expects its test to pass at the first run; without the suffix it stops the part as a plan defect. A scenario that is not present never carries it.
 - `## Tasks`: numbered contracts, no code. Each task:
@@ -85,7 +84,7 @@ Done when every scenario is named in one part and every task has its three lines
 
 ## 5. Check
 
-Run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" plan check openspec/changes/<change>/plan/parts`. Exit 1 lists problems under `problems:`: fix each (split an oversized part, quote an id, move a shared file into one part or add the dependency) and run it again. Exit 3 is an environment problem: pass it on and stop.
+Run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" plan check openspec/changes/<change>/plan/parts`. Exit 1 lists problems under `problems:`: fix each (split an oversized part, quote an id, remove an `isolation` key, break a dependency cycle) and run it again. Exit 3 is an environment problem: pass it on and stop.
 
 Done when it exits 0. Keep its `waves:` lines for the reply.
 

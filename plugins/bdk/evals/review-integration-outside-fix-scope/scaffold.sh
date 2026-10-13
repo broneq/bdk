@@ -29,7 +29,6 @@ cat > "$R1/fixes/parts/03.md" <<'MD'
 ---
 id: "03"
 depends-on: []
-isolation: shared
 files:
   - src/parse.test.js
 ---

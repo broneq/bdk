@@ -45,8 +45,9 @@ The `plan` artifact SHALL generate one file per part, `plan/parts/NN.md`, where 
 
 - `id`: the part's file stem `NN`, as a quoted string;
 - `depends-on`: a list of the ids of other parts of the same Change that must be done before this one, empty when none;
-- `isolation`: `worktree` when the part runs in its own git worktree, or `shared` when it runs in the Change checkout;
 - `files`: a list of the repository-relative paths of the files the part creates, changes or deletes, each an exact file path, never a glob or a directory.
+
+The frontmatter SHALL hold no `isolation` key: every part runs in the Change checkout, one after another.
 
 After the frontmatter, a part SHALL hold its goal, its acceptance scenarios taken from the Change's spec deltas, and its tasks as contracts. The part template and the plan instruction SHALL state this format.
 
@@ -55,7 +56,7 @@ Under `## Tasks`, each task SHALL be one numbered item whose first line says wha
 #### Scenario: Template carries the frontmatter
 
 - **WHEN** the part template of the shipped schema is read
-- **THEN** it begins with YAML frontmatter that has the keys `id`, `depends-on`, `isolation` and `files`, with `id` a quoted two-digit string and `isolation` one of `worktree` and `shared`
+- **THEN** it begins with YAML frontmatter that has the keys `id`, `depends-on` and `files` and no `isolation`, with `id` a quoted two-digit string
 
 #### Scenario: Template carries the task contract
 
