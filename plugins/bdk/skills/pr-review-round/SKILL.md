@@ -1,6 +1,6 @@
 ---
 name: pr-review-round
-description: 'The review of a GitHub pull request, run by the bdk:lead agent that /bdk:pr-review starts - fetches the PR head into a detached worktree under the run directory, finds the OpenSpec Change it carries, records the groups with bdk git groups, runs review-group per group in parallel batches, then review-integration, then judge, removes the worktree and writes result.md. With --verify it first seeds the findings of the previous review, then reviews the commits since --since (the whole pull request after a force-push), and the judge levels both. Not for users: /bdk:pr-review is the command.'
+description: 'The review of a GitHub pull request, run by the bdk:lead agent that /bdk:pr-review starts - fetches the PR head into a detached worktree under the run directory, finds the OpenSpec Change it carries, records the groups with bdk git groups, runs review-group per group in parallel batches, then review-integration, then judge, removes the worktree and writes result.md. With --verify it first seeds the findings of the previous review, then reviews the commits since --since (the whole pull request after a force-push), and the judge levels both. Use when the bdk:lead agent is started with a prompt naming bdk:pr-review-round and a pull request. Not for users: /bdk:pr-review is the command.'
 argument-hint: "<pr-number> --run-dir <absolute path> [--verify [--since <sha>]]"
 user-invocable: false
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(cd *) Bash(mkdir -p *) Bash(git *) Read Write Grep Glob Agent

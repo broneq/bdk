@@ -1,6 +1,6 @@
 ---
 name: diagnose-run
-description: 'Analyses how a BDK run went, after the fact, on the bdk:analyst agent - which stages and agents ran, how long each took, its tokens and cost, retries and blockers, and where time and tokens were wasted (repeated commands, re-reads, refused or slow calls, outliers) - from the run files under .bdk/runs/<change>/ and the host transcripts of its sessions, and writes .bdk/runs/<change>/diagnostics.md with a citation for every claim. Use when the user asks why a run was slow or expensive, what a run cost, what went wrong in a run, or wants a diagnostics report or post-mortem of a Change, a session or /bdk:run.'
+description: 'Analyses how a BDK run went, after the fact, on the bdk:analyst agent - which stages and agents ran, how long each took, its tokens and cost, retries and blockers, and where time and tokens were wasted (repeated commands, re-reads, refused or slow calls, outliers) - from the run files of the Change under .bdk/runs/ and the host transcripts of its sessions, and writes diagnostics.md into that run directory with a citation for every claim. Use when the user asks why a run was slow or expensive, what a run cost, what went wrong in a run, or wants a diagnostics report or post-mortem of a Change, a session or /bdk:run.'
 argument-hint: "[<change> | <session-id>] [--transcripts <dir>]"
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Read Grep Glob Write Agent
 ---

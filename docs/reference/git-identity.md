@@ -14,7 +14,7 @@ Bind a project to a GitHub account and a git commit identity. Every gh call and 
 
 Started by: you only. Claude does not start it on its own.
 
-Create a git-identity profile - a named pairing of a GitHub account and a git commit identity. Run once per account, then bind projects to it with /git-identity:use.
+Create a git-identity profile - a named pairing of a GitHub account and a git commit identity. Use when adding a GitHub account to work under, once per account; then bind projects to it with /git-identity:use.
 
 ### `/git-identity:status` {#status}
 
@@ -22,7 +22,7 @@ Create a git-identity profile - a named pairing of a GitHub account and a git co
 
 Started by: you only. Claude does not start it on its own.
 
-Show which GitHub account and git identity this project is actually using right now, and whether that matches what it is bound to.
+Show which GitHub account and git identity this project is actually using right now, and whether that matches what it is bound to. Use when a commit or a gh call may have gone out under the wrong account.
 
 ### `/git-identity:use` {#use}
 
@@ -30,7 +30,7 @@ Show which GitHub account and git identity this project is actually using right 
 
 Started by: you only. Claude does not start it on its own.
 
-Bind the current project to a git-identity profile, so every gh call and every commit in it uses that GitHub account and identity.
+Bind the current project to a git-identity profile, so every gh call and every commit in it uses that GitHub account and identity. Use when a project must commit and call gh as one of the profiles.
 
 ## Hooks
 

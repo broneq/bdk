@@ -1,6 +1,6 @@
 ---
 name: use
-description: Bind the current project to a git-identity profile, so every gh call and every commit in it uses that GitHub account and identity.
+description: Bind the current project to a git-identity profile, so every gh call and every commit in it uses that GitHub account and identity. Use when a project must commit and call gh as one of the profiles.
 argument-hint: "<profile-name>"
 disable-model-invocation: true
 allowed-tools: Read Write Edit Bash AskUserQuestion

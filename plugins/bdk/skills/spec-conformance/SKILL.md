@@ -52,7 +52,7 @@ First run `openspec validate <change> --strict`, on its own, in every run, round
 
 For each scenario of an added or modified requirement, take its own WHEN, follow it from the entry point through the code, and compute the THEN value by value: the text printed, the exit code, the status and body, what the page shows, the file written. The question is whether the sentence is true of the product, not whether the code is good.
 
-Then read each requirement's own text. A SHALL sentence promises every input it names, and a scenario shows only one example: when a requirement says "a path absolute or relative to the current directory" and its scenario uses `books/2026.json`, compute the absolute case too (`/tmp/ledger.json` joined to the current directory is `<cwd>/tmp/ledger.json`). Do the same for each class the sentence names: absolute and relative, empty and missing, one and many, "any" or "every" command.
+Then read each requirement's own text. A SHALL sentence promises every input it names, and a scenario shows only one example: when a requirement says "a path absolute or relative to the current directory" and its scenario uses `books/2026.json`, compute the absolute case too (an absolute `$HOME/ledger.json` wrongly joined to the current directory gives `<cwd>/<home>/ledger.json`). Do the same for each class the sentence names: absolute and relative, empty and missing, one and many, "any" or "every" command.
 
 These seven problems make the main specs wrong after archive, or stop archive. Each one is a `Must address` item:
 

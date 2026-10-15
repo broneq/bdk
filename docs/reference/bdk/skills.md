@@ -92,7 +92,7 @@ Turns a bug report into a fix contract backed by evidence - reproduces the bug o
 
 Started by: you, or Claude when your request matches the description below.
 
-Analyses how a BDK run went, after the fact, on the bdk:analyst agent - which stages and agents ran, how long each took, its tokens and cost, retries and blockers, and where time and tokens were wasted (repeated commands, re-reads, refused or slow calls, outliers) - from the run files under .bdk/runs/&lt;change&gt;/ and the host transcripts of its sessions, and writes .bdk/runs/&lt;change&gt;/diagnostics.md with a citation for every claim. Use when the user asks why a run was slow or expensive, what a run cost, what went wrong in a run, or wants a diagnostics report or post-mortem of a Change, a session or /bdk:run.
+Analyses how a BDK run went, after the fact, on the bdk:analyst agent - which stages and agents ran, how long each took, its tokens and cost, retries and blockers, and where time and tokens were wasted (repeated commands, re-reads, refused or slow calls, outliers) - from the run files of the Change under .bdk/runs/ and the host transcripts of its sessions, and writes diagnostics.md into that run directory with a citation for every claim. Use when the user asks why a run was slow or expensive, what a run cost, what went wrong in a run, or wants a diagnostics report or post-mortem of a Change, a session or /bdk:run.
 
 ## `/bdk:e2e-check` {#e2e-check}
 
@@ -116,7 +116,7 @@ Runs the execute stage of an OpenSpec Change - starts one bdk:lead agent that bu
 
 Started by: other BDK skills only. It is not in the `/` menu.
 
-The execute stage of an OpenSpec Change, run by the bdk:lead agent that /bdk:execute starts (and /bdk:auto-review for the fix parts of a review round) - takes the waves of the plan parts from bdk plan check, builds the parts one at a time in plan order in the main checkout through implement-part and conform-part, retries and escalates within the budget, commits each part on the Change branch, stops at the first blocked part, runs the wave check after each wave and has repair-wave repair a red one, and writes state.json and execute/result.md. Not for users: /bdk:execute is the command.
+The execute stage of an OpenSpec Change, run by the bdk:lead agent that /bdk:execute starts (and /bdk:auto-review for the fix parts of a review round) - takes the waves of the plan parts from bdk plan check, builds the parts one at a time in plan order in the main checkout through implement-part and conform-part, retries and escalates within the budget, commits each part on the Change branch, stops at the first blocked part, runs the wave check after each wave and has repair-wave repair a red one, and writes state.json and execute/result.md. Use when the bdk:lead agent is started with a prompt naming bdk:execute-waves and a Change. Not for users: /bdk:execute is the command.
 
 ## `/bdk:explore` {#explore}
 
@@ -188,7 +188,7 @@ Reviews GitHub pull requests with the BDK review blocks - starts one bdk:lead ag
 
 Started by: other BDK skills only. It is not in the `/` menu.
 
-The review of a GitHub pull request, run by the bdk:lead agent that /bdk:pr-review starts - fetches the PR head into a detached worktree under the run directory, finds the OpenSpec Change it carries, records the groups with bdk git groups, runs review-group per group in parallel batches, then review-integration, then judge, removes the worktree and writes result.md. With --verify it first seeds the findings of the previous review, then reviews the commits since --since (the whole pull request after a force-push), and the judge levels both. Not for users: /bdk:pr-review is the command.
+The review of a GitHub pull request, run by the bdk:lead agent that /bdk:pr-review starts - fetches the PR head into a detached worktree under the run directory, finds the OpenSpec Change it carries, records the groups with bdk git groups, runs review-group per group in parallel batches, then review-integration, then judge, removes the worktree and writes result.md. With --verify it first seeds the findings of the previous review, then reviews the commits since --since (the whole pull request after a force-push), and the judge levels both. Use when the bdk:lead agent is started with a prompt naming bdk:pr-review-round and a pull request. Not for users: /bdk:pr-review is the command.
 
 ## `/bdk:propose` {#propose}
 
@@ -228,7 +228,7 @@ Reviews a whole BDK Change top down after its group reviews - every spec scenari
 
 Started by: other BDK skills only. It is not in the `/` menu.
 
-One review round of an OpenSpec Change, run by the bdk:lead agent that /bdk:auto-review starts - records the round scope and groups with bdk git groups (a later round covers only the fix commits), plans the review checks with bdk check plan, runs one bdk:reviewer per group and the printed check lines in parallel, records them with bdk check record, then spec-conformance on bdk:verifier, bdk:integration-reviewer and bdk:e2e-tester together (no E2E tester in a later round whose fixes changed only test files after a passing E2E verdict), then bdk:judge, and writes round.md next to the review.md of the judge. Not for users: /bdk:auto-review is the command.
+One review round of an OpenSpec Change, run by the bdk:lead agent that /bdk:auto-review starts - records the round scope and groups with bdk git groups (a later round covers only the fix commits), plans the review checks with bdk check plan, runs one bdk:reviewer per group and the printed check lines in parallel, records them with bdk check record, then spec-conformance on bdk:verifier, bdk:integration-reviewer and bdk:e2e-tester together (no E2E tester in a later round whose fixes changed only test files after a passing E2E verdict), then bdk:judge, and writes round.md next to the review.md of the judge. Use when the bdk:lead agent is started with a prompt naming bdk:review-round, a Change and a round. Not for users: /bdk:auto-review is the command.
 
 ## `/bdk:run` {#run}
 
