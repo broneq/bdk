@@ -68,7 +68,7 @@ Fixes a reported bug end to end - diagnose-bug reproduces it on the product and 
 
 Started by: you, or Claude when your request matches the description below.
 
-Runs the design stage of an OpenSpec Change - maps the code with explore, drafts the specs and design.md with design-draft, checks them with verify-design until a report passes or policy.budgets.verifier is spent, then applies the design gate of policy.gates.design. Resumes from the run files. Use when a Change has a proposal and needs its design, when asked to "design" a Change, or when /bdk:run reaches the design stage.
+Runs the design stage of an OpenSpec Change - maps the code with explore, drafts the specs and design.md with design-draft, checks them with verify-design until a report passes or policy.budgets.verifier is spent, then applies the design gate of policy.gates.design, showing the intent page when the scope changed since propose. Resumes from the run files. Use when a Change has a proposal and needs its design, when asked to "design" a Change, or when /bdk:run reaches the design stage.
 
 ## `/bdk:design-draft` {#design-draft}
 
@@ -76,7 +76,7 @@ Runs the design stage of an OpenSpec Change - maps the code with explore, drafts
 
 Started by: you, or Claude when your request matches the description below.
 
-Drafts the spec deltas and design.md of an OpenSpec Change from its proposal and the code map - approaches with diagrams and self-critique, questions to the user through a Lavish page or AskUserQuestion (or decided and recorded by policy) - and fixes them after a failed design verification. Use when a Change has a proposal and needs its specs and design, when asked to design a Change, or when /bdk:design drafts or fixes a design.
+Drafts the spec deltas and design.md of an OpenSpec Change from its proposal and the code map - approaches with diagrams and self-critique, questions to the user through a Lavish page or AskUserQuestion (or decided and recorded by policy) - fixes them after a failed design verification, and writes the intent page of a scope change for the design gate. Use when a Change has a proposal and needs its specs and design, when asked to design a Change, or when /bdk:design drafts or fixes a design.
 
 ## `/bdk:diagnose-bug` {#diagnose-bug}
 
@@ -124,7 +124,7 @@ The execute stage of an OpenSpec Change, run by the bdk:lead agent that /bdk:exe
 
 Started by: you, or Claude when your request matches the description below.
 
-Maps the code an OpenSpec Change touches - modules, entry points, data, boundaries, conventions, tests and gaps, each with file:line - into the run file design/explore.md, on the bdk:explorer agent. Use when a Change is about to be designed, when asked what code a proposal touches, or when /bdk:design needs the code map.
+Maps the code an OpenSpec Change touches - modules, entry points, data, boundaries, conventions, tests and gaps, each with file:line - into the run file explore/design.md, on the bdk:explorer agent. Use when a Change is about to be designed, when asked what code a proposal touches, or when /bdk:design needs the code map.
 
 ## `/bdk:explore-project` {#explore-project}
 
@@ -196,7 +196,15 @@ The review of a GitHub pull request, run by the bdk:lead agent that /bdk:pr-revi
 
 Started by: you, or Claude when your request matches the description below.
 
-Opens a BDK Change from an intent or a GitHub issue - runs openspec new change with the BDK schema and writes proposal.md with the capabilities the design stage works from. Use when starting a feature or fix in a BDK project, when asked to "start a change", "propose" or "open a change for issue #N", or when /bdk:run reaches the propose stage.
+Opens a BDK Change from an intent or a GitHub issue - saves the source word for word, runs openspec new change with the BDK schema, writes proposal.md with the intent, the acceptance criteria (AC-1..n) and the capabilities, checks conditional criteria in the code with the recon block, asks every scope question in one round, and opens the scope log. Use when starting a feature or fix in a BDK project, when asked to "start a change", "propose" or "open a change for issue #N", or when /bdk:run reaches the propose stage.
+
+## `/bdk:recon` {#recon}
+
+`/bdk:recon <change-name> <AC ids>`
+
+Started by: you, or Claude when your request matches the description below.
+
+Checks the conditional or unclear acceptance criteria of a BDK proposal against the code - does the condition hold, does a named symbol or file exist, how many copies of a thing exist - and writes the facts with file:line, no recommendation, to explore/propose-recon.md, on the bdk:explorer agent. Use when /bdk:propose names AC to check before its decision round, or when asked whether a condition of a proposal holds in the code.
 
 ## `/bdk:repair-wave` {#repair-wave}
 
@@ -236,7 +244,7 @@ One review round of an OpenSpec Change, run by the bdk:lead agent that /bdk:auto
 
 Started by: you, or Claude when your request matches the description below.
 
-Autopilot over a queue of OpenSpec Changes - builds the queue from an intent, an issue or a list of issues (ordered by "blocked by"), writes .bdk/runs/run.json, gives each Change its own branch from the base branch, and runs propose, design, plan, execute, auto-review and close in order until every Change has a pull request. A Change whose blocker in the queue is not merged waits. Resumes from files. Use when asked to carry a feature, an issue or several issues end to end, to "run" or "continue the run", or to work through a list of issues to pull requests.
+Autopilot over a queue of OpenSpec Changes - builds the queue from an intent, an issue or a list of issues (ordered by "blocked by"), writes .bdk/runs/run.json, gives each Change its own branch from the base branch, and runs propose, design, plan, execute, auto-review and close in order until every Change has a pull request. A Change whose blocker in the queue is not merged waits; a Change with a scope question only the user may answer is marked needs-user and the queue goes on. Resumes from files. Use when asked to carry a feature, an issue or several issues end to end, to "run" or "continue the run", or to work through a list of issues to pull requests.
 
 ## `/bdk:setup` {#setup}
 
@@ -268,7 +276,7 @@ Decides what happens to each finding of a judged BDK review round - fix, accept 
 
 Started by: you, or Claude when your request matches the description below.
 
-Checks the spec deltas and design.md of an OpenSpec Change against the code and the proposal on the bdk:verifier agent, and writes the run file design/verify-N.md with a PASS or FAIL verdict. Use when a design is ready for review, before planning, when asked to check or verify a design, or when /bdk:design verifies an iteration.
+Checks the spec deltas and design.md of an OpenSpec Change against the code, the proposal and the acceptance criteria of its source on the bdk:verifier agent, and writes the run file design/verify-N.md with a PASS or FAIL verdict. Use when a design is ready for review, before planning, when asked to check or verify a design, or when /bdk:design verifies an iteration.
 
 ## `/bdk:verify-plan` {#verify-plan}
 

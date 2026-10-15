@@ -116,6 +116,27 @@ describe("shipped files", () => {
     ]);
   });
 
+  it("puts Intent and Acceptance after Why in the proposal template and instruction", () => {
+    const proposal = readFileSync(join(SCHEMA, "templates", "proposal.md"), "utf8");
+    expect([...proposal.matchAll(/^## (.+)$/gm)].map((match) => match[1])).toEqual([
+      "Why",
+      "Intent",
+      "Acceptance",
+      "What Changes",
+      "Capabilities",
+      "Out of scope",
+      "Impact",
+    ]);
+    expect(proposal).toMatch(/^- AC-1: /m);
+    const schema = readFileSync(join(SCHEMA, "schema.yaml"), "utf8");
+    const instruction = /- id: proposal[\s\S]*?- id: specs/.exec(schema)?.[0] ?? "";
+    expect(instruction).toMatch(/\*\*Intent\*\*/);
+    expect(instruction).toMatch(/\*\*Acceptance\*\*/);
+    expect(instruction).toMatch(
+      /skip_specs: true[\s\S]*Intent and Acceptance|Intent and Acceptance[\s\S]*skip_specs: true/,
+    );
+  });
+
   it("shows the task contract lines in the part template and the plan instruction", () => {
     const part = readFileSync(join(SCHEMA, "templates", "part.md"), "utf8");
     const tasks = /^## Tasks$([\s\S]*)/m.exec(part)?.[1] ?? "";

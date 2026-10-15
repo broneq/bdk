@@ -6,8 +6,14 @@ set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 bash "$here/ledger-proposal.sh"
 
-mkdir -p .bdk/runs/add-csv-export/design
-cat > .bdk/runs/add-csv-export/design/explore.md <<'MD'
+mkdir -p .bdk/runs/add-csv-export/explore .bdk/runs/add-csv-export/design
+cat > .bdk/runs/add-csv-export/explore/design.md <<'MD'
+---
+question: What code does add-csv-export touch?
+summary: The store lists a date range and formatCents formats amounts; no CSV writer or export entry point exists.
+stage: design
+files: [src/store.js, src/format.js, src/ledger.js, package.json]
+---
 # Explore: add-csv-export
 
 ## Touches

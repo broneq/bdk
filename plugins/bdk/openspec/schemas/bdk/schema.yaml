@@ -16,6 +16,14 @@ artifacts:
       Sections:
       - **Why**: the problem or opportunity in one to three sentences. When the
         Change comes from an issue, its first line names the issue.
+      - **Intent**: the goal of the issue, or the intent, quoted word for word
+        as a Markdown quote. Never paraphrase it.
+      - **Acceptance**: every acceptance point of the source (its acceptance
+        signal and every point of its scope a user can check), one per line as
+        `AC-1`, `AC-2`, ... An id never changes and is never reused. A
+        conditional point keeps its condition in the source's words. An AC
+        changed later keeps its id: its old text struck through and the new
+        text after it, naming the `scope-log.md` entry that changed it.
       - **What Changes**: a bullet list of concrete changes. Mark a change that
         removes or alters existing behaviour with **BREAKING**.
       - **Capabilities**: the contract with the specs stage.
@@ -30,6 +38,9 @@ artifacts:
       - **Out of scope**: what this Change does not do, naming the Change or
         issue that owns it when one does.
       - **Impact**: affected code, interfaces, dependencies and users.
+
+      Intent and Acceptance are written in every proposal, also when the
+      Change sets `skip_specs: true`.
 
       A Change with no capability at all must set `skip_specs: true` in its
       `.openspec.yaml`; do that only when no behaviour changes (refactoring,

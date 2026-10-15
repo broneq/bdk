@@ -22,7 +22,7 @@ Checks the uncommitted diff of one implemented plan part of a BDK Change against
 
 Model: `inherit` · Tools: `Read`, `Write`, `Edit`, `Bash`, `Grep`, `Glob`, `Skill`
 
-Writes the spec deltas and design.md of one BDK Change, or fixes them after a failed design verification, or revises them on a request. Started by /bdk:design or the design-draft block with a prompt naming the skill bdk:design-draft and its arguments; continue it with SendMessage to hand it the user's answers to its open questions.
+Writes the spec deltas and design.md of one BDK Change, or fixes them after a failed design verification, or revises them on a request, or writes the intent page of a scope change for the design gate. Started by /bdk:design or the design-draft block with a prompt naming the skill bdk:design-draft and its arguments; continue it with SendMessage to hand it the user's answers to its open questions.
 
 ## `e2e-tester` {#e2e-tester}
 
@@ -34,7 +34,7 @@ Uses the product as a user would to confirm that one OpenSpec Change works as it
 
 Model: `sonnet` · Tools: `Read`, `Grep`, `Glob`, `Bash`, `Write`, `Skill`
 
-Maps the code a BDK Change touches (bdk:explore) or how a project builds, tests and runs (bdk:explore-project), and writes the map to the run file its block names. Started by a BDK block or orchestrator with a prompt naming the skill to run; continue it with SendMessage to ask a follow-up question about the same code.
+Reads the code for a BDK block and writes what it found to the run file the block names - the code a Change touches (bdk:explore), whether the conditional acceptance criteria of a proposal hold (bdk:recon), or how a project builds, tests and runs (bdk:explore-project). Started by a BDK block or orchestrator with a prompt naming the skill to run; continue it with SendMessage to ask a follow-up question about the same code.
 
 ## `implementer` {#implementer}
 

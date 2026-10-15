@@ -1,6 +1,6 @@
 ---
 name: explore
-description: 'Maps the code an OpenSpec Change touches - modules, entry points, data, boundaries, conventions, tests and gaps, each with file:line - into the run file design/explore.md, on the bdk:explorer agent. Use when a Change is about to be designed, when asked what code a proposal touches, or when /bdk:design needs the code map.'
+description: 'Maps the code an OpenSpec Change touches - modules, entry points, data, boundaries, conventions, tests and gaps, each with file:line - into the run file explore/design.md, on the bdk:explorer agent. Use when a Change is about to be designed, when asked what code a proposal touches, or when /bdk:design needs the code map.'
 argument-hint: "[change-name]"
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(git log *) Bash(git show *) Read Grep Glob Write Agent
 ---
@@ -25,7 +25,7 @@ Done when you are `bdk:explorer`, or the agent has answered.
 
 The argument names the Change. Without one, list `openspec/changes/` and take the only directory other than `archive/`. With none or several, name what you found, ask which Change to map, and stop.
 
-Read `openspec/changes/<change>/proposal.md` whole. Done when you know the Change and what it adds or changes.
+Read `openspec/changes/<change>/proposal.md` whole. When `.bdk/runs/<change>/explore/propose-recon.md` exists, read it too: its facts about the acceptance criteria are settled, so do not check them again; build on them. Done when you know the Change and what it adds or changes.
 
 ## 2. Map the code
 
@@ -37,9 +37,15 @@ Note for every fact the file and line you saw it at. Done when you can say, for 
 
 ## 3. Write the map
 
-Write `.bdk/runs/<change>/design/explore.md` (create the directories) with exactly these sections:
+Write `.bdk/runs/<change>/explore/design.md` (create the directories): a front matter, then exactly these sections. The orchestrator builds `explore/index.md` from the front matter, so fill each field.
 
 ```markdown
+---
+question: What code does <change> touch?
+summary: <one line: the main places it touches and the main gap>
+stage: design
+files: [<every project file you read for the map>]
+---
 # Explore: <change>
 
 ## Touches
@@ -58,7 +64,7 @@ Write `.bdk/runs/<change>/design/explore.md` (create the directories) with exact
 - <what you could not settle from the code or a help command; for a tool, the help command that would settle it and why it did not run; "None." when nothing>
 ```
 
-Every bullet of `Touches`, `Patterns` and `Tests` names `file:line`, or the help command for a tool's options. Write facts, not a design: no approach, no recommendation. Keep it under 80 lines. Done when the file has the five sections.
+Every bullet of `Touches`, `Patterns` and `Tests` names `file:line`, or the help command for a tool's options. Write facts, not a design: no approach, no recommendation. Keep it under 80 lines. Done when the file has the front matter and the five sections.
 
 ## 4. Reply
 

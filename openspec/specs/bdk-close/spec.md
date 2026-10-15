@@ -157,3 +157,12 @@ When the E2E verdict the pull request body names is `Verdict: FAIL`, the body SH
 
 - **WHEN** the latest E2E verdict of `add-total` is `review/round-1/e2e/verdict.md` with `Verdict: FAIL`, its only failed path has one `e2e-check` finding levelled `not-a-problem`, and spec conformance passes
 - **THEN** close archives the Change, opens the pull request, and the body file holds `Verdict: FAIL` with the cleared path file and its finding id
+
+### Requirement: Scope changes in the pull request body
+
+The pull request body SHALL hold a part `Scope changes` listing every `## SL-<n>` entry of the archived Change's `scope-log.md` in its order, copied as written (its id, stage, AC, before, after, why and `By:` line), or saying `none` when the log holds no entry or is missing. The reply SHALL name the entries too.
+
+#### Scenario: AC dropped by the user
+
+- **WHEN** the close of `add-total` creates its pull request and `scope-log.md` holds `SL-1` with `AC: AC-3`, `After: dropped` and `By: user`
+- **THEN** the body file has a `Scope changes` part that holds `SL-1` with `AC-3` and `By: user`

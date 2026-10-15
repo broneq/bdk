@@ -50,9 +50,10 @@ Points where the user decides, and the setting that skips them:
 
 | Point | Skill | Asked when | Skipped when |
 |---|---|---|---|
-| Open questions of the intent | `/bdk:propose` | two readings change the scope | `policy.questions: decide-and-record` (recorded under `## Decided without the user`) |
+| Open questions of the intent | `/bdk:propose` | two readings change the scope, or a conditional AC does not hold | `policy.questions: decide-and-record` (recorded under `## Decided without the user`), except a question that changes an AC |
+| A change of an acceptance criterion | `/bdk:propose`, `/bdk:design-draft` | an AC would be dropped, narrowed or reinterpreted | never: under `decide-and-record` it stays open as a scope-log entry `By: needs-user`, and `/bdk:run` goes on with the next Change |
 | Open design decisions, data-model changes | `/bdk:design-draft` | a decision the proposal, code or conventions do not settle | `policy.questions: decide-and-record` (recorded as `Decided without the user:`) |
-| Design gate | `/bdk:design` | after a passing `verify-N.md` | `policy.gates.design: auto` |
+| Design gate | `/bdk:design` | after a passing `verify-N.md`; with the intent page when the scope changed since propose | `policy.gates.design: auto`, unless the scope changed since the last approved gate |
 | Retry blocked parts | `/bdk:execute` | the lead returns `Status: blocked` | never retried under `decide-and-record`: the stage stops |
 | Triage of findings | `/bdk:triage` | every round with undecided findings | `policy.gates.review: auto` (fixed policy table) |
 | Fix gate | `/bdk:debug` | after a `ready` diagnosis | `policy.gates.design: auto` |
@@ -73,7 +74,7 @@ flowchart TB
   UNF -->|"no"| BUILD["build the queue<br/>gh issue view, blocked-by<br/>write run.json"]
   BUILD --> NEXT
   NEXT{{"next Change<br/>not done?"}}
-  NEXT -->|"none left"| FINAL["final report:<br/>PRs and decisions"]
+  NEXT -->|"none left"| FINAL["final report:<br/>PRs, decisions,<br/>needs-user Changes"]
   NEXT -->|"its branch<br/>exists"| CLEAN
   NEXT -->|"no branch"| BLK{{"blockers in<br/>the queue merged?"}}
   BLK -->|"no"| WAIT["the Change waits"] --> NEXT
@@ -82,7 +83,7 @@ flowchart TB
   CLEAN -->|"yes"| SW["git switch, or a new<br/>branch from origin/base"]
   SW --> ST
   ST["bdk run status --json<br/>stage of this Change"]
-  ST -->|"done"| NEXT
+  ST -->|"done, or marked<br/>needs-user"| NEXT
   ST -->|"a stage"| CALL["Skill /bdk:&lt;stage&gt;"]
   CALL --> MOVED{{"stage<br/>moved on?"}}
   MOVED -->|"yes"| ST
@@ -93,6 +94,7 @@ flowchart TB
 - `/bdk:run` never carries one Change's files onto another branch: before it switches, uncommitted files stop the run, naming them and the branch they are on.
 - The stage stays `design` while `R/design/gate.md` is not approved, whatever `bdk run status` says.
 - Before `execute`, `/bdk:run` commits the uncommitted Change files with `/bdk:commit`: the execute lead builds only on a clean tree.
+- A Change whose scope log holds an open entry `By: needs-user` (no later entry `Answers: SL-n`) is marked `"needs-user": "SL-n"` in `run.json`; its files are committed on its branch and the run goes on with the next Change. The final report names the entry; `/bdk:design <change>` in a session that can ask answers it, and the next `/bdk:run` continues the Change.
 - A stage stops the run when it waits for the user: a gate or a question, a blocked part, a spent budget, a failing `/bdk:spec-conformance` report, a failed push.
 
 ## Sources

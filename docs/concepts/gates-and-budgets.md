@@ -8,9 +8,13 @@ Two kinds of settings decide how autonomous a run is. **Gates and questions** ar
 |---|---|---|---|
 | `policy.gates.design` | `/bdk:design` (design gate), `/bdk:debug` (fix gate) | you approve a verified design before planning, and a diagnosis before a bug fix is built | approved without asking; the gate file records it |
 | `policy.gates.review` | `/bdk:triage` in `/bdk:auto-review` | you decide fix, accept or defer for every finding | the [triage policy](./findings.md#decisions) decides by level |
-| `policy.questions` | `/bdk:propose`, `/bdk:design-draft`, `/bdk:execute`, `/bdk:pr-review` | a stage asks when the intent or a design decision is open, before retrying blocked parts, and before posting a PR review | the recommended answer is taken and recorded in the Change; blocked parts are not retried; the run stops there |
+| `policy.questions` | `/bdk:propose`, `/bdk:design-draft`, `/bdk:execute`, `/bdk:pr-review` | a stage asks when the intent or a design decision is open, before retrying blocked parts, and before posting a PR review | the recommended answer is taken and recorded in the Change; blocked parts are not retried; the run stops there. A question that changes an acceptance criterion is never decided: it stays open as a scope-log entry `By: needs-user` |
 
-With everything on `auto` and `decide-and-record`, `/bdk:run` goes from an intent to pull requests without asking. Every decision it took is recorded (`## Decided without the user` in the proposal, `Decided without the user:` in the design, `By: policy.gates.design auto` in the gate file, `## Decisions taken without the user` in `review/result.md`). Each pull request body lists the decisions of its Change, the review's included, and the final report repeats them.
+The design gate shows the intent page `R/design/intent.html` whenever the scope log holds a change after propose that no earlier gate approved, under `manual` and `auto` alike: a changed scope is always put to you before the plan. Without such a change, `manual` asks as before and `auto` approves. The gate file's `Scope log: SL-n` names the last entry approved with the design.
+
+An acceptance criterion changes only through a scope-log entry `By: user`. Under `decide-and-record`, `/bdk:propose` and `/bdk:design-draft` leave such a question open as `By: needs-user`; `/bdk:design` stops on it, and `/bdk:run` marks the Change `needs-user` in `run.json`, commits its files and goes on with the next Change. `/bdk:design <change>` in a session that can ask answers it, and the next `/bdk:run` continues the Change.
+
+With everything on `auto` and `decide-and-record`, `/bdk:run` goes from an intent to pull requests without asking, except for an acceptance criterion it would change. Every decision it took is recorded (`## Decided without the user` in the proposal, `Decided without the user:` in the design, `By: policy.gates.design auto` in the gate file, `## Decisions taken without the user` in `review/result.md`). Each pull request body lists the decisions of its Change, the review's included, and every entry of the scope log under `Scope changes`; the final report repeats them.
 
 ## Budgets
 

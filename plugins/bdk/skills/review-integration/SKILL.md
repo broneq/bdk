@@ -35,22 +35,23 @@ Done when you know the range, the changed files, the findings so far, and the Ch
 
 ## 2. Read the intent
 
-Read `proposal.md`, every file under `specs/` (each requirement and scenario), `design.md`, every file of `plan/parts/`, and the fix parts of earlier rounds (`.bdk/runs/<change>/review/round-*/fixes/parts/*.md`; their tasks name the findings they fix). Without a Change, the intent is the commit subjects of the range (`git log --format=%s <range>`) and what the user said.
+Read `proposal.md` (its `## Intent` and `## Acceptance`), `scope-log.md` and `.bdk/runs/<change>/source/issue.md` when present (find them with Glob, never with a Bash command), every file under `specs/` (each requirement and scenario), `design.md`, every file of `plan/parts/`, and the fix parts of earlier rounds (`.bdk/runs/<change>/review/round-*/fixes/parts/*.md`; their tasks name the findings they fix). Without a Change, the intent is the commit subjects of the range (`git log --format=%s <range>`) and what the user said.
 
-Done when you have the list of scenarios, and for each part the contracts it creates or changes (its tasks' `Interface` lines).
+Done when you have the list of scenarios, the list of AC (every AC of `## Acceptance` that no `By: user` entry of the log dropped), and for each part the contracts it creates or changes (its tasks' `Interface` lines).
 
 ## 3. Check scenarios, tests and seams
 
 Read code to confirm or refute each item; do not review files line by line again.
 
-In a fix round, check only the scenarios whose path from the entry point runs through a changed file, and the contracts a changed file defines or uses, each followed to all its users, inside the scope or not. Every other scenario was reviewed in an earlier round and its code did not change; skip it, and skip item 4 for files outside the scope.
+In a fix round, check only the scenarios whose path from the entry point runs through a changed file, and the contracts a changed file defines or uses, each followed to all its users, inside the scope or not. Every other scenario was reviewed in an earlier round and its code did not change; skip it, and skip item 5 for files outside the scope.
 
 Following a contract takes you into files outside the scope. Do not search them for problems, but a problem you see there on the way is still a problem of the Change: append it in step 4 like any other, unless a finding of this round or an earlier one already names it. A defect you saw and did not log never gets a level or a decision, so the stage can end `done` over it, or someone further on acts on a suspicion nobody judged. Start its evidence with `Outside the fix scope:`, so the judge and the user see why a round that reviewed a fix holds it.
 
 1. **Scenario to product.** For each scenario, follow it as a user runs it: from the entry point (a command, a route, a page, a configuration key) through the code to the result. Take the scenario's own inputs and compute what the code returns or prints, value by value. A scenario whose result differs, or that no entry point reaches, is a finding.
 2. **Scenario to test.** Each scenario has a test that would fail without it, at a level that proves it: a unit test with hand-built input does not prove what a command prints from a file. Name the scenario without such a test.
 3. **Seams.** For each contract a part changes (an exported function or type, a field and its unit, empty and null values, sort order, an error or exit code, a configuration key, a file format, a command) find every user in the other parts and in the existing code, and check that both sides agree. Test data that one side builds by hand while the other side produces it is where a disagreement hides.
-4. **Outside the plan.** Behaviour no scenario or intent names; changed files no part lists (the `unplanned` group, when it holds code); a part whose files the range does not touch.
+4. **Acceptance criteria.** Follow each AC of the list as a user checks it, from its entry point through the code, as a scenario. An AC the product does not meet, and one the code narrows or changes with no `By: user` entry of the log naming it, is a finding; its evidence names the AC id and quotes it. In a fix round, only the AC whose path runs through a changed file.
+5. **Outside the plan.** Behaviour no scenario or intent names; changed files no part lists (the `unplanned` group, when it holds code); a part whose files the range does not touch.
 
 Done when every scenario and every changed contract has a verdict.
 
