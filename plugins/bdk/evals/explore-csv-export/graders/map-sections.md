@@ -1,6 +1,6 @@
 ---
 type: regex
-target: { source: file, path: .bdk/runs/add-csv-export/design/explore.md }
+target: { source: file, path: .bdk/runs/add-csv-export/explore/design.md }
 flags: m
 pattern: '^## Touches[\s\S]*^## Patterns[\s\S]*^## Tests[\s\S]*^## Gaps[\s\S]*^## Unsure'
 ---

@@ -45,7 +45,8 @@ flowchart TB
 | Block | Role | Runs on (default model) | Writes | Reads |
 |---|---|---|---|---|
 | `/bdk:explore-project` | author (project map) | `bdk:explorer` (sonnet) | `.bdk/runs/setup/project-map.md` | rules and hooks, manifests, scripts, test and CI configs |
-| `/bdk:explore` | author (map) | `bdk:explorer` (sonnet) | `R/design/explore.md` | proposal, code |
+| `/bdk:recon` | author (facts on AC) | `bdk:explorer` (sonnet) | `R/explore/propose-recon.md` | proposal, source, code |
+| `/bdk:explore` | author (map) | `bdk:explorer` (sonnet) | `R/explore/design.md` | proposal, recon, code |
 | `/bdk:design-draft` | author | `bdk:designer` (session's model) | `C/specs/**/spec.md`, `C/design.md` | proposal, explore map, last `verify-N.md` |
 | `/bdk:verify-design` | verifier | `bdk:verifier` (opus) | `R/design/verify-N.md` | proposal, specs, design, explore map, code |
 | `/bdk:plan-draft` | author | `bdk:planner` (session's model) | `C/plan/parts/NN.md` | proposal, specs, design, code, last `verify-N.md` |

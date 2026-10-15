@@ -32,7 +32,7 @@ Done when you know the Change and your report path.
 
 ## 2. Read
 
-Read every part, the proposal, every spec delta and the design. List every scenario of the spec deltas as `<capability>` / `Requirement: <name>` / `Scenario: <name>`. Run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" plan check openspec/changes/<change>/plan/parts` as a Bash command of its own and keep its output: waves and problems.
+Read every part, the proposal, every spec delta and the design, `scope-log.md`, and `.bdk/runs/<change>/source/issue.md` when present. List every AC of `## Acceptance` that no `By: user` entry of the log dropped. List every scenario of the spec deltas as `<capability>` / `Requirement: <name>` / `Scenario: <name>`. Run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" plan check openspec/changes/<change>/plan/parts` as a Bash command of its own and keep its output: waves and problems.
 
 For each part, run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" rules for --stage plan --files <file> --files <file> ...` with the part's `files`, one `--files` per path, as a Bash command of its own, and keep the rules it prints for that part. A rule another part's files select does not hold for this part.
 
@@ -52,7 +52,8 @@ Put into **Must address** what makes an implementer build the wrong thing, fail 
 8. A fact a part needs that only another part states: a signature from an earlier part, a source, a command. The implementer reads only its own part, the specs and the design.
 9. A `Verified by:` line that names commands by exclusion ("every test except ..."), or a command that spends money, needs credentials or reaches a shared or external system.
 10. An interface the plan changes whose callers behave differently and no task covers them. Find the callers with Grep.
-11. A part that breaks a rule selected for its files in step 2. The item names the rule's id and the part; evidence: the rule's sentence and the part's task or `files` that break it.
+11. An AC of the list in step 2 that no part carries, through a scenario under `## Acceptance scenarios` that answers it or a task that names its id; or an AC a part narrows or changes with no `By: user` entry naming it (an entry `By: setting ...` or `By: needs-user` does not count). Evidence: the AC quoted and the parts searched.
+12. A part that breaks a rule selected for its files in step 2. The item names the rule's id and the part; evidence: the rule's sentence and the part's task or `files` that break it.
 
 Put into **Should consider** the rest: a cut with fewer waves (more than three waves needs a reason), code written into a task, an unclear sentence, a part close to a limit.
 

@@ -1,6 +1,6 @@
 ---
 name: run
-description: 'Autopilot over a queue of OpenSpec Changes - builds the queue from an intent, an issue or a list of issues (ordered by "blocked by"), writes .bdk/runs/run.json, gives each Change its own branch from the base branch, and runs propose, design, plan, execute, auto-review and close in order until every Change has a pull request. A Change whose blocker in the queue is not merged waits. Resumes from files. Use when asked to carry a feature, an issue or several issues end to end, to "run" or "continue the run", or to work through a list of issues to pull requests.'
+description: 'Autopilot over a queue of OpenSpec Changes - builds the queue from an intent, an issue or a list of issues (ordered by "blocked by"), writes .bdk/runs/run.json, gives each Change its own branch from the base branch, and runs propose, design, plan, execute, auto-review and close in order until every Change has a pull request. A Change whose blocker in the queue is not merged waits; a Change with a scope question only the user may answer is marked needs-user and the queue goes on. Resumes from files. Use when asked to carry a feature, an issue or several issues end to end, to "run" or "continue the run", or to work through a list of issues to pull requests.'
 argument-hint: '["<intent>" | #<issue> [#<issue> ...]]'
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(git *) Bash(gh *) Bash(openspec *) Read Write Edit Glob Grep Skill Agent SendMessage ToolSearch AskUserQuestion
 ---
@@ -77,7 +77,7 @@ Done when `bdk run status` exits 0 on the new `run.json`.
 
 ## 4. Take the next Change
 
-Go through the queue in order and take the first Change that is neither done nor waiting in this run:
+Go through the queue in order and take the first Change that is neither done, nor waiting in this run, nor marked `needs-user` in this run:
 
 - Its branch exists (`git rev-parse --verify --quiet refs/heads/<change>` prints a commit): it has started. Go to step 6, switch only.
 - No branch: it has not started. Go to step 5.
@@ -106,7 +106,9 @@ Done when the Change waits or may start.
 
 Tell the user in one line, e.g. `Change 2 of 3: 1-skip-void-in-balance on its branch from origin/main`.
 
-Done when `<change>` is checked out and `current`.
+5. **Needs the user.** Grep `openspec/changes/<change>/scope-log.md` for `By: needs-user` and `Answers: SL-` lines. An entry is open when it says `By: needs-user` and no later entry says `Answers: SL-<its number>`. With an open entry, set `"needs-user": "SL-<n>"` (the first open one) on the Change's queue entry in `run.json` with Edit, tell the user in one line (`run: 2-void-entries needs the user - SL-1 (AC-3): <its question>`), call no stage for it, and go back to step 4 for the next Change. Before you leave it, when `git status --porcelain -- openspec/changes/<change>/` lists files (propose leaves them uncommitted), commit them as step 7.4 does, so the next Change switches from a clean tree. Without one, and the entry carries `needs-user`, remove the key with Edit and go on.
+
+Done when `<change>` is checked out and `current`, and it has no open scope-log entry, or it is marked `needs-user`.
 
 ## 7. Run its stages
 
@@ -114,14 +116,15 @@ Done when `<change>` is checked out and `current`.
 2. Take its `stage`. When the stage is `plan`, `execute`, `auto-review` or `close`, and `.bdk/runs/<change>/design/gate.md` is missing or does not say `Gate: approved`, while `openspec/changes/<change>/plan/parts/` holds no part: the stage is `design` (its gate is open).
 3. `done`: tell the user the `PR:` line of `close/pr.md` and go back to step 4.
 4. Stage `execute`: the execute lead builds only on a clean tree, and propose, design and plan leave the Change's files uncommitted. When `git status --porcelain -- openspec/changes/<change>/` lists files, call the Skill tool with `bdk:commit` and the arguments `only openspec/changes/<change>/: the proposal, specs, design and plan of Change <change>` first.
-5. Tell the user in one line which stage runs and why (`run: bdk:plan 1-skip-void-in-balance - design verify-2.md PASS, gate approved`), and call the stage's skill from the table. Follow it to its end.
-6. Run the status again. When the Change's stage moved past the one you called (or the design gate is now approved), go back to 2. When it is the same stage, go to step 8.
+5. Before every stage call, check the scope log as step 6.5 says (propose may just have written an open entry): with an open entry, mark the Change `needs-user` and go back to step 4.
+6. Tell the user in one line which stage runs and why (`run: bdk:plan 1-skip-void-in-balance - design verify-2.md PASS, gate approved`), and call the stage's skill from the table. Follow it to its end.
+7. Run the status again. When the Change's stage moved past the one you called (or the design gate is now approved), go back to 2. When it is the same stage, check the scope log as step 6.5 says: with an open entry, mark the Change `needs-user` there and go back to step 4; otherwise go to step 8.
 
 Done when the Change is done (step 4 next), or a stage stopped (step 8 next).
 
 ## 8. Stop on a stage that did not reach its end
 
-A stage that ends without moving the Change on is waiting for something only the user can give: a gate or a question, a blocked part, a spent budget, a failing spec-conformance report, a failed push. Stop the run here; do not start another Change. Reply with:
+A stage that ends without moving the Change on, with no open scope-log entry (step 6.5 handles that one), is waiting for something only the user can give: a gate or a question, a blocked part, a spent budget, a failing spec-conformance report, a failed push. Stop the run here; do not start another Change. Reply with:
 
 - the Change, its branch and the stage;
 - the stage's own reason, in its words (its report, its blockers, its command);
@@ -132,9 +135,9 @@ End your turn there.
 
 ## 9. Final report
 
-Every Change is done or waits. Reply with:
+Every Change is done, waits or needs the user. Reply with:
 
-1. One line per Change in queue order: the `PR:` and `Base:` lines of its `close/pr.md`; or `waiting` with each blocker that is not merged and its pull request.
+1. One line per Change in queue order: the `PR:` and `Base:` lines of its `close/pr.md`; `waiting` with each blocker that is not merged and its pull request; or `needs-user` with each open scope-log entry (its id, its AC and its question) and that `/bdk:design <change>` in a session that can ask answers it, after which `/bdk:run` continues it.
 2. Every decision taken without the user, per Change, from `.bdk/runs/<change>/close/pr.md` (the same on every branch): the decisions part of its pull request body, where `/bdk:close` gathers the proposal's, the design's and the review's, so read no other file for them and list each once. Write `none` when a Change has none.
 3. Blockers outside the queue that are still open, from step 3.
 4. When a Change waits: that `/bdk:run` continues it after its blockers are merged.

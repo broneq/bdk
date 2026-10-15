@@ -10,7 +10,9 @@ The example adds a CSV export to a web app.
 /bdk:propose "users can export the order list as CSV"
 ```
 
-You can also start from a GitHub issue: `/bdk:propose #42` or its URL. BDK opens the Change and writes `proposal.md`: why, what changes, which capabilities of `openspec/specs/` it touches, and what is out of scope. When two readings of the intent would change the scope, it asks you first.
+You can also start from a GitHub issue: `/bdk:propose #42` or its URL. BDK opens the Change, saves the issue (with its comments) or your words unchanged in `.bdk/runs/<change>/source/issue.md`, and writes `proposal.md`: why, the intent quoted from the source, every acceptance point as a numbered criterion (`AC-1`, `AC-2`, ...), what changes, which capabilities of `openspec/specs/` it touches, and what is out of scope. A criterion with a condition on the code ("if the seed helper can ...") is checked in the code first, by `/bdk:recon` on `bdk:explorer`. Then it asks you every scope question in one round: two readings that change the scope, a condition that does not hold, and every criterion it would drop or narrow. Each answer goes into `openspec/changes/<change>/scope-log.md`.
+
+The criteria are what every later check holds the work to, so only you change one: no setting does. Under `policy.questions: decide-and-record` such a question waits for you as an entry `By: needs-user`; `/bdk:design <change>` asks it first.
 
 Read `proposal.md`. If it is wrong, say what to change, or edit it yourself.
 
@@ -22,7 +24,7 @@ Read `proposal.md`. If it is wrong, say what to change, or edit it yourself.
 
 Three blocks run in turn: `/bdk:explore` maps the code the Change touches, `/bdk:design-draft` writes the spec deltas and `design.md` (it asks you about decisions the code and the proposal do not settle), and `/bdk:verify-design` checks them against the proposal and the code on the `bdk:verifier` agent. A failing check sends the draft back, at most `policy.budgets.verifier` times (3).
 
-Then the **design gate**: BDK asks you to approve the design, naming the files to read. Approve, or ask for changes and the draft runs again with your request. With `policy.gates.design: auto` the gate approves by itself. This is the one gate before the build: the plan has no gate of its own, its verifier checks it.
+Then the **design gate**: BDK asks you to approve the design, naming the files to read. Approve, or ask for changes and the draft runs again with your request. With `policy.gates.design: auto` the gate approves by itself, unless the scope changed. When a criterion or the intent changed since propose, BDK first opens the **intent page** `.bdk/runs/<change>/design/intent.html` in your browser: the intent with every changed word struck, a card per change with why and the options weighed, every criterion before and after, and the flow before and after. It asks you to approve, under `manual` and `auto` alike. This is the one gate before the build: the plan has no gate of its own, its verifier checks it.
 
 ## Plan
 
@@ -87,7 +89,7 @@ You review and merge the pull request.
 /bdk:run #42 #43 #44
 ```
 
-`/bdk:run` builds a queue of Changes (from an intent, or from issues, in the order their "blocked by" links allow) and runs the same stages for each, on its own branch, committing the Change files before the build. It stops whenever a stage needs you: a gate, a question, a blocked part, a spent budget. Run `/bdk:run` with no arguments to continue where it stopped. The final report lists the pull requests and every decision taken without you.
+`/bdk:run` builds a queue of Changes (from an intent, or from issues, in the order their "blocked by" links allow) and runs the same stages for each, on its own branch, committing the Change files before the build. It stops whenever a stage needs you: a gate, a question, a blocked part, a spent budget. A Change with a question about its acceptance criteria that only you may answer does not stop the queue: it is marked `needs-user`, its files are committed, and the run goes on with the next Change; answer it with `/bdk:design <change>`. Run `/bdk:run` with no arguments to continue where it stopped. The final report lists the pull requests, every decision taken without you and every Change that needs you.
 
 How far it goes without you depends on [gates and budgets](/concepts/gates-and-budgets). With the defaults it stops at every design gate and every triage.
 

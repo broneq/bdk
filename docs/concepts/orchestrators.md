@@ -28,15 +28,18 @@ Setup runs on `opus` (its `model` frontmatter), whatever the session model; the 
 
 ```mermaid
 flowchart TB
-  P1{{"configured?"}} --> P2["input: gh issue view, or the intent text"]
+  P1{{"configured?"}} --> P2["input: gh issue view with comments,<br/>or the intent text"]
   P2 --> P3["openspec list --specs<br/>read the touched main specs"]
-  P3 --> P4(["open questions<br/>policy.questions"])
-  P4 --> P5["name by the naming rule of openspec/config.yaml<br/>openspec new change &lt;name&gt; --schema bdk"]
-  P5 --> P6["openspec instructions proposal<br/>write C/proposal.md"]
-  P6 --> P7["openspec status, report<br/>next: /bdk:design"]
+  P3 --> P5["name by the naming rule of openspec/config.yaml<br/>openspec new change &lt;name&gt; --schema bdk"]
+  P5 --> P5S["write R/source/issue.md<br/>word for word"]
+  P5S --> P6["openspec instructions proposal<br/>write C/proposal.md:<br/>Intent, Acceptance AC-n<br/>open C/scope-log.md"]
+  P6 --> PR["a conditional or unclear AC:<br/>/bdk:recon<br/>Agent bdk:explorer, sonnet<br/>R/explore/propose-recon.md,<br/>R/explore/index.md"]
+  PR --> P4(["one round of scope questions<br/>policy.questions"])
+  P4 -->|"answers, or open<br/>By: needs-user"| P4L["append C/scope-log.md SL-n,<br/>apply answers to proposal.md"]
+  P4L --> P7["openspec status,<br/>every source point an AC,<br/>report; next: /bdk:design"]
 ```
 
-It never commits, branches or writes to GitHub. A Change of no behaviour sets `skip_specs: true` in `.openspec.yaml`.
+It never commits, branches or writes to GitHub. A Change of no behaviour sets `skip_specs: true` in `.openspec.yaml`; it still has Intent and Acceptance. An answer that changes an AC keeps its id, strikes the old text and names the entry (`(SL-1)`). Under `decide-and-record` a question that touches no AC takes its default; one that touches an AC stays open as `By: needs-user` and changes nothing in the proposal.
 
 ## `/bdk:design`
 
@@ -44,16 +47,16 @@ Three blocks and a gate. The verifier is one agent continued with `SendMessage` 
 
 ```mermaid
 flowchart TB
-  EX["/bdk:explore<br/>Agent bdk:explorer, sonnet"] -->|"R/design/explore.md"| DR
-  DR["/bdk:design-draft<br/>bdk:designer"] -.->|"open decisions"| Q(["questions to the user<br/>policy.questions"])
+  EX["/bdk:explore<br/>Agent bdk:explorer, sonnet"] -->|"R/explore/design.md,<br/>then R/explore/index.md"| DR
+  DR["/bdk:design-draft<br/>bdk:designer"] -.->|"open decisions,<br/>Needs user: SL-n"| Q(["questions to the user<br/>policy.questions"])
   DR -->|"C/specs, C/design.md"| VER
   VER["/bdk:verify-design<br/>Agent bdk:verifier, opus"] -->|"R/design/verify-N.md"| V{{"verdict"}}
   V -->|"FAIL,<br/>budget left"| FIX["/bdk:design-draft<br/>fixes Must address"]
   FIX -->|"SendMessage to<br/>the same verifier"| VER
   V -->|"FAIL,<br/>budget spent"| STOPB["stop,<br/>no gate"]
-  V -->|"PASS"| GATE(["design gate<br/>policy.gates.design"])
+  V -->|"PASS"| GATE(["design gate<br/>policy.gates.design;<br/>scope changed:<br/>intent page, asked"])
   GATE -->|"request<br/>changes"| REV["/bdk:design-draft<br/>with the request"] --> VER
-  GATE -->|"auto, or<br/>approve"| GF["R/design/gate.md<br/>Gate: approved"]
+  GATE -->|"auto, or<br/>approve"| GF["R/design/gate.md<br/>Gate: approved<br/>Scope log: SL-n"]
 ```
 
 Every block runs in the foreground: `/bdk:design` waits for each one before the next step.
@@ -62,16 +65,20 @@ Questions come in rounds, at most three. The designer writes the round's Lavish 
 
 Every question on the page is a card you can decide from without opening the proposal or the code: **Context** says what the proposal says and what the code does today, with `file:line`; **Options with consequences** gives each option's cost, risk, what it leaves uncovered and what it breaks; **Recommendation** names the option the designer would take and why. The designer checks each card before the page opens, also a page it opens again on resume, and fixes a card that lacks one of them. The page is in the language you write in: `/bdk:design` tells the designer; its look follows Lavish's own design guidance.
 
+The designer reads the proposal's `## Acceptance`, the source `R/source/issue.md`, `C/scope-log.md` and `R/explore/index.md`, and answers every AC in the spec deltas and `design.md`. An answer of yours that changes an AC is a new scope-log entry (`Stage: design`, `By: user`), and the AC in `proposal.md` is struck and rewritten naming it. Under `decide-and-record` the designer never changes an AC: it appends an open entry `By: needs-user` and ends with `Needs user: SL-n`, and `/bdk:design` stops there; the next `/bdk:design <change>` in a session that can ask puts that entry first.
+
+When the log holds a change after propose that no earlier gate approved, the gate shows it on the intent page `R/design/intent.html`, under `manual` and `auto` alike: the intent with every changed word struck, one card per change with why and the options, a table of every AC before and after, and the flow before and after. The designer writes it in intent page mode; its `bdk-scope-log` meta names the last entry it shows, so a stale page is written again.
+
 An answer that adds or drops a capability changes `proposal.md` too: the designer owns that edit and records it in `design.md` as `Scope changed by the user:`. An answer against the issue's acceptance signal or a project rule (`CLAUDE.md`, `.claude/rules/`, the rules of `openspec/config.yaml`) is asked once more, quoting the rule; when you keep it, `design.md` records a `Deviation:` line, which the gate and the report name so you update the issue. BDK does not edit the issue.
 
-The manual gate ends on exactly one question: approve, or say what to change.
+The manual gate, and any gate with a scope change to show, ends on exactly one question: approve, or say what to change. `gate.md` records `Scope log: SL-n`, the last entry approved with the design.
 
 The verifier budget is `policy.budgets.verifier` (default 3) passes per run. On a new start, `/bdk:design` skips every step whose file exists:
 
 | Files found | Starts at |
 |---|---|
 | `gate.md` approved for the last report | nothing: reports the approved design |
-| no `explore.md`, no `design.md` | explore |
+| no `explore/design.md`, no `design.md` | explore |
 | no `design.md` | `/bdk:design-draft` |
 | no `verify-N.md` | `/bdk:verify-design` |
 | last `verify-N.md` is `FAIL` | `/bdk:design-draft` fix, then `/bdk:verify-design` |
@@ -289,9 +296,11 @@ flowchart TB
   C3 --> C4["Skill /bdk:commit:<br/>only openspec/"]
   C4 --> C5["git push -u origin &lt;branch&gt;<br/>never forced"]
   C5 -->|"fails"| CP["stop: archived and<br/>committed locally"]
-  C5 --> C6["gh pr view, or<br/>gh pr create, body from<br/>R/close/pr-body.md"]
+  C5 --> C6["gh pr view, or<br/>gh pr create, body from<br/>R/close/pr-body.md,<br/>Scope changes"]
   C6 --> C7["write R/close/pr.md last<br/>(bdk run status<br/>reads it as done)"]
 ```
+
+The body's `Scope changes` part copies every entry of the archived Change's `scope-log.md` in order (id, stage, AC, before, after, why, `By:`), so the reviewer checks the scope against your decisions; `none` without an entry.
 
 ## `/bdk:pr-review` and the `/bdk:pr-review-round` lead
 

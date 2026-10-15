@@ -90,6 +90,7 @@ Otherwise gather the body from files (Read and Grep, not from memory):
 - E2E: the first line of the latest E2E verdict, the file modified last of `.bdk/runs/<change>/e2e/verdict.md` and `.bdk/runs/<change>/review/round-*/e2e/verdict.md` (Glob lists the newest first), or `no E2E results`. When that line is `Verdict: FAIL`, add the `E2E:` line of `## Checked` of `close/spec-conformance.md` as written: it names each failed path the review cleared (its judge levelled the finding `not-a-problem`) and why, which is why the check passed.
 - Review: the number of `.bdk/runs/<change>/review/round-N/` directories, or `no review round ran`.
 - Decisions taken without the user, in up to three groups, each only when it has a line: `Proposal:` the bullets under `## Decided without the user` of `proposal.md`; `Design:` every line of `design.md` that starts with `Decided without the user:`; `Review:` every bullet under `## Decisions taken without the user` of `.bdk/runs/<change>/review/result.md`, in its order, auto triage lines included. Copy the lines as they are written, never pick among them: the stage that wrote them decided what belongs there. A `- None.` bullet or a missing file adds nothing. With no line in any group, `none`.
+- Scope changes: every `## SL-<n>` entry of the archived Change's `scope-log.md`, in its order, copied as written (id, stage, AC, before, after, why, `By:` line). Copy, never pick: the user's decisions are what the reviewer checks the scope against. With no entry or no log, `none`.
 - Deferred: every bullet under `## Deferred` of `.bdk/runs/<change>/review/result.md`, in its order, as written (place, summary, level, and the issue when it has one), `nice-to-have` findings without an issue included: they are the review's open ends, and the pull request is where the reviewer weighs them. Copy, never pick or count. With only `- None.` or no file, leave this part out.
 
 Write the body to `.bdk/runs/<change>/close/pr-body.md`. The title says what the Change does, in the style of the project's commit subjects (`git log --format=%s -10`). Run:
@@ -118,6 +119,7 @@ Reply in a few lines:
 - the archive path and each commit this close made (hash and subject, from `git log --oneline <base>..HEAD` or the commit reports);
 - the spec-conformance verdict;
 - every decision taken without the user, as in the body, with its group;
+- every scope change, as in the body;
 - the deferred findings, as in the body, when it has a `Deferred` part.
 
 End your turn there. The pull request waits for the user's review; you do not merge it.

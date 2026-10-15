@@ -34,7 +34,7 @@ Done when you know the Change, the base, the round if any, and whether an earlie
 
 ## 2. Read
 
-1. `proposal.md` of the Change: the intent, used to say which side of a disagreement it supports.
+1. `proposal.md` of the Change: the intent, used to say which side of a disagreement it supports, and its `## Acceptance`; `scope-log.md` of the Change; `.bdk/runs/<change>/source/issue.md` when present. Every AC that no `By: user` entry of the log dropped is a promise the product keeps, as a scenario is.
 2. Every `openspec/changes/<change>/specs/**/spec.md`. Note each requirement under `## ADDED`, `## MODIFIED`, `## REMOVED` and `## RENAMED Requirements`, and each `#### Scenario:` with its file, heading line, WHEN and THEN.
 3. For each capability a delta modifies, removes or renames, its main spec `openspec/specs/<capability>/spec.md`: archive applies the delta to it, and the result is what must be right.
 4. The code: `git diff --stat <base>...HEAD`, then the changed files and every file a scenario runs through from its entry point (a command's dispatch, a route, a page, a configuration loader).
@@ -54,7 +54,7 @@ For each scenario of an added or modified requirement, take its own WHEN, follow
 
 Then read each requirement's own text. A SHALL sentence promises every input it names, and a scenario shows only one example: when a requirement says "a path absolute or relative to the current directory" and its scenario uses `books/2026.json`, compute the absolute case too (an absolute `$HOME/ledger.json` wrongly joined to the current directory gives `<cwd>/<home>/ledger.json`). Do the same for each class the sentence names: absolute and relative, empty and missing, one and many, "any" or "every" command.
 
-These seven problems make the main specs wrong after archive, or stop archive. Each one is a `Must address` item:
+These eight problems make the main specs wrong after archive, stop archive, or ship less than the source asked for. Each one is a `Must address` item:
 
 1. **Contradicted scenario or requirement.** The code does not produce the THEN for the WHEN, no entry point reaches the scenario, or the code breaks a SHALL sentence for an input it names.
 2. **E2E failure** (not in a round check). An E2E path file starts with `Result: fail`: the product breaks a promise of the proposal that the deltas are about to document. The item names the proposal line of its `Proposal:` line instead of a spec location. One exception, because close fails only on what changed after the last review round: a failed path of a round verdict is **cleared by the review** when that round's log holds at least one `e2e-check` finding whose evidence names the path file (`<process>--<path>.md`) and every such finding has the level `not-a-problem` - the judge traced the path through the code and the observation does not hold. A cleared path is no item; list it under `Checked` (step 4). Any other failed path stays an item: no finding names it, one is unleveled or at another level (a `blocker` deferred or accepted too: it holds, so shipping it would break the promise), or the verdict is not a round's (`.bdk/runs/<change>/e2e/`, which no judge levels). Match by the path file, not by the proposal line: several paths share one line.
@@ -63,6 +63,7 @@ These seven problems make the main specs wrong after archive, or stop archive. E
 5. **Undocumented behaviour.** The diff adds or changes something a user can observe - a command, an option, an output such as an error message, an exit code, an endpoint, a page, a configuration key - that no delta and no main-spec requirement describes. Internal code (a refactor, a helper, a test) never needs a delta.
 6. **Contradiction after merge.** A delta, merged into its main spec, contradicts another requirement there.
 7. **Delta OpenSpec refuses.** `openspec validate <change> --strict` reported an error: archive cannot merge the deltas, even when the product does what they say. One item per error line, naming the delta file and the requirement the error names; its `Evidence:` is the command and the error line. In a round check this is as much a `Must address` item as at close.
+8. **Acceptance criterion not kept.** An AC of step 2 that the product does not meet, traced from its entry point through the code with its own example as a scenario is; an AC the product or the deltas narrow or change with no `By: user` entry of `scope-log.md` naming it (an entry `By: setting ...` or `By: needs-user` does not count); an AC whose only coverage is a deferred finding of a review round (`## Deferred` of `.bdk/runs/<change>/review/result.md`, or a finding decided `defer`) with no `By: user` entry for it: deferred without the user is not coverage. The item names the AC id instead of a spec location and quotes it; its `Evidence:` is the code line, or the deferred finding.
 
 Everything else you notice goes to `Should consider`: wording a test cannot check, a scenario no user can observe, a class or function name inside a requirement. Not a problem: code quality, test coverage, style; reviews own those.
 
@@ -90,7 +91,7 @@ Verdict: FAIL
 - `openspec validate add-total --strict`: valid.
 ```
 
-- Each `Must address` item names the spec location (file, requirement, scenario), what the spec says, what the product does, and, when the proposal settles it, which side disagrees with the intent. Its `Evidence:` line is a file and line with what the code does there, the E2E path file, or the `openspec validate` command with its error line.
+- Each `Must address` item names the spec location (file, requirement, scenario) or the AC id, what the spec says, what the product does, and, when the proposal settles it, which side disagrees with the intent. Its `Evidence:` line is a file and line with what the code does there, the E2E path file, or the `openspec validate` command with its error line.
 - `Checked` lists each scenario that holds, with where it holds, and states the E2E input: the verdict read with the path of its file under `.bdk/runs/<change>/`, or `no E2E results` when no E2E verdict exists (a `SKIPPED` or `BLOCKED` verdict is stated the same way); in a round check, `E2E: not read (round check)`. Each failed path cleared by the review goes on that `E2E:` line, with the path file, the finding id and the judge's `levelReason`, e.g. `E2E: Verdict: FAIL (review/round-1/e2e/verdict.md); cleared by the review: see-total--empty-ledger.md (f-4d2e8a1c7b90, not-a-problem: load() returns [] without a ledger)`; `/bdk:close` copies that line into the pull request. It also states the validation: `openspec validate <change> --strict: valid` when it reported no error.
 - `Verdict: FAIL` if and only if `Must address` holds an item. An empty section holds `- None.`
 - IDs: at close, when step 1 found an earlier report, keep the ID of every problem still open, give a new problem the next unused number, and put `Closed: <IDs>` (or `Closed: none`) on the line under the verdict. Then replace the file: there is one report per Change, read by `bdk run status`. A first report has no `Closed:` line.
@@ -114,6 +115,7 @@ Skip this step at close. In a round check, the round's judge, triage and fix pla
 - A contradiction after merge with the main spec: the delta.
 - A delta OpenSpec refuses: the delta file the error names, at the heading of the requirement it names (else its first `## ... Requirements` heading); the fix is a delta edit, such as a scenario under that requirement, checked against the code like any other.
 - The proposal settles neither side: the delta, and say so in the evidence; the fix planner leaves it to the user.
+- An AC not kept: the code line where the AC is not met; for an AC changed or deferred without the user, the line of the AC in `proposal.md`, and say in the evidence that only the user can change it (a `scope-log.md` entry `By: user`).
 
 Then run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" findings list <round dir>/findings.jsonl` and check that each item has its finding with the source `spec-conformance`.
 

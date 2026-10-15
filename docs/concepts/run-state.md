@@ -21,6 +21,7 @@ BDK keeps no memory between commands: everything a later step needs is a file. T
 openspec/changes/<change>/            C - committed with the Change
   .openspec.yaml                      propose (skip_specs for no-behaviour Changes)
   proposal.md                         propose / /bdk:diagnose-bug
+  scope-log.md                        propose, /bdk:design-draft (append only)
   specs/<capability>/spec.md          /bdk:design-draft / /bdk:diagnose-bug
   design.md                           /bdk:design-draft / /bdk:diagnose-bug
   plan/parts/NN.md                    /bdk:plan-draft / /bdk:diagnose-bug (01 only)
@@ -31,7 +32,11 @@ openspec/specs/<capability>/spec.md   main specs: openspec archive merges the de
   run.json                            /bdk:run (only writer)
   <change>/                           R
     state.json                        execute lead (only writer)
-    design/explore.md                 explore
+    source/issue.md                   propose (the source, word for word)
+    explore/index.md                  propose, /bdk:design
+    explore/propose-recon.md          /bdk:recon (in propose)
+    explore/design.md                 explore
+    design/intent.html                /bdk:design-draft (intent page mode)
     design/verify-N.md                /bdk:verify-design
     design/gate.md                    /bdk:design
     plan/verify-N.md                  /bdk:verify-plan
@@ -69,9 +74,14 @@ openspec/specs/<capability>/spec.md   main specs: openspec archive merges the de
 | `run.json` | `/bdk:run` only | `/bdk:run` to continue the queue, `bdk run status`, `/bdk:execute`, `/bdk:auto-review` and `/bdk:close` to check the queued stage | the queue and its current Change | `/bdk:run` without arguments asks what to run; the stages skip their queue check |
 | `state.json` | the execute lead only | the lead on a restart, `bdk run status` | each part's status (`pending`, `done`, `blocked`) and attempts, and each started wave's base commit and wave check status | every part counts as pending again, so the next `/bdk:execute` builds the done parts again too |
 | `setup/project-map.md` | `/bdk:explore-project` | `/bdk:setup` | how the project builds, tests and runs: rules, hooks, wrappers, suite setup, side effects, CI | rewritten by the next `/bdk:setup` run |
-| `design/explore.md` | `/bdk:explore` | `/bdk:design-draft`, `/bdk:verify-design` | the code map the design is grounded in | not regenerated once `design.md` exists; the drafter reads the code itself |
+| `source/issue.md` | `/bdk:propose`, once | `/bdk:recon`, `/bdk:design-draft`, every verifier (`/bdk:verify-design`, `/bdk:verify-plan`, `/bdk:review-integration`, `/bdk:spec-conformance`) | the issue or intent word for word: the reference the `## Acceptance` of `proposal.md` is checked against | the verifiers check against `## Acceptance` and `scope-log.md` alone |
+| `scope-log.md` | `/bdk:propose`, `/bdk:design-draft` (append only) | the drafters, every verifier, the design gate, `/bdk:run`, `/bdk:close` (the `Scope changes` part of the PR body) | every change of scope with its stage, AC, before and after, why, options and who decided; an AC changes only through an entry `By: user`, and an open `By: needs-user` entry stops the Change for you | a changed AC has no record, so every verifier reports it as dropped |
+| `explore/propose-recon.md` | `bdk:explorer` (`/bdk:recon`, in propose) | propose's decision round, `/bdk:explore`, `/bdk:design-draft` | whether each conditional or unclear AC holds in the code, with `file:line`, no recommendation | the decision round has no facts; recon runs again with the next `/bdk:propose` |
+| `explore/design.md` | `/bdk:explore` | `/bdk:design-draft`, `/bdk:verify-design` | the code map the design is grounded in, with front matter (question, summary, stage, files) | not regenerated once `design.md` exists; the drafter reads the code itself |
+| `explore/index.md` | `/bdk:propose`, `/bdk:design` (rewritten whole) | the drafters | one line per explore file: its question and summary, so a reader opens only the one it needs | rebuilt by the next propose or design run |
+| `design/intent.html` | `bdk:designer` (`/bdk:design-draft` in intent page mode) | you, at the design gate | every change of the intent and the AC since propose on one page: struck intent, the AC before and after, a card per change, the flow before and after; its `bdk-scope-log` meta names the last log entry it shows | written again at the next gate |
 | `design/verify-N.md`, `plan/verify-N.md` | `bdk:verifier` (a new number per pass) | `bdk run status` (the last one's `Verdict:` line), the drafter (a `FAIL` puts it in fix mode), `/bdk:plan` (needs the last design report to pass) | the check's verdict with evidence; their count is the `policy.budgets.verifier` budget | the previous report becomes the last one |
-| `design/gate.md` | `/bdk:design` only, on approval | `/bdk:design` (nothing left to run), `/bdk:run` (the design is approved) | the record of who approved which verified design | the gate is asked again |
+| `design/gate.md` | `/bdk:design` only, on approval | `/bdk:design` (nothing left to run), `/bdk:run` (the design is approved) | the record of who approved which verified design, and with `Scope log: SL-n` the last scope change approved with it | the gate is asked again |
 | `execute/part-NN.md` | `bdk:implementer` | the lead, `/bdk:conform-part`, the implementer's retry | what was built, the checks, a blocker with its evidence | the conformer refuses the part; a retry starts without the hint |
 | `execute/conform-NN.md` | `bdk:conformer` | the lead (commits only on `PASS`), the implementer's retry | the gate before a part's commit | the part is conformed again |
 | `execute/wave-N.md` | `bdk:implementer` repairing a red wave check | the lead (commits the repair only on `Status: done`), `/bdk:execute` (a wave blocker) | what two parts broke together and how it was repaired | the lead runs the wave check again on the next `/bdk:execute` |
@@ -94,16 +104,18 @@ Once a Change's pull request is merged and no `/bdk:run` queue still holds it, n
 
 ```mermaid
 flowchart TB
-  P[("C/proposal.md")] --> EX["/bdk:explore"]
-  EX --> EM[("R/design/explore.md")]
-  P --> DD["/bdk:design-draft"]
-  EM --> DD
+  PR["/bdk:propose"] --> P[("C/proposal.md,<br/>C/scope-log.md,<br/>R/source/issue.md")]
+  PR -->|"/bdk:recon"| RE[("R/explore/<br/>propose-recon.md")]
+  RE --> EX["/bdk:explore"]
+  P --> EX
+  EX --> EM[("R/explore/design.md")]
+  EM --> DD["/bdk:design-draft"]
   DD --> SD[("C/specs, C/design.md")]
   SD --> VD["/bdk:verify-design"]
   VD --> VR[("R/design/verify-N.md")]
   VR -->|"FAIL: Must address"| DD
-  VR -->|"PASS"| DG["/bdk:design gate"]
-  DG --> GM[("R/design/gate.md")]
+  VR -->|"PASS"| DG["/bdk:design gate,<br/>R/design/intent.html<br/>when the scope changed"]
+  DG --> GM[("R/design/gate.md<br/>Scope log: SL-n")]
   SD --> PD["/bdk:plan-draft"]
   PD --> PP[("C/plan/parts/NN.md")]
   PP --> VP["/bdk:verify-plan"]
@@ -111,7 +123,7 @@ flowchart TB
   PV -->|"FAIL: Must address"| PD
 ```
 
-Cylinders are files, boxes are the blocks that write or read them. `bdk run status` reads the last `verify-N.md` of both loops; `/bdk:run` reads `gate.md`.
+Cylinders are files, boxes are the blocks that write or read them. `bdk run status` reads the last `verify-N.md` of both loops; `/bdk:run` reads `gate.md`. `source/issue.md` and `scope-log.md` are also read by `/bdk:verify-plan`, `/bdk:review-integration` and `/bdk:spec-conformance`, which check every AC against them. `design/intent.html` is written only when the log holds a change after propose.
 
 ## Execute
 
