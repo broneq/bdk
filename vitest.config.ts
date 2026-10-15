@@ -21,6 +21,10 @@ export default defineConfig({
     ),
     // CLI tests spawn Node processes.
     testTimeout: 30_000,
+    // Hooks build and delete git fixtures. On a loaded machine that work waits on filesystem
+    // stalls whatever the tree size (a 206-entry delete took 5 s), so hooks get the tests'
+    // budget instead of vitest's 10 s default (#417).
+    hookTimeout: 30_000,
     coverage: {
       enabled: true,
       provider: "v8",

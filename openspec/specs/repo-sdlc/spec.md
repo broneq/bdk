@@ -142,6 +142,17 @@ A plugin directory under `plugins/` SHALL NOT carry its own lint, format, test o
 - **WHEN** a pull request adds a `biome.json`, `eslint.config.*`, `vitest.config.*`, `pnpm-lock.yaml` or `.github/` under `plugins/<name>/`
 - **THEN** the `check` job fails at the test step and names the file
 
+### Requirement: Test hooks have the time budget of tests
+The root Vitest config SHALL give every hook (`beforeAll`, `beforeEach`, `afterAll`, `afterEach`, `onTestFinished`) the same timeout it gives a test, so a hook that builds or deletes git fixtures does not fail on the filesystem stalls of a loaded machine that a test of the same work survives. A hook that needs more time than a test SHALL pass its own limit.
+
+#### Scenario: Full runs under load pass
+- **WHEN** a full `pnpm test` runs three times in a row while two more full runs of the suite run at the same time with `--maxWorkers` raised
+- **THEN** every run passes with no hook timeout
+
+#### Scenario: Hook budget follows the test budget
+- **WHEN** a contributor reads `vitest.config.ts`
+- **THEN** `hookTimeout` equals `testTimeout`
+
 ### Requirement: Behaviour-changing Changes update the docs
 The SDLC in `CLAUDE.md` SHALL require that a Change which changes what a BDK user sees (a skill, agent, hook, `bdk` command, settings key, or the flow between them) updates the hand-written pages of the site (`docs/guide/`, `docs/concepts/`) and regenerates the Reference in the same pull request. The update SHALL cover the Mermaid diagrams of those pages as well as their prose and tables: a Change that adds, removes or reorders a step, an exit, a command, a settings key, a file or an agent of a flow SHALL update every diagram that draws that flow. The `tasks` rules in `openspec/config.yaml` SHALL require such a Change to hold a docs task of its own that names the pages it updates and the diagrams on them it redraws, or to state in its proposal's Impact why no page changes. The `apply` and `archive` guidance in `openspec/config.yaml` SHALL name the docs task, so that an unchecked docs task shows in `/opsx:verify` as an incomplete task and blocks the archive.
 
