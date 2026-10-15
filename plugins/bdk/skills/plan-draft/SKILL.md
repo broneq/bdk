@@ -46,15 +46,17 @@ Done when every scenario is listed and marked present or not, every symbol you w
 
 Execute builds the parts one at a time in the Change checkout, in plan order (waves in order, ascending id within a wave), each on the commits of the parts before it, and runs the whole wave check (the full suite, the type check) once after each wave. Wave depth decides how often that check runs.
 
-1. Find the contracts several parts need (a type, a function signature, a file format). When a later part cannot be tested without them, put them first, in a part as small as it can be.
-2. Split the rest by the files it touches and the behaviour it adds. Parts that use nothing of each other share a wave, even when they touch the same file: the later one builds on the earlier one's commit.
-3. Keep a task's tests in the part of the code they test.
-4. `depends-on` lists only the parts whose output this part uses. Every extra edge lengthens the run.
-5. Assign every scenario to exactly one part: the part whose code makes it true. A present scenario goes to the part that owns the test file or the code of its requirement, usually the part that adds the requirement's new scenarios. Write a part that holds only present scenarios only when no other part owns that code or test file.
+1. Find the contracts several parts need (a type, a function signature, a file format). When a later part cannot be tested without them, put them first, in a part as small as it can be. A function of one feature that another feature's part calls (a report that reuses another feature's computation) is such a contract: put its module, with its unit tests, in a wave-1 part, and leave the feature's command in its own part.
+2. Keep the parts that others depend on to what those others use. Work no other part uses (a command only the user calls, with its tests) goes into a part of a later wave, as long as that wave is no deeper than the longest chain already is.
+3. Split the rest by the files it touches and the behaviour it adds. Parts that use nothing of each other share a wave, even when they touch the same file: the later one builds on the earlier one's commit.
+4. Keep a task's tests in the part of the code they test.
+5. `depends-on` lists only the parts whose output this part uses. Every extra edge lengthens the run.
+6. Assign every scenario to exactly one part: the part whose code makes it true. A present scenario goes to the part that owns the test file or the code of its requirement, usually the part that adds the requirement's new scenarios. Write a part that holds only present scenarios only when no other part owns that code or test file.
+7. Walk the longest `depends-on` chain. For each edge on it, name what the later part uses of the earlier one; when that is only a function or a module (item 1), move it into a wave-1 part and drop the edge.
 
-Aim for the fewest waves the dependencies allow; a chain longer than three waves needs a reason in the reply. Respect the part limits `plan.part.*` in the configuration (default 5 tasks, 10 files, 8192 bytes): a unit of work over a limit becomes two parts that can share a wave.
+Aim for the fewest waves the dependencies allow; a chain longer than three waves needs a reason in the reply. Respect the part limits `plan.part.*` in the configuration (default 5 tasks, 10 files, 8192 bytes): a unit of work over a limit becomes two parts that can share a wave. Leave room in every part for the fixes of a verification round: no part above seven eighths of `plan.part.max-bytes` (7168 of the default 8192). When a part would pass that, move work out by items 1 and 2 or split it, before you trim facts the implementer needs.
 
-Done when each part has its files, dependencies and scenarios.
+Done when each part has its files, dependencies and scenarios, and no edge of the longest chain exists only for a function another part could hold.
 
 ## 4. Write the parts
 
@@ -91,11 +93,11 @@ Done when every scenario is named in one part, every task has its three lines, a
 
 Run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" plan check openspec/changes/<change>/plan/parts`. Exit 1 lists problems under `problems:`: fix each (split an oversized part, quote an id, remove an `isolation` key, break a dependency cycle, give a present scenario its own `Verified by:` line with the ending) and run it again. Exit 3 is an environment problem: pass it on and stop.
 
-Done when it exits 0. Keep its `waves:` lines for the reply.
+Done when it exits 0 and its `parts:` rows show no part above seven eighths of its byte limit (otherwise step 3, then check again). Keep its `waves:` lines for the reply.
 
 ## 6. Fix after a failed verification
 
-Read the last report. Fix every item under `## Must address` in the parts it names; apply a `## Should consider` item only when it changes no other part. Leave every other part as it is. Then run step 5.
+Read the last report. Fix every item under `## Must address` in the parts it names; apply a `## Should consider` item only when it changes no other part. Leave every other part as it is. Then run step 5; a fix may use the room of step 3, so here only the check's own limits apply.
 
 Done when every `Must address` item is fixed and the check exits 0.
 
