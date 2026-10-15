@@ -1,6 +1,6 @@
 ---
 name: execute-waves
-description: 'The execute stage of an OpenSpec Change, run by the bdk:lead agent that /bdk:execute starts (and /bdk:auto-review for the fix parts of a review round) - takes the waves of the plan parts from bdk plan check, builds the parts one at a time in plan order in the main checkout through implement-part and conform-part, retries and escalates within the budget, commits each part on the Change branch, stops at the first blocked part, runs the wave check after each wave and has repair-wave repair a red one, and writes state.json and execute/result.md. Not for users: /bdk:execute is the command.'
+description: 'The execute stage of an OpenSpec Change, run by the bdk:lead agent that /bdk:execute starts (and /bdk:auto-review for the fix parts of a review round) - takes the waves of the plan parts from bdk plan check, builds the parts one at a time in plan order in the main checkout through implement-part and conform-part, retries and escalates within the budget, commits each part on the Change branch, stops at the first blocked part, runs the wave check after each wave and has repair-wave repair a red one, and writes state.json and execute/result.md. Use when the bdk:lead agent is started with a prompt naming bdk:execute-waves and a Change. Not for users: /bdk:execute is the command.'
 argument-hint: "<change> --run-dir <absolute path> [--parts <absolute dir>]"
 user-invocable: false
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/bdk *) Bash(mkdir -p *) Bash(git *) Read Write Grep Glob Agent
@@ -31,7 +31,7 @@ Done when you are `bdk:lead`.
 - **State file and result file**: with `--parts`, `state.json` and `result.md` in the directory that holds the parts directory (`<run dir>/review/round-<N>/fixes/`), never in the parts directory, where `bdk plan check` takes every other `.md` for a misnamed part; else `<run dir>/state.json` and `<run dir>/execute/result.md`. Never write the other pair: the plan's state stays the plan's, and `bdk run status` reads it.
 - With `--parts`, a blocker this skill would send to `/bdk:plan <change>` names the part file in the parts directory instead: its author (`plan-fixes`) fixes it, through `/bdk:auto-review <change>`. A blocker that would name `/bdk:execute <change>` names `/bdk:auto-review <change>` instead: `/bdk:execute` builds plan parts only.
 - **Run directory**: `--run-dir <path>`, an absolute path. Without it, take `.bdk/runs/<change>` under the path `git rev-parse --show-toplevel` prints. Run `mkdir -p <run dir>/execute`. Pass this absolute path to every worker.
-- **Settings** from the configuration above, with their defaults: `policy.budgets.part-attempts` (3), `policy.escalation.model` (`opus`), and `policy.escalation.effort`, `models.implementer.model`, `models.implementer.effort`, `models.conformer.model` and `models.conformer.effort` when set.
+- **Settings** from the configuration above, with their defaults: `policy.budgets.part-attempts` (3), `policy.escalation.model` (the most capable model; the configuration above prints its value), and `policy.escalation.effort`, `models.implementer.model`, `models.implementer.effort`, `models.conformer.model` and `models.conformer.effort` when set.
 - **State**: the state file when it exists. Its schema:
 
   ```json
@@ -136,7 +136,7 @@ Status: blocked
 
 ## Parts
 - 01: done, 1 attempt; execute/conform-01.md PASS; committed on add-timer
-- 02: done, 2 attempts (the second on opus); execute/conform-02.md PASS; committed on add-timer
+- 02: done, 2 attempts (the second on the escalation model); execute/conform-02.md PASS; committed on add-timer
 - 03: blocked, 1 attempt; execute/part-03.md; its work left uncommitted in the main checkout
 - 04: pending, not started: part 03 is blocked
 

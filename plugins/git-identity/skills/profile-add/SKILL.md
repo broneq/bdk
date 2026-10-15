@@ -1,6 +1,6 @@
 ---
 name: profile-add
-description: Create a git-identity profile - a named pairing of a GitHub account and a git commit identity. Run once per account, then bind projects to it with /git-identity:use.
+description: Create a git-identity profile - a named pairing of a GitHub account and a git commit identity. Use when adding a GitHub account to work under, once per account; then bind projects to it with /git-identity:use.
 argument-hint: "<profile-name>"
 disable-model-invocation: true
 allowed-tools: Read Write Edit Bash AskUserQuestion
@@ -86,7 +86,7 @@ Write `<config>/git-identity/<name>.gitconfig`:
 
 ```gitconfig
 [include]
-	path = <absolute path to the user's ~/.gitconfig>
+	path = <absolute path of the user's global .gitconfig in their home directory>
 [user]
 	name = <name>
 	email = <email>

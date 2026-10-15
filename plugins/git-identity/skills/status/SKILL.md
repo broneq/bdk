@@ -1,6 +1,6 @@
 ---
 name: status
-description: Show which GitHub account and git identity this project is actually using right now, and whether that matches what it is bound to.
+description: Show which GitHub account and git identity this project is actually using right now, and whether that matches what it is bound to. Use when a commit or a gh call may have gone out under the wrong account.
 disable-model-invocation: true
 allowed-tools: Read Bash
 ---
