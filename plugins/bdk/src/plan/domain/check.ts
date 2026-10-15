@@ -1,9 +1,13 @@
-// The plan checks of `bdk plan check` (spec `bdk-cli/plan`, "Part limits", "Dependencies and
-// waves"; design D6): pure rules over the parts read from one directory. Waves are longest-path
+// The plan checks of `bdk plan check` (spec `bdk-cli/plan`, "Part limits", "Present scenarios",
+// "Dependencies and waves"; design D6): pure rules over the parts read from one directory. Waves are longest-path
 // layers of `depends-on`; the parts run one at a time in wave order, so a file several parts of
 // one wave list is no problem.
 
+import { PRESENT_MARKER } from "./part.ts";
 import type { Part } from "./part.ts";
+
+/** The ending of the `Verified by:` line of a present scenario (spec `bdk-plan-blocks`). */
+export const PRESENT_ENDING = "; it passes at its first run, the behaviour is present";
 
 /** Every check, in the order problems are listed. */
 export const CHECKS = [
@@ -14,6 +18,7 @@ export const CHECKS = [
   "max-tasks",
   "max-files",
   "max-bytes",
+  "present-scenario",
   "unknown-dependency",
   "cycle",
 ] as const;
@@ -61,6 +66,10 @@ export const PROBLEMS: Readonly<Record<Check, ProblemDoc>> = {
   "max-bytes": {
     meaning: "The part file is larger, in bytes, than `plan.part.max-bytes` allows.",
     fix: "Split the part in two, or cut text the implementer does not need. Raise `plan.part.max-bytes` only when your agents handle bigger parts well.",
+  },
+  "present-scenario": {
+    meaning: `A scenario the part marks \`${PRESENT_MARKER}\` has no \`Verified by:\` line that names it and ends \`${PRESENT_ENDING}\`, or a line with that ending also names a scenario of the part that is not marked. The implementer reads the ending as a test that passes before any code; without it, it stops the part when the test passes, and on an unmarked scenario it takes a missing behaviour for a present one.`,
+    fix: `Give each present scenario a \`Verified by:\` line of its own in the task that adds its test (a task may hold several): the scenario, the test with its exact input and expected result, and the ending \`${PRESENT_ENDING}\`. Name the other scenarios of the task on a line without it. When the behaviour is not present after all, remove the marker.`,
   },
   "unknown-dependency": {
     meaning:
@@ -146,6 +155,45 @@ function cycles(parts: readonly Part[], known: ReadonlySet<string>): string[][] 
   return found;
 }
 
+const escape = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/** True when `line` holds `name` as whole words. */
+const names = (line: string, name: string): boolean =>
+  new RegExp(`(?<!\\w)${escape(name)}(?!\\w)`).test(line);
+
+/** The present-scenario problems of one part, one message each. */
+function presentProblems(part: Part): string[] {
+  const present = part.scenarios.filter((s) => s.present).map((s) => s.name);
+  if (present.length === 0) return [];
+  const others = part.scenarios
+    .filter((s) => !s.present && !present.includes(s.name))
+    .map((s) => s.name);
+  const ending = part.verifiedBy.filter((line) => line.endsWith(PRESENT_ENDING));
+  const messages: string[] = [];
+  for (const name of present) {
+    if (ending.some((line) => names(line, name))) continue;
+    messages.push(
+      `scenario "${name}" is marked${PRESENT_MARKER}, but no Verified by: line names it and ends "${PRESENT_ENDING}"`,
+    );
+  }
+  // Only the scenarios a line names count, not a test's input or output (`Total: 0.00`): the
+  // text before its first "; ", without code spans. A present name that holds an unmarked one
+  // ("Total" in "Total of an empty ledger") is not it.
+  const longestFirst = [...present].sort((a, b) => b.length - a.length);
+  const mixed = new Set<string>();
+  for (const line of ending) {
+    const named = (line.split("; ")[0] ?? "").replace(/`[^`]*`/g, " ");
+    const rest = longestFirst.reduce((text, name) => text.split(name).join(" "), named);
+    for (const name of others) if (names(rest, name)) mixed.add(name);
+  }
+  for (const name of others.filter((other) => mixed.has(other))) {
+    messages.push(
+      `a Verified by: line that ends "${PRESENT_ENDING}" names "${name}", which is not marked${PRESENT_MARKER}`,
+    );
+  }
+  return messages;
+}
+
 const list = (ids: readonly string[]): string =>
   ids.length <= 1 ? (ids[0] ?? "") : `${ids.slice(0, -1).join(", ")} and ${String(ids.at(-1))}`;
 
@@ -182,6 +230,7 @@ export function checkPlan(
         );
       }
     }
+    for (const message of presentProblems(part)) add("present-scenario", [part.id], message);
   }
 
   const known = new Set(parts.map((part) => part.id));

@@ -76,15 +76,20 @@ The implementer reads only its part, the specs and the design. Write into each p
 
 A part or task that exists because of a rule of step 2, or is shaped by one, names the rule's id in its goal or its task line (`(API-DOC-1)`).
 
-For a present scenario, `Verified by:` gives the scenario and a test with its exact input and expected result, ending `; it passes at its first run, the behaviour is present`; the task changes no code for it.
+Each present scenario gets a `Verified by:` line of its own, in the task that adds its test: the scenario, a test with its exact input and expected result, and the ending `; it passes at its first run, the behaviour is present`, with nothing after it. The task changes no code for it. A task that tests several scenarios holds several `Verified by:` lines: one for the scenarios that are not present, without the ending, then one per present scenario. Never put a present scenario on the line of the others, the ending in the middle of a line, or a test command after it; `bdk plan check` reports each as a `present-scenario` problem.
+
+```markdown
+   - Verified by: tally / Requirement: Total / Scenario: Count flag; test/total.test.js
+   - Verified by: tally / Requirement: Total / Scenario: Empty ledger; `tally total` in an empty directory prints `Total: 0.00`, exit 0; it passes at its first run, the behaviour is present
+```
 
 `Verified by:` names tests, scenarios or exact commands. Never a set described by exclusion ("every command except ..."), never a command that spends money, needs credentials or reaches a shared or external system.
 
-Done when every scenario is named in one part and every task has its three lines.
+Done when every scenario is named in one part, every task has its three lines, and every present scenario has its own `Verified by:` line with the ending.
 
 ## 5. Check
 
-Run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" plan check openspec/changes/<change>/plan/parts`. Exit 1 lists problems under `problems:`: fix each (split an oversized part, quote an id, remove an `isolation` key, break a dependency cycle) and run it again. Exit 3 is an environment problem: pass it on and stop.
+Run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" plan check openspec/changes/<change>/plan/parts`. Exit 1 lists problems under `problems:`: fix each (split an oversized part, quote an id, remove an `isolation` key, break a dependency cycle, give a present scenario its own `Verified by:` line with the ending) and run it again. Exit 3 is an environment problem: pass it on and stop.
 
 Done when it exits 0. Keep its `waves:` lines for the reply.
 

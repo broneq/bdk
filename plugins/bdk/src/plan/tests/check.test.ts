@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { CHECKS, PROBLEMS, checkPlan } from "../domain/check.ts";
+import { CHECKS, PRESENT_ENDING, PROBLEMS, checkPlan } from "../domain/check.ts";
 import type { Limits } from "../domain/check.ts";
 import type { Part } from "../domain/part.ts";
 
-// The plan checks of spec `bdk-cli/plan`: limits, dependencies and waves.
+// The plan checks of spec `bdk-cli/plan`: limits, present scenarios, dependencies and waves.
 
 const LIMITS: Limits = { maxTasks: 5, maxFiles: 10, maxBytes: 8192 };
 
@@ -15,6 +15,8 @@ function part(id: string, over: Partial<Part> = {}): Part {
     files: [`src/${id}.ts`],
     tasks: 2,
     bytes: 1000,
+    scenarios: [],
+    verifiedBy: [],
     faults: [],
     ...over,
   };
@@ -62,6 +64,75 @@ describe("checkPlan limits", () => {
         { check: "name", parts: [], message: "02-login.md is not a part file; a part is NN.md" },
       ],
     });
+  });
+});
+
+describe("checkPlan present scenarios", () => {
+  const scenarios = [
+    { name: "Empty ledger", present: true },
+    { name: "Broken ledger", present: true },
+    { name: "Total", present: false },
+    { name: "Count flag", present: false },
+  ];
+  const problems = (verifiedBy: string[]) =>
+    checkPlan([part("01", { scenarios, verifiedBy })], [], LIMITS).problems;
+
+  it("passes a plan whose present scenarios each have a line with the ending", () => {
+    expect(
+      problems([
+        "Scenario: Total, Scenario: Count flag; src/total.test.js",
+        `Scenario: Empty ledger; no ledger.json prints \`Total: 0.00\`${PRESENT_ENDING}`,
+        `Scenario: Broken ledger; \`{\` exits 2${PRESENT_ENDING}`,
+      ]),
+    ).toEqual([]);
+  });
+
+  it("reports a present scenario named only on a line without the ending, or in its middle", () => {
+    expect(
+      problems([
+        "Scenario: Count flag, Scenario: Empty ledger; src/total.test.js",
+        `Scenario: Broken ledger (it passes at its first run, the behaviour is present); src/total.test.js`,
+        `Scenario: Total; src/total.test.js`,
+      ]),
+    ).toEqual([
+      {
+        check: "present-scenario",
+        parts: ["01"],
+        message: `scenario "Broken ledger" is marked (behaviour present), but no Verified by: line names it and ends "${PRESENT_ENDING}"`,
+      },
+      {
+        check: "present-scenario",
+        parts: ["01"],
+        message: `scenario "Empty ledger" is marked (behaviour present), but no Verified by: line names it and ends "${PRESENT_ENDING}"`,
+      },
+    ]);
+  });
+
+  it("reports an unmarked scenario the line names, by whole names, not in its test", () => {
+    const own = part("01", {
+      scenarios: [
+        { name: "Total of an empty ledger", present: true },
+        { name: "Total", present: false },
+        { name: "Count flag", present: false },
+      ],
+      verifiedBy: [
+        `Scenario: Total of an empty ledger and Count flag; prints \`Total: 0.00\`, Totals${PRESENT_ENDING}`,
+      ],
+    });
+    expect(checkPlan([own], [], LIMITS).problems).toEqual([
+      {
+        check: "present-scenario",
+        parts: ["01"],
+        message: `a Verified by: line that ends "${PRESENT_ENDING}" names "Count flag", which is not marked (behaviour present)`,
+      },
+    ]);
+  });
+
+  it("leaves a part without present scenarios alone, and keeps its wave", () => {
+    const own = part("01", { scenarios: [{ name: "Total", present: false }], verifiedBy: [] });
+    expect(checkPlan([own], [], LIMITS).problems).toEqual([]);
+    const marked = part("01", { scenarios: [{ name: "Total", present: true }] });
+    expect(checkPlan([marked], [], LIMITS).waves).toEqual([{ wave: 1, parts: ["01"] }]);
   });
 });
 

@@ -144,14 +144,18 @@ artifacts:
       - **Acceptance scenarios**: the spec scenarios this part makes true,
         named as `<capability>` / `Requirement: <name>` / `Scenario: <name>`.
         Every scenario of the Change's spec deltas is covered by exactly one
-        part. The implementer writes their tests first.
+        part. The implementer writes their tests first. A scenario whose
+        behaviour the code already gives ends with ` (behaviour present)`.
       - **Tasks**: numbered tasks as contracts, no code. Each task is one
         numbered item whose first line says what changes, followed by three
         labelled lines:
         - `File:` one or more paths from the part's `files`;
         - `Interface:` the function, command, endpoint or type that changes,
           as a signature (`Interface: none` when no interface changes);
-        - `Verified by:` the spec scenario, the test, or both.
+        - `Verified by:` the spec scenario, the test, or both. A present
+          scenario gets a `Verified by:` line of its own, ending
+          `; it passes at its first run, the behaviour is present`;
+          a task may hold several `Verified by:` lines.
 
       Size a part so one agent finishes it in one sitting. Prefer a few wide
       waves of parallel parts over a long chain.

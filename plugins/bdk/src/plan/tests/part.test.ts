@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { countTasks, partId, readPart } from "../domain/part.ts";
+import { countTasks, partId, readPart, readScenarios, readVerifiedBy } from "../domain/part.ts";
 
-// Part files and their measures, spec `bdk-cli/plan`, "Part files" and "Part limits".
+// Part files and their measures, spec `bdk-cli/plan`, "Part files", "Part limits" and
+// "Present scenarios".
 
 const front = (id: string, extra = ""): string =>
   `---\nid: ${id}\ndepends-on: []\nfiles:\n  - src/a.ts\n${extra}---\n`;
@@ -28,6 +29,8 @@ describe("readPart", () => {
       files: ["src/a.ts"],
       tasks: 2,
       bytes: new TextEncoder().encode(text).length,
+      scenarios: [],
+      verifiedBy: [],
       faults: [],
     });
   });
@@ -152,5 +155,49 @@ describe("countTasks", () => {
 
   it("is zero without a Tasks section", () => {
     expect(countTasks("## Goal\n1. a\n")).toBe(0);
+  });
+});
+
+describe("readScenarios", () => {
+  it("reads the scenario names and their marker under ## Acceptance scenarios", () => {
+    const text = [
+      "## Goal",
+      "- `ledger` / Requirement: Total / Scenario: Not a scenario of the part",
+      "## Acceptance scenarios",
+      "",
+      "- `ledger` / Requirement: Total / Scenario: Empty ledger (behaviour present)",
+      "- `ledger` / Requirement: Total / Scenario: Count flag",
+      "- None.",
+      "```",
+      "- `ledger` / Requirement: Total / Scenario: In code",
+      "```",
+      "## Tasks",
+      "1. x",
+    ].join("\n");
+    expect(readScenarios(text)).toEqual([
+      { name: "Empty ledger", present: true },
+      { name: "Count flag", present: false },
+    ]);
+  });
+});
+
+describe("readVerifiedBy", () => {
+  it("reads every Verified by: line under ## Tasks, several per task included", () => {
+    const text = [
+      "## Acceptance scenarios",
+      "- Verified by: not a task line",
+      "## Tasks",
+      "1. one",
+      "   - File: src/a.ts",
+      "   - Verified by: ledger / Scenario: Count flag; src/a.test.ts  ",
+      "   - Verified by: ledger / Scenario: Empty ledger; it passes at its first run, the behaviour is present",
+      "2. two",
+      "   - Verified by:",
+    ].join("\n");
+    expect(readVerifiedBy(text)).toEqual([
+      "ledger / Scenario: Count flag; src/a.test.ts",
+      "ledger / Scenario: Empty ledger; it passes at its first run, the behaviour is present",
+      "",
+    ]);
   });
 });
