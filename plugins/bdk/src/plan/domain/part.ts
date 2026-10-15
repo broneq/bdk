@@ -1,6 +1,7 @@
-// One plan part as `bdk plan check` reads it (spec `bdk-cli/plan`, "Part files", "Part limits";
-// design D2, D8): the frontmatter of `bdk-openspec-schema` checked key by key, and the measures
-// the part limits apply to. Faults are values, so one call reports every fault of a plan.
+// One plan part as `bdk plan check` reads it (spec `bdk-cli/plan`, "Part files", "Part limits",
+// "Present scenarios"; design D2, D8): the frontmatter of `bdk-openspec-schema` checked key by
+// key, the measures the part limits apply to, and the scenarios and `Verified by:` lines the
+// present-scenario check reads. Faults are values, so one call reports every fault of a plan.
 
 import { parse } from "yaml";
 
@@ -13,9 +14,22 @@ export interface Part {
   readonly files: readonly string[];
   readonly tasks: number;
   readonly bytes: number;
+  /** The scenarios under `## Acceptance scenarios`, in their order. */
+  readonly scenarios: readonly Scenario[];
+  /** The text after `Verified by:` of every such line under `## Tasks`, in their order. */
+  readonly verifiedBy: readonly string[];
   /** What breaks the frontmatter rules, one sentence per key. */
   readonly faults: readonly string[];
 }
+
+export interface Scenario {
+  /** The text after the last `Scenario: `, without the marker. */
+  readonly name: string;
+  /** True when the line ends with the marker ` (behaviour present)`. */
+  readonly present: boolean;
+}
+
+export const PRESENT_MARKER = " (behaviour present)";
 
 /** The part id of a file name, or undefined when the file is no part. */
 export function partId(name: string): string | undefined {
@@ -41,11 +55,14 @@ function show(value: unknown): string {
   return typeof value === "string" ? `"${value}"` : JSON.stringify(value);
 }
 
-/** The numbered list items under `## Tasks`, up to the next `#` or `##` heading. */
-export function countTasks(text: string): number {
-  let inTasks = false;
+/**
+ * The lines of the level-2 section `title`, up to the next `#` or `##` heading, outside fenced
+ * code blocks and without the deeper headings.
+ */
+function sectionLines(text: string, title: string): string[] {
+  let inSection = false;
   let fence: string | undefined;
-  let count = 0;
+  const lines: string[] = [];
   for (const line of text.split(/\r?\n/)) {
     const marker = /^\s*(`{3,}|~{3,})/.exec(line)?.[1];
     if (marker !== undefined) {
@@ -57,12 +74,40 @@ export function countTasks(text: string): number {
     const heading = /^(#{1,6})\s+(.*?)\s*#*\s*$/.exec(line);
     if (heading !== null) {
       const level = heading[1]?.length ?? 0;
-      if (level <= 2) inTasks = level === 2 && heading[2] === "Tasks";
+      if (level <= 2) inSection = level === 2 && heading[2] === title;
       continue;
     }
-    if (inTasks && /^\d+[.)] /.test(line)) count += 1;
+    if (inSection) lines.push(line);
   }
-  return count;
+  return lines;
+}
+
+/** The numbered list items under `## Tasks`, up to the next `#` or `##` heading. */
+export function countTasks(text: string): number {
+  return sectionLines(text, "Tasks").filter((line) => /^\d+[.)] /.test(line)).length;
+}
+
+/** The list items under `## Acceptance scenarios` that name a `Scenario: `. */
+export function readScenarios(text: string): Scenario[] {
+  const scenarios: Scenario[] = [];
+  for (const line of sectionLines(text, "Acceptance scenarios")) {
+    const item = /^\s*[-*+]\s+(.*?)\s*$/.exec(line)?.[1];
+    const at = item?.lastIndexOf("Scenario: ") ?? -1;
+    if (item === undefined || at === -1) continue;
+    const named = item.slice(at + "Scenario: ".length);
+    const present = named.endsWith(PRESENT_MARKER);
+    const name = (present ? named.slice(0, -PRESENT_MARKER.length) : named).trim();
+    if (name !== "") scenarios.push({ name, present });
+  }
+  return scenarios;
+}
+
+/** The text after `Verified by:` of every list item under `## Tasks` that starts with it. */
+export function readVerifiedBy(text: string): string[] {
+  return sectionLines(text, "Tasks").flatMap((line) => {
+    const rest = /^\s*[-*+]\s+Verified by:\s*(.*?)\s*$/.exec(line)?.[1];
+    return rest === undefined ? [] : [rest];
+  });
 }
 
 type Frontmatter = { readonly data: Record<string, unknown> } | { readonly fault: string };
@@ -89,6 +134,8 @@ export function readPart(id: string, text: string): Part {
     id,
     tasks: countTasks(text),
     bytes: new TextEncoder().encode(text).length,
+    scenarios: readScenarios(text),
+    verifiedBy: readVerifiedBy(text),
   };
   const found = frontmatter(text.split(/\r?\n/));
   if ("fault" in found) {

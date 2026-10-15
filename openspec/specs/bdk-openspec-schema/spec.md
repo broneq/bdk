@@ -51,7 +51,7 @@ The frontmatter SHALL hold no `isolation` key: every part runs in the Change che
 
 After the frontmatter, a part SHALL hold its goal, its acceptance scenarios taken from the Change's spec deltas, and its tasks as contracts. The part template and the plan instruction SHALL state this format.
 
-Under `## Tasks`, each task SHALL be one numbered item whose first line says what changes, followed by three labelled lines: `File:` naming one or more paths from the part's `files`, `Interface:` naming the function, command, endpoint or type that changes as a signature without code (`Interface: none` when no interface changes), and `Verified by:` naming the spec scenario, the test, or both. The part template and the plan instruction SHALL show these three lines.
+Under `## Tasks`, each task SHALL be one numbered item whose first line says what changes, followed by three labelled lines: `File:` naming one or more paths from the part's `files`, `Interface:` naming the function, command, endpoint or type that changes as a signature without code (`Interface: none` when no interface changes), and `Verified by:` naming the spec scenario, the test, or both. A task MAY hold several `Verified by:` lines; a scenario whose behaviour the code already gives SHALL be listed with the suffix ` (behaviour present)` and get a `Verified by:` line of its own ending `; it passes at its first run, the behaviour is present` (spec `bdk-plan-blocks`). The part template and the plan instruction SHALL show these three lines, and the plan instruction SHALL state the suffix and the line of a present scenario.
 
 #### Scenario: Template carries the frontmatter
 

@@ -63,8 +63,8 @@ The execute lead builds the parts one at a time in your checkout, in plan order:
 **When you review a plan**, read each part file for:
 
 - `## Goal`: what works after the part, in one or two sentences.
-- `## Acceptance scenarios`: the spec scenarios the part makes true. Each scenario of the deltas belongs to exactly one part.
-- `## Tasks`: numbered contracts, each with the `File` it changes, the `Interface` it adds or changes, and what verifies it (`Verified by`). A task names real paths and signatures; it holds no code.
+- `## Acceptance scenarios`: the spec scenarios the part makes true. Each scenario of the deltas belongs to exactly one part. A scenario the code already satisfies ends with ` (behaviour present)`: the part only adds its test, which passes at its first run.
+- `## Tasks`: numbered contracts, each with the `File` it changes, the `Interface` it adds or changes, and what verifies it (`Verified by`). A task names real paths and signatures; it holds no code. Each present scenario has a `Verified by` line of its own that ends `; it passes at its first run, the behaviour is present`, so a task that tests several scenarios can hold several; `bdk plan check` reports a present scenario without one as a `present-scenario` problem.
 - The frontmatter: does `depends-on` name only parts whose output this one needs? Every extra edge adds a wave. A part has no other key: one that still holds `isolation` from an older plan is a `frontmatter` problem.
 
 `bdk plan check <dir>` prints the waves, a row per part with its size against the limits, and the problems it finds. What each problem means and what to do about it: [the problems of `bdk plan check`](/reference/bdk/cli#plan-check-problems).

@@ -51,7 +51,7 @@ Done when you hold the Change, the parts, the run directory, the settings and th
 Run `"${CLAUDE_PLUGIN_ROOT}/bin/bdk" plan check <parts dir> --json`. It exits 1 when it reports a problem; read the result anyway.
 
 - A part with `wave: null`, or a `frontmatter` problem: the order of the work is unknown, or a part is not readable. Start nothing, change nothing, and go to step 8 with the blocker naming the problems and `/bdk:plan <change>`.
-- Any other problem (`max-tasks`, `max-files`, `max-bytes`): note it for `Decisions taken without the user` and go on.
+- Any other problem (`max-tasks`, `max-files`, `max-bytes`, `present-scenario`): note it for `Decisions taken without the user` and go on.
 
 The order of the work: waves in ascending order, the parts of a wave in ascending id. Parts of one wave may touch the same files: each runs on the commits of the parts before it.
 
