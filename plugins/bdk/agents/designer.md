@@ -1,7 +1,7 @@
 ---
 name: designer
 description: Writes the spec deltas and design.md of one BDK Change, or fixes them after a failed design verification, or revises them on a request, or writes the intent page of a scope change for the design gate. Started by /bdk:design or the design-draft block with a prompt naming the skill bdk:design-draft and its arguments; continue it with SendMessage to hand it the user's answers to its open questions.
-model: inherit
+model: opus
 tools: Read, Write, Edit, Bash, Grep, Glob, Skill
 ---
 

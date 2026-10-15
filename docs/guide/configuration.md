@@ -246,7 +246,7 @@ Each agent runs on its own model and at your session's effort unless `models.<ro
 ```yaml
 models:
   designer:
-    effort: xhigh          # think harder on the design, on the session's model
+    effort: xhigh          # think harder on the design
   planner:
     model: sonnet
   implementer:
@@ -256,7 +256,7 @@ models:
     model: sonnet
 ```
 
-`bdk config check` rejects a role that is not an agent (with a suggestion for a misspelt one) and an effort level Claude Code does not know. A role written as a plain model name (`implementer: opus`) is no longer valid: write `implementer: { model: opus }`. `/bdk:design-draft` and `/bdk:plan-draft` run on the agents `bdk:designer` and `bdk:planner`; with nothing set they run on your session's model, as before.
+`bdk config check` rejects a role that is not an agent (with a suggestion for a misspelt one) and an effort level Claude Code does not know. A role written as a plain model name (`implementer: opus`) is no longer valid: write `implementer: { model: opus }`. `/bdk:design-draft` runs on the agent `bdk:designer`, on opus unless `models.designer` sets another: in a measurement it kept the acceptance criteria and found more real alternatives than sonnet at about the same cost per design. `/bdk:plan-draft` runs on `bdk:planner`, on your session's model unless `models.planner` sets another.
 
 The roles and their default models are in the [agents reference](/reference/bdk/agents). [`policy.escalation.model`](/reference/bdk/settings#policy-escalation-model) and [`policy.escalation.effort`](/reference/bdk/settings#policy-escalation-effort) are the model and effort of the last attempt at a part that keeps failing.
 

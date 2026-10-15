@@ -277,9 +277,9 @@ Names are working names. Models are defaults that configuration overrides per ro
 | Block | Agent (default model) | Does |
 |---|---|---|
 | `explore` | `bdk:explorer` (sonnet) | Maps the code a proposal touches |
-| `design-draft` | main thread | Approaches, questions (Lavish or policy), specs and design |
+| `design-draft` | `bdk:designer` (opus) | Approaches, questions (Lavish or policy), specs and design |
 | `verify-design`, `verify-plan` | `bdk:verifier` (opus) | Checks the design or plan against the code; continued with `SendMessage` across iterations |
-| `plan-draft` | main thread | Parts with tasks as contracts, `depends-on`, `isolation`, acceptance scenarios from the specs |
+| `plan-draft` | `bdk:planner` (session's model) | Parts with tasks as contracts, `depends-on`, `isolation`, acceptance scenarios from the specs |
 | `implement-part` | `bdk:implementer` (sonnet) | One part: acceptance tests first, code, part checks; stops on a plan defect |
 | `conform-part` | `bdk:conformer` (sonnet) | Checks the part's diff against rules, project instructions and tasks; fixes without changing behaviour |
 | `review-round` | `bdk:lead` (sonnet) | Lead skill of one review round, see "Flows" |
