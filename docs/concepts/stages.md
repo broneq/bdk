@@ -29,7 +29,7 @@ The design is where the product's shape and the architecture are settled: where 
 
 The specs it writes describe behaviour only: every requirement has scenarios in WHEN / THEN form that can run against the product. They become the acceptance criteria of everything after.
 
-A design fails verification for: an AC dropped, narrowed or reinterpreted without a scope-log entry `By: user` (a `Decided without the user:` line does not excuse it), a false claim about the code, a requirement with no answer or one the design contradicts, a capability with no spec delta, a scenario that cannot run, an ignored failure path, a decision against the proposal, a broken design rule you did not agree to depart from.
+A design fails verification for: an AC dropped, narrowed or reinterpreted without a scope-log entry `By: user` (a `Decided without the user:` line does not excuse it; an AC kept for one option only, such as a rule that holds under the default format and not under one the design adds, counts as narrowed), a false claim about the code, a requirement with no answer or one the design contradicts, a capability with no spec delta, a scenario that cannot run, an ignored failure path, a decision against the proposal, a broken design rule you did not agree to depart from.
 
 ## Plan
 

@@ -49,11 +49,18 @@ Done when you can list each claim the design makes about existing code, and the 
 8. **Open questions.** Only unknowns that change neither the specs, the decisions nor the plan.
 9. **Plan readiness.** The design names the modules, interfaces and data the plan parts will touch.
 10. **Acceptance criteria.** List the acceptance points of `source/issue.md` (its acceptance signal and every point of its scope a user can check) and the AC of `## Acceptance`. Each point is an AC that states it as the source does, or one a log entry `By: user` changed or dropped. Each AC not dropped by such an entry is answered by a requirement of a delta or a decision of `design.md` (with `skip_specs: true`, by a section that names its id), as it stands. An entry `By: setting ...`, an open entry `By: needs-user` and a `Decided without the user:` line never cover a change of an AC. Without `source/issue.md`, check against `## Acceptance` and say so under `Checked`.
+
+    Check each AC as it stands, not only that a scenario names its subject, and not from the design's own list of answered AC: such a list is a claim to check.
+    1. Quote the AC and its condition; an AC with no condition holds in every case.
+    2. Find every requirement and scenario of the deltas, and every decision, that touches its subject, also those written for another AC: an option, mode, setting or input another AC brings in (a second format, a locale, a flag) is a case the AC still covers.
+    3. The AC is narrowed when one of them gives, under any option, mode or input, an outcome the AC rules out (a scenario whose THEN says the opposite), or limits the AC to fewer cases than its condition ("only under the default", "when the output is JSON"). A requirement that words the rule on something else ("the selected unit" for "metres") narrows it as soon as an option makes the two differ.
+
+    Write one `Checked` line per AC: its id, the quoted condition, and the requirements and scenarios read, with every option or mode of the deltas under which the AC holds.
 11. **Rules.** The design breaks no rule of step 2, unless a decision records the user's agreement to depart from it.
 
 ## 4. Sort
 
-- **Must address**: a defect that would make the plan or the product wrong. A false claim about the code; a requirement without an answer, or one the design contradicts; a capability without a spec delta; a scenario that cannot run; a failure path the specs imply and the design ignores; a decision against the proposal; a design that breaks a rule of step 2 without the user's agreement, the item naming the rule's id; an acceptance point of the source that `## Acceptance` lacks or states differently, or an AC the deltas or the design drop, narrow, reinterpret or leave unanswered, with no `By: user` entry of `scope-log.md` for it, the item naming the AC id and its evidence quoting the source or the AC.
+- **Must address**: a defect that would make the plan or the product wrong. A false claim about the code; a requirement without an answer, or one the design contradicts; a capability without a spec delta; a scenario that cannot run; a failure path the specs imply and the design ignores; a decision against the proposal; a design that breaks a rule of step 2 without the user's agreement, the item naming the rule's id; an acceptance point of the source that `## Acceptance` lacks or states differently, or an AC the deltas or the design drop, narrow (also under one option or mode only), reinterpret or leave unanswered, with no `By: user` entry of `scope-log.md` for it, the item naming the AC id and its evidence quoting the source or the AC.
 - **Should consider**: every other gap from step 3.
 
 Not a problem: wording, style, a choice among valid alternatives the design argued, anything outside the proposal and its source. An AC is never outside the proposal. A proposal without `## Acceptance` (written before BDK kept AC) is a `Should consider` item, not a `Must address` one.
