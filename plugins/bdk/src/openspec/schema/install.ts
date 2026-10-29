@@ -1,4 +1,4 @@
-// The `--json` result of `bdk openspec install` (spec `bdk-cli/openspec`, "Install the BDK schema").
+// The `--json` result of `bdk openspec install` (`docs/concepts/openspec-changes.md`).
 
 import { z } from "zod";
 

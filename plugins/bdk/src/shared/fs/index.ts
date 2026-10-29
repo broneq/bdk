@@ -1,4 +1,4 @@
-// The file system boundary of the bdk CLI (spec `bdk-cli`, "OS boundary"). `main.ts` passes
+// The file system boundary of the bdk CLI (ADR-0009). `main.ts` passes
 // `files` to the slices that need it; use cases see only the `Files` interface, so their tests
 // run against an in-memory fake. Synchronous: a CLI call is short-lived and does one thing.
 import { appendFileSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";

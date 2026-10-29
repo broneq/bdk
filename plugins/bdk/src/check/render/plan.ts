@@ -1,7 +1,6 @@
 // The text of `bdk check plan`, written for a model about to run the lines: what to do first,
 // each check with its Bash timeout and the line to run indented under it, the skipped entries,
-// then the `bdk check record` call to make after the lines (spec `bdk-cli/check`, "Plan text
-// output").
+// then the `bdk check record` call to make after the lines (ADR-0011).
 
 import type { CheckPlan } from "../schema/plan.ts";
 import { skipReason } from "./skip.ts";

@@ -1,4 +1,4 @@
-// The subagent-git guard's rule (spec `bdk-cli/hooks`, "Subagent git guard"; design D6): who is
+// The subagent-git guard's rule (`docs/concepts/cli-config-hooks.md`; design D6): who is
 // a worker, and the reason a denial gives.
 
 import type { HookPayload } from "./payload.ts";

@@ -7,8 +7,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { build } from "../build.ts";
 import { listResult } from "../src/findings/schema/list.ts";
 
-// Acceptance of #187 against the built CLI run through `bin/bdk` (spec `bdk-cli/findings`,
-// "Parallel writers lose no line" and "Fold the log"): real processes, a real file.
+// Acceptance of #187 against the built CLI run through `bin/bdk` (`docs/concepts/findings.md`):
+// parallel writers lose no line, and the log folds; real processes, a real file.
 
 const PLUGIN = join(import.meta.dirname, "..");
 

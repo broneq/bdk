@@ -1,6 +1,5 @@
-// Where a check plan and its record write inside the run directory (spec `bdk-cli/check`,
-// "Plan the checks", "Output files", "Result file", "Red checks as findings"). Paths are joined onto the run directory as the
-// caller gave it, so an absolute run directory gives absolute paths.
+// Where a check plan and its record write inside the run directory (ADR-0011). Paths are joined
+// onto the run directory as the caller gave it, so an absolute run directory gives absolute paths.
 
 import { join } from "node:path";
 

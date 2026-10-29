@@ -1,5 +1,5 @@
-// `bdk hooks session-start -` (spec `bdk-cli/hooks`, "Session start context" and "Session start
-// warning without configuration"; design D7, content from Change v3-285-session-start-context D2).
+// `bdk hooks session-start -` (`docs/concepts/cli-config-hooks.md`; design D7,
+// content from Change v3-285-session-start-context D2).
 
 import { loadConfig } from "../../config/index.ts";
 import type { SessionStartResult } from "../schema/session-start.ts";

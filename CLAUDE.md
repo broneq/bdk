@@ -21,7 +21,7 @@ The v3 architecture is decided in [ADR-0003](docs/adr/0003-v3-architecture-skill
 - Always build a skill with `/skill-creator`, new or rewritten. v2 skills (`main`) and draft skills (`draft/v3-1`) are input to read, not text to copy.
 - A new skill starts as a plain skill with an eval case. Add a CLI helper, hook or workflow only when an eval or a measurement shows a concrete problem, and record that problem.
 - One block, one job: an author block writes, a verifier block checks, an orchestrator only composes blocks. Each block runs alone and has its own eval cases.
-- The `bdk` CLI is built as vertical slices, one per command group: spec `openspec/specs/bdk-cli/`, rule `.claude/rules/bdk-cli.md`, enforced by ESLint (`plugins/bdk/eslint.architecture.ts`).
+- The `bdk` CLI is built as vertical slices, one per command group: [ADR-0009](docs/adr/0009-cli-vertical-slices.md), rule `.claude/rules/bdk-cli.md`, enforced by ESLint (`plugins/bdk/eslint.architecture.ts`).
 
 ## Target layout (v3)
 

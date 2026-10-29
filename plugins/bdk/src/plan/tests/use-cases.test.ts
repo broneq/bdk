@@ -6,7 +6,7 @@ import { checkResult } from "../schema/check.ts";
 import { check } from "../use-cases/check.ts";
 import type { PlanDeps } from "../use-cases/check.ts";
 
-// `bdk plan check` over an in-memory project (spec `bdk-cli/plan`, "Plan check command").
+// `bdk plan check` over an in-memory project (`docs/concepts/stages.md`).
 
 const ROOT = "/work/app";
 const PARTS = "openspec/changes/x/plan/parts";

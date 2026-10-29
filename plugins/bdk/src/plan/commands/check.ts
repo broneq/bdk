@@ -1,4 +1,4 @@
-// `bdk plan check <dir>` (spec `bdk-cli/plan`): exit 1 with the same result when the plan has
+// `bdk plan check <dir>` (`docs/concepts/stages.md`): exit 1 with the same result when the plan has
 // a problem.
 
 import type { Command } from "../../shared/cli/index.ts";

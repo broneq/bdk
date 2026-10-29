@@ -6,8 +6,9 @@ import { hooksGroup } from "../index.ts";
 import { preToolUseResult } from "../schema/pre-tool-use.ts";
 import { sessionStartResult } from "../schema/session-start.ts";
 
-// `bdk hooks` through the frame on in-memory projects (spec `bdk-cli/hooks`): payload input, the
-// host output, the session-start context and warning, and every path of the subagent-git guard.
+// `bdk hooks` through the frame on in-memory projects (`docs/concepts/cli-config-hooks.md`):
+// payload input, the host output, the session-start context and warning, and every path of the
+// subagent-git guard.
 
 const ROOT = "/work/app";
 const OTHER = "/work/other";

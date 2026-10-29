@@ -1,4 +1,4 @@
-// Text of `bdk config show` (spec `bdk-cli/config`, "config show"; design D9): one leaf per line
+// Text of `bdk config show` (ADR-0008; design D9): one leaf per line
 // as `key: <JSON value>  # <origin>`, valid YAML a model reads without a legend.
 
 import type { LayerFile } from "../domain/layer-files.ts";

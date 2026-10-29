@@ -1,4 +1,4 @@
-// `bdk config set <key> <value> [--layer]` (spec `bdk-cli/config`, "config set").
+// `bdk config set <key> <value> [--layer]` (ADR-0008).
 
 import { CliError } from "../../shared/cli/index.ts";
 import type { Command } from "../../shared/cli/index.ts";

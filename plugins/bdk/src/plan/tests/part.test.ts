@@ -2,8 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { countTasks, partId, readPart, readScenarios, readVerifiedBy } from "../domain/part.ts";
 
-// Part files and their measures, spec `bdk-cli/plan`, "Part files", "Part limits" and
-// "Present scenarios".
+// Part files, their measures and present scenarios (`docs/concepts/stages.md`).
 
 const front = (id: string, extra = ""): string =>
   `---\nid: ${id}\ndepends-on: []\nfiles:\n  - src/a.ts\n${extra}---\n`;

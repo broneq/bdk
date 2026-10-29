@@ -1,4 +1,4 @@
-// The `--json` result of `bdk diagnostics report` (spec `bdk-cli/diagnostics`, "Report output").
+// The `--json` result of `bdk diagnostics report` (`docs/concepts/orchestrators.md`).
 
 import { z } from "zod";
 

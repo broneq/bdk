@@ -14,7 +14,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { build } from "../build.ts";
 
-// End-to-end test of the plugin's hooks (spec `bdk-cli/hooks`, "Hook registration" and the
+// End-to-end test of the plugin's hooks (`docs/concepts/cli-config-hooks.md` and the
 // acceptance signal of #182): each command of `hooks/hooks.json` runs through `sh -c` the way
 // the host runs it, with `CLAUDE_PLUGIN_ROOT` set and the payload on stdin, against a copy of the
 // plugin built outside the workspace.

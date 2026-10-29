@@ -1,4 +1,4 @@
-// `bdk git scope <base> [--rounds <dir>]` (spec `bdk-cli/git`, "Scope of a review round").
+// `bdk git scope <base> [--rounds <dir>]` (`docs/concepts/run-state.md`).
 
 import type { Command } from "../../shared/cli/index.ts";
 import { renderScope } from "../render/scope.ts";

@@ -1,4 +1,4 @@
-// The `--json` result of `bdk config check` (spec `bdk-cli/config`, "config check").
+// The `--json` result of `bdk config check` (ADR-0008).
 
 import { z } from "zod";
 

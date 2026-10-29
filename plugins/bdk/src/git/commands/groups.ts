@@ -1,5 +1,5 @@
 // `bdk git groups <base> [--rounds <dir>] [--plan <dir>] [--max-files <n>] [--record <dir>]`
-// (spec `bdk-cli/git`, "Review groups", "Recording a round").
+// (`docs/concepts/run-state.md`).
 
 import { CliError } from "../../shared/cli/index.ts";
 import type { Command } from "../../shared/cli/index.ts";

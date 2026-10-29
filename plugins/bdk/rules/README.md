@@ -1,6 +1,6 @@
 # The BDK rule pack
 
-One Markdown file per rule; the file name is the rule's id. `bdk rules for --stage <stage> [--files <file>]...` selects the rules a role of that stage reads for those files, and the skill puts their text into the role's prompt. Spec: `openspec/specs/rule-pack/spec.md`, command: `openspec/specs/bdk-cli/rules/spec.md`.
+One Markdown file per rule; the file name is the rule's id. `bdk rules for --stage <stage> [--files <file>]...` selects the rules a role of that stage reads for those files, and the skill puts their text into the role's prompt. Why the pack is small: [ADR-0012](../../../docs/adr/0012-rule-pack-admission-by-measurement.md); how roles read the rules: [`docs/concepts/rules.md`](../../../docs/concepts/rules.md).
 
 ## Rule file
 

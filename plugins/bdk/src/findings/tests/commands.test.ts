@@ -10,7 +10,8 @@ import { listResult } from "../schema/list.ts";
 import { reportResult } from "../schema/report.ts";
 import { MemoryFiles } from "./memory-files.ts";
 
-// Spec `bdk-cli/findings`, the commands through the CLI frame against an in-memory `Files`.
+// The findings commands (`docs/concepts/findings.md`) through the CLI frame against an in-memory
+// `Files`.
 
 const DIR = "/p/.bdk/runs/c/review/round-1";
 const LOG = `${DIR}/findings.jsonl`;

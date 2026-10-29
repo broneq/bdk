@@ -1,4 +1,4 @@
-// The config slice (spec `bdk-cli/config`): the `bdk config` command group, and the resolved
+// The config slice (ADR-0008): the `bdk config` command group, and the resolved
 // configuration for other slices.
 
 import type { Group } from "../shared/cli/index.ts";

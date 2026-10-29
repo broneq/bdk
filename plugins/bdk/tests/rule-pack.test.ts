@@ -6,8 +6,8 @@ import { RULE_KINDS, RULE_STAGES } from "../src/config/index.ts";
 import { isRuleFile, KINDS, parseRule, STAGES } from "../src/rules/domain/rule.ts";
 import type { Rule } from "../src/rules/domain/rule.ts";
 
-// The BDK rule pack as shipped (spec `rule-pack`, "BDK pack and language packs" and "Admission by
-// measurement"): every file valid, and every rule admitted by a measurement on record.
+// The BDK rule pack as shipped (ADR-0012): every file valid, and every rule admitted by a
+// measurement on record.
 
 const PACK = join(import.meta.dirname, "..", "rules");
 const REPO = join(import.meta.dirname, "..", "..", "..");

@@ -1,4 +1,4 @@
-// `bdk config show [<key>]` (spec `bdk-cli/config`, "config show"; design D4): the resolved
+// `bdk config show [<key>]` (ADR-0008; design D4): the resolved
 // configuration with origins, or the state that keeps a skill from using it. Every state is a
 // result, never an error, because the `!` block of a skill drops a failing command's output.
 

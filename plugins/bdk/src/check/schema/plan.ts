@@ -1,5 +1,4 @@
-// The plan of `bdk check plan`, in `checks/<id>/plan.json` and under `--json` (spec `bdk-cli/check`,
-// "Plan the checks").
+// The plan of `bdk check plan`, in `checks/<id>/plan.json` and under `--json` (ADR-0011).
 
 import { z } from "zod";
 

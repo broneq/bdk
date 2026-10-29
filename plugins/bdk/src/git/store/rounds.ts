@@ -1,5 +1,5 @@
-// The round records under a run's `review/` directory (spec `bdk-cli/git`, "Round record",
-// "Recording a round"; design D3).
+// The round records under a run's `review/` directory (`docs/concepts/run-state.md`;
+// design D3).
 
 import { join } from "node:path";
 

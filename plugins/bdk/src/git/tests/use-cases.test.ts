@@ -7,8 +7,8 @@ import { groups } from "../use-cases/groups.ts";
 import { scope } from "../use-cases/scope.ts";
 import type { GitDeps } from "../use-cases/deps.ts";
 
-// The use cases of spec `bdk-cli/git` against a scripted git and an in-memory file system.
-// Real git runs in plugins/bdk/tests/git.test.ts.
+// The git use cases (`docs/concepts/run-state.md`) against a scripted git and an in-memory file
+// system. Real git runs in plugins/bdk/tests/git.test.ts.
 
 const HEAD = "1".repeat(40);
 const BASE = "2".repeat(40);

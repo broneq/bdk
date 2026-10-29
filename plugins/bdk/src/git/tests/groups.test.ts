@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { reviewGroups } from "../domain/groups.ts";
 import { partFiles, partId } from "../domain/plan.ts";
 
-// Part grouping and plan part parsing of spec `bdk-cli/git`, "Review groups".
+// Part grouping and plan part parsing (`docs/concepts/run-state.md`).
 
 const many = (dir: string, count: number): string[] =>
   Array.from({ length: count }, (_, i) => `${dir}/f${String(i).padStart(3, "0")}.ts`);

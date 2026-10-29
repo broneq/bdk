@@ -1,5 +1,5 @@
 // `bdk check record <run-dir> <id> [--exit <kind>-<tool>=<code>]... [--timed-out <kind>-<tool>]... [--round <n>]`
-// (spec `bdk-cli/check`, "Record the checks").
+// (ADR-0011).
 
 import type { Command, Input } from "../../shared/cli/index.ts";
 import { renderRecord } from "../render/record.ts";

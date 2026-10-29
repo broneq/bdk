@@ -1,4 +1,4 @@
-// The `diagnostics` command group (spec `bdk-cli/diagnostics`): counts a run from the host's
+// The `diagnostics` command group (`docs/concepts/orchestrators.md`): counts a run from the host's
 // transcripts for /bdk:diagnose-run. It reads; it records nothing during a run (design D4).
 
 import type { Group } from "../shared/cli/index.ts";

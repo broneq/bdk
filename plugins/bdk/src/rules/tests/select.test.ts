@@ -4,7 +4,7 @@ import type { Rule, Stage } from "../domain/rule.ts";
 import { select } from "../domain/select.ts";
 import type { Selected } from "../domain/select.ts";
 
-// Selection by stage, path and language (spec `bdk-cli/rules`, "Rules for a stage and files").
+// Selection by stage, path and language (`docs/concepts/rules.md`).
 
 function rule(id: string, fields: Partial<Rule> = {}): Rule {
   return {

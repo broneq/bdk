@@ -1,6 +1,6 @@
-// What each settings key is, for the settings Reference (spec `bdk-cli/config`, "Every settings
-// key has a description"). Walks the settings schema: a mapping key by its name, an item of an
-// array merged by `id` as `<id>`, the value of a record as `<entry>` from the record's meta.
+// What each settings key is, for the settings Reference (ADR-0008). Walks the settings schema: a
+// mapping key by its name, an item of an array merged by `id` as `<id>`, the value of a record as
+// `<entry>` from the record's meta.
 
 import { z } from "zod";
 

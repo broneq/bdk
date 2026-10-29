@@ -10,7 +10,7 @@ import { set } from "../use-cases/set.ts";
 import { show } from "../use-cases/show.ts";
 import { GLOBAL, LOCAL, memory, OPENSPEC, PROJECT, ROOT } from "./memory.ts";
 
-// The config use cases against an in-memory file system (spec `bdk-cli/config`).
+// The config use cases against an in-memory file system (ADR-0008).
 
 function deps(files: Record<string, string>, cwd = ROOT, env: Record<string, string> = {}) {
   const fs = memory(files);

@@ -1,6 +1,6 @@
 // The text of `bdk check record`, written for a model reading a Bash result: one line per check,
 // the point and revision first, the tail of each red one indented under it, one line per skipped
-// entry, then the verdict and where the result is (spec `bdk-cli/check`, "Record text output").
+// entry, then the verdict and where the result is (ADR-0011).
 
 import { TAIL_LINES } from "../domain/verdict.ts";
 import type { RecordResult } from "../schema/record.ts";

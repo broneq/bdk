@@ -12,7 +12,7 @@ import { run } from "../src/shared/cli/index.ts";
 import { files } from "../src/shared/fs/index.ts";
 import { git } from "../src/shared/git/index.ts";
 
-// Spec `bdk-cli/check` end to end: the frame, the slice, the config and findings slices, and the
+// `bdk check` end to end (ADR-0011): the frame, the slice, the config and findings slices, and the
 // file system boundary against a temporary project, the way `src/main.ts` wires them. Each
 // printed line runs through `/bin/sh` from the project root, as the agent's Bash call runs it.
 

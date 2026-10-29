@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 import { derive, mergeParts, passes } from "../domain/status.ts";
 import type { ChangeSnapshot, Part } from "../domain/status.ts";
 
-// The pure rules of `bdk run status` (spec `bdk-cli/run`): the verdict line, the parts and every
-// row of the resume table on hand-built snapshots.
+// The pure rules of `bdk run status` (`docs/concepts/run-state.md`): the verdict line, the parts
+// and every row of the resume table on hand-built snapshots.
 
 const done = (id: string): Part => ({ id, status: "done", attempts: 1, reason: null });
 

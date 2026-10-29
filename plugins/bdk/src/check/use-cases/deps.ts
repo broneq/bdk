@@ -1,6 +1,5 @@
 // What the check slice needs from the OS, injected by `src/main.ts`, and the argument checks
-// `bdk check plan` and `bdk check record` share (spec `bdk-cli/check`, "Errors of the check
-// command").
+// `bdk check plan` and `bdk check record` share (ADR-0011).
 
 import { resolve } from "node:path";
 

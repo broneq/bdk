@@ -32,7 +32,7 @@ export default tseslint.config(
     },
   },
   prettier,
-  // The slice architecture of the bdk CLI (spec bdk-cli), generated from its slice matrix.
+  // The slice architecture of the bdk CLI (ADR-0009), generated from its slice matrix.
   ...architecture({
     cwd: import.meta.dirname,
     srcDir: "plugins/bdk/src",

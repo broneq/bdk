@@ -1,4 +1,4 @@
-// The round report `bdk findings report` writes (spec `bdk-cli/findings`, "Round report"): a pure
+// The round report `bdk findings report` writes (the Concepts page "Findings"): a pure
 // function of the fold, every level section always present so a reader finds it by name.
 import { countsLine } from "./counts.ts";
 import { LEVELS } from "./events.ts";

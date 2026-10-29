@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { moduleOf, pack, tolerance } from "../domain/pack.ts";
 
-// Module packing of spec `bdk-cli/git`, "Review groups".
+// Module packing of reviewer groups (`docs/concepts/run-state.md`).
 
 const many = (dir: string, count: number): string[] =>
   Array.from({ length: count }, (_, i) => `${dir}/f${String(i).padStart(3, "0")}.ts`);

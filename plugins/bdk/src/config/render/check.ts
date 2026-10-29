@@ -1,4 +1,4 @@
-// Text of `bdk config check` (spec `bdk-cli/config`, "config check"): one problem per line.
+// Text of `bdk config check` (ADR-0008): one problem per line.
 
 import { describeProblem } from "../domain/validate.ts";
 import type { CheckResult } from "../schema/check.ts";

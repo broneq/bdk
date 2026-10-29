@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { SHARED } from "../src/slices.ts";
 import type { Matrix } from "../eslint.architecture.ts";
 
-// Spec `bdk-cli`, "shared/ admission": a module admitted to shared/ because three or more
+// shared/ admission (ADR-0009): a module admitted to shared/ because three or more
 // slices use it must keep three importing slices. ESLint checks one import at a time and
 // cannot count importers, so this check is a test (design D5).
 

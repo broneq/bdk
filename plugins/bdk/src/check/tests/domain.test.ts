@@ -23,7 +23,7 @@ import {
   verdictOf,
 } from "../domain/verdict.ts";
 
-// Pure rules of spec `bdk-cli/check`, "Run the checks", "Output files", "Red checks as findings".
+// Pure rules of the check slice (ADR-0011).
 
 const TOOLS: Tools = {
   test: [

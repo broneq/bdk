@@ -1,5 +1,5 @@
 // Which commands a check plan holds and how each command line and the line the agent runs are
-// composed (spec `bdk-cli/check`, "Plan the checks"; design D4 of v3-183-check-run, D1-D4 of
+// composed (ADR-0011; design D4 of v3-183-check-run, D1-D4 of
 // v3-275-scoped-check-files, D1-D4 of v3-317-test-groups, D3-D5 of v3-408-check-plan-record).
 
 import { minimatch } from "minimatch";
@@ -7,7 +7,7 @@ import { minimatch } from "minimatch";
 export const KINDS = ["test", "lint", "build"] as const;
 export type Kind = (typeof KINDS)[number];
 
-/** The check points of `--at`; `tools.<kind>.<id>.when` names them (spec `bdk-cli/config`). */
+/** The check points of `--at`; `tools.<kind>.<id>.when` names them (ADR-0008). */
 export const POINTS = ["part", "wave", "review"] as const;
 export type Point = (typeof POINTS)[number];
 

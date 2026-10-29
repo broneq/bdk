@@ -1,4 +1,4 @@
-// The range of a review round (spec `bdk-cli/git`, "Scope of a review round", "Round record";
+// The range of a review round (`docs/concepts/run-state.md`;
 // design D3, D4): parsing git's `-z` output and choosing the round to anchor at.
 
 import { byCodeUnit } from "./pack.ts";

@@ -1,4 +1,4 @@
-// The `--json` result of `bdk hooks pre-tool-use -` (spec `bdk-cli/hooks`, "Hook output").
+// The `--json` result of `bdk hooks pre-tool-use -` (`docs/concepts/cli-config-hooks.md`).
 
 import { z } from "zod";
 

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { isRuleFile, parseRule, ruleBody } from "../domain/rule.ts";
 import type { Rule } from "../domain/rule.ts";
 
-// The rule file format of spec `rule-pack`, "Rule file".
+// The rule file format of the BDK pack (ADR-0012).
 
 const HOUSE = `---
 kind: house

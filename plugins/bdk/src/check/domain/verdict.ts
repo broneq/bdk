@@ -1,5 +1,4 @@
-// The result of a check from the outcome the agent reports for its call (spec `bdk-cli/check`,
-// "Record the checks", "Result file", "Output files", "Red checks as findings").
+// The result of a check from the outcome the agent reports for its call (ADR-0011).
 
 import type { Kind } from "./plan.ts";
 
