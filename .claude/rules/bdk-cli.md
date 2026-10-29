@@ -9,7 +9,7 @@ paths:
 The `bdk` CLI helps skills; it never runs the process. Decisions: ADR-0009 (`docs/adr/0009-cli-vertical-slices.md`, slices) and ADR-0010 (`docs/adr/0010-cli-output-contract.md`, output contract); behaviour: `docs/concepts/cli-config-hooks.md` and `docs/reference/bdk/cli.md`.
 
 - A command computes a result from its arguments and the files it reads, or writes what it was asked to write, and returns. It never decides what runs next, records which step of a skill ran, refuses work because another command did not run, prompts, or waits. The order of the work lives in skill text.
-- A new command needs a recorded problem that an eval or a measurement showed (`CLAUDE.md`, "Building skills"). Name it in the Change.
+- A new command needs a recorded problem that an eval or a measurement showed (`CLAUDE.md`, "Building skills"). Name it in the issue and the PR.
 - One slice per command group: `src/<group>/`. A new verb goes into its group's slice; a new group is a new slice and its row in `src/slices.ts`.
 - A slice owns its whole vertical: `commands/` (argv, help), `use-cases/` (logic; no argv, no stdout), `domain/` (types, pure rules), `store/` (its files), `render/` (text), `schema/` (zod schema of the `--json` result), `tests/`. One file per command in each layer.
 - Reach another slice only through its `index.ts`, and add a matrix edge only for a use case that slice owns. Data several slices read goes through `shared/`.

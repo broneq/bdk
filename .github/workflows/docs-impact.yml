@@ -1,9 +1,8 @@
 name: docs-impact
 
-# A pull request that changes what a BDK user sees (skills, agents, hooks, plugin sources, main
-# specs) changes a Guide or Concepts page too, or says why in its description
-# (v3-268-docs-site-user-docs, design D9). Its own workflow, so that editing the description
-# re-runs only this job.
+# A pull request that changes what a BDK user sees (skills, agents, hooks, plugin sources)
+# changes a Guide or Concepts page too, or says why in its description. Its own workflow, so
+# that editing the description re-runs only this job.
 
 permissions:
   contents: read

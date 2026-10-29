@@ -7,23 +7,6 @@ on:
   pull_request:
 
 jobs:
-  # The SDLC gate of CLAUDE.md: every main spec under openspec/specs/ passes
-  # strict validation. The version matches the one CLAUDE.md pins.
-  openspec:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-
-      - name: Install OpenSpec
-        run: npm install --global @fission-ai/openspec@1.13.2
-
-      - name: Validate main specs
-        run: openspec validate --specs --strict
-
   # `pnpm check`, step by step, so a failure names its step.
   check:
     runs-on: ubuntu-latest
@@ -134,7 +117,7 @@ jobs:
         run: pnpm --filter @bdk/docs docs:build
 
       # Mermaid lays a diagram out only in a browser, so the fit check measures the built site
-      # in Chromium (v3-338-docs-wide-diagrams-fit, design D3).
+      # in Chromium.
       - if: steps.changes.outputs.build == 'true'
         run: pnpm --filter @bdk/docs exec playwright install --with-deps chromium
 

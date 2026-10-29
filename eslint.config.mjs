@@ -12,9 +12,6 @@ import { SHARED, SLICES } from "./plugins/bdk/src/slices.ts";
 export default tseslint.config(
   includeIgnoreFile(fileURLToPath(new URL(".gitignore", import.meta.url))),
   {
-    ignores: ["openspec/changes/archive/"],
-  },
-  {
     // Plugin hooks stay plain .mjs with JSDoc types (no build step); their
     // plugin tsconfig sets checkJs, so the typed rules apply to them too.
     files: ["**/*.ts", "plugins/*/hooks/**/*.mjs"],
