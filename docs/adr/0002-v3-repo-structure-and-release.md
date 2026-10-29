@@ -2,6 +2,11 @@
 status: accepted
 date: 2026-10-07
 decision-makers: broneq
+enforced-by:
+  - tests/release-components.test.ts
+  - tests/marketplace.test.ts
+  - scripts/publish-plugin.test.ts
+  - .github/workflows/release.yml
 ---
 
 # ADR-0002: v3 repository structure and release flow - one directory per plugin, builds on a `release` branch

@@ -8,6 +8,8 @@ How the engineering skills should consume this repo's domain documentation when 
 - **`GLOSSARY-MAP.md`** at the repo root if it exists: it points at one `GLOSSARY.md` per context. Read each one relevant to the topic.
 - **`docs/adr/`**: read ADRs that touch the area you're about to work in. In multi-context repos, also check `src/<context>/docs/adr/` for context-scoped decisions.
 
+A new ADR in this repository follows the format in `CONTRIBUTING.md` ("ADRs"): frontmatter `status`, `date`, `decision-makers` and `enforced-by` (repository paths of the checks that enforce it, or `none`), checked by `tests/adr-format.test.ts`.
+
 If any of these files don't exist, **proceed silently**. Don't flag their absence; don't suggest creating them upfront. The `/domain-modeling` skill (reached via `/grill-with-docs` and `/improve-codebase-architecture`) creates them lazily when terms or decisions actually get resolved.
 
 ## File structure

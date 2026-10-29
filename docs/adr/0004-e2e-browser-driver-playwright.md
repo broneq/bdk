@@ -2,6 +2,8 @@
 status: accepted
 date: 2026-10-08
 decision-makers: broneq
+enforced-by:
+  - plugins/bdk/tests/browser-driver.test.ts
 ---
 
 # ADR-0004: e2e-check drives the browser with Playwright scripts the tester writes as it goes
