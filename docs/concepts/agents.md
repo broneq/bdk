@@ -40,7 +40,7 @@ flowchart TB
   style S3 fill:transparent,stroke:transparent
 ```
 
-`bdk:reviewer`, `bdk:integration-reviewer`, `bdk:judge` and `bdk:e2e-tester` have their skill preloaded through the `skills:` frontmatter; the other agents call the skill their prompt names with the `Skill` tool. A block with an agent of its own (`/bdk:explore-project`, `/bdk:explore`, `/bdk:design-draft`, `/bdk:verify-design`, `/bdk:plan-draft`, `/bdk:verify-plan`, `/bdk:implement-part`, `/bdk:conform-part`, `/bdk:repair-wave`, `/bdk:spec-conformance`, `/bdk:diagnose-run`) starts that agent when it runs in the main thread, instead of doing the work (its step 0), so the author never checks its own work. `/bdk:diagnose-run` has no orchestrator: you type it, and its step 0 starts `bdk:analyst`. `/bdk:review-group`, `/bdk:review-integration`, `/bdk:judge` and `/bdk:e2e-check` have no step 0: in a round the lead starts their agents, and typed by a user they run in the main thread, like the main-thread blocks of the table below.
+`bdk:reviewer`, `bdk:integration-reviewer`, `bdk:judge` and `bdk:e2e-tester` have their skill preloaded through the `skills:` frontmatter; the other agents call the skill their prompt names with the `Skill` tool. A block with an agent of its own (`/bdk:explore-project`, `/bdk:recon`, `/bdk:explore`, `/bdk:design-draft`, `/bdk:verify-design`, `/bdk:plan-draft`, `/bdk:verify-plan`, `/bdk:implement-part`, `/bdk:conform-part`, `/bdk:repair-wave`, `/bdk:spec-conformance`, `/bdk:diagnose-run`) starts that agent when it runs in the main thread, instead of doing the work (its step 0), so the author never checks its own work. `/bdk:diagnose-run` has no orchestrator: you type it, and its step 0 starts `bdk:analyst`. `/bdk:review-group`, `/bdk:review-integration`, `/bdk:judge` and `/bdk:e2e-check` have no step 0: in a round the lead starts their agents, and typed by a user they run in the main thread, like the main-thread blocks of the table below. Why blocks reach their agents this way: [ADR-0023](../adr/0023-agent-block-starts-its-own-agent.md).
 
 ## Roles
 
@@ -72,7 +72,14 @@ flowchart TB
 
 The model and effort of each agent can be overridden with `models.<role>.model` and `models.<role>.effort`, where the role is the agent's name (`lead`, `explorer`, `designer`, `planner`, `verifier`, `implementer`, `conformer`, `reviewer`, `integration-reviewer`, `e2e-tester`, `judge`, `analyst`); every stage that starts the agent passes them, so `models.verifier` sets the verifier of `/bdk:design`, `/bdk:plan`, every review round and `/bdk:close` alike. See [CLI, configuration and hooks](./cli-config-hooks.md#configuration-bdk-settings-yaml).
 
-`/bdk:review-group`, `/bdk:review-integration`, `/bdk:judge`, `/bdk:triage` and `bdk:verifier` run each `bdk` call as a Bash command of its own, with every argument written out: no `cd`, `;`, `&&`, pipe or shell variable around or inside it. The permission rule `/bdk:setup` writes for `bdk` matches only that form; a compound call, or one with a variable in an argument, is refused or asks you. The review blocks under `--workdir` (a pull request reviewed in its own worktree) run `cd <worktree> && bdk ...`, which the skills grant.
+`/bdk:review-group`, `/bdk:review-integration`, `/bdk:judge`, `/bdk:triage` and `bdk:verifier` run each `bdk` call as a Bash command of its own, with every argument written out: no `cd`, `;`, `&&`, pipe or shell variable around or inside it. The permission rule `/bdk:setup` writes for `bdk` matches only that form; a compound call, or one with a variable in an argument, is refused or asks you. The review blocks under `--workdir` (a pull request reviewed in its own worktree) run `cd <worktree> && bdk ...`, which the skills grant. Why BDK fits its commands to narrow grants, never the grants to its commands: [ADR-0024](../adr/0024-commands-alone-under-narrow-grants.md).
+
+## The tools `/bdk:commit` and `/bdk:adr`
+
+Both run in the main thread without a BDK configuration, and both follow your project's convention before their own default.
+
+- `/bdk:commit` writes the message in the first convention it finds: a commitlint configuration, the commit section of `CONTRIBUTING.md`, then the subjects of the last 20 commits; Conventional Commits otherwise. It adds no `Co-Authored-By`, tool or agent line unless that convention shows one. It commits exactly what is staged; with nothing staged, it stages by path the changes and the new files they use, never with `git add -A` or `git add .`, leaves out files that look like secrets or local artefacts (`.env*`, keys, logs, build output) and lists them, and splits unrelated changes into one commit each. It never passes `--no-verify`, never amends unless asked and never pushes; a hook that rejects for a reason other than the message stops it with the hook's output.
+- `/bdk:adr` writes one record in your ADR directory and format (an `.adr-dir` file, `docs/adr/` and the other usual homes), MADR under `docs/adr/` when the project has none, numbered one above the highest. It takes a free-form decision or a decision `D<N>` of a Change's `design.md`, gives every option its pros and cons, and when the new record replaces an accepted one, changes only that record's status to superseded. It commits nothing.
 
 ## Compose your own
 
@@ -87,3 +94,4 @@ Every block runs alone, so a team can change the flow without changing BDK:
 
 - `plugins/bdk/agents/*.md` (frontmatter `model`, `skills`, `tools`)
 - `plugins/bdk/skills/*/SKILL.md` (step 0 of each block)
+- `plugins/bdk/skills/{commit,adr}/SKILL.md`
