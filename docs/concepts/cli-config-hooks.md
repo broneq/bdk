@@ -76,7 +76,7 @@ flowchart TB
 
 ## Configuration `.bdk/settings.yaml`
 
-Three layers merge, later over earlier; arrays of items merge by `id`. `bdk config show` prints each value with the layer it came from.
+Three layers merge, later over earlier; arrays of items merge by `id` ([ADR-0008](../adr/0008-configuration-layers-required.md)). `bdk config show` prints each value with the layer it came from.
 
 ```mermaid
 flowchart TB

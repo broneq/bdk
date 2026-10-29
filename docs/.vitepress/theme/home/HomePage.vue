@@ -261,7 +261,6 @@ const year = new Date().getFullYear();
             <ul>
               <li><a href="https://github.com/broneq/bdk">GitHub</a></li>
               <li><a :href="withBase('/adr/0003-v3-architecture-skills-first')">Decisions</a></li>
-              <li><a :href="withBase('/design/2026-10-07-v3-architecture')">Designs</a></li>
             </ul>
           </nav>
         </div>

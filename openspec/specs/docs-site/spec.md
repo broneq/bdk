@@ -31,8 +31,8 @@ Every page, asset and internal link of the built site SHALL resolve under the pa
 - **WHEN** a reader opens `https://broneq.github.io/bdk/` and follows a link in the sidebar
 - **THEN** the linked page loads with its styles, under `/bdk/`
 
-### Requirement: The sidebar lists every ADR and design
-The site SHALL have a home page and a navigation bar. Its sidebar SHALL hold, in this order, the sections Guide, Concepts, Reference, Architecture decisions and Designs. The Guide, Concepts and Reference sections SHALL list their pages in a declared reading order. The Architecture decisions and Designs sections SHALL list every Markdown file in `docs/adr/` and `docs/design/`, in file-name order, titled by the plain text of the file's first level-one heading up to its first " - ", and a new file in either directory SHALL appear in the sidebar without a change to the site configuration. A Markdown page under `docs/guide/`, `docs/concepts/` or `docs/reference/` that the sidebar does not list, or a sidebar link to a page that does not exist, SHALL fail `pnpm check` and name the page or the link.
+### Requirement: The sidebar lists every ADR
+The site SHALL have a home page and a navigation bar. Its sidebar SHALL hold, in this order, the sections Guide, Concepts, Reference and Architecture decisions. The Guide, Concepts and Reference sections SHALL list their pages in a declared reading order. The Architecture decisions section SHALL list every Markdown file in `docs/adr/`, in file-name order, titled by the plain text of the file's first level-one heading up to its first " - ", and a new file in that directory SHALL appear in the sidebar without a change to the site configuration. A Markdown page under `docs/guide/`, `docs/concepts/` or `docs/reference/` that the sidebar does not list, or a sidebar link to a page that does not exist, SHALL fail `pnpm check` and name the page or the link.
 
 #### Scenario: New ADR
 - **WHEN** a contributor adds `docs/adr/0004-<slug>.md` whose first line is `# ADR-0004: <title> - <summary>`
@@ -40,7 +40,7 @@ The site SHALL have a home page and a navigation bar. Its sidebar SHALL hold, in
 
 #### Scenario: Section order
 - **WHEN** a reader opens any page of the site
-- **THEN** the sidebar shows Guide, Concepts, Reference, Architecture decisions and Designs, in that order
+- **THEN** the sidebar shows Guide, Concepts, Reference and Architecture decisions, in that order
 
 #### Scenario: Concepts page missing from the sidebar
 - **WHEN** a contributor adds `docs/concepts/<slug>.md` without adding it to the sidebar

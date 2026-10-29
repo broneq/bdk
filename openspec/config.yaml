@@ -9,12 +9,11 @@ context: |
 
   Sources of truth for v3 work:
   - Repository conventions and the SDLC: CLAUDE.md.
-  - Architecture: docs/design/2026-10-07-v3-architecture.md and
-    docs/adr/0003-v3-architecture-skills-first.md (decision IDs D1, D2-2,
-    D3-0 and the named design sections).
+  - Architecture: docs/adr/0003-v3-architecture-skills-first.md (decision
+    IDs D1, D2-2, D3-0) and the ADRs after it in docs/adr/; how the product
+    works: docs/concepts/.
   - Repository layout, CI and releases:
-    docs/design/2026-10-07-v3-repo-structure-cicd.md and
-    docs/adr/0002-v3-repo-structure-and-release.md.
+    docs/adr/0002-v3-repo-structure-and-release.md and CONTRIBUTING.md.
   - What the first attempt taught: docs/v3-draft1/ (start with
     run-b1/2026-10-07-bdk-v3-findings.md). It is an archive: read it, never
     edit it, and do not repeat its root causes.

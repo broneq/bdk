@@ -8,6 +8,8 @@ Notation in the diagrams: see the [glossary](./glossary.md#notation-in-the-diagr
 
 The main thread (an orchestrator, or a block a user typed) starts leads and single agents; a lead starts workers as foreground `Agent` calls. Every `Agent` call a BDK skill makes names its run mode: `run_in_background: false` for an agent the caller waits for, so the host never starts a worker in the background and a lead never waits on one by polling; only a lead started under `execution.lead: background` gets `run_in_background: true`. A block that runs in the main thread is called with the `Skill` tool.
 
+The host nests subagents at most three levels under the main thread. BDK uses two: a lead (level 1) and its workers (level 2). Only `bdk:lead` starts agents; a worker runs its block itself and starts none, so the third level stays free.
+
 ```mermaid
 flowchart TB
   O["orchestrators<br/>(main thread)"]
@@ -71,6 +73,15 @@ flowchart TB
 The model and effort of each agent can be overridden with `models.<role>.model` and `models.<role>.effort`, where the role is the agent's name (`lead`, `explorer`, `designer`, `planner`, `verifier`, `implementer`, `conformer`, `reviewer`, `integration-reviewer`, `e2e-tester`, `judge`, `analyst`); every stage that starts the agent passes them, so `models.verifier` sets the verifier of `/bdk:design`, `/bdk:plan`, every review round and `/bdk:close` alike. See [CLI, configuration and hooks](./cli-config-hooks.md#configuration-bdk-settings-yaml).
 
 `/bdk:review-group`, `/bdk:review-integration`, `/bdk:judge`, `/bdk:triage` and `bdk:verifier` run each `bdk` call as a Bash command of its own, with every argument written out: no `cd`, `;`, `&&`, pipe or shell variable around or inside it. The permission rule `/bdk:setup` writes for `bdk` matches only that form; a compound call, or one with a variable in an argument, is refused or asks you. The review blocks under `--workdir` (a pull request reviewed in its own worktree) run `cd <worktree> && bdk ...`, which the skills grant.
+
+## Compose your own
+
+Every block runs alone, so a team can change the flow without changing BDK:
+
+- **Your own orchestrator**: a project skill (`.claude/skills/<name>/SKILL.md`) that calls BDK blocks with the `Skill` tool or starts BDK agents with the `Agent` tool, in the order your team works. A block reads the same run files whoever calls it.
+- **Your own rules**: rules declared under `rules` in the settings join the [rule pack](./rules.md), and `enabled: false` switches a pack rule off.
+- **Settings**: commands, gates, budgets and models per [configuration layer](./cli-config-hooks.md#configuration-bdk-settings-yaml).
+- **A subset of plugins**: each plugin of the marketplace installs and works alone ([install](../guide/install.md)).
 
 ## Sources
 

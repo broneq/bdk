@@ -15,7 +15,7 @@ enforced-by:
 
 BDK v3 ships several Claude Code plugins (`bdk`, `bdk-craft`, `git-identity`, `bdk-skill-kit`) and built Node CLIs from one repository. An installed plugin is copied into the user's cache on its own, so its built CLI has to travel with it, and the installed files must match a released version. How is the repository laid out, and how does a built CLI reach an installed plugin?
 
-The full design, with diagrams, CI jobs and the risk register, is in [`docs/design/2026-10-07-v3-repo-structure-cicd.md`](../design/2026-10-07-v3-repo-structure-cicd.md).
+The full design, with diagrams, CI jobs and the risk register, was in [`docs/design/2026-10-07-v3-repo-structure-cicd.md`](https://github.com/broneq/bdk/blob/1c91fba8215522bface9112796d0db3dd939a453/docs/design/2026-10-07-v3-repo-structure-cicd.md) (removed in #441). How the repository works today is in `CONTRIBUTING.md`.
 
 ## Decision Drivers
 

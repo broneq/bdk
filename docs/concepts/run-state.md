@@ -100,6 +100,33 @@ openspec/specs/<capability>/spec.md   main specs: openspec archive merges the de
 
 Once a Change's pull request is merged and no `/bdk:run` queue still holds it, nothing reads its directory any more: keep it as the record of why, or delete it.
 
+## How a report reads
+
+Every agent report starts with one line that decides: `Status: done` or `Status: blocker` for an author (`execute/part-NN.md`, `execute/wave-N.md`), `Verdict: PASS` or `Verdict: FAIL` for a checker (`verify-N.md`, `execute/conform-NN.md`, `spec-conformance.md`). Callers and `bdk run status` decide on that line alone, so one rule resumes every stage: a missing report means the step has not run, and its first line says whether the next step may start. Fixed sections follow it.
+
+A verifier report (`/bdk:verify-design`, `/bdk:verify-plan`, `/bdk:spec-conformance`):
+
+```markdown
+Verdict: FAIL
+Closed: M2
+
+## Must address
+- M1 design.md "Export": streams nothing on an empty query.
+  Evidence: src/users/repo.ts:42
+
+## Should consider
+- S1 ...
+
+## Checked
+- Every spec scenario has an answer in the design.
+```
+
+- `FAIL` if and only if `Must address` holds an item; every such item has an `Evidence:` line (a file and line, a spec scenario, or a command and its output).
+- IDs (`M1`, `S1`) stay stable across passes over the same artifact: a later report keeps the ID of each problem still open, numbers a new one on, and lists the fixed ones under `Closed:`.
+- `Checked` names what holds, so the verdict's coverage is visible.
+
+An implementer report has `## Acceptance tests` (each scenario, its test, red seen, green seen), `## Changed files`, `## Checks`, `## Decisions taken without the user`, and with `Status: blocker` a `## Blocker` (kind, evidence, proposal). A conformer report has `## Fixed`, `## Left` and `## Checks`.
+
 ## Design and plan
 
 ```mermaid
