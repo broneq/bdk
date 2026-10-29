@@ -1,6 +1,18 @@
 # Contributing to BDK
 
-BDK v3 is being rebuilt on `staging/v3`. This guide describes how the repository works; the way of working (issues, branches, pull requests) is the `## SDLC` section of `CLAUDE.md`. Why the repository is laid out and released this way is [ADR-0002](docs/adr/0002-v3-repo-structure-and-release.md).
+BDK v3 is being rebuilt on `staging/v3`. This guide describes how the repository works, from an issue to a merged pull request. The exact `gh` commands for the board are in the `## SDLC` section of `CLAUDE.md`. Why the repository is laid out and released this way is [ADR-0002](docs/adr/0002-v3-repo-structure-and-release.md).
+
+## Way of working
+
+Every piece of work is a GitHub issue, a branch from that issue and one pull request into `staging/v3`, in this order. The repository process uses no OpenSpec ([ADR-0005](docs/adr/0005-repository-process-without-openspec.md)); the `bdk` plugin still runs OpenSpec in the projects it is installed in.
+
+1. **Issue.** The issue holds the scope: Goal, Scope, Input, Acceptance signal, Open questions and Dependencies (`None.` when there are none), plus a `Budget` section when the work pays for model runs. It goes into the `v3.0` milestone and onto the `BDK v3` board, and each dependency on an open issue is a GitHub "blocked by" relation.
+2. **Branch.** Pick an issue whose blockers are all closed, assign yourself, and create the branch from the issue: `gh issue develop N --base staging/v3 --name v3/<N>-<slug> --checkout`.
+3. **Work.** Code and its tests together; the current state of the product is described by the code, its tests and the Concepts pages. A decision that is hard to reverse, surprising without context and the result of a real trade-off is recorded as an ADR in the same pull request ("ADRs" below); most work needs none.
+4. **Docs.** A change to what a BDK user sees updates the Guide and Concepts pages in the same pull request and regenerates the Reference ("Updating the docs" below).
+5. **Gates.** `pnpm docs:reference` and every check PR CI runs ("Checks" below).
+6. **Pull request.** One Conventional Commit and one pull request into `staging/v3`. Its body names the issue (`Resolves #N`), the ADR when there is one, and the gates you ran, and holds `Docs-impact: none - <reason>` when no user docs change.
+7. **After the merge.** Close the issue with `gh issue close N -c "Done in #PR"` (closing keywords fire only on the default branch), or leave it open with a comment on what is left; delete the branch and its worktree.
 
 ## Plugins
 
@@ -73,8 +85,7 @@ PR CI runs on Linux and aims at 5 minutes or less. Every job is a required check
 | `plugins` | `pr.yml` | `claude plugin validate --strict` on the marketplace and on every plugin directory, nothing else |
 | `commitlint` | `pr.yml` | every commit of the PR |
 | `docs` | `pr.yml` | the VitePress build and the diagram fit check, only when `docs/`, `pnpm-lock.yaml` or `pr.yml` changed; it reports success otherwise |
-| `openspec` | `pr.yml` | `openspec validate --specs --strict` |
-| `docs-impact` | `docs-impact.yml` | a change to plugin skills, agents, hooks, sources or main specs changes a Guide or Concepts page too, or the PR body says `Docs-impact: none - <reason>` |
+| `docs-impact` | `docs-impact.yml` | a change to plugin skills, agents, hooks or sources changes a Guide or Concepts page too, or the PR body says `Docs-impact: none - <reason>` |
 
 Besides each plugin's own tests, `pnpm test` runs the repository tests in `tests/`; among them `tests/conflict-markers.test.ts` fails when a committed file holds a git conflict marker, which a merge can commit past every other check.
 

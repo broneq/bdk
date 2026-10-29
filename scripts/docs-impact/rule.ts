@@ -1,5 +1,4 @@
-// The docs-impact rule (CONTRIBUTING.md, "Updating the docs";
-// v3-268-docs-site-user-docs, design D9): a pull request that changes what a BDK user sees
+// The docs-impact rule (CONTRIBUTING.md, "Updating the docs"): a pull request that changes what a BDK user sees
 // changes a Guide or Concepts page too, or says why it does not.
 
 /** Sources of user-visible behaviour. */
@@ -8,7 +7,6 @@ const WATCHED = [
   /^plugins\/[^/]+\/agents\//,
   /^plugins\/[^/]+\/hooks\//,
   /^plugins\/[^/]+\/src\//,
-  /^openspec\/specs\//,
 ];
 
 /** The hand-written user docs; the Reference is generated and checked by its own test. */
@@ -25,7 +23,7 @@ export interface Impact {
 export function docsImpact(changed: readonly string[], body: string): Impact {
   const watched = changed.filter((path) => WATCHED.some((pattern) => pattern.test(path)));
   if (watched.length === 0) {
-    return { ok: true, message: "No skill, agent, hook, plugin source or main spec changed." };
+    return { ok: true, message: "No skill, agent, hook or plugin source changed." };
   }
   const docs = changed.filter((path) => DOCS.some((pattern) => pattern.test(path)));
   if (docs.length > 0) {
