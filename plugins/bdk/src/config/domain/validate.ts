@@ -1,4 +1,4 @@
-// Validation of the layers (ADR-0008; design D3): merge first,
+// Validation of the layers (ADR-0008): merge first,
 // then validate every prefix of the layers, so a partial item is checked on top of the layers
 // below it and a value a higher layer overrides is still checked; each problem names the layer
 // its value comes from.

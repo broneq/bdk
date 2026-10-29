@@ -1,5 +1,5 @@
 // The command reader of the subagent-git guard (`docs/concepts/cli-config-hooks.md`;
-// design D5, ported from draft 1's `kernel/src/hooks/domain/shell.ts`): a Bash command becomes
+// ported from draft 1's `kernel/src/hooks/domain/shell.ts`): a Bash command becomes
 // simple commands with their words, so the guard looks at command words and never at text
 // inside a quoted argument or a heredoc body (unless a shell reads that body). Best effort for
 // a careless model: aliases, functions called by name, variables used as the command word and

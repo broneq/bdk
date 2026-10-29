@@ -1,5 +1,4 @@
-// The round records under a run's `review/` directory (`docs/concepts/run-state.md`;
-// design D3).
+// The round records under a run's `review/` directory (`docs/concepts/run-state.md`).
 
 import { join } from "node:path";
 

@@ -13,7 +13,7 @@ enforced-by:
 
 BDK v2 is slow, checks code rather than the product, keeps no living documentation and is hard for teams to adapt. The first v3 attempt (`draft/v3-1`) put the process into a TypeScript kernel that held the stage order, started one agent per task and checked every agent through a ledger and guards. It failed on speed and on product-level correctness. Models change week to week, so whatever governs the process outside the skill text has to be rewritten each time they do. Where does orchestration live, what holds the living documentation, and who holds the state of a run?
 
-The full design, with flows, the catalog of skills, the risk register and the open items, was in [`docs/design/2026-10-07-v3-architecture.md`](https://github.com/broneq/bdk/blob/1c91fba8215522bface9112796d0db3dd939a453/docs/design/2026-10-07-v3-architecture.md) (removed in #441). How the product works today is in [Concepts](../concepts/workflow.md).
+The full design, with flows, the catalog of skills, the risk register and the open items, was in [`docs/design/2026-10-07-v3-architecture.md`](https://github.com/broneq/bdk/blob/8dced46ec79df99ba0900d3a7b6dd650c12e6ecc/docs/design/2026-10-07-v3-architecture.md) (removed in #441). How the product works today is in [Concepts](../concepts/workflow.md).
 
 ## Decision Drivers
 
@@ -72,7 +72,7 @@ It is the only combination that keeps the process in text a team can read and ch
 
 ### Implementation Requirements
 
-- [ ] Initialise OpenSpec in this repository and write the BDK schema.
+- [ ] Initialise OpenSpec in this repository and write the BDK schema. (For this repository, [ADR-0005](0005-repository-process-without-openspec.md) replaced this step: the repository process runs without OpenSpec. The product keeps the BDK schema.)
 - [ ] `bdk config` with three layers and `/bdk:setup` (stack detection including `tools.e2e`, permission allow rules, OpenSpec init).
 - [ ] `bdk check run`, `bdk git groups`, `bdk rules for`, `bdk plan check`, `bdk findings`, `bdk run status`.
 - [ ] Each block as a plain skill with its eval cases, then the orchestrators.

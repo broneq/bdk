@@ -1,4 +1,4 @@
-// What the git slice needs from the OS, injected by `src/main.ts` (design D7).
+// What the git slice needs from the OS, injected by `src/main.ts`.
 
 import type { Files } from "../../shared/fs/index.ts";
 

@@ -1,4 +1,4 @@
-// `bdk git scope`: the range a review round covers (`docs/concepts/run-state.md`; design D2-D4).
+// `bdk git scope`: the range a review round covers (`docs/concepts/run-state.md`).
 
 import { resolve } from "node:path";
 

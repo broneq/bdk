@@ -17,7 +17,7 @@ import { checkResult } from "../src/plan/schema/check.ts";
 import { run } from "../src/shared/cli/index.ts";
 import { files } from "../src/shared/fs/index.ts";
 
-// Free checks specific to the bdk eval suite (evals/README.md; design D6 of v3-189-eval-setup).
+// Free checks specific to the bdk eval suite (evals/README.md).
 // The loader and case-scaffold checks of every plugin's suite are in tests/eval-suites.test.ts.
 
 const PLUGIN = join(import.meta.dirname, "..");

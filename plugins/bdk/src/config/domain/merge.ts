@@ -1,4 +1,4 @@
-// Merging layers and naming their leaves (ADR-0008; design D3). Pure
+// Merging layers and naming their leaves (ADR-0008). Pure
 // functions over plain YAML data: mappings merge deeply, arrays of items with an `id` merge on
 // `id`, everything else is replaced by the higher layer.
 

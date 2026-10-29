@@ -1,5 +1,5 @@
-// The dedupe key and the finding id (the Concepts page "Findings";
-// design D2). SHA-256 is a pure computation, not an OS access.
+// The dedupe key and the finding id (the Concepts page "Findings").
+// SHA-256 is a pure computation, not an OS access.
 import { createHash } from "node:crypto";
 
 export interface Keyed {

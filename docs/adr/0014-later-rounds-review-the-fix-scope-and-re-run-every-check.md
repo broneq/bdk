@@ -4,9 +4,9 @@ date: 2026-10-29
 decision-makers: broneq
 enforced-by:
   - plugins/bdk/src/git/tests/use-cases.test.ts
+measured-by:
   - plugins/bdk/evals/auto-review-fix-round
   - plugins/bdk/evals/auto-review-test-only-fix
-  - tests/eval-suites.test.ts
 ---
 
 # ADR-0014: A later review round reviews only the fix commits but re-runs every check, spec conformance and E2E

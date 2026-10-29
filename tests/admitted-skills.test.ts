@@ -3,8 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 // Plain-skill plugins admitted by evals (ADR-0025): each ships
-// skills only, and a skill ships only with an `admitted` row in its evals/RESULTS.md (design D3,
-// D7 of v3-207-bdk-craft-plugin; D8 of v3-383-explain-plugin).
+// skills only, and a skill ships only with an `admitted` row in its evals/RESULTS.md.
 
 const root = join(import.meta.dirname, "..");
 const PLUGINS = ["bdk-craft", "bdk-explain"];

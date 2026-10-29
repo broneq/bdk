@@ -1,5 +1,5 @@
-// The architecture lint of the bdk CLI (ADR-0009;
-// design D5 of v3-178-bdk-plugin-skeleton). Generated from the slice matrix in `src/slices.ts`,
+// The architecture lint of the bdk CLI (ADR-0009).
+// Generated from the slice matrix in `src/slices.ts`,
 // so the root `eslint.config.mjs` and the tests build the same rules, each from its own matrix.
 import { readdirSync } from "node:fs";
 import { join } from "node:path";

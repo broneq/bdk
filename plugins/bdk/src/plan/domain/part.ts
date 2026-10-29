@@ -1,4 +1,4 @@
-// One plan part as `bdk plan check` reads it (`docs/concepts/stages.md`; design D2, D8): the
+// One plan part as `bdk plan check` reads it (`docs/concepts/stages.md`): the
 // frontmatter of the BDK OpenSpec schema checked key by key, the measures the part limits apply to,
 // and the scenarios and `Verified by:` lines the present-scenario check reads. Faults are values,
 // so one call reports every fault of a plan.

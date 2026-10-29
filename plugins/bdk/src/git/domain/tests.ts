@@ -1,5 +1,5 @@
-// The test-file convention of a range (`docs/concepts/run-state.md`; design D2 of
-// the Change v3-264). Conservative on purpose: a product file taken for a test file lets a
+// The test-file convention of a range (`docs/concepts/run-state.md`).
+// Conservative on purpose: a product file taken for a test file lets a
 // review round skip a needed E2E check, a missed test file only costs one E2E run.
 
 /** Directory segments that hold only tests, in any position. */

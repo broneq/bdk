@@ -2,10 +2,10 @@
 status: accepted
 date: 2026-10-29
 decision-makers: broneq
-enforced-by:
+enforced-by: none
+measured-by:
   - plugins/bdk/evals/implement-part-plan-defect
   - plugins/bdk/evals/execute-plan-defect
-  - tests/eval-suites.test.ts
 ---
 
 # ADR-0021: A part edits only its declared files - a contract it cannot meet is a plan defect, never a workaround

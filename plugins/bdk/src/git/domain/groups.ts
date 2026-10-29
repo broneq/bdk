@@ -1,4 +1,4 @@
-// Reviewer groups of a range (`docs/concepts/run-state.md`; design D5).
+// Reviewer groups of a range (`docs/concepts/run-state.md`).
 
 import { byCodeUnit, pack, tolerance } from "./pack.ts";
 import type { Part } from "./plan.ts";

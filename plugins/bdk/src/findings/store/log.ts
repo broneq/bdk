@@ -1,4 +1,4 @@
-// The findings log on disk (design D3): read whole, appended one event line per write.
+// The findings log on disk: read whole, appended one event line per write.
 import { dirname, join } from "node:path";
 
 import type { Files } from "../../shared/fs/index.ts";

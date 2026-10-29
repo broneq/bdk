@@ -1,5 +1,5 @@
 // Runs the plugin's eval suite with the Claude Code version pinned in the root package.json
-// (design D1-D3 of v3-300-eval-openspec-path). Run as `node evals/run.ts [claude plugin eval args]`
+// (CONTRIBUTING.md, "Evals"). Run as `node evals/run.ts [claude plugin eval args]`
 // from the `eval` script, after `build.ts`.
 //
 // `pnpm run` puts the workspace `node_modules/.bin` directories first on PATH, and a run inherits
@@ -9,13 +9,11 @@
 //
 // The sandbox also denies reads under /Users except the directories on PATH, so the shell
 // prefix of the `git` host workaround (CLAUDE_CODE_SHELL_PREFIX) is unreadable in a run unless
-// its directory is on PATH; the run gets that directory first (design D2 of
-// v3-313-execute-evals-lead).
+// its directory is on PATH; the run gets that directory first.
 //
 // npm checks for its own update on any command whose cache holds no recent check, as under the
 // clean HOME of the README's host limits. The sandbox denies that request and reports it in the
-// command's output although the command worked, so the run gets the check off (design D1 of
-// v3-298-evals-lavish-stub-offline).
+// command's output although the command worked, so the run gets the check off.
 import { spawnSync } from "node:child_process";
 import { accessSync, constants, realpathSync } from "node:fs";
 import { homedir } from "node:os";

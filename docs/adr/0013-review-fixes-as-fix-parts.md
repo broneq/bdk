@@ -2,12 +2,12 @@
 status: accepted
 date: 2026-10-29
 decision-makers: broneq
-enforced-by:
+enforced-by: none
+measured-by:
   - plugins/bdk/evals/auto-review-fix-round
   - plugins/bdk/evals/auto-review-present-behaviour
   - plugins/bdk/evals/plan-fixes-judged-round
   - plugins/bdk/evals/plan-fixes-spec-delta
-  - tests/eval-suites.test.ts
 ---
 
 # ADR-0013: Review fixes are planned as fix parts and built by the execute lead; every fix pass gets a review round

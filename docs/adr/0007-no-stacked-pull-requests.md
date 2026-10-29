@@ -2,10 +2,10 @@
 status: accepted
 date: 2026-10-29
 decision-makers: broneq
-enforced-by:
+enforced-by: none
+measured-by:
   - plugins/bdk/evals/run-waiting-blocker
   - plugins/bdk/evals/run-two-prs
-  - tests/eval-suites.test.ts
 ---
 
 # ADR-0007: No stacked pull requests - every Change branches from the base and waits for its blockers

@@ -1,4 +1,4 @@
-// The settings schema (ADR-0008; design D1, D7). One strict zod
+// The settings schema (ADR-0008). One strict zod
 // schema of the resolved configuration: a default on every leaf, `prefault({})` on every nested
 // object so its inner defaults apply (zod 4's `default({})` would skip them).
 

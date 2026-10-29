@@ -8,7 +8,7 @@ Every piece of work is a GitHub issue, a branch from that issue and one pull req
 
 1. **Issue.** The issue holds the scope: Goal, Scope, Input, Acceptance signal, Open questions and Dependencies (`None.` when there are none), plus a `Budget` section when the work pays for model runs. It goes into the `v3.0` milestone and onto the `BDK v3` board, and each dependency on an open issue is a GitHub "blocked by" relation.
 2. **Branch.** Pick an issue whose blockers are all closed, assign yourself, and create the branch from the issue: `gh issue develop N --base staging/v3 --name v3/<N>-<slug> --checkout`.
-3. **Work.** Code and its tests together; the current state of the product is described by the code, its tests and the Concepts pages. A decision that is hard to reverse, surprising without context and the result of a real trade-off is recorded as an ADR in the same pull request ("ADRs" below); most work needs none.
+3. **Work.** Code and its tests together; the current state of the product is described by the code, its tests and the Concepts pages. A decision that meets the conditions in ["ADRs"](#adrs) is recorded as an ADR in the same pull request; most work needs none.
 4. **Docs.** A change to what a BDK user sees updates the Guide and Concepts pages in the same pull request and regenerates the Reference ("Updating the docs" below).
 5. **Gates.** `pnpm docs:reference` and every check PR CI runs ("Checks" below).
 6. **Pull request.** One Conventional Commit and one pull request into `staging/v3`. Its body names the issue (`Resolves #N`), the ADR when there is one, and the gates you ran, and holds `Docs-impact: none - <reason>` when no user docs change.
@@ -45,7 +45,7 @@ The working rule for CLI code is `.claude/rules/bdk-cli.md`; the decisions behin
 - **Help and the Reference come from the declaration.** A command's help is generated from its declaration in the slice, so `pnpm docs:reference` regenerates the CLI Reference after any change to a command.
 - **A `boundaries/*` lint failure is fixed by fixing the import.** Inline `eslint-disable` comments have no effect under `plugins/bdk/src/`.
 - **Tests.** Every command's `--json` output is parsed with its zod schema in the slice's tests. One end-to-end test of the built launcher, `plugins/bdk/tests/cli.test.ts`, builds into a temporary directory, because `pnpm check` runs the tests before `pnpm build`.
-- **OpenSpec pin.** A bump of `@fission-ai/openspec` changes `plugins/bdk/package.json`, the version in `/bdk:setup` and the Guide's `install.md` together, and merges only with `plugins/bdk/tests/openspec-schema.test.ts` passing (ADR-0003, "More Information").
+- **OpenSpec pin.** A bump of `@fission-ai/openspec` changes `plugins/bdk/package.json`, the version in `/bdk:setup` and the Guide's `install.md` together, and merges only with `plugins/bdk/tests/openspec-schema.test.ts` passing. Why the pin is exact: [ADR-0003](docs/adr/0003-v3-architecture-skills-first.md), "More Information".
 - **Pack rules.** A new rule under `plugins/bdk/rules/` names its measurement in `measured`, pointing at a report row; `plugins/bdk/tests/rule-pack.test.ts` fails otherwise ([ADR-0012](docs/adr/0012-rule-pack-admission-by-measurement.md)).
 
 Plugin text conventions, each held by a test:
@@ -112,7 +112,7 @@ When a release is created, one `publish` job (`scripts/publish-plugin.ts`) handl
 
 - One site for the release on `main`; no pages per version.
 - Why the Reference is committed, an exception to ADR-0002, is [ADR-0026](docs/adr/0026-reference-generated-and-committed.md). `scripts/docs-reference.test.ts` fails `pnpm check` on a page that differs from the sources and names the command; after parallel PRs conflict on it, regenerate, never merge the text by hand.
-- ADRs and designs enter the sidebar by file name. A Guide, Concepts or Reference page is added to the declared order in `docs/.vitepress/sidebar.ts`; `sidebar.test.ts` fails on a page missing from it.
+- ADRs enter the sidebar by file name. A Guide, Concepts or Reference page is added to the declared order in `docs/.vitepress/sidebar.ts`; `sidebar.test.ts` fails on a page missing from it.
 - `docs/v3-draft1/` stays out of the site: a relative link into it becomes a GitHub link, and a link to a file that does not exist there fails the build.
 - The styling is the Broniszewski design system: an unchanged copy of its tokens in `docs/.vitepress/theme/design-system/`, updated as its README says. Fonts are self-hosted; the site loads nothing from another host.
 
@@ -151,16 +151,26 @@ Skills are measured with `claude plugin eval`, locally only, because every run i
 
 ## ADRs
 
-A decision that is hard to reverse, surprising without context and the result of a real trade-off is recorded as an ADR in `docs/adr/`, numbered on from the highest existing one (`NNNN-<slug>.md`), with MADR-style sections (Context and Problem Statement, Decision Drivers, Considered Options, Decision Outcome). Its frontmatter:
+A decision is recorded as an ADR only when it meets all three conditions: it is hard to reverse, it is surprising without context, and it is the result of a real trade-off. Most work needs none. An ADR lives in `docs/adr/`, numbered on from the highest existing one (`NNNN-<slug>.md`, its H1 `# ADR-NNNN: <title>`), with MADR-style sections (Context and Problem Statement, Decision Drivers, Considered Options, Decision Outcome). Its frontmatter:
 
 ```yaml
 ---
-status: accepted
+status: accepted # proposed, accepted, rejected, deprecated or superseded by ADR-NNNN
 date: 2026-10-29
 decision-makers: broneq
 enforced-by: # repository paths of the tests, lint configs or CI workflows that check it, or `none`
   - tests/release-components.test.ts
+measured-by: # optional: the paid eval cases that measure it, plugins/<name>/evals/<case>
+  - plugins/bdk/evals/judge-levels
 ---
 ```
 
-`tests/adr-format.test.ts` (run by `pnpm check`) fails an ADR without `status`, `date`, `decision-makers` or `enforced-by`, an `enforced-by` path that does not exist, and two ADRs with the same number.
+`enforced-by` lists only checks that run on every PR. An eval case runs only when someone pays for it, so it goes in `measured-by`, never in `enforced-by`; a decision held by eval cases alone has `enforced-by: none`.
+
+`tests/adr-format.test.ts` (run by `pnpm check`) fails:
+
+- a `.md` file in `docs/adr/` whose name is not `NNNN-<slug>.md`, and two ADRs with the same number;
+- an ADR without `status`, `date`, `decision-makers` or `enforced-by`, a `status` outside the set above, and an H1 whose number is not the file's;
+- an `enforced-by` path that does not exist or is an eval case;
+- a `measured-by` entry that does not exist or is not an eval case directory;
+- a `{TBD}` placeholder left in any ADR.

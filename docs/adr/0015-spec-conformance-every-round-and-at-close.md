@@ -2,12 +2,12 @@
 status: accepted
 date: 2026-10-29
 decision-makers: broneq
-enforced-by:
+enforced-by: none
+measured-by:
   - plugins/bdk/evals/spec-conformance-round
   - plugins/bdk/evals/auto-review-first-round
   - plugins/bdk/evals/close-conformance-fail
   - plugins/bdk/evals/close-e2e-cleared
-  - tests/eval-suites.test.ts
 ---
 
 # ADR-0015: Spec conformance runs in every review round and again at close; close stops on a failure and fixes nothing

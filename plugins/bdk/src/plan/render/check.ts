@@ -1,4 +1,4 @@
-// The text of `bdk plan check` (`docs/concepts/stages.md`; design D7), written for a
+// The text of `bdk plan check` (`docs/concepts/stages.md`), written for a
 // model reading a Bash result: the summary first, then waves, parts and problems.
 
 import type { CheckResult } from "../schema/check.ts";

@@ -2,13 +2,13 @@
 status: accepted
 date: 2026-10-29
 decision-makers: broneq
-enforced-by:
+enforced-by: none
+measured-by:
   - plugins/bdk/evals/run-two-prs
   - plugins/bdk/evals/run-resume
   - plugins/bdk/evals/run-waiting-blocker
   - plugins/bdk/evals/run-queue-from-issues
   - plugins/bdk/evals/run-needs-user
-  - tests/eval-suites.test.ts
 ---
 
 # ADR-0018: `/bdk:run` adds no autonomy - it never answers for the user, and a stage that does not reach its end stops the whole queue

@@ -4,6 +4,7 @@ date: 2026-10-29
 decision-makers: broneq
 enforced-by:
   - plugins/bdk/tests/check.test.ts
+measured-by:
   - plugins/bdk/evals/implement-part-csv
 ---
 

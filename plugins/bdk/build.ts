@@ -1,5 +1,5 @@
-// Builds the bdk CLI into one self-contained file, `dist/bdk.mjs` (design D3 of
-// v3-178-bdk-plugin-skeleton). Run as `node build.ts`; the end-to-end test imports `build`.
+// Builds the bdk CLI into one self-contained file, `dist/bdk.mjs` (ADR-0002).
+// Run as `node build.ts`; the end-to-end test imports `build`.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";

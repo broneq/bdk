@@ -1,5 +1,5 @@
 // The plan parts of a Change, `plan/parts/<NN>.md` (`docs/concepts/run-state.md`;
-// design D5; the format is #180's).
+// the format is #180's).
 
 import { join } from "node:path";
 

@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 // A merge that commits unresolved conflict blocks passes every other check: Markdown lint reads
-// the markers as text (design D8 of v3-280-pr-review-verify-new-commits).
+// the markers as text.
 
 const root = join(import.meta.dirname, "..");
 const marker = /^(?:<{7}|>{7})(?: |$)/;

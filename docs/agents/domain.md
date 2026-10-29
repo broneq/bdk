@@ -7,7 +7,7 @@ How the engineering skills should consume this repo's domain documentation when 
 - **`docs/concepts/glossary.md`**: the one glossary of this repository, the words BDK uses, published as the Concepts glossary of the docs site.
 - **`docs/adr/`**: read ADRs that touch the area you're about to work in.
 
-A new ADR in this repository follows the format in `CONTRIBUTING.md` ("ADRs"): frontmatter `status`, `date`, `decision-makers` and `enforced-by` (repository paths of the checks that enforce it, or `none`), checked by `tests/adr-format.test.ts`.
+A new ADR in this repository follows the format in `CONTRIBUTING.md` ("ADRs"), checked by `tests/adr-format.test.ts`: `enforced-by` names only CI checks (tests, lint configs, workflows) or `none`, and the paid eval cases that measure a decision go in the optional `measured-by`.
 
 A new term goes into `docs/concepts/glossary.md`, never into a root `GLOSSARY.md`: this repository keeps one glossary, on the docs site.
 

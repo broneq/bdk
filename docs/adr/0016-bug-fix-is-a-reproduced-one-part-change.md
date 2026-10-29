@@ -2,12 +2,12 @@
 status: accepted
 date: 2026-10-29
 decision-makers: broneq
-enforced-by:
+enforced-by: none
+measured-by:
   - plugins/bdk/evals/debug-fix
   - plugins/bdk/evals/diagnose-bug-not-reproduced
   - plugins/bdk/evals/diagnose-bug-related-defect
   - plugins/bdk/evals/debug-too-large
-  - tests/eval-suites.test.ts
 ---
 
 # ADR-0016: A bug fix is a reproduced, one-part Change; no reproduction, no Change

@@ -1,4 +1,4 @@
-// The `rules` entries of the configuration (ADR-0012; design D5): a `BDK-` entry adjusts a pack
+// The `rules` entries of the configuration (ADR-0012): a `BDK-` entry adjusts a pack
 // rule, any other entry is a project rule with the defaults the configuration schema leaves out.
 
 import { PACK_PREFIX } from "./rule.ts";

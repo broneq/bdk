@@ -1,4 +1,4 @@
-// The text of `bdk rules for`: Markdown a skill puts into a role's prompt as it is (design D10).
+// The text of `bdk rules for`: Markdown a skill puts into a role's prompt as it is.
 
 import type { ForResult } from "../schema/for.ts";
 

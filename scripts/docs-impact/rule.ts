@@ -1,5 +1,5 @@
-// The docs-impact rule (CONTRIBUTING.md, "Updating the docs"): a pull request that changes what a BDK user sees
-// changes a Guide or Concepts page too, or says why it does not.
+// The docs-impact rule (CONTRIBUTING.md, "Updating the docs"): a pull request that changes what
+// a BDK user sees changes a Guide or Concepts page too, or says why it does not.
 
 /** Sources of user-visible behaviour. */
 const WATCHED = [
@@ -35,7 +35,8 @@ export function docsImpact(changed: readonly string[], body: string): Impact {
   return {
     ok: false,
     message: [
-      "This pull request changes what a BDK user sees, but no page under docs/guide/ or docs/concepts/:",
+      "This pull request changes what a BDK user sees, " +
+        "but no page under docs/guide/ or docs/concepts/:",
       ...watched.map((path) => `  ${path}`),
       "Update the pages that describe it, or add this line to the pull request description:",
       "  Docs-impact: none - <reason>",

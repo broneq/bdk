@@ -2,12 +2,12 @@
 status: accepted
 date: 2026-10-29
 decision-makers: broneq
-enforced-by:
+enforced-by: none
+measured-by:
   - plugins/bdk/evals/pr-review-verify
   - plugins/bdk/evals/pr-review-verify-force-push
   - plugins/bdk/evals/pr-review-verify-no-new-commit
   - plugins/bdk/evals/pr-review-verify-regression
-  - tests/eval-suites.test.ts
 ---
 
 # ADR-0017: The PR-review record lives on GitHub, in hidden markers of the user's own review

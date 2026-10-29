@@ -1,4 +1,4 @@
-// The composition root of the bdk CLI (design D8): the one place that reads `process`, wires
+// The composition root of the bdk CLI: the one place that reads `process`, wires
 // the command groups into the frame with their OS boundaries and sets the exit code.
 
 import { homedir } from "node:os";

@@ -1,5 +1,5 @@
 // `bdk plan check <dir>`: the parts of a plan checked against the configured part limits
-// (`docs/concepts/stages.md`; design D4, D5). Plan faults are the answer; only a missing directory
+// (`docs/concepts/stages.md`). Plan faults are the answer; only a missing directory
 // and a missing or invalid configuration are errors.
 
 import { loadConfig } from "../../config/index.ts";

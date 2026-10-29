@@ -3,7 +3,7 @@ status: accepted
 date: 2026-10-29
 decision-makers: broneq
 enforced-by:
-  - scripts/docs-impact/rule.test.ts
+  - tests/no-openspec-process.test.ts
 ---
 
 # ADR-0005: The repository process runs without OpenSpec - decisions in ADRs, current state in code, tests and Concepts
@@ -43,7 +43,7 @@ The `bdk` product is not part of this decision: its skills, CLI and schema keep 
 - ✅ Decisions keep their reasons in ADRs, written only when a decision earns one.
 - ❌ Requirements that had scenarios are no longer collected in one place per capability; a reader finds them in tests and Concepts pages.
 - ❌ The repository no longer uses the product's own spec flow on itself, so OpenSpec defects reach the product without this repository meeting them first; the product's tests and evals carry that.
-- 🟡 The archived Changes stay in git history (last at commit `c4f2b2a0cb7c1bfe672c0a7a88e690221fba2dc0`).
+- 🟡 The archived Changes stay in git history (for example [`openspec/changes/archive/` at `8dced46`](https://github.com/broneq/bdk/tree/8dced46ec79df99ba0900d3a7b6dd650c12e6ecc/openspec/changes/archive)).
 
 ## Pros and Cons of the Options
 

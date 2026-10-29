@@ -1,4 +1,4 @@
-// Plan parts as the review groups read them (`docs/concepts/run-state.md`; design D5):
+// Plan parts as the review groups read them (`docs/concepts/run-state.md`):
 // `<NN>.md` with a YAML frontmatter whose `files` lists repository-relative paths.
 
 import { parse } from "yaml";

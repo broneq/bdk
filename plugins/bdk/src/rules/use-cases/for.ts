@@ -140,7 +140,7 @@ export function rulesFor(deps: RulesDeps, input: ForInput): ForResult {
   return {
     stage: input.stage,
     files,
-    // `measured` stays out: admission is the pack tests' concern, not the role's (design D3).
+    // `measured` stays out: admission is the pack tests' concern, not the role's (ADR-0012).
     rules: selected.map((rule) => ({
       id: rule.id,
       origin: rule.origin,

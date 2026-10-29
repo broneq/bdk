@@ -3,11 +3,11 @@ status: accepted
 date: 2026-10-29
 decision-makers: broneq
 enforced-by:
+  - plugins/bdk/src/plan/tests/check.test.ts
+measured-by:
   - plugins/bdk/evals/implement-part-present-behaviour
   - plugins/bdk/evals/plan-draft-present-scenarios
   - plugins/bdk/evals/verify-plan-present-scenarios
-  - plugins/bdk/src/plan/tests/check.test.ts
-  - tests/eval-suites.test.ts
 ---
 
 # ADR-0022: Test-first is proved by a recorded red run - the plan, not the implementer, decides which scenarios are already green

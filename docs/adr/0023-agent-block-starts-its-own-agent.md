@@ -5,8 +5,8 @@ decision-makers: broneq
 enforced-by:
   - plugins/bdk/tests/agent-models.test.ts
   - plugins/bdk/tests/agent-run-mode.test.ts
+measured-by:
   - plugins/bdk/evals/verify-design-second-pass
-  - tests/eval-suites.test.ts
 ---
 
 # ADR-0023: An agent block starts its own agent through `Agent` and `Skill`, so it can be continued

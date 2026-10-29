@@ -1,5 +1,5 @@
 #!/bin/sh
-# Runs the bdk CLI bundle with Node (design D2 of v3-178-bdk-plugin-skeleton).
+# Runs the bdk CLI bundle with Node (ADR-0002).
 set -eu
 
 # Resolve symbolic links by hand: `readlink -f` is missing on older macOS.

@@ -80,7 +80,7 @@ describe("release-please configuration", () => {
   });
 
   // Release type `simple` bumps a version.txt that exists, which would give a
-  // plugin a second version next to plugin.json (v3-173-release-please-dry-run).
+  // plugin a second version next to plugin.json (ADR-0002).
   it("keeps plugin.json the only version file of a plugin", () => {
     expect(versionTxtFiles(root), "plugin.json is the only version of a plugin").toEqual([]);
   });

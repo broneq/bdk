@@ -2,10 +2,10 @@
 status: accepted
 date: 2026-10-29
 decision-makers: broneq
-enforced-by:
+enforced-by: none
+measured-by:
   - plugins/bdk/evals/e2e-check-proposal-paths
   - plugins/bdk/evals/judge-e2e-failure
-  - tests/eval-suites.test.ts
 ---
 
 # ADR-0020: E2E drives the user processes of the proposal, not the spec scenarios - the proposal line is the promise

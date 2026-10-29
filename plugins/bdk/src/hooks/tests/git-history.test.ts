@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { historyChange } from "../domain/git-history.ts";
 
-// The table of git history changes (`docs/concepts/cli-config-hooks.md`, design D5): which git
+// The table of git history changes (`docs/concepts/cli-config-hooks.md`): which git
 // commands the subagent-git guard counts as changing history, row by row.
 
 const denied = (command: string) => historyChange(command);

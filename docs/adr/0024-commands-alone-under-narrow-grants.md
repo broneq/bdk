@@ -2,10 +2,10 @@
 status: accepted
 date: 2026-10-29
 decision-makers: broneq
-enforced-by:
+enforced-by: none
+measured-by:
   - plugins/bdk/evals/judge-levels
   - plugins/bdk/evals/plan-fresh
-  - tests/eval-suites.test.ts
 ---
 
 # ADR-0024: Agents run each command alone under narrow grants - a denied command is never a verdict

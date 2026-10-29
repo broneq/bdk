@@ -8,7 +8,7 @@ enforced-by:
 
 # ADR-0004: e2e-check drives the browser with Playwright scripts the tester writes as it goes
 
-Supersedes decision D5 of the [Skills and agents decisions](https://github.com/broneq/bdk/blob/1c91fba8215522bface9112796d0db3dd939a453/docs/design/2026-10-07-v3-skills-decisions.md#d5-how-e2e-check-drives-a-browser) (removed in #441).
+Supersedes decision D5 of the [Skills and agents decisions](https://github.com/broneq/bdk/blob/8dced46ec79df99ba0900d3a7b6dd650c12e6ecc/docs/design/2026-10-07-v3-skills-decisions.md#d5-how-e2e-check-drives-a-browser) (removed in #441).
 
 ## Context and Problem Statement
 

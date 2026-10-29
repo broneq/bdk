@@ -5,6 +5,7 @@ decision-makers: broneq
 enforced-by:
   - plugins/bdk/src/config/tests/domain.test.ts
   - plugins/bdk/src/config/tests/commands.test.ts
+measured-by:
   - plugins/bdk/evals/propose-not-configured
 ---
 

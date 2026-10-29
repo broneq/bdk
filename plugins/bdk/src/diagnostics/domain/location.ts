@@ -1,4 +1,4 @@
-// Where the host keeps a project's transcripts, and which sessions belong to a Change (design D5).
+// Where the host keeps a project's transcripts, and which sessions belong to a Change.
 
 import { join } from "node:path";
 

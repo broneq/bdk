@@ -3,10 +3,10 @@ status: accepted
 date: 2026-10-29
 decision-makers: broneq
 enforced-by:
+  - plugins/bdk/src/plan/tests/part.test.ts
+measured-by:
   - plugins/bdk/evals/execute-main-checkout
   - plugins/bdk/evals/execute-resume-main-checkout
-  - plugins/bdk/src/plan/tests/part.test.ts
-  - tests/eval-suites.test.ts
 ---
 
 # ADR-0019: Plan parts run one at a time in the main checkout - no worktrees, part branches or merges

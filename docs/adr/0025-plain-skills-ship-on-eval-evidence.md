@@ -4,7 +4,6 @@ date: 2026-10-29
 decision-makers: broneq
 enforced-by:
   - tests/admitted-skills.test.ts
-  - tests/eval-suites.test.ts
 ---
 
 # ADR-0025: A skill of a plain-skill plugin ships only with recorded with/without eval evidence

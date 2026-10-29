@@ -1,4 +1,4 @@
-// The source model of the site's Reference (v3-268-docs-site-user-docs, design D3): what each
+// The source model of the site's Reference (ADR-0026): what each
 // plugin ships, read from the files Claude Code loads, the bdk command declarations and the
 // settings schema. Every fact on a Reference page comes from here; nothing is typed twice.
 

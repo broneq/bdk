@@ -1,5 +1,5 @@
-// Hand-written pages name only what exists (CONTRIBUTING.md, "Updating the docs"; v3-268-docs-site-user-docs,
-// design D5). Reads the Guide and Concepts pages, prose and Mermaid blocks, for the names the
+// Hand-written pages name only what exists (CONTRIBUTING.md, "Updating the docs").
+// Reads the Guide and Concepts pages, prose and Mermaid blocks, for the names the
 // docs convention writes in a fixed form and checks each against the source model:
 //
 //   /<plugin>:<skill>      a skill            bdk:<agent>         an agent (or skill) of bdk

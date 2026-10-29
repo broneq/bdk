@@ -14,7 +14,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { build } from "../build.ts";
 
-// End-to-end test of the built CLI (design D10): a copy of the plugin outside the workspace, so
+// End-to-end test of the built CLI: a copy of the plugin outside the workspace, so
 // no node_modules is in reach, built by `build.ts` and run through `bin/bdk` the way the Bash
 // tool runs it, from another working directory.
 

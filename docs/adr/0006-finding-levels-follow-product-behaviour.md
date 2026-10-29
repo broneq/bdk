@@ -2,9 +2,9 @@
 status: accepted
 date: 2026-10-29
 decision-makers: broneq
-enforced-by:
+enforced-by: none
+measured-by:
   - plugins/bdk/evals/judge-levels
-  - tests/eval-suites.test.ts
 ---
 
 # ADR-0006: Finding levels follow the product's behaviour - a broken rule alone is never a blocker

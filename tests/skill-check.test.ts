@@ -5,7 +5,7 @@ import { expect, it } from "vitest";
 import config from "../skill-check.config.ts";
 
 // Every plugin's skills and agents pass skill-check in strict mode, with the root
-// skill-check.config.ts (CONTRIBUTING.md, "Checks"; v3-415-skill-check-ci). The kit's vitest.setup.ts
+// skill-check.config.ts (CONTRIBUTING.md, "Checks"). The kit's vitest.setup.ts
 // builds the CLI before any test runs.
 
 const root = join(import.meta.dirname, "..");

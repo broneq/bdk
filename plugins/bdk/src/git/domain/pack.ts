@@ -1,4 +1,4 @@
-// Module packing of reviewer groups (`docs/concepts/run-state.md`; design D5).
+// Module packing of reviewer groups (`docs/concepts/run-state.md`).
 
 /** Code-unit order, independent of the locale. */
 export function byCodeUnit(a: string, b: string): number {
