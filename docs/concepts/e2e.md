@@ -16,7 +16,7 @@ Per process it drives up to 5 **paths**, with no cap over the whole Change, so a
 | variant | another state or input the proposal, the design or a delta names, or a user plainly meets: nothing there yet, many items, a second run |
 | `break` | at least one per process: wrong or missing input, wrong order, a repeated, quick or interrupted action |
 
-Every path names the proposal line it comes from. A `break` path whose outcome the Change does not state is held to what every user expects: the product refuses or handles it visibly (a message that names the problem, a non-zero exit, a 4xx status, an error on the page), shows no crash or stack trace, loses no data, and still works afterwards.
+Every path names the proposal line it comes from. A `break` path whose outcome the Change does not state is held to what every user expects: the product refuses or handles it visibly (a message that names the problem, a non-zero exit, a 4xx status, an error on the page), shows no crash or stack trace, loses no data, and still works afterwards. Why the proposal, not the spec scenarios, decides what is driven: [ADR-0020](../adr/0020-e2e-drives-proposal-user-processes.md).
 
 ## When it runs
 

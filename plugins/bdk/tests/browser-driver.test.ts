@@ -2,8 +2,8 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import { describe, expect, it } from "vitest";
 
-// The browser driver of e2e-check as shipped (ADR-0004; specs `bdk-e2e-check` "Playwright driver"
-// and `bdk-setup` "Playwright for the browser item"): one pinned Playwright version wherever the
+// The browser driver of e2e-check as shipped (ADR-0004; `skills/e2e-check/references/drivers.md`
+// and `skills/setup/references/e2e.md` "Playwright"): one pinned Playwright version wherever the
 // tester and setup name it, and no trace of the removed chrome-devtools-axi driver.
 
 const PLUGIN = join(import.meta.dirname, "..");
