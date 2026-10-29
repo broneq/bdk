@@ -1,6 +1,6 @@
 # bdk evals
 
-Eval cases of the `bdk` plugin for [`claude plugin eval`](https://code.claude.com/docs/en/plugin-evals). A block stays in BDK only when its case shows that it changes the outcome (ADR-0003); a CLI helper, hook or workflow comes only for a problem a case or a measurement showed. Spec: `openspec/specs/skill-evals/spec.md`.
+Eval cases of the `bdk` plugin for [`claude plugin eval`](https://code.claude.com/docs/en/plugin-evals). A block stays in BDK only when its case shows that it changes the outcome (ADR-0003); a CLI helper, hook or workflow comes only for a problem a case or a measurement showed. How the repository runs evals: `CONTRIBUTING.md`, "Evals".
 
 Every run is a real model call on your account. Nothing here runs in CI except the free check below.
 
@@ -38,7 +38,7 @@ Every run spends the account's usage limit; the measuring issues of Phase 6 cost
 - Run both arms only when the question is whether a block changes the outcome (ADR-0003); to confirm a fix or check a regression, pass `--ablation none`.
 - Put `--max-cost-usd` on every command, and give the agent `--model sonnet` unless the case measures the main thread's model.
 - A full unattended `/bdk:run` on a B1-sized fixture ($7-25 a run, "B1-sized fixture") is for discovering defects between blocks. Confirm a fix on a snapshot of a built workspace (about $3) or with the block case that guards it.
-- The issue names a `Budget`, and the Change's design records the total cost and machine time of every paid run, probe, failed and repeated runs included, or names each run whose cost is unknown.
+- The issue names a `Budget`, and the pull request that reports a paid measurement records the total cost and machine time of every paid run it made, probe, failed and repeated runs included, or names each run whose cost is unknown.
 
 ### Grants
 
@@ -448,7 +448,7 @@ Recorded 2026-10-10 (Claude Code 2.1.296, main thread opus): round 1's verifier 
 
 ## Free check in CI
 
-`plugins/bdk/tests/evals.test.ts` (part of `pnpm test`) loads every case with `claude plugin eval --max-cost-usd 0`, which checks the case files and the graders against the grants `Write Edit` but starts no run and needs no credential. It also runs every fixture and case scaffold as the harness does, and checks names and tags. Run it alone with `pnpm exec vitest run plugins/bdk/tests/evals.test.ts`.
+`tests/eval-suites.test.ts` (part of `pnpm test`) loads every case of every plugin with `claude plugin eval --max-cost-usd 0`, which checks the case files and the graders against the grants `Write Edit` but starts no run and needs no credential, and runs every case scaffold as the harness does. `plugins/bdk/tests/evals.test.ts` holds the checks of this suite alone: it runs every shared fixture, checks case names, tags and the graders each tag needs, the launcher, this README's rules and the offline `gh` stand-in. Run them alone with `pnpm exec vitest run tests/eval-suites.test.ts plugins/bdk/tests/evals.test.ts`.
 
 ## Flaky cases
 

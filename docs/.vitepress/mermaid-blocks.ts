@@ -1,5 +1,5 @@
-// The `mermaid` blocks of a page, with the line each starts on (spec `docs-site`, "Mermaid blocks
-// parse"). The parse test runs every block through mermaid's own parser.
+// The `mermaid` blocks of a page, with the line each starts on (CONTRIBUTING.md,
+// "Mermaid diagrams"). The parse test runs every block through mermaid's own parser.
 
 export interface MermaidBlock {
   /** Line of the opening fence, from 1. */

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { docsImpact } from "./rule.ts";
 
-// Pull requests that change behaviour without docs say why (spec `repo-sdlc`).
+// Pull requests that change behaviour without docs say why (CONTRIBUTING.md, "Updating the docs").
 
 const SKILL = "plugins/bdk/skills/plan/SKILL.md";
 
@@ -49,7 +49,7 @@ describe("docsImpact", () => {
       "plugins/bdk/agents/lead.md",
       "plugins/git-identity/hooks/hooks.json",
       "plugins/bdk-skill-kit/src/cli.ts",
-      "openspec/specs/docs-site/spec.md",
+      "openspec/specs/x/spec.md",
     ]) {
       expect(docsImpact([path], "").ok, path).toBe(false);
     }

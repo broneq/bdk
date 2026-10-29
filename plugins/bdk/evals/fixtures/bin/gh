@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Offline gh stand-in for eval runs (spec skill-evals, "Offline gh stand-in"). An eval run has
+// Offline gh stand-in for eval runs (evals/README.md, "Cases that need Bash"). An eval run has
 // its own HOME and no GitHub credential, so the real gh cannot read an issue or open a pull
 // request. This script answers `gh issue view <ref>` from .git/bdk-eval/issues/<n>.json, written
 // by the case scaffold, `gh pr create` / `gh pr view <head|number|url>` from

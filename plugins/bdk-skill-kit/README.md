@@ -138,9 +138,62 @@ pnpm exec skill-check --baseline-prune
 
 `--baseline-init` refuses to overwrite an existing file. A baseline entry that no longer matches a finding is a `baseline-stale` error until `--baseline-prune` removes it, and prune never adds entries.
 
-## Rules
+## Contract
 
-The rule catalogue, the profiles and the exit codes are specified in the [`skill-kit` spec](../../openspec/specs/skill-kit/spec.md). `skill-check --help` is the usage reference, `skill-check --list-rules` prints the rules a config enables, and `skill-check --explain <rule>` prints what a rule checks, why, how to fix a finding and its options. A plugin rule can carry the same text in its `explain` field.
+This is what a consumer can rely on across releases: a release that removes or tightens any of it is a breaking change of the kit. `skill-check --help` is the usage reference, `skill-check --list-rules` prints the rules a config enables, and `skill-check --explain <rule>` prints what a rule checks, why, how to fix a finding and its options. A plugin rule can carry the same text in its `explain` field.
+
+### Invocation and exit codes
+
+```text
+skill-check [paths...] [--config <file>] [--portable] [--json] [--strict]
+            [--baseline <file>] [--baseline-init] [--baseline-prune]
+            [--list-rules] [--explain <rule>] [--version] [--help]
+```
+
+Path arguments narrow the per-file rules to those skill directories or agent files; project rules always see every target. `--portable` applies the portable profile to every skills target.
+
+| Code | When |
+| --- | --- |
+| 0 | no error-severity finding remains after the baseline |
+| 1 | an error-severity finding remains, a baseline entry is stale, or, under `--strict`, a warning remains |
+| 2 | usage or configuration error: `skill-check: <reason>` on stderr, no findings printed |
+| 3 | internal error (discovery, a rule or the checker failed): `skill-check: internal error: <message>` on stderr, naming the rule and file when a rule threw; the stack trace follows only when `SKILL_CHECK_DEBUG` is set |
+
+### Output
+
+Every finding carries a rule ID, a severity (`error` or `warning`), a file path relative to the config root, a 1-based line, a message and a fingerprint that does not depend on the line. Findings are ordered by file, line, rule ID and message.
+
+- Default: one line per finding, `file:line  severity  rule  message`, then a blank line and a summary with the error, warning and file counts and the number of findings the baseline suppressed. With `GITHUB_ACTIONS` set, one workflow annotation per finding as well.
+- `--json`: one object `{ version, findings, baseline: { suppressed, stale }, summary: { files, errors, warnings } }` and nothing else on stdout.
+
+### Profiles
+
+| Profile | Skills accept | Agents accept |
+| --- | --- | --- |
+| `portable` | the six Agent Skills fields: `name`, `description`, `license`, `compatibility`, `metadata`, `allowed-tools` | not allowed (configuration error) |
+| `claude-code` (default) | the six fields plus `when_to_use`, `argument-hint`, `arguments`, `disable-model-invocation`, `user-invocable`, `disallowed-tools`, `model`, `effort`, `context`, `agent`, `background`, `hooks`, `paths`, `shell` | `name`, `description`, `tools`, `disallowedTools`, `model`, `maxTurns`, `skills`, `memory`, `background`, `omitClaudeMd`, `effort`, `isolation`, `color`, `experimental`; with `plugin: false` also `hooks`, `mcpServers`, `permissionMode`, `initialPrompt` |
+
+The field lists live in `src/profiles.ts`, with the date and the URLs they were read from.
+
+### Rules
+
+Every generic rule has a seeded-violation fixture under `fixtures/` that fails that rule and no other. Default severities:
+
+| Rule | Kinds | Default |
+| --- | --- | --- |
+| `frontmatter`, `name-format`, `description`, `fields`, `field-values`, `body`, `absolute-paths`, `model-names`, `arguments-typo` | skills, agents | error |
+| `name-matches-dir`, `skill-file-name`, `invocation`, `line-limit`, `portable-syntax`, `references`, `unused-files`, `layout`, `unique-names`, `cli-front` | skills | error |
+| `reasoning-prompts` | skills, agents | warning |
+| `description-front-loaded` | skills | warning |
+| `require-model` | agents | off |
+| `block-form`, `forbidden-text`, `required-fields`, `body-shape`, `namespaced-refs` | skills, agents | off (project policy rules, see above) |
+| `block-allowed-tools` | skills | off (project policy rule) |
+
+A report can cap its finding at warning (`invocation` reports `agent` without `context: fork` as one). A baseline entry that matches no finding is a `baseline-stale` error.
+
+A skill that declares `metadata.fronts-cli: <command>` is checked by `cli-front`: it fails when the skill sets `disable-model-invocation: true`, exceeds 30 lines (`maxLines`), never names `<command>` with `--help` on one line, or documents usage (more than three flags other than `--help` and `--json`, `maxFlags`, or more than two rows that start with a flag or subcommand, `maxUsageRows`).
+
+The kit ships no prose on how to write a skill: that is Anthropic's Agent Skills best practices and the `skill-creator` skill. The kit checks the result.
 
 ## Develop
 
@@ -154,7 +207,7 @@ pnpm --filter bdk-skill-kit build
 
 `dist/` is not committed. The test suite builds it before the tests that run the bundles (`vitest.setup.ts`), and the release job builds it onto the `release` branch. The tests include the self-check: the built CLI over the kit's own `skills/` with `skill-check.config.ts`. Releases are cut per plugin by release-please from Conventional Commits, as tags `bdk-skill-kit--v<version>`; the version lives only in `.claude-plugin/plugin.json`.
 
-A change to the contract (a rule, an option, the output, the exit codes) runs as an [OpenSpec](https://github.com/Fission-AI/OpenSpec) change that updates `openspec/specs/skill-kit/spec.md` at the repository root in the same PR, following the repository's SDLC.
+A change to the contract (a rule, an option, the output, the exit codes, a profile) updates the "Contract" section above in the same PR, following the repository's SDLC. Why the kit is also a library installed as a git dependency is [ADR-0027](../../docs/adr/0027-skill-kit-library-git-dependency.md).
 
 ## License
 
