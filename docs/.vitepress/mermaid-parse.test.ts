@@ -12,14 +12,13 @@ const DOCS = join(import.meta.dirname, "..");
 const SKIP = /^(v3-draft1|node_modules|\.vitepress)\//;
 /**
  * The site draws flowcharts and sequence diagrams with wrapping off (`theme/mermaid-diagram.ts`),
- * so a label line is as wide as its author wrote it (spec `docs-site`, "Diagram label lines stay
- * short").
+ * so a label line is as wide as its author wrote it (CONTRIBUTING.md, "Mermaid diagrams").
  */
 const MAX_LABEL_LINE = 40;
 /**
  * An init directive or a `config:` frontmatter. Wrapping and layout are set once for the site
  * (`theme/mermaid-diagram.ts`), so a diagram fits the content column the same way on every page
- * (spec `docs-site`, "Diagrams fit the content column").
+ * (CONTRIBUTING.md, "Mermaid diagrams").
  */
 const OWN_CONFIG = /%%\{\s*init(ialize)?\s*:|^\s*---\s*\n[\s\S]*?^\s*config\s*:/m;
 

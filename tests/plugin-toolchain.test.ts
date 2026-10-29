@@ -2,7 +2,7 @@ import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-// Every plugin runs on the root toolchain (repo-sdlc): a tool config, lockfile
+// Every plugin runs on the root toolchain (CONTRIBUTING.md, "Plugins"): a tool config, lockfile
 // or workflow directory inside a plugin would be ignored by CI or fight the
 // root one.
 

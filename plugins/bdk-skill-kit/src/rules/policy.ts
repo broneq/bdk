@@ -1,4 +1,4 @@
-// Project policy rules (spec `skill-kit`, Project policy rules): checks whose
+// Project policy rules (README.md, "Project policy rules"): checks whose
 // values are a project's choices, so they are off by default and take them
 // as options. Each validates its options, so a rule enabled without the
 // values it needs is a configuration error.

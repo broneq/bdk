@@ -79,9 +79,9 @@ The execute lead builds the parts one at a time in your checkout, in plan order:
 
 Your test, lint and build commands run inside each part, not after the stage: the implementer runs the new acceptance tests red before any code and all checks green after it, the conformer runs them again after its fixes, and the lead runs the wave check once every part of a wave is committed; `/bdk:repair-wave` repairs a red one. The slow suites of the `review` point run first in the first round of review. [Where execute runs your checks](./orchestrators.md#where-execute-runs-your-checks) lists each run.
 
-A part whose tasks contradict each other or their scenario is a plan defect: the implementer stops and says so instead of picking a side.
+A part whose tasks contradict each other or their scenario is a plan defect: the implementer stops and says so instead of picking a side. Why: [ADR-0021](../adr/0021-part-edits-only-its-files-contract-defect-stops.md).
 
-One acceptance test is not seen red: the test of a scenario the part marks ` (behaviour present)`. `/bdk:plan-fixes` marks a scenario so when a review finding asks for its missing test and the code already does it; the implementer expects that test to pass at its first run and reports `green at first run (behaviour present)`. When the part and the code disagree (an unmarked test passes before any code, or a marked one fails), that is a plan defect too. The lead agent only composes: it runs the parts in waves, commits, merges and keeps the state, and never writes product code.
+One acceptance test is not seen red: the test of a scenario the part marks ` (behaviour present)`. `/bdk:plan-fixes` marks a scenario so when a review finding asks for its missing test and the code already does it; the implementer expects that test to pass at its first run and reports `green at first run (behaviour present)`. When the part and the code disagree (an unmarked test passes before any code, or a marked one fails), that is a plan defect too. Why the planner, not the implementer, decides this: [ADR-0022](../adr/0022-test-first-proved-by-recorded-red-run.md). The lead agent only composes: it runs the parts in waves, commits, merges and keeps the state, and never writes product code.
 
 ## Review
 

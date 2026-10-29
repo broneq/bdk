@@ -12,7 +12,7 @@ import { runGroup } from "../src/run/index.ts";
 import { run } from "../src/shared/cli/index.ts";
 import { files } from "../src/shared/fs/index.ts";
 
-// The B1-sized fixture (spec skill-evals, "B1-sized fixture"; design D6 of v3-243-b1-eval-fixture,
+// The B1-sized fixture (evals/README.md, "B1-sized fixture"; design D6 of v3-243-b1-eval-fixture,
 // D2 of v3-208-measure-speed-b1, D1 of v3-368-measure-spec-conformance-run): what the four states must hold beyond building, so an edit of a part, a spec delta or the
 // default part limits cannot break the fixture silently.
 
@@ -280,8 +280,8 @@ function tree(dir: string): string[] {
     .sort();
 }
 
-// The case plan-draft-household-book-gap (spec skill-evals, "plan-draft design-gap case on the
-// B1-sized fixture"; design D1, D2 of v3-253-measure-plan-draft-gap): one product choice open.
+// The case plan-draft-household-book-gap (evals/README.md, "B1-sized fixture";
+// design D1, D2 of v3-253-measure-plan-draft-gap): one product choice open.
 describe("plan-draft-household-book-gap: the short-month choice is open", () => {
   const RECURRING = "specs/ledger-recurring/spec.md";
 

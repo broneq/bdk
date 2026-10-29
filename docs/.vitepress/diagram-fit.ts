@@ -1,7 +1,7 @@
 // Every diagram of the built site fits the desktop content column and shows its labels on the lines
-// their authors wrote (spec `docs-site`, "Diagrams fit the content column" and "Drawn labels keep
-// their author's lines"). Mermaid lays a diagram out only in a browser, so this check opens each
-// page with a diagram in Chromium and measures what the reader sees. Run after `docs:build`.
+// their authors wrote (CONTRIBUTING.md, "Mermaid diagrams"). Mermaid lays a diagram out only in a
+// browser, so this check opens each page with a diagram in Chromium and measures what the reader
+// sees. Run after `docs:build`.
 
 import { once } from "node:events";
 import { readdirSync, readFileSync } from "node:fs";

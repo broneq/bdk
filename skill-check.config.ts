@@ -1,5 +1,5 @@
 // Every plugin's skills and agents, checked in strict mode by tests/skill-check.test.ts
-// (spec repo-sdlc; v3-415-skill-check-ci). Plugins are found by listing plugins/, so a new
+// (CONTRIBUTING.md, "Checks"; v3-415-skill-check-ci). Plugins are found by listing plugins/, so a new
 // one is checked without an edit here. The kit's own skill also keeps its stricter
 // self-check, plugins/bdk-skill-kit/skill-check.config.ts.
 import { existsSync, readdirSync } from "node:fs";

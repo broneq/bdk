@@ -6,7 +6,7 @@
 import { PRESENT_MARKER } from "./part.ts";
 import type { Part } from "./part.ts";
 
-/** The ending of the `Verified by:` line of a present scenario (spec `bdk-plan-blocks`). */
+/** The ending of the `Verified by:` line of a present scenario (ADR-0022). */
 export const PRESENT_ENDING = "; it passes at its first run, the behaviour is present";
 
 /** Every check, in the order problems are listed. */

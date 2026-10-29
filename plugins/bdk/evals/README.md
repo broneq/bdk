@@ -1,6 +1,6 @@
 # bdk evals
 
-Eval cases of the `bdk` plugin for [`claude plugin eval`](https://code.claude.com/docs/en/plugin-evals). A block stays in BDK only when its case shows that it changes the outcome (ADR-0003); a CLI helper, hook or workflow comes only for a problem a case or a measurement showed. Spec: `openspec/specs/skill-evals/spec.md`.
+Eval cases of the `bdk` plugin for [`claude plugin eval`](https://code.claude.com/docs/en/plugin-evals). A block stays in BDK only when its case shows that it changes the outcome (ADR-0003); a CLI helper, hook or workflow comes only for a problem a case or a measurement showed. How the repository runs evals: `CONTRIBUTING.md`, "Evals".
 
 Every run is a real model call on your account. Nothing here runs in CI except the free check below.
 
@@ -38,7 +38,7 @@ Every run spends the account's usage limit; the measuring issues of Phase 6 cost
 - Run both arms only when the question is whether a block changes the outcome (ADR-0003); to confirm a fix or check a regression, pass `--ablation none`.
 - Put `--max-cost-usd` on every command, and give the agent `--model sonnet` unless the case measures the main thread's model.
 - A full unattended `/bdk:run` on a B1-sized fixture ($7-25 a run, "B1-sized fixture") is for discovering defects between blocks. Confirm a fix on a snapshot of a built workspace (about $3) or with the block case that guards it.
-- The issue names a `Budget`, and the Change's design records the total cost and machine time of every paid run, probe, failed and repeated runs included, or names each run whose cost is unknown.
+- The issue names a `Budget`, and the pull request that reports a paid measurement records the total cost and machine time of every paid run it made, probe, failed and repeated runs included, or names each run whose cost is unknown.
 
 ### Grants
 
@@ -70,7 +70,7 @@ done
 
 `setup-web-app` and `setup-library` also grade the decision surface setup reports: each puts a `lavish-axi` stub into the workspace's `node_modules`, which `npx -y lavish-axi` runs before any installed one. The stub of `setup-web-app` answers `--version`, so its reply names the Lavish page; the stub of `setup-library` fails, so its reply names `AskUserQuestion`. The `Bash(npx *)` grant covers both.
 
-The review cases (`review-group-*`, `review-integration-*`, `judge-*`) run on the `monthly-report` fixture, a recorded review round of a two-part Change. `review-group-instruction` and `judge-instruction` run on `monthly-report-instructions.sh`, the same round with a `CLAUDE.md` on `main` whose testing instruction part 01 breaks: the reviewer must cite it with `--rule CLAUDE.md`, and the judge must level it `should-fix` and a citation of an instruction the file does not hold `not-a-problem`. `judge-previous-repeat` seeds a `previous-review` finding of the parse bug and, after it, a differently worded `review-group` finding of the same bug, as a verify round of `/bdk:pr-review` leaves them: the judge must keep the seeded one `blocker` and level the later one `not-a-problem` naming the seeded id (spec `review-blocks`, scenario "A previous finding reported again"). `review-integration-outside-fix-scope` starts from round 2 of `monthly-report` after a fix pass that changed only `src/parse.test.js`: round 1 logged the parse bug of amounts with fewer than two decimals (decided `accept`) and a test gap (decided `fix`), not the cents and dollars seam, and round 2's log is empty. It grades that the integration reviewer logs the seam with evidence saying it lies outside the fix scope, and does not raise the accepted parse bug again (#367). The blocks read the code and write only through `bdk findings`, so they need `bdk` and read-only `git`, and no `Write` or `Edit`:
+The review cases (`review-group-*`, `review-integration-*`, `judge-*`) run on the `monthly-report` fixture, a recorded review round of a two-part Change. `review-group-instruction` and `judge-instruction` run on `monthly-report-instructions.sh`, the same round with a `CLAUDE.md` on `main` whose testing instruction part 01 breaks: the reviewer must cite it with `--rule CLAUDE.md`, and the judge must level it `should-fix` and a citation of an instruction the file does not hold `not-a-problem`. `judge-previous-repeat` seeds a `previous-review` finding of the parse bug and, after it, a differently worded `review-group` finding of the same bug, as a verify round of `/bdk:pr-review` leaves them: the judge must keep the seeded one `blocker` and level the later one `not-a-problem` naming the seeded id (`skills/judge/SKILL.md`: of two findings that repeat each other, the later one is the repeat). `review-integration-outside-fix-scope` starts from round 2 of `monthly-report` after a fix pass that changed only `src/parse.test.js`: round 1 logged the parse bug of amounts with fewer than two decimals (decided `accept`) and a test gap (decided `fix`), not the cents and dollars seam, and round 2's log is empty. It grades that the integration reviewer logs the seam with evidence saying it lies outside the fix scope, and does not raise the accepted parse bug again (#367). The blocks read the code and write only through `bdk findings`, so they need `bdk` and read-only `git`, and no `Write` or `Edit`:
 
 ```bash
 pnpm --filter @bdk/bdk run eval --allow-tools "Bash(*/bin/bdk *)" "Bash(git *)" --case 'review-*'
@@ -448,7 +448,7 @@ Recorded 2026-10-10 (Claude Code 2.1.296, main thread opus): round 1's verifier 
 
 ## Free check in CI
 
-`plugins/bdk/tests/evals.test.ts` (part of `pnpm test`) loads every case with `claude plugin eval --max-cost-usd 0`, which checks the case files and the graders against the grants `Write Edit` but starts no run and needs no credential. It also runs every fixture and case scaffold as the harness does, and checks names and tags. Run it alone with `pnpm exec vitest run plugins/bdk/tests/evals.test.ts`.
+`tests/eval-suites.test.ts` (part of `pnpm test`) loads every case of every plugin with `claude plugin eval --max-cost-usd 0`, which checks the case files and the graders against the grants `Write Edit` but starts no run and needs no credential, and runs every case scaffold as the harness does. `plugins/bdk/tests/evals.test.ts` holds the checks of this suite alone: it runs every shared fixture, checks case names, tags and the graders each tag needs, the launcher, this README's rules and the offline `gh` stand-in. Run them alone with `pnpm exec vitest run tests/eval-suites.test.ts plugins/bdk/tests/evals.test.ts`.
 
 ## Flaky cases
 
