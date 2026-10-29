@@ -1,5 +1,5 @@
-// The docs-impact rule (spec `repo-sdlc`, "Pull requests that change behaviour without docs say
-// why"; v3-268-docs-site-user-docs, design D9): a pull request that changes what a BDK user sees
+// The docs-impact rule (CONTRIBUTING.md, "Updating the docs";
+// v3-268-docs-site-user-docs, design D9): a pull request that changes what a BDK user sees
 // changes a Guide or Concepts page too, or says why it does not.
 
 /** Sources of user-visible behaviour. */

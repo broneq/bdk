@@ -7,7 +7,7 @@ import { committedPages, drift, writePages } from "./docs-reference/files.ts";
 import { loadModel } from "./docs-reference/model.ts";
 import { renderReference } from "./docs-reference/render.ts";
 
-// Reference drift fails pnpm check (spec `docs-site`, "Reference drift fails pnpm check").
+// Reference drift fails pnpm check (ADR-0026).
 
 describe("docs/reference", () => {
   it("matches what pnpm docs:reference generates from the plugin sources", async () => {

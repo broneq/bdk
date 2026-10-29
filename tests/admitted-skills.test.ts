@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-// Plain-skill plugins admitted by evals (specs craft-skills and explain-plugin): each ships
+// Plain-skill plugins admitted by evals (ADR-0025): each ships
 // skills only, and a skill ships only with an `admitted` row in its evals/RESULTS.md (design D3,
 // D7 of v3-207-bdk-craft-plugin; D8 of v3-383-explain-plugin).
 
