@@ -29,3 +29,19 @@ claude --plugin-dir ~/projects/bdk/plugins/<name>
 ## Evals
 
 Skills are measured with `claude plugin eval`, locally only, because every run is paid. How to run the suite and write a case: [`plugins/bdk/evals/README.md`](plugins/bdk/evals/README.md). PR CI loads every case of every plugin's `evals/` for free, at a cost ceiling of zero, and runs each case's scaffold (`tests/eval-suites.test.ts`); a plugin that adds its first case lists the tools its eval README grants in that test.
+
+## ADRs
+
+A decision that is hard to reverse, surprising without context and the result of a real trade-off is recorded as an ADR in `docs/adr/`, numbered on from the highest existing one (`NNNN-<slug>.md`), with MADR-style sections (Context and Problem Statement, Decision Drivers, Considered Options, Decision Outcome). Its frontmatter:
+
+```yaml
+---
+status: accepted
+date: 2026-10-29
+decision-makers: broneq
+enforced-by: # repository paths of the tests, lint configs or CI workflows that check it, or `none`
+  - tests/release-components.test.ts
+---
+```
+
+`tests/adr-format.test.ts` (run by `pnpm check`) fails an ADR without `status`, `date`, `decision-makers` or `enforced-by`, an `enforced-by` path that does not exist, and two ADRs with the same number.

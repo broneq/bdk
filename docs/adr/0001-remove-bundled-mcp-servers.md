@@ -1,9 +1,8 @@
 ---
 status: accepted
 date: 2026-09-25
-decision-makers: {TBD}
-consulted: {TBD}
-informed: {TBD}
+decision-makers: broneq
+enforced-by: none
 ---
 
 # ADR-0001: Remove the bundled MCP servers (serena and code-review-graph) from v3

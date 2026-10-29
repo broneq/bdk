@@ -2,6 +2,9 @@
 status: accepted
 date: 2026-10-07
 decision-makers: broneq
+enforced-by:
+  - plugins/bdk/tests/hooks.test.ts
+  - plugins/bdk/tests/openspec-schema.test.ts
 ---
 
 # ADR-0003: v3 architecture - logic in skills, leads for long stages, OpenSpec with a BDK schema, one writer of run state
