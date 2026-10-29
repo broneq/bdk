@@ -1,5 +1,5 @@
-// The `rules` command group (spec `bdk-cli/rules`): the rules of the BDK pack and the project
-// that a role of a stage reads for its files (spec `rule-pack`).
+// The `rules` command group (`docs/concepts/rules.md`): the rules of the BDK pack and the project
+// that a role of a stage reads for its files (ADR-0012).
 
 import type { Group } from "../shared/cli/index.ts";
 import { forCommand } from "./commands/for.ts";

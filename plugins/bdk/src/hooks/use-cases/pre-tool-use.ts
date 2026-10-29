@@ -1,4 +1,4 @@
-// `bdk hooks pre-tool-use -` (spec `bdk-cli/hooks`, "Subagent git guard"): the payload first, the
+// `bdk hooks pre-tool-use -` (`docs/concepts/cli-config-hooks.md`): the payload first, the
 // command next, the configuration last, so most calls never touch the file system.
 
 import { loadConfig } from "../../config/index.ts";

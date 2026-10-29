@@ -1,4 +1,4 @@
-// Dotted keys against the settings schema (spec `bdk-cli/config`, "Settings keys"): which keys
+// Dotted keys against the settings schema (ADR-0008): which keys
 // name a setting, how a key walks mappings, records and id arrays, and the names known at a
 // place, for "did you mean".
 

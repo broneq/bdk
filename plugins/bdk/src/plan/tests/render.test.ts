@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { renderCheck } from "../render/check.ts";
 import type { CheckResult } from "../schema/check.ts";
 
-// The text of spec `bdk-cli/plan`, "Check output".
+// The text of `bdk plan check` (`docs/concepts/stages.md`).
 
 const LIMITS = { maxTasks: 5, maxFiles: 10, maxBytes: 8192 };
 

@@ -1,5 +1,5 @@
-// The router of the bdk CLI (spec `bdk-cli`; design D8): argv in, stdout, stderr and the exit
-// code out. Every OS value comes in as a parameter, so tests drive it with strings.
+// The router of the bdk CLI (ADR-0009 and ADR-0010; design D8): argv in, stdout, stderr and the
+// exit code out. Every OS value comes in as a parameter, so tests drive it with strings.
 
 import { parseArgs } from "node:util";
 

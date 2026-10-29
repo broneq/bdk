@@ -1,7 +1,6 @@
-// The plan checks of `bdk plan check` (spec `bdk-cli/plan`, "Part limits", "Present scenarios",
-// "Dependencies and waves"; design D6): pure rules over the parts read from one directory. Waves are longest-path
-// layers of `depends-on`; the parts run one at a time in wave order, so a file several parts of
-// one wave list is no problem.
+// The plan checks of `bdk plan check` (`docs/concepts/stages.md`; design D6): pure rules over the
+// parts read from one directory. Waves are longest-path layers of `depends-on`; the parts run one
+// at a time in wave order, so a file several parts of one wave list is no problem.
 
 import { PRESENT_MARKER } from "./part.ts";
 import type { Part } from "./part.ts";

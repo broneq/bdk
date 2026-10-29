@@ -1,5 +1,5 @@
-// The `plan` command group (spec `bdk-cli/plan`): checks the plan parts of a Change. It reads;
-// the plan skills write.
+// The `plan` command group (`docs/concepts/stages.md`): checks the plan parts of a Change. It
+// reads; the plan skills write.
 
 import type { Group } from "../shared/cli/index.ts";
 import { checkCommand } from "./commands/check.ts";

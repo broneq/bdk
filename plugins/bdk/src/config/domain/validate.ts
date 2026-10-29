@@ -1,4 +1,4 @@
-// Validation of the layers (spec `bdk-cli/config`, "config check"; design D3): merge first,
+// Validation of the layers (ADR-0008; design D3): merge first,
 // then validate every prefix of the layers, so a partial item is checked on top of the layers
 // below it and a value a higher layer overrides is still checked; each problem names the layer
 // its value comes from.
@@ -77,7 +77,7 @@ function problemAt(layers: readonly Layer[], key: string, message: string): Prob
   };
 }
 
-/** Keys a release removed, with the rewrite the message names (spec `bdk-cli/config`). */
+/** Keys a release removed, with the rewrite the message names (ADR-0008). */
 function removedKey(key: string): string | undefined {
   return /^tools\.(test|lint|build)\.[^.]+\.scoped$/.test(key)
     ? "scoped was removed: put {files} into the command of a second item that runs at part (when: [part])"

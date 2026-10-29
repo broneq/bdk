@@ -1,4 +1,4 @@
-// The `git` command group: review scope and reviewer groups (spec `bdk-cli/git`).
+// The `git` command group: review scope and reviewer groups (`docs/concepts/run-state.md`).
 
 import type { Group } from "../shared/cli/index.ts";
 import { groupsCommand } from "./commands/groups.ts";

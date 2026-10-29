@@ -1,4 +1,4 @@
-// "Did you mean" for an unknown group or verb (spec `bdk-cli`, "Invocation and routing").
+// "Did you mean" for an unknown group or verb (ADR-0010).
 
 /** Edit distance where swapping two neighbouring letters costs one (optimal string alignment). */
 function distance(a: string, b: string): number {

@@ -1,5 +1,5 @@
-// The `hooks` command group (spec `bdk-cli/hooks`): the commands the plugin's hooks call. They
-// speak the host's hook protocol on stdout and exit 0 for every decision.
+// The `hooks` command group (`docs/concepts/cli-config-hooks.md`): the commands the plugin's hooks
+// call. They speak the host's hook protocol on stdout and exit 0 for every decision.
 
 import type { Group } from "../shared/cli/index.ts";
 import { preToolUseCommand } from "./commands/pre-tool-use.ts";

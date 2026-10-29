@@ -1,4 +1,4 @@
-// The one argument of every `bdk hooks` command (spec `bdk-cli/hooks`, "Hook payload input").
+// The one argument of every `bdk hooks` command (`docs/concepts/cli-config-hooks.md`).
 
 import { CliError } from "../../shared/cli/index.ts";
 import type { Argument, Input } from "../../shared/cli/index.ts";

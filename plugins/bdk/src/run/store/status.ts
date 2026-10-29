@@ -1,4 +1,4 @@
-// The files `bdk run status` reads (spec `bdk-cli/run`, "Files the derivation reads"): the
+// The files `bdk run status` reads (`docs/concepts/run-state.md`): the
 // schemas of `run.json` and `state.json`, and the snapshot of each queued Change. Read only.
 
 import { join } from "node:path";

@@ -7,7 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { build } from "../build.ts";
 import { forSchema } from "../src/rules/schema/for.ts";
 
-// `bdk rules for` end to end (spec `bdk-cli/rules`): a copy of the plugin with its rule pack,
+// `bdk rules for` end to end (`docs/concepts/rules.md`): a copy of the plugin with its rule pack,
 // built by `build.ts`, run through `bin/bdk` from a temporary project.
 
 const PLUGIN = join(import.meta.dirname, "..");

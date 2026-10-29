@@ -1,5 +1,5 @@
-// The `--json` result of `bdk git groups`, also the round record `groups.json` (spec
-// `bdk-cli/git`, "Review groups", "Recording a round").
+// The `--json` result of `bdk git groups`, also the round record `groups.json`
+// (`docs/concepts/run-state.md`).
 
 import { z } from "zod";
 

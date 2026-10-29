@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { basename, join, relative, sep } from "node:path";
 import { describe, expect, it } from "vitest";
 
-// Spec `bdk-plugin`, "No run file named like a refused report": every BDK block may run as a
+// No run file named like a refused report (`CONTRIBUTING.md`): every BDK block may run as a
 // subagent, and Claude Code refuses a subagent's `Write` to a file whose base name matches this
 // pattern ("Subagents should return findings as text, not write report files"). Copied from the
 // `Write` tool's input check of Claude Code 2.1.294.

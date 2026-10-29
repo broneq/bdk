@@ -21,7 +21,7 @@ flowchart TB
 | `/bdk:e2e-check` on `bdk:e2e-tester` | the running product, along the paths of each user process the proposal adds or changes; a finding points at the proposal line |
 | `bdk check record --round` | your test, lint and build commands, run by the round's lead; a red or not-run check is a finding |
 
-Reviewers only report: they change no code and decide nothing.
+Reviewers only report: they change no code and decide nothing. The CLI stamps each finding's id (`f-` and 12 hex characters) from a dedupe key: the file, the line and the rule, or the normalised summary when there is no rule. Two writers that log the same rule on the same line get the same id, and a red check recorded again in the same round adds no second finding.
 
 ## Levels
 

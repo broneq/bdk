@@ -1,4 +1,4 @@
-// `bdk config set <key> <value> [--layer]` (spec `bdk-cli/config`, "config set"): one key into
+// `bdk config set <key> <value> [--layer]` (ADR-0008): one key into
 // one layer file, refused when the key names no setting or the value adds a problem.
 
 import { parse, YAMLParseError } from "yaml";

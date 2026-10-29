@@ -1,4 +1,4 @@
-// `bdk config check` (spec `bdk-cli/config`, "config check").
+// `bdk config check` (ADR-0008).
 
 import type { Command } from "../../shared/cli/index.ts";
 import { renderCheck } from "../render/check.ts";

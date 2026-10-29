@@ -1,4 +1,4 @@
-// `bdk rules for`: the rules a role of a stage reads for a set of files (spec `bdk-cli/rules`),
+// `bdk rules for`: the rules a role of a stage reads for a set of files (`docs/concepts/rules.md`),
 // from the BDK pack and the `rules` entries of the resolved configuration, with its `languages`.
 
 import { dirname, isAbsolute, normalize, relative, resolve, sep } from "node:path";

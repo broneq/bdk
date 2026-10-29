@@ -4,7 +4,7 @@ import { CHECKS, PRESENT_ENDING, PROBLEMS, checkPlan } from "../domain/check.ts"
 import type { Limits } from "../domain/check.ts";
 import type { Part } from "../domain/part.ts";
 
-// The plan checks of spec `bdk-cli/plan`: limits, present scenarios, dependencies and waves.
+// The plan checks (`docs/concepts/stages.md`): limits, present scenarios, dependencies and waves.
 
 const LIMITS: Limits = { maxTasks: 5, maxFiles: 10, maxBytes: 8192 };
 

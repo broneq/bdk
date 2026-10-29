@@ -1,4 +1,4 @@
-// Help rendered from the declarations (spec `bdk-cli`, "Help").
+// Help rendered from the declarations (ADR-0009).
 
 import type { Command, Group } from "./types.ts";
 

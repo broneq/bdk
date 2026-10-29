@@ -1,6 +1,5 @@
-// The resolved configuration of the project around `cwd` (spec `bdk-cli/config`, "Configured
-// project"): every command of the slice starts here, and other slices read it through
-// `config/index.ts`.
+// The resolved configuration of the project around `cwd` (ADR-0008): every command
+// of the slice starts here, and other slices read it through `config/index.ts`.
 
 import { CliError, closest } from "../../shared/cli/index.ts";
 import { resolveKey } from "../domain/keys.ts";

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { fold } from "../domain/fold.ts";
 import { findingId } from "../domain/id.ts";
 
-// Spec `bdk-cli/findings`, "Fold the log".
+// The fold of a findings log (`docs/concepts/findings.md`).
 
 const A = { source: "review-group", summary: "a is wrong", file: "src/a.ts", line: 3 };
 const B = { source: "e2e-check", summary: "login fails" };

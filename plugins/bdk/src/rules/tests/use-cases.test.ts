@@ -8,7 +8,7 @@ import type { RulesDeps } from "../use-cases/for.ts";
 import { rulesFor } from "../use-cases/for.ts";
 import { memory } from "./memory.ts";
 
-// `bdk rules for` against an in-memory project and pack (spec `bdk-cli/rules`, spec `rule-pack`).
+// `bdk rules for` against an in-memory project and pack (`docs/concepts/rules.md`, ADR-0012).
 
 const ROOT = "/work/app";
 const PACK = "/plugin/rules";

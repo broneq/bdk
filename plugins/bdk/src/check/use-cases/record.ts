@@ -1,4 +1,4 @@
-// `bdk check record` (spec `bdk-cli/check`, "Record the checks"): reads the plan of a check and
+// `bdk check record` (ADR-0011): reads the plan of a check and
 // the outputs of the lines the agent ran, and writes the result and, for a round, the findings.
 
 import { addFinding } from "../../findings/index.ts";

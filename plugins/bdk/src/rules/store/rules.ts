@@ -1,4 +1,4 @@
-// The rule files of the BDK pack in the plugin (spec `rule-pack`), and the file a project rule's
+// The rule files of the BDK pack in the plugin (ADR-0012), and the file a project rule's
 // `file` names, read through the `shared/fs` boundary.
 
 import { join } from "node:path";

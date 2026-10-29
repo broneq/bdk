@@ -11,7 +11,7 @@ import { recordChecks } from "../use-cases/record.ts";
 import type { RecordInput } from "../use-cases/record.ts";
 import { fakeGit, memory, ROOT, RUN } from "./memory.ts";
 
-// `bdk check plan` and `bdk check record` against an in-memory file system (spec `bdk-cli/check`).
+// `bdk check plan` and `bdk check record` against an in-memory file system (ADR-0011).
 
 const SETTINGS = `tools:
   test:

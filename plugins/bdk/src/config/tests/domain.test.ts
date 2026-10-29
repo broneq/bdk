@@ -7,7 +7,7 @@ import { DEFAULTS } from "../domain/settings.ts";
 import { DEFAULT_LAYER, validate } from "../domain/validate.ts";
 import type { Suggest } from "../domain/validate.ts";
 
-// Pure rules of spec `bdk-cli/config`: defaults, merge, origins, keys and validation.
+// Pure rules of the configuration (ADR-0008): defaults, merge, origins, keys and validation.
 
 const suggest: Suggest = (name, names) =>
   names.find((candidate) => candidate.startsWith(name) || name.startsWith(candidate));

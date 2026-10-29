@@ -124,3 +124,14 @@ It is the only combination that keeps the process in text a team can read and ch
 
 - ✅ One source of truth behind an API.
 - ❌ A skipped command means a false state; every skill must call commands precisely; the draft 1 path (1,349 of 1,808 Bash calls in B1 were `bdk`).
+
+## More Information
+
+### OpenSpec is pinned exactly; BDK reads plan parts as plain files
+
+The BDK schema depends on project schemas, an experimental OpenSpec feature (D2-2). Two rules keep that dependency safe:
+
+- **An exact pin, gated by a test.** `@fission-ai/openspec` is pinned to one version (1.13.2): an exact dev dependency of `plugins/bdk`, the version `/bdk:setup` uses in a user project, and the version the Guide names. `plugins/bdk/tests/openspec-schema.test.ts` runs that version from the workspace dependencies against the shipped schema (schema validation, a new Change, its status, strict validation, archive), so a bump merges only with that test passing. A floating range lost: an OpenSpec release that changes project schemas would break user projects on install.
+- **Plan parts are files, progress is not in the Change.** Skills and the CLI read `plan/parts/NN.md` (frontmatter `id`, `depends-on`, `isolation`, `files`) as plain files, never through OpenSpec, and the schema has no `apply` section: progress is run state in `.bdk/runs/`. So if project schemas break beyond repair, the fallback (the stock `spec-driven` schema and plain part files at the same path) changes only the install and the proposal-to-design instructions, not the plan format or anything downstream.
+
+How a Change is laid out today is in [OpenSpec Changes](../concepts/openspec-changes.md).

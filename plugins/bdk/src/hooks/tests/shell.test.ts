@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { commandWords, readCommands } from "../domain/shell.ts";
 
-// The command reader of the subagent-git guard (spec `bdk-cli/hooks`, "Git history changes";
+// The command reader of the subagent-git guard (`docs/concepts/cli-config-hooks.md`;
 // design D5): a Bash command becomes simple commands with their words, as a shell reads them.
 
 const words = (text: string) => readCommands(text).map((command) => command.words);

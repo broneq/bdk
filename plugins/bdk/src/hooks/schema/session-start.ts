@@ -1,4 +1,4 @@
-// The `--json` result of `bdk hooks session-start -` (spec `bdk-cli/hooks`, "Hook output").
+// The `--json` result of `bdk hooks session-start -` (`docs/concepts/cli-config-hooks.md`).
 
 import { z } from "zod";
 

@@ -1,5 +1,4 @@
-// `bdk git scope`: the range a review round covers (spec `bdk-cli/git`, "Scope of a review
-// round", "Round record"; design D2-D4).
+// `bdk git scope`: the range a review round covers (`docs/concepts/run-state.md`; design D2-D4).
 
 import { resolve } from "node:path";
 

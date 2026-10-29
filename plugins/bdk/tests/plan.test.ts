@@ -8,10 +8,10 @@ import { checkResult } from "../src/plan/schema/check.ts";
 import { run } from "../src/shared/cli/index.ts";
 import { files } from "../src/shared/fs/index.ts";
 
-// Spec `bdk-cli/plan` end to end: the frame, the slice, the config slice and the file system
-// boundary against a temporary configured project, the way `src/main.ts` wires them. Covers
-// the acceptance signal of #185: an oversized part and a cycle each reported with
-// the part id, and the waves printed in order.
+// `bdk plan check` end to end (`docs/concepts/stages.md`): the frame, the slice, the config slice
+// and the file system boundary against a temporary configured project, the way `src/main.ts` wires
+// them. Covers the acceptance signal of #185: an oversized part and a cycle each reported with the
+// part id, and the waves printed in order.
 
 const PARTS = "openspec/changes/x/plan/parts";
 

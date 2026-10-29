@@ -1,4 +1,4 @@
-// Which rules a role reads (spec `bdk-cli/rules`, "Rules for a stage and files"): pure, so the
+// Which rules a role reads (`docs/concepts/rules.md`): pure, so the
 // same rules and inputs give the same answer. Rules switched off never reach it (`entries.ts`).
 
 import { minimatch } from "minimatch";

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { isTestFile } from "../domain/tests.ts";
 
-// The test-file convention of spec `bdk-cli/git`, "Test files of a range".
+// The test-file convention of a range (`docs/concepts/run-state.md`).
 
 describe("isTestFile", () => {
   it.each([

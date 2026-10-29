@@ -8,8 +8,7 @@ import { set } from "../use-cases/set.ts";
 import { show } from "../use-cases/show.ts";
 import { memory, OPENSPEC, PROJECT, ROOT } from "./memory.ts";
 
-// Model and effort per role, and the escalation effort (spec `bdk-cli/config`, "Settings keys";
-// spec `bdk-cli/config`, "Every agent is a models role").
+// Model and effort per role, and the escalation effort (ADR-0008).
 
 const project = (data: Record<string, unknown>): Layer => ({
   name: "project",

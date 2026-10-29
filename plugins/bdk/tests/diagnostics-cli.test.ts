@@ -7,8 +7,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { build } from "../build.ts";
 import { reportResult } from "../src/diagnostics/schema/report.ts";
 
-// Acceptance of #322 against the built CLI run through `bin/bdk` (spec `bdk-cli/diagnostics`) on
-// the recorded `/bdk:debug` run of the diagnose-run eval fixture (evals/fixtures/diagnose-run/).
+// Acceptance of #322 against the built CLI run through `bin/bdk` (`docs/concepts/orchestrators.md`)
+// on the recorded `/bdk:debug` run of the diagnose-run eval fixture (evals/fixtures/diagnose-run/).
 
 const PLUGIN = join(import.meta.dirname, "..");
 const FIXTURE = join(PLUGIN, "evals", "fixtures", "diagnose-run");

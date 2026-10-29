@@ -1,4 +1,4 @@
-// The test-file convention of a range (spec `bdk-cli/git`, "Test files of a range"; design D2 of
+// The test-file convention of a range (`docs/concepts/run-state.md`; design D2 of
 // the Change v3-264). Conservative on purpose: a product file taken for a test file lets a
 // review round skip a needed E2E check, a missed test file only costs one E2E run.
 

@@ -1,4 +1,4 @@
-// The layer files of the configuration (spec `bdk-cli/config`, "Layer files"; design D2, D5):
+// The layer files of the configuration (ADR-0008; design D2, D5):
 // finding the project root, reading and parsing each layer, and editing one key of a layer file
 // with the yaml Document API, which keeps comments and key order.
 

@@ -1,4 +1,4 @@
-// The architecture lint of the bdk CLI (spec `bdk-cli`, "Vertical slices" to "OS boundary";
+// The architecture lint of the bdk CLI (ADR-0009;
 // design D5 of v3-178-bdk-plugin-skeleton). Generated from the slice matrix in `src/slices.ts`,
 // so the root `eslint.config.mjs` and the tests build the same rules, each from its own matrix.
 import { readdirSync } from "node:fs";
@@ -207,8 +207,7 @@ export function architecture({
     .map(([name]) => `${src}/shared/${name}/**/*.ts`);
   const restricted = OS_MODULES.flatMap((name) => [name, `node:${name}`]).map((name) => ({
     name,
-    message:
-      "OS access belongs in src/main.ts or a shared/ OS boundary module (spec bdk-cli, OS boundary).",
+    message: "OS access belongs in src/main.ts or a shared/ OS boundary module (ADR-0009).",
   }));
   return [
     {
@@ -236,7 +235,7 @@ export function architecture({
         "no-restricted-imports": ["error", { paths: restricted }],
         "no-restricted-globals": [
           "error",
-          { name: "process", message: "Use what src/main.ts injects (spec bdk-cli, OS boundary)." },
+          { name: "process", message: "Use what src/main.ts injects (ADR-0009)." },
         ],
       },
     },

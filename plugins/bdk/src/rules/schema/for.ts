@@ -1,4 +1,4 @@
-// The `--json` result of `bdk rules for` (spec `bdk-cli/rules`, "Rules output").
+// The `--json` result of `bdk rules for` (`docs/concepts/rules.md`).
 
 import { z } from "zod";
 

@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 import { CliError, run } from "../index.ts";
 import type { Command, Group } from "../index.ts";
 
-// The frame of spec `bdk-cli`, driven with fake groups: what reaches stdout and stderr, and the
-// exit code, for every path through the router.
+// The CLI frame (ADR-0009, ADR-0010), driven with fake groups: what reaches stdout and stderr, and
+// the exit code, for every path through the router.
 
 const calls: string[] = [];
 
