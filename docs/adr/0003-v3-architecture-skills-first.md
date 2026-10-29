@@ -13,7 +13,7 @@ enforced-by:
 
 BDK v2 is slow, checks code rather than the product, keeps no living documentation and is hard for teams to adapt. The first v3 attempt (`draft/v3-1`) put the process into a TypeScript kernel that held the stage order, started one agent per task and checked every agent through a ledger and guards. It failed on speed and on product-level correctness. Models change week to week, so whatever governs the process outside the skill text has to be rewritten each time they do. Where does orchestration live, what holds the living documentation, and who holds the state of a run?
 
-The full design, with flows, the catalog of skills, the risk register and the open items, is in [`docs/design/2026-10-07-v3-architecture.md`](../design/2026-10-07-v3-architecture.md).
+The full design, with flows, the catalog of skills, the risk register and the open items, was in [`docs/design/2026-10-07-v3-architecture.md`](https://github.com/broneq/bdk/blob/1c91fba8215522bface9112796d0db3dd939a453/docs/design/2026-10-07-v3-architecture.md) (removed in #441). How the product works today is in [Concepts](../concepts/workflow.md).
 
 ## Decision Drivers
 

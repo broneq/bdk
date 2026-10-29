@@ -61,7 +61,7 @@ Points where the user decides, and the setting that skips them:
 
 ## Autopilot: `/bdk:run` over a queue
 
-`/bdk:run` writes only `.bdk/runs/run.json`. It calls the same stage skills a user would, one Change at a time, each Change on its own branch from the base (no stacking). It stops whenever a stage ends without moving its Change on.
+`/bdk:run` writes only `.bdk/runs/run.json`. It calls the same stage skills a user would, one Change at a time, each Change on its own branch from the base (no stacking, [ADR-0007](../adr/0007-no-stacked-pull-requests.md)). It stops whenever a stage ends without moving its Change on.
 
 ```mermaid
 flowchart TB

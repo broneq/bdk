@@ -34,7 +34,7 @@ Reviewers only report: they change no code and decide nothing.
 | `nice-to-have` | an improvement whose absence costs nothing concrete, including a test no owed scenario asks for |
 | `not-a-problem` | the failure scenario does not hold, it is out of the Change's scope, already handled, or a duplicate |
 
-A rule broken alone is never a `blocker`. A finding whose failure does not hold is `not-a-problem`, not a lower level.
+A rule broken alone is never a `blocker` ([ADR-0006](../adr/0006-finding-levels-follow-product-behaviour.md)). A finding whose failure does not hold is `not-a-problem`, not a lower level.
 
 An E2E finding is a path the E2E tester saw fail, placed at the proposal line it comes from. It stays a `blocker` when the spec deltas or the design word that promise more narrowly than the proposal, or leave its input out: the proposal is the intent, so the review fixes the product (or you narrow the proposal at a manual review gate) instead of shipping a broken promise or stopping at close. An E2E finding whose observation the code does not give (a tester error) is `not-a-problem`; close then clears that failed path and names it, with the judge's reason, next to the `FAIL` verdict in the pull request.
 

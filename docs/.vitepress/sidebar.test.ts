@@ -19,7 +19,7 @@ describe("sidebarItems", () => {
       "adr/0002-second.md": "---\nstatus: accepted\n---\n\n# ADR-0002: Second\n\n## Context\n",
       "adr/0001-first.md": "# ADR-0001: First\n\nText with # a hash.\n",
       "adr/notes.txt": "# Not a page\n",
-      "design/2026-01-01-other.md": "# Other\n",
+      "guide/other.md": "# Other\n",
     });
 
     expect(sidebarItems(root, "adr")).toEqual([
@@ -39,21 +39,18 @@ describe("sidebarItems", () => {
   });
 
   it("fails with the file path when a file has no level-one heading", () => {
-    const root = docsDir({ "design/untitled.md": "## Only a subheading\n" });
+    const root = docsDir({ "adr/0001-untitled.md": "## Only a subheading\n" });
 
-    expect(() => sidebarItems(root, "design")).toThrow(
-      `${join(root, "design", "untitled.md")} has no "# " heading`,
+    expect(() => sidebarItems(root, "adr")).toThrow(
+      `${join(root, "adr", "0001-untitled.md")} has no "# " heading`,
     );
   });
 
-  it("titles every ADR and design of this site", () => {
+  it("titles every ADR of this site", () => {
     const root = import.meta.dirname + "/..";
 
     expect(sidebarItems(root, "adr").map((item) => item.link)).toContain(
       "/adr/0002-v3-repo-structure-and-release",
-    );
-    expect(sidebarItems(root, "design").map((item) => item.link)).toContain(
-      "/design/2026-10-07-v3-architecture",
     );
   });
 });
@@ -93,13 +90,12 @@ describe("user sections", () => {
     expect(unlistedPages(import.meta.dirname + "/..", USER_SECTIONS)).toEqual([]);
   });
 
-  it("orders the sections Guide, Concepts, Reference, decisions, designs", () => {
+  it("orders the sections Guide, Concepts, Reference, decisions", () => {
     expect(sidebar(import.meta.dirname + "/..").map((section) => section.text)).toEqual([
       "Guide",
       "Concepts",
       "Reference",
       "Architecture decisions",
-      "Designs",
     ]);
   });
 });
