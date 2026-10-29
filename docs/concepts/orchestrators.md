@@ -24,6 +24,8 @@ flowchart TB
 
 Setup runs on `opus` (its `model` frontmatter), whatever the session model; the map comes from `bdk:explorer`, which `models.explorer` sets. A re-run keeps every value a layer sets and fills only what is missing; an argument such as "add the e2e entry" limits the run to that change.
 
+In a repository of several packages, setup detects the check items per package and writes `paths` on an item whose command covers only part of the repository (`api/**` for a package in its own directory, `**/*.py` for packages that share the root), so `bdk check plan` runs it only for the files it owns; an item that covers the whole repository gets no `paths`. Setup never installs or deletes anything without your answer: deleting v2 files and installing Playwright are questions of their own, and when it cannot ask, it keeps the files, installs nothing and lists both in the report. It never runs a project command to try a value, and never commits.
+
 ## `/bdk:propose`
 
 ```mermaid
@@ -70,6 +72,8 @@ The designer reads the proposal's `## Acceptance`, the source `R/source/issue.md
 When the log holds a change after propose that no earlier gate approved, the gate shows it on the intent page `R/design/intent.html`, under `manual` and `auto` alike: the intent with every changed word struck, one card per change with why and the options, a table of every AC before and after, and the flow before and after. The designer writes it in intent page mode; its `bdk-scope-log` meta names the last entry it shows, so a stale page is written again.
 
 An answer that adds or drops a capability changes `proposal.md` too: the designer owns that edit and records it in `design.md` as `Scope changed by the user:`. An answer against the issue's acceptance signal or a project rule (`CLAUDE.md`, `.claude/rules/`, the rules of `openspec/config.yaml`) is asked once more, quoting the rule; when you keep it, `design.md` records a `Deviation:` line, which the gate and the report name so you update the issue. BDK does not edit the issue.
+
+A decision the designer takes without you (by `policy.questions`, or still open after round 3, when it takes the recommended answer) carries a `Decided without the user:` line under it in `design.md`. These three lines, `Decided without the user:`, `Scope changed by the user:` and `Deviation:`, are what the gate collects and the report lists, and `/bdk:close` copies every `Decided without the user:` line into the pull request.
 
 The manual gate, and any gate with a scope change to show, ends on exactly one question: approve, or say what to change. `gate.md` records `Scope log: SL-n`, the last entry approved with the design.
 

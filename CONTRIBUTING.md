@@ -12,6 +12,10 @@ A plugin's CLI is called as `bin/<cli>`, a shell launcher that resolves its own 
 
 How a skill is built (a plain skill with eval cases first; a CLI helper, hook or workflow only for a measured, recorded problem) is [ADR-0003](docs/adr/0003-v3-architecture-skills-first.md) and `CLAUDE.md` ("Building skills (v3)").
 
+## Commands in skills and agents
+
+A skill or agent runs every `bdk` and `lavish-axi` call as the whole Bash command, the quoted plugin path and every argument written out: no `cd`, `;`, `&&`, pipe, `echo` or shell variable, and no backtick, `$` or backslash in free text such as `--summary`. Files are read with Read, Grep and Glob, not through Bash. Write the rule into each block's own text; never widen a grant or add a hook to fit a command. A verifier whose command is denied returns the denial, not a verdict. Why: [ADR-0024](docs/adr/0024-commands-alone-under-narrow-grants.md). The eval cases of the review, triage and plan blocks hold the grader `no-denied-call`, and the eval grants stay as narrow as a real session's (`plugins/bdk/evals/README.md`).
+
 ## Checks
 
 Node >= 22.18 and pnpm (the version in `package.json` `packageManager`; `corepack enable` provides it).
