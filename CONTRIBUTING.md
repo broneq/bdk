@@ -76,6 +76,8 @@ PR CI runs on Linux and aims at 5 minutes or less. Every job is a required check
 | `openspec` | `pr.yml` | `openspec validate --specs --strict` |
 | `docs-impact` | `docs-impact.yml` | a change to plugin skills, agents, hooks, sources or main specs changes a Guide or Concepts page too, or the PR body says `Docs-impact: none - <reason>` |
 
+Besides each plugin's own tests, `pnpm test` runs the repository tests in `tests/`; among them `tests/conflict-markers.test.ts` fails when a committed file holds a git conflict marker, which a merge can commit past every other check.
+
 `pnpm-lock.yaml` is the one generated file a PR may change, so a dependency change goes in a PR of its own.
 
 ## Trying a change
