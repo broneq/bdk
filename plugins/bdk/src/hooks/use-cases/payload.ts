@@ -1,4 +1,4 @@
-// The hook payload of both `bdk hooks` commands (spec `bdk-cli/hooks`, "Hook payload input").
+// The hook payload of both `bdk hooks` commands (`docs/concepts/cli-config-hooks.md`).
 
 import { CliError } from "../../shared/cli/index.ts";
 import type { ConfigDeps } from "../../config/index.ts";

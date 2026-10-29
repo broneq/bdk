@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { docsImpact } from "./rule.ts";
 
-// Pull requests that change behaviour without docs say why (spec `repo-sdlc`).
+// Pull requests that change behaviour without docs say why (CONTRIBUTING.md, "Updating the docs").
 
 const SKILL = "plugins/bdk/skills/plan/SKILL.md";
 
@@ -35,7 +35,7 @@ describe("docsImpact", () => {
 
   it("passes when a Guide or Concepts page changes with the source", () => {
     expect(docsImpact([SKILL, "docs/concepts/orchestrators.md"], "").ok).toBe(true);
-    expect(docsImpact(["openspec/specs/bdk-run/spec.md", "docs/guide/workflow.md"], "").ok).toBe(
+    expect(docsImpact(["plugins/bdk/hooks/hooks.json", "docs/guide/workflow.md"], "").ok).toBe(
       true,
     );
   });
@@ -44,19 +44,18 @@ describe("docsImpact", () => {
     expect(docsImpact([SKILL, "docs/reference/bdk/skills.md"], "").ok).toBe(false);
   });
 
-  it("watches skills, agents, hooks, plugin sources and main specs, nothing else", () => {
+  it("watches skills, agents, hooks and plugin sources, nothing else", () => {
     for (const path of [
       "plugins/bdk/agents/lead.md",
       "plugins/git-identity/hooks/hooks.json",
       "plugins/bdk-skill-kit/src/cli.ts",
-      "openspec/specs/docs-site/spec.md",
     ]) {
       expect(docsImpact([path], "").ok, path).toBe(false);
     }
     for (const path of [
       "plugins/bdk/tests/cli.test.ts",
       "plugins/bdk/evals/x/case.yaml",
-      "openspec/changes/v3-1-x/proposal.md",
+      "openspec/specs/x/spec.md",
       "docs/adr/0004-x.md",
       ".github/workflows/pr.yml",
     ]) {

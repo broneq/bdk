@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { nulPaths, numstat, recordHead, roundNumbers } from "../domain/range.ts";
 
-// Parsing and round choice of spec `bdk-cli/git`, "Scope of a review round", "Round record".
+// Parsing and round choice of a review range (`docs/concepts/run-state.md`).
 
 const SHA = "a".repeat(40);
 

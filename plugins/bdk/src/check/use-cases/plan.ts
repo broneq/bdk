@@ -1,4 +1,4 @@
-// `bdk check plan` (spec `bdk-cli/check`, "Plan the checks"): resolves which configured check
+// `bdk check plan` (ADR-0011): resolves which configured check
 // commands to run and the line the agent runs for each, runs none of them, and writes the plan.
 
 import { isAbsolute, relative } from "node:path";

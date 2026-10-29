@@ -1,4 +1,4 @@
-// The `--json` result of `bdk run status` (spec `bdk-cli/run`, "Run status output").
+// The `--json` result of `bdk run status` (`docs/concepts/run-state.md`).
 
 import { z } from "zod";
 

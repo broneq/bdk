@@ -4,7 +4,7 @@ import { expect, it } from "vitest";
 
 import { bdkGroups } from "./docs-reference/model.ts";
 
-// The `/bdk:cli` skill follows the CLI (spec `bdk-cli-skill`, "The skill follows the CLI"): it is
+// The `/bdk:cli` skill follows the CLI (`CONTRIBUTING.md`): it is
 // a written mapping from questions to commands, so a new, renamed or removed command must fail
 // here until the skill follows.
 

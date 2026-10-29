@@ -1,4 +1,4 @@
-// The slice matrix of the bdk CLI (spec `bdk-cli`, "Import matrix" and "shared/ admission").
+// The slice matrix of the bdk CLI (ADR-0009).
 // Plain data, no imports: `eslint.architecture.ts` reads it to generate the architecture lint,
 // so a new slice or a new edge is one entry here, with the reason in `why`.
 

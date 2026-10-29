@@ -4,8 +4,8 @@ import { z } from "zod";
 import { describeSettings } from "../domain/describe.ts";
 import { SettingsSchema } from "../domain/settings.ts";
 
-// Every settings key carries its user-facing description in the schema (spec `bdk-cli/config`,
-// "Every settings key has a description"); the settings Reference is generated from it.
+// Every settings key carries its user-facing description in the schema (ADR-0008);
+// the settings Reference is generated from it.
 
 describe("describeSettings", () => {
   const docs = describeSettings(SettingsSchema);

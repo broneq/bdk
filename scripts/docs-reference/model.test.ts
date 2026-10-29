@@ -8,7 +8,7 @@ import { CHECKS } from "../../plugins/bdk/src/plan/domain/check.ts";
 import { bdkGroups, loadModel, readPlugins, readRules } from "./model.ts";
 import { renderReference } from "./render.ts";
 
-// The source model of the Reference (design D3 of v3-268-docs-site-user-docs) on fixture plugins.
+// The source model of the Reference (ADR-0026) on fixture plugins.
 
 let root: string;
 

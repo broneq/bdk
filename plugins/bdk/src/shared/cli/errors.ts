@@ -1,4 +1,4 @@
-// Errors of the bdk CLI and the exit code of each class (spec `bdk-cli`, "Errors", "Exit codes").
+// Errors of the bdk CLI and the exit code of each class (ADR-0010).
 
 export type ErrorClass = "usage" | "env" | "internal";
 export type ErrorCode = `${ErrorClass}/${string}`;

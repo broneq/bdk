@@ -7,7 +7,6 @@ import { sidebar, sidebarItems } from "./sidebar.ts";
 
 const docsDir = join(import.meta.dirname, "..");
 const adrs = sidebarItems(docsDir, "adr");
-const designs = sidebarItems(docsDir, "design");
 
 export default defineConfig({
   title: "BDK",
@@ -44,7 +43,6 @@ export default defineConfig({
       { text: "Concepts", link: "/concepts/workflow" },
       { text: "Reference", link: "/reference/" },
       { text: "Decisions", link: adrs.at(-1)?.link ?? "/" },
-      { text: "Designs", link: designs.at(-1)?.link ?? "/" },
     ],
     sidebar: sidebar(docsDir),
     search: { provider: "local" },

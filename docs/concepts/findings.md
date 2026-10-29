@@ -21,7 +21,7 @@ flowchart TB
 | `/bdk:e2e-check` on `bdk:e2e-tester` | the running product, along the paths of each user process the proposal adds or changes; a finding points at the proposal line |
 | `bdk check record --round` | your test, lint and build commands, run by the round's lead; a red or not-run check is a finding |
 
-Reviewers only report: they change no code and decide nothing.
+Reviewers only report: they change no code and decide nothing. The CLI stamps each finding's id (`f-` and 12 hex characters) from a dedupe key: the file, the line and the rule, or the normalised summary when there is no rule. Two writers that log the same rule on the same line get the same id, and a red check recorded again in the same round adds no second finding.
 
 ## Levels
 
@@ -34,7 +34,7 @@ Reviewers only report: they change no code and decide nothing.
 | `nice-to-have` | an improvement whose absence costs nothing concrete, including a test no owed scenario asks for |
 | `not-a-problem` | the failure scenario does not hold, it is out of the Change's scope, already handled, or a duplicate |
 
-A rule broken alone is never a `blocker`. A finding whose failure does not hold is `not-a-problem`, not a lower level.
+A rule broken alone is never a `blocker` ([ADR-0006](../adr/0006-finding-levels-follow-product-behaviour.md)). A finding whose failure does not hold is `not-a-problem`, not a lower level.
 
 An E2E finding is a path the E2E tester saw fail, placed at the proposal line it comes from. It stays a `blocker` when the spec deltas or the design word that promise more narrowly than the proposal, or leave its input out: the proposal is the intent, so the review fixes the product (or you narrow the proposal at a manual review gate) instead of shipping a broken promise or stopping at close. An E2E finding whose observation the code does not give (a tester error) is `not-a-problem`; close then clears that failed path and names it, with the judge's reason, next to the `FAIL` verdict in the pull request.
 

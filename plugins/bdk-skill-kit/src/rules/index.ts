@@ -31,7 +31,7 @@ import {
 } from "./policy.ts";
 import { layout, referencesRule, uniqueNames, unusedFiles } from "./structure.ts";
 
-/** The generic rule catalogue (spec `skill-kit`, Generic rule catalogue), in catalogue order. */
+/** The generic rule catalogue (README.md, "Contract"), in catalogue order. */
 export const genericRules: Rule<object>[] = [
   frontmatter,
   nameFormat,

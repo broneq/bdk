@@ -1,5 +1,5 @@
 // `bdk diagnostics report`: the numbers and detector findings of the sessions of a Change, or of
-// the sessions named, from the host's transcripts (spec `bdk-cli/diagnostics`).
+// the sessions named, from the host's transcripts (`docs/concepts/orchestrators.md`).
 
 import { resolve } from "node:path";
 

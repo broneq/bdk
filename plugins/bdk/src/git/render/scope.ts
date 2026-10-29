@@ -1,4 +1,4 @@
-// Text of `bdk git scope` (design D8): short lines for a model reading a Bash result.
+// Text of `bdk git scope`: short lines for a model reading a Bash result.
 
 import type { ScopeResult } from "../schema/scope.ts";
 

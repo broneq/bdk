@@ -1,4 +1,4 @@
-// The plan parts directory `bdk plan check` reads (spec `bdk-cli/plan`, "Part files"): the part
+// The plan parts directory `bdk plan check` reads (`docs/concepts/stages.md`): the part
 // files `NN.md` with their text, and the other `.md` names. Read only.
 
 import { join, resolve } from "node:path";

@@ -1,4 +1,4 @@
-// Where the generated Reference lives and how it is compared and written (design D1, D2).
+// Where the generated Reference lives and how it is compared and written (ADR-0026).
 
 import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";

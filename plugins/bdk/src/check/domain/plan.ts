@@ -1,13 +1,12 @@
 // Which commands a check plan holds and how each command line and the line the agent runs are
-// composed (spec `bdk-cli/check`, "Plan the checks"; design D4 of v3-183-check-run, D1-D4 of
-// v3-275-scoped-check-files, D1-D4 of v3-317-test-groups, D3-D5 of v3-408-check-plan-record).
+// composed (ADR-0011).
 
 import { minimatch } from "minimatch";
 
 export const KINDS = ["test", "lint", "build"] as const;
 export type Kind = (typeof KINDS)[number];
 
-/** The check points of `--at`; `tools.<kind>.<id>.when` names them (spec `bdk-cli/config`). */
+/** The check points of `--at`; `tools.<kind>.<id>.when` names them (ADR-0008). */
 export const POINTS = ["part", "wave", "review"] as const;
 export type Point = (typeof POINTS)[number];
 
@@ -131,7 +130,7 @@ function planned(kind: Kind, entry: Entry, command: string, scoped: boolean): Pl
 /**
  * The line the agent runs for a planned command: the command as written, stdin closed, both
  * output streams into its output file. It holds no `cd`, variable, quoted text of its own or
- * group, which the permission check of the Bash tool refuses (design D3 of v3-408).
+ * group, which the permission check of the Bash tool refuses (ADR-0024).
  */
 export function lineOf(command: string, output: string): string {
   return `${command} </dev/null > ${quote(output)} 2>&1`;

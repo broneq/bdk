@@ -1,6 +1,6 @@
 # The BDK rule pack
 
-One Markdown file per rule; the file name is the rule's id. `bdk rules for --stage <stage> [--files <file>]...` selects the rules a role of that stage reads for those files, and the skill puts their text into the role's prompt. Spec: `openspec/specs/rule-pack/spec.md`, command: `openspec/specs/bdk-cli/rules/spec.md`.
+One Markdown file per rule; the file name is the rule's id. `bdk rules for --stage <stage> [--files <file>]...` selects the rules a role of that stage reads for those files, and the skill puts their text into the role's prompt. Why the pack is small: [ADR-0012](../../../docs/adr/0012-rule-pack-admission-by-measurement.md); how roles read the rules: [`docs/concepts/rules.md`](../../../docs/concepts/rules.md).
 
 ## Rule file
 
@@ -30,4 +30,4 @@ A project declares its own rules in its settings, not as files: entries of the m
 
 ## Admission
 
-A rule is in this pack only while a measurement shows that it changes the outcome: class `effective` (a review with the rule in its prompt finds the seeded violation measurably more often than without it) or `corrects the model` (a model answers the rule's question against it). `measured` names the report row, and `plugins/bdk/tests/rule-pack.test.ts` checks it. The 16 rules here are the draft 1 rules with a measured effect (`openspec/changes/archive/2026-10-07-v3-184-rule-pack-rules-for/design.md`, D1); their ids keep the draft numbering, so the gaps are dropped rules. A dropped rule comes back through a new measurement.
+A rule is in this pack only while a measurement shows that it changes the outcome: class `effective` (a review with the rule in its prompt finds the seeded violation measurably more often than without it) or `corrects the model` (a model answers the rule's question against it). `measured` names the report row, and `plugins/bdk/tests/rule-pack.test.ts` checks it. The 16 rules here are the draft 1 rules with a measured effect ([design D1 of the rule-pack Change](https://github.com/broneq/bdk/blob/8dced46ec79df99ba0900d3a7b6dd650c12e6ecc/openspec/changes/archive/2026-10-07-v3-184-rule-pack-rules-for/design.md), at `8dced46`); their ids keep the draft numbering, so the gaps are dropped rules. A dropped rule comes back through a new measurement.

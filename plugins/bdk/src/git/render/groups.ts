@@ -1,4 +1,4 @@
-// Text of `bdk git groups` (design D8).
+// Text of `bdk git groups`.
 
 import type { GroupsResult } from "../schema/groups.ts";
 import { renderRange } from "./scope.ts";

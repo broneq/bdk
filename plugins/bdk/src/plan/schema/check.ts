@@ -1,4 +1,4 @@
-// The `--json` result of `bdk plan check` (spec `bdk-cli/plan`, "Check output").
+// The `--json` result of `bdk plan check` (`docs/concepts/stages.md`).
 
 import { z } from "zod";
 

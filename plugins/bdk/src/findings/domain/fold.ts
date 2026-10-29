@@ -1,5 +1,5 @@
-// The fold of a findings log into the current view (spec `bdk-cli/findings`, "Fold the log";
-// design D3): one entry per id in the order of its first finding line, the last level and
+// The fold of a findings log into the current view (the Concepts page "Findings"):
+// one entry per id in the order of its first finding line, the last level and
 // the last decision in file order, and every line that is no usable event reported, not fatal.
 import { DECISIONS, event, LEVELS } from "./events.ts";
 import type { Decision, DecisionEvent, Event, FindingEvent, Level, LevelEvent } from "./events.ts";

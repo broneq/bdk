@@ -1,6 +1,6 @@
 // One host transcript (Claude Code's JSON Lines) as the events diagnostics counts. The format is
 // not documented, so a line of a shape this parser does not know is counted, never guessed at
-// (design D9). Text is kept only where a detector classifies it; thinking is never kept.
+// Text is kept only where a detector classifies it; thinking is never kept.
 
 export interface Tokens {
   readonly input: number;

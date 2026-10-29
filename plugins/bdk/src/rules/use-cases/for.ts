@@ -1,4 +1,4 @@
-// `bdk rules for`: the rules a role of a stage reads for a set of files (spec `bdk-cli/rules`),
+// `bdk rules for`: the rules a role of a stage reads for a set of files (`docs/concepts/rules.md`),
 // from the BDK pack and the `rules` entries of the resolved configuration, with its `languages`.
 
 import { dirname, isAbsolute, normalize, relative, resolve, sep } from "node:path";
@@ -140,7 +140,7 @@ export function rulesFor(deps: RulesDeps, input: ForInput): ForResult {
   return {
     stage: input.stage,
     files,
-    // `measured` stays out: admission is the pack tests' concern, not the role's (design D3).
+    // `measured` stays out: admission is the pack tests' concern, not the role's (ADR-0012).
     rules: selected.map((rule) => ({
       id: rule.id,
       origin: rule.origin,

@@ -1,4 +1,4 @@
-// The settings schema (spec `bdk-cli/config`, "Settings keys"; design D1, D7). One strict zod
+// The settings schema (ADR-0008). One strict zod
 // schema of the resolved configuration: a default on every leaf, `prefault({})` on every nested
 // object so its inner defaults apply (zod 4's `default({})` would skip them).
 
@@ -14,7 +14,7 @@ const count = (fallback: number, description: string) =>
 /** The user-facing text of a key; the settings Reference is generated from it. */
 const about = (description: string) => ({ description });
 
-/** The check points of `bdk check plan --at` (spec `bdk-cli/check`). */
+/** The check points of `bdk check plan --at` (ADR-0011). */
 export const CHECK_POINTS = ["part", "wave", "review"] as const;
 
 const Check = z.strictObject({
@@ -139,12 +139,12 @@ const Step = z.strictObject({
   use: text.optional().meta(about("Project skill or agent that runs instead of the step's block.")),
 });
 
-/** The stages and kinds of a rule (spec `rule-pack`); `rules/domain/rule.ts` holds the same. */
+/** The stages and kinds of a rule (ADR-0012); `rules/domain/rule.ts` holds the same. */
 export const RULE_STAGES = ["design", "plan", "execute", "review"] as const;
 export const RULE_KINDS = ["house", "knowledge"] as const;
 /** The prefix of the BDK pack's rule ids. */
 export const PACK_PREFIX = "BDK-";
-/** A rule id (spec `bdk-cli/config`, "Settings keys"): the one key that keeps its case. */
+/** A rule id (ADR-0008): the one key that keeps its case. */
 export const RULE_ID = /^[A-Za-z0-9][A-Za-z0-9-]*$/;
 
 const ruleId = z.string().regex(RULE_ID, "must be a rule id (letters, digits and -)");
@@ -210,7 +210,7 @@ const RuleEntry = z
 const PACK_FIELDS: ReadonlySet<string> = new Set(["enabled", "paths", "stages"]);
 
 /**
- * A rule entry's checks across its fields (spec `bdk-cli/config`, "Settings keys"). Checks that a
+ * A rule entry's checks across its fields (ADR-0008). Checks that a
  * higher layer can still satisfy carry `resolved: true`, so `validate` reports them only on the
  * full merge, like a missing required field.
  */

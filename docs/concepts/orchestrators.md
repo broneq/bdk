@@ -24,6 +24,8 @@ flowchart TB
 
 Setup runs on `opus` (its `model` frontmatter), whatever the session model; the map comes from `bdk:explorer`, which `models.explorer` sets. A re-run keeps every value a layer sets and fills only what is missing; an argument such as "add the e2e entry" limits the run to that change.
 
+In a repository of several packages, setup detects the check items per package and writes `paths` on an item whose command covers only part of the repository (`api/**` for a package in its own directory, `**/*.py` for packages that share the root), so `bdk check plan` runs it only for the files it owns; an item that covers the whole repository gets no `paths`. Setup never installs or deletes anything without your answer: deleting v2 files and installing Playwright are questions of their own, and when it cannot ask, it keeps the files, installs nothing and lists both in the report. It never runs a project command to try a value, and never commits.
+
 ## `/bdk:propose`
 
 ```mermaid
@@ -71,6 +73,8 @@ When the log holds a change after propose that no earlier gate approved, the gat
 
 An answer that adds or drops a capability changes `proposal.md` too: the designer owns that edit and records it in `design.md` as `Scope changed by the user:`. An answer against the issue's acceptance signal or a project rule (`CLAUDE.md`, `.claude/rules/`, the rules of `openspec/config.yaml`) is asked once more, quoting the rule; when you keep it, `design.md` records a `Deviation:` line, which the gate and the report name so you update the issue. BDK does not edit the issue.
 
+A decision the designer takes without you (by `policy.questions`, or still open after round 3, when it takes the recommended answer) carries a `Decided without the user:` line under it in `design.md`. These three lines, `Decided without the user:`, `Scope changed by the user:` and `Deviation:`, are what the gate collects and the report lists, and `/bdk:close` copies every `Decided without the user:` line into the pull request.
+
 The manual gate, and any gate with a scope change to show, ends on exactly one question: approve, or say what to change. `gate.md` records `Scope log: SL-n`, the last entry approved with the design.
 
 The verifier budget is `policy.budgets.verifier` (default 3) passes per run. On a new start, `/bdk:design` skips every step whose file exists:
@@ -107,7 +111,7 @@ A gap of the design is a choice about what the product does that the specs and t
 
 ## `/bdk:execute` and the `/bdk:execute-waves` lead
 
-`/bdk:execute` is thin: it starts one `bdk:lead` with the stage skill `/bdk:execute-waves` and passes the result on. The lead is the only writer of `state.json` and the only agent that commits. It builds every part in your checkout, on the Change branch, one at a time: no part runs in a git worktree, and nothing is merged.
+`/bdk:execute` is thin: it starts one `bdk:lead` with the stage skill `/bdk:execute-waves` and passes the result on. The lead is the only writer of `state.json` and the only agent that commits. It builds every part in your checkout, on the Change branch, one at a time: no part runs in a git worktree, and nothing is merged ([ADR-0019](../adr/0019-parts-run-one-at-a-time-in-the-main-checkout.md)).
 
 The stage builds every part of the plan and takes no part id: called with one (`/bdk:execute add-csv-export 01`) or asked for one part, it starts no lead and names [`/bdk:implement-part`](/reference/bdk/skills#implement-part) `<change> <part-id>`, the block that builds one part, uncommitted.
 
@@ -206,7 +210,7 @@ sequenceDiagram
 
 ### Where execute runs your checks
 
-Every check of the execute stage runs your `tools.test`, `tools.lint` and `tools.build` commands (the [`tools`](/reference/bdk/settings#tools) items) in three steps. `bdk check plan` picks the items and prints, for each, the line to run: your command as configured, stdin closed, its whole output into a file under `R/checks/<id>/` (`npm run test:e2e -- e2e/checkout.spec.ts </dev/null > .bdk/runs/<change>/checks/02/test-playwright.txt 2>&1`), with the Bash timeout of the call. The agent that needs the check runs each line as its own Bash call, so its transcript shows your real command, how long it ran and its exit code. Then `bdk check record` takes each exit code and writes the result `R/checks/<id>.json` and prints the last lines of each red check. No agent runs a test, linter or build command other than a printed line. Each check names its check point with `--at`, and runs only the items whose `when` holds that point, plus the items without `when` ([check points](/guide/configuration#a-web-app-with-a-browser-e2e-check)). Four checks, in this order:
+Every check of the execute stage runs your `tools.test`, `tools.lint` and `tools.build` commands (the [`tools`](/reference/bdk/settings#tools) items) in three steps. `bdk check plan` picks the items and prints, for each, the line to run: your command as configured, stdin closed, its whole output into a file under `R/checks/<id>/` (`npm run test:e2e -- e2e/checkout.spec.ts </dev/null > .bdk/runs/<change>/checks/02/test-playwright.txt 2>&1`), with the Bash timeout of the call. The agent that needs the check runs each line as its own Bash call, so its transcript shows your real command, how long it ran and its exit code. Then `bdk check record` takes each exit code and writes the result `R/checks/<id>.json` and prints the last lines of each red check. No agent runs a test, linter or build command other than a printed line ([ADR-0011](../adr/0011-checks-only-through-bdk-check.md)). The lines run one after another, never in parallel or in the background, and every line runs, also after a red one, so one turn fixes every red check; a line nobody ran is recorded as `not-run`, which is red. A resumed or another agent reads `R/checks/<id>.json` instead of running the suite again. Each check names its check point with `--at`, and runs only the items whose `when` holds that point, plus the items without `when` ([check points](/guide/configuration#a-web-app-with-a-browser-e2e-check)). Four checks, in this order:
 
 | Run | Who, when | Point, files | When it is red |
 |---|---|---|---|
@@ -225,7 +229,7 @@ Every check of the execute stage runs your `tools.test`, `tools.lint` and `tools
 
 ## `/bdk:auto-review`
 
-Rounds and fix passes each run in a fresh `bdk:lead`; triage and fix planning run in the main thread. Round 1 reviews the whole Change, a later round only the fix commits of the round before.
+Rounds and fix passes each run in a fresh `bdk:lead`; triage and fix planning run in the main thread. Round 1 reviews the whole Change, a later round only the fix commits of the round before. The review fixes nothing in place: each finding decided `fix` becomes a task of a fix part that the execute lead builds test-first, and every fix pass is reviewed by the next round ([ADR-0013](../adr/0013-review-fixes-as-fix-parts.md)).
 
 ```mermaid
 flowchart TB
@@ -279,7 +283,7 @@ flowchart TB
   JD --> RM["bdk:lead writes round-N/round.md"]
 ```
 
-`bdk git groups` gets `--rounds R/review`, so a later round covers only what changed since the round before, and `--plan` with the plan parts (round 1) or the fix parts of the round before, so each group is one part. Every finding lands in `round-N/findings.jsonl`. Each step starts its agents in one message, in batches of `execution.max-parallel` when they number more. The verifier runs the check `/bdk:close` runs before the archive (`/bdk:spec-conformance`, see below) in every round, so a spec delta that misses an error message, or a requirement the code breaks for an input its scenario does not use, becomes a `blocker` finding the fix pass fixes, instead of a stop at close; it reads no E2E results, because the E2E tester logs its own failures. The verifier, the integration reviewer and the E2E tester start together once the group reviewers have returned and the check run is recorded, so your suites and the started product never compete for the same ports or browsers. None of the three reads another's output: the integration reviewer reads the group findings, not the verifier's findings nor the E2E verdict, so it never waits for the slower verifier (about two minutes on opus), and a problem two of them log is a repeat the judge levels `not-a-problem`. A later round whose fix commits changed only test files (`testsOnly` in `groups.json`, from file names such as `test/`, `__tests__/`, `*.test.*` or `*_test.*`) runs no E2E check when the last E2E verdict passed or was skipped: the product is the one that verdict checked, so the round writes no `round-N/e2e/` and its `round.md` names the verdict it carries over. A fix that touches any other file, or a last verdict `FAIL` or `BLOCKED`, gets the full check. A worker that fails is started once more with the same prompt; a second failure goes under `Gaps` in `round.md`.
+`bdk git groups` gets `--rounds R/review`, so a later round covers only what changed since the round before ([ADR-0014](../adr/0014-later-rounds-review-the-fix-scope-and-re-run-every-check.md)), and `--plan` with the plan parts (round 1) or the fix parts of the round before, so each group is one part. Every finding lands in `round-N/findings.jsonl`. Each step starts its agents in one message, in batches of `execution.max-parallel` when they number more. The verifier runs the check `/bdk:close` runs before the archive (`/bdk:spec-conformance`, see below) in every round ([ADR-0015](../adr/0015-spec-conformance-every-round-and-at-close.md)), so a spec delta that misses an error message, or a requirement the code breaks for an input its scenario does not use, becomes a `blocker` finding the fix pass fixes, instead of a stop at close; it reads no E2E results, because the E2E tester logs its own failures. The verifier, the integration reviewer and the E2E tester start together once the group reviewers have returned and the check run is recorded, so your suites and the started product never compete for the same ports or browsers. None of the three reads another's output: the integration reviewer reads the group findings, not the verifier's findings nor the E2E verdict, so it never waits for the slower verifier (about two minutes on opus), and a problem two of them log is a repeat the judge levels `not-a-problem`. A later round whose fix commits changed only test files (`testsOnly` in `groups.json`, from file names such as `test/`, `__tests__/`, `*.test.*` or `*_test.*`) runs no E2E check when the last E2E verdict passed or was skipped: the product is the one that verdict checked, so the round writes no `round-N/e2e/` and its `round.md` names the verdict it carries over. A fix that touches any other file, or a last verdict `FAIL` or `BLOCKED`, gets the full check. A worker that fails is started once more with the same prompt; a second failure goes under `Gaps` in `round.md`.
 
 ## `/bdk:close`
 
@@ -300,11 +304,15 @@ flowchart TB
   C6 --> C7["write R/close/pr.md last<br/>(bdk run status<br/>reads it as done)"]
 ```
 
+Close checks a Change that is not yet archived again even when an earlier report passed, since the code may have changed since; the verifier carries the earlier report's ids over. On any verdict but `PASS` it stops before the archive, names the report and the side to fix (the code or the Change's spec deltas), and fixes nothing itself: no code, spec delta or main spec is edited to make the check pass ([ADR-0015](../adr/0015-spec-conformance-every-round-and-at-close.md)). Fix that side, then run `/bdk:close <change>` again.
+
+The pull request body says what the Change does, `Resolves #n` when the issue is known, the capabilities whose main specs changed, the spec conformance verdict, the E2E verdict (with every failed path the review cleared, its path file and finding id, when the verdict is `FAIL`), the number of review rounds, every decision taken without the user by its source, and a `Deferred` part with each deferred finding.
+
 The body's `Scope changes` part copies every entry of the archived Change's `scope-log.md` in order (id, stage, AC, before, after, why, `By:`), so the reviewer checks the scope against your decisions; `none` without an entry.
 
 ## `/bdk:pr-review` and the `/bdk:pr-review-round` lead
 
-Reviews any open pull request in a detached worktree. It runs no checks and no E2E; nothing reaches GitHub before the user confirms.
+Reviews any open pull request in a detached worktree; your own checkout is never touched. It runs no checks and no E2E: the pull request's CI runs the checks, and a teammate's code is not started on your machine. Nothing reaches GitHub before the user confirms.
 
 ```mermaid
 sequenceDiagram
@@ -333,7 +341,7 @@ The workers get `--workdir`, `--change` (or `none`) and `--intent pr.md`. The qu
 
 Several pull requests (`/bdk:pr-review 7 8`) start one lead each in one message, at most `execution.max-parallel`; the reviews are shown when every lead has returned, and one question covers all of them. A lead checks the head with `git ls-remote` and fetches without `FETCH_HEAD`, so leads in one repository do not read each other's head.
 
-`--verify` re-checks your previous review and reviews only the commits added since it:
+`--verify` re-checks your previous review and reviews only the commits added since it. It reads that review from GitHub, from the hidden markers of your own posted review and threads, never from local run files ([ADR-0017](../adr/0017-pr-review-record-lives-on-github.md)):
 
 ```mermaid
 sequenceDiagram
@@ -378,7 +386,7 @@ flowchart TB
   G5 -->|"review/result.md"| G6["write R/debug/result.md<br/>next: /bdk:close"]
 ```
 
-The fix Change covers the reproduced bug only: its part has one acceptance scenario, the reproduction, whose test the implementer must see red. A related defect `/bdk:diagnose-bug` finds on the way, such as another bug or data the bug already wrote that fixing the cause does not repair, is named and not fixed: a `Related:` line in `diagnosis.md`, a "Related, not fixed" entry under Risks in the Change's `design.md`, the fix gate's question, and a `Related (not fixed)` line under `## Bug` in `debug/result.md`. Give each its own Change: `/bdk:debug` with its symptom, or `/bdk:propose`.
+A bug that does not reproduce gets no Change; every reproduced bug, also a one-line fix, gets a one-part fix Change built, reviewed and closed by the normal stages ([ADR-0016](../adr/0016-bug-fix-is-a-reproduced-one-part-change.md)). The fix Change covers the reproduced bug only: its part has one acceptance scenario, the reproduction, whose test the implementer must see red. A related defect `/bdk:diagnose-bug` finds on the way, such as another bug or data the bug already wrote that fixing the cause does not repair, is named and not fixed: a `Related:` line in `diagnosis.md`, a "Related, not fixed" entry under Risks in the Change's `design.md`, the fix gate's question, and a `Related (not fixed)` line under `## Bug` in `debug/result.md`. Give each its own Change: `/bdk:debug` with its symptom, or `/bdk:propose`.
 
 ## `/bdk:diagnose-run`
 
@@ -396,7 +404,7 @@ flowchart TB
   D6 --> D7["reply: wall, cost,<br/>waste findings, path"]
 ```
 
-Every number in the report comes from `bdk diagnostics report`; the analyst never counts transcripts itself, and a cost it cannot cite is written as `unknown`. Without transcripts (exit 3) the report is written from the run files alone and says under `## Missing data` where the command looked. A session that names no Change gets `.bdk/runs/diagnostics/<session-id>.md`. Run it again at any time: the report is replaced.
+Every number in the report comes from `bdk diagnostics report`; the analyst never counts transcripts itself, and a cost it cannot cite is written as `unknown`. The cost is the host's own, from the last `cost-state` line of the main transcript; each agent gets a share of it by its weighted tokens (input 1, output 5, cache read 0.1, cache write 1.25 for 5 minutes and 2 for 1 hour), so the command holds no price table that could go stale. Without a `cost-state` line (a session that has not ended, or crashed) the tokens are still counted and the cost is `unknown`. Without transcripts (exit 3) the report is written from the run files alone and says under `## Missing data` where the command looked. A session that names no Change gets `.bdk/runs/diagnostics/<session-id>.md`. Run it again at any time: the report is replaced.
 
 ## Sources
 

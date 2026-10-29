@@ -1,6 +1,5 @@
-// The `rules` entries of the configuration (spec `rule-pack`, "Project rules" and "Switching
-// rules off"; design D5): a `BDK-` entry adjusts a pack rule, any other entry is a project rule
-// with the defaults the configuration schema leaves out.
+// The `rules` entries of the configuration (ADR-0012): a `BDK-` entry adjusts a pack
+// rule, any other entry is a project rule with the defaults the configuration schema leaves out.
 
 import { PACK_PREFIX } from "./rule.ts";
 import type { Origin, Rule, Stage } from "./rule.ts";

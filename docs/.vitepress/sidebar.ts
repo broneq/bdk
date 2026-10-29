@@ -88,8 +88,8 @@ function titleOf(path: string): string {
 
 /**
  * Sidebar entries for every Markdown file in `docs/<section>/`, in file-name order, so a new
- * ADR or design appears on the site without a config change. ADR and design file names start
- * with a number or a date, so file-name order is chronological.
+ * ADR appears on the site without a config change. ADR file names start with a number, so
+ * file-name order is chronological.
  */
 export function sidebarItems(docsDir: string, section: string): SidebarLink[] {
   return readdirSync(join(docsDir, section))
@@ -109,7 +109,7 @@ export function declaredItems(docsDir: string, section: UserSection): SidebarLin
   }));
 }
 
-/** The whole sidebar: the user sections, then every ADR and every design. */
+/** The whole sidebar: the user sections, then every ADR. */
 export function sidebar(docsDir: string): SidebarSection[] {
   return [
     ...USER_SECTIONS.map((section) => ({
@@ -117,7 +117,6 @@ export function sidebar(docsDir: string): SidebarSection[] {
       items: declaredItems(docsDir, section),
     })),
     { text: "Architecture decisions", items: sidebarItems(docsDir, "adr") },
-    { text: "Designs", items: sidebarItems(docsDir, "design") },
   ];
 }
 

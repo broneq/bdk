@@ -1,7 +1,7 @@
-// One plan part as `bdk plan check` reads it (spec `bdk-cli/plan`, "Part files", "Part limits",
-// "Present scenarios"; design D2, D8): the frontmatter of `bdk-openspec-schema` checked key by
-// key, the measures the part limits apply to, and the scenarios and `Verified by:` lines the
-// present-scenario check reads. Faults are values, so one call reports every fault of a plan.
+// One plan part as `bdk plan check` reads it (`docs/concepts/stages.md`): the
+// frontmatter of the BDK OpenSpec schema checked key by key, the measures the part limits apply to,
+// and the scenarios and `Verified by:` lines the present-scenario check reads. Faults are values,
+// so one call reports every fault of a plan.
 
 import { parse } from "yaml";
 

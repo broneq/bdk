@@ -9,7 +9,7 @@ import { architecture, ArchitectureError } from "../eslint.architecture.ts";
 import type { Matrix } from "../eslint.architecture.ts";
 
 // Each case writes a small source tree to a temporary directory and lints it with the rules
-// generated from its own matrix, so every check of design D5 is shown to fail on a violation.
+// generated from its own matrix, so every check of ADR-0009 is shown to fail on a violation.
 
 type Tree = Readonly<Record<string, string>>;
 

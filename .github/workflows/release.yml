@@ -1,7 +1,7 @@
 name: release
 
 # Releases run from main only: staging/v3 reaches main by its final merge
-# (v3-172-repo-skeleton, design D5).
+# (ADR-0002).
 on:
   push:
     branches: [main]

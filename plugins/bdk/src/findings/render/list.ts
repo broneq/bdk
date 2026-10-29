@@ -1,4 +1,4 @@
-// The text form of `bdk findings list`, for a model reading a Bash result (design D4).
+// The text form of `bdk findings list`, for a model reading a Bash result.
 import { countsLine } from "../domain/counts.ts";
 import type { Finding } from "../domain/fold.ts";
 import type { ListResult } from "../schema/list.ts";

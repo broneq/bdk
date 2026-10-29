@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { skillAgentCalls } from "./skill-agent-calls.ts";
 
-// Spec `bdk-plugin`, "Every Agent call names its run mode": a host that gets no
+// Every Agent call names its run mode (`CONTRIBUTING.md`): a host that gets no
 // `run_in_background` value may start the agent in the background, and a lead that waits for a
 // background worker polls for minutes (#326). Every Agent call a skill writes names the value.
 

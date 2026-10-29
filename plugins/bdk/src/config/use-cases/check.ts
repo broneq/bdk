@@ -1,4 +1,4 @@
-// `bdk config check` (spec `bdk-cli/config`, "config check"): every problem of every layer file.
+// `bdk config check` (ADR-0008): every problem of every layer file.
 
 import type { CheckResult } from "../schema/check.ts";
 import { load } from "./load.ts";

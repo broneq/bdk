@@ -88,7 +88,7 @@ openspec/specs/<capability>/spec.md   main specs: openspec archive merges the de
 | `execute/result.md` | the execute lead | `/bdk:execute`, `/bdk:debug` | the stage's outcome and its blockers | `/bdk:execute` resumes from `state.json` |
 | `checks/<id>.json`, `checks/<id>/` | `bdk check plan` (`checks/<id>/plan.json`), the agent's run of each line (`checks/<id>/<kind>-<tool>.txt`), `bdk check record` (`checks/<id>.json`) | implementers (the output of a red check), `/bdk:plan-fixes`, the round summary | the record of every test, lint and build run, with its check point, the revision it compared against, and its output | nothing reads it to decide |
 | `review/round-N/e2e/` (`e2e/` when run alone): `<process>--<path>.md`, screenshots and video, `verdict.md` | `bdk:e2e-tester` | the review round, `/bdk:spec-conformance`, `/bdk:close` (the verdict goes into the PR body) | the evidence of each path on the running product; absent in a later round that carried the last verdict over because its fixes changed only test files | spec conformance has no E2E evidence |
-| `review/round-N/groups.json` | `bdk git groups` | the round's reviewers and its E2E decision (`testsOnly`), and the next round, which reviews only the commits after this round's head | the reviewed range, its test files and its groups | the next round falls back to the whole branch |
+| `review/round-N/groups.json` | `bdk git groups` | the round's reviewers and its E2E decision (`testsOnly`), and the next round, which reviews only the commits after this round's head (ADR-0014) | the reviewed range, its test files and its groups; the base branch is always given by the caller, never guessed | the next round falls back to the whole branch from the merge base: it reviews more, never less |
 | `review/round-N/spec-conformance.md` | `bdk:verifier` in the round (`/bdk:spec-conformance --round`) | `round.md`, you | the spec check of the round; its problems are also findings in the round's log | the round's spec check runs again with the round |
 | `review/round-N/findings.jsonl` | reviewers, spec check, E2E, red checks, judge, triage (append only) | `bdk run status`, `/bdk:auto-review`, `/bdk:plan-fixes` | the [findings](./findings.md), their levels and decisions | the round has no findings |
 | `review/round-N/review.md` | `bdk findings report` | `bdk run status`, `/bdk:auto-review` | marks the round finished | the round counts as unfinished and runs again |
@@ -99,6 +99,33 @@ openspec/specs/<capability>/spec.md   main specs: openspec archive merges the de
 | `diagnostics.md` | `bdk:analyst` (replaced per run of `/bdk:diagnose-run`) | you | where the run's time and cost went, and its waste, each cited | nothing reads it; run `/bdk:diagnose-run` again |
 
 Once a Change's pull request is merged and no `/bdk:run` queue still holds it, nothing reads its directory any more: keep it as the record of why, or delete it.
+
+## How a report reads
+
+Every agent report starts with one line that decides: `Status: done` or `Status: blocker` for an author (`execute/part-NN.md`, `execute/wave-N.md`), `Verdict: PASS` or `Verdict: FAIL` for a checker (`verify-N.md`, `execute/conform-NN.md`, `spec-conformance.md`). Callers and `bdk run status` decide on that line alone, so one rule resumes every stage: a missing report means the step has not run, and its first line says whether the next step may start. Fixed sections follow it.
+
+A verifier report (`/bdk:verify-design`, `/bdk:verify-plan`, `/bdk:spec-conformance`):
+
+```markdown
+Verdict: FAIL
+Closed: M2
+
+## Must address
+- M1 design.md "Export": streams nothing on an empty query.
+  Evidence: src/users/repo.ts:42
+
+## Should consider
+- S1 ...
+
+## Checked
+- Every spec scenario has an answer in the design.
+```
+
+- `FAIL` if and only if `Must address` holds an item; every such item has an `Evidence:` line (a file and line, a spec scenario, or a command and its output).
+- IDs (`M1`, `S1`) stay stable across passes over the same artifact: a later report keeps the ID of each problem still open, numbers a new one on, and lists the fixed ones under `Closed:`.
+- `Checked` names what holds, so the verdict's coverage is visible.
+
+An implementer report has `## Acceptance tests` (each scenario, its test, red seen, green seen), `## Changed files`, `## Checks`, `## Decisions taken without the user`, and with `Status: blocker` a `## Blocker` (kind, evidence, proposal). A conformer report has `## Fixed`, `## Left` and `## Checks`.
 
 ## Design and plan
 

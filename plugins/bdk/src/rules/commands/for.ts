@@ -1,4 +1,4 @@
-// `bdk rules for --stage <stage> [--files <file>]...` (spec `bdk-cli/rules`).
+// `bdk rules for --stage <stage> [--files <file>]...` (`docs/concepts/rules.md`).
 
 import type { Command } from "../../shared/cli/index.ts";
 import { CliError } from "../../shared/cli/index.ts";

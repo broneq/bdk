@@ -1,5 +1,5 @@
 // `pnpm docs:reference`: writes the Reference pages of the site from the plugin sources
-// (v3-268-docs-site-user-docs, design D1). The drift test in docs-reference.test.ts fails while
+// (ADR-0026). The drift test in docs-reference.test.ts fails while
 // the committed pages differ from what this writes.
 
 import { join } from "node:path";

@@ -5,7 +5,7 @@ import type { Model } from "./model.ts";
 import { checkNames } from "./names.ts";
 import { renderReference } from "./render.ts";
 
-// Hand-written pages name only what exists (spec `docs-site`), on a fixture model.
+// Hand-written pages name only what exists (CONTRIBUTING.md, "Updating the docs"), on a fixture model.
 
 const run = () => ({ data: null, text: "" });
 

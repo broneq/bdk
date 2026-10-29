@@ -1,5 +1,4 @@
-// The result of `bdk check record`, in `checks/<id>.json` and under `--json` (spec `bdk-cli/check`,
-// "Result file").
+// The result of `bdk check record`, in `checks/<id>.json` and under `--json` (ADR-0011).
 
 import { z } from "zod";
 

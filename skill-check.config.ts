@@ -1,5 +1,5 @@
 // Every plugin's skills and agents, checked in strict mode by tests/skill-check.test.ts
-// (spec repo-sdlc; v3-415-skill-check-ci). Plugins are found by listing plugins/, so a new
+// (CONTRIBUTING.md, "Checks"). Plugins are found by listing plugins/, so a new
 // one is checked without an edit here. The kit's own skill also keeps its stricter
 // self-check, plugins/bdk-skill-kit/skill-check.config.ts.
 import { existsSync, readdirSync } from "node:fs";
@@ -8,7 +8,7 @@ import { defineConfig } from "./plugins/bdk-skill-kit/src/index.ts";
 import type { Config } from "./plugins/bdk-skill-kit/src/index.ts";
 
 // Plugins whose descriptions were admitted by with/without evals (evals/RESULTS.md) trigger
-// with "Load it when|before ..."; rewording them would void that measurement (design D5).
+// with "Load it when|before ..."; rewording them would void that measurement (ADR-0025).
 const LOAD_IT_TRIGGER = ["bdk-craft", "bdk-explain"];
 
 const plugins = readdirSync(join(import.meta.dirname, "plugins"), { withFileTypes: true })

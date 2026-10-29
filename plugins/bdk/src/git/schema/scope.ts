@@ -1,4 +1,4 @@
-// The `--json` result of `bdk git scope` (spec `bdk-cli/git`, "Scope of a review round").
+// The `--json` result of `bdk git scope` (`docs/concepts/run-state.md`).
 
 import { z } from "zod";
 

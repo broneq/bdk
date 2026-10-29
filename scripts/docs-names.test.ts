@@ -6,7 +6,7 @@ import { loadModel } from "./docs-reference/model.ts";
 import { checkNames } from "./docs-reference/names.ts";
 import { renderReference } from "./docs-reference/render.ts";
 
-// Hand-written pages name only what exists (spec `docs-site`): every Guide and Concepts page,
+// Hand-written pages name only what exists (CONTRIBUTING.md, "Updating the docs"): every Guide and Concepts page,
 // prose and Mermaid blocks, against the plugin sources.
 
 const DOCS = join(import.meta.dirname, "../docs");

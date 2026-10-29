@@ -13,8 +13,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it, onTestFinished } from "vitest";
 
-// Free checks of every plugin's eval suite (spec skill-evals, design D1-D4 of
-// v3-318-eval-loader-all-plugins). Paid runs never happen here: the loader runs at a cost
+// Free checks of every plugin's eval suite (CONTRIBUTING.md, "Evals").
+// Paid runs never happen here: the loader runs at a cost
 // ceiling of zero, which loads every case and starts no run. Checks that only the bdk suite
 // follows stay in plugins/bdk/tests/evals.test.ts.
 

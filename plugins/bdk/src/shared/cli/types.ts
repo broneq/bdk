@@ -1,4 +1,4 @@
-// The declaration a slice's `index.ts` exports for its command group (design D8).
+// The declaration a slice's `index.ts` exports for its command group (ADR-0009).
 
 export interface Argument {
   readonly name: string;

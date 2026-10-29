@@ -1,4 +1,4 @@
-// Text of `bdk config set` (spec `bdk-cli/config`, "config set").
+// Text of `bdk config set` (ADR-0008).
 
 import type { SetResult } from "../schema/set.ts";
 

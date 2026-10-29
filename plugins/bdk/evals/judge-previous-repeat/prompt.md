@@ -1,5 +1,5 @@
 ---
-description: "judge levels a seeded previous-review finding of the unfixed parse bug and a later review-group finding of the same bug (spec review-blocks, scenario 'A previous finding reported again'): the seeded one stays blocker, the later one is not-a-problem naming the seeded id."
+description: "judge levels a seeded previous-review finding of the unfixed parse bug and a later review-group finding of the same bug (the judge levels the later of two repeating findings as the repeat): the seeded one stays blocker, the later one is not-a-problem naming the seeded id."
 tags: [block]
 max_turns: 40
 allowed_tools: [Read, Glob, Grep, Skill, Bash]

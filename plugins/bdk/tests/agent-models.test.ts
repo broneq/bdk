@@ -6,7 +6,7 @@ import { describeSettings } from "../src/config/domain/describe.ts";
 import { MODEL_ROLES, SettingsSchema } from "../src/config/domain/settings.ts";
 import { skillAgentCalls } from "./skill-agent-calls.ts";
 
-// Spec `bdk-cli/config`, "Every agent is a models role": every agent of the plugin is a role of
+// Every agent is a models role (ADR-0008): every agent of the plugin is a role of
 // `models`, the `models` description names it, and every skill that starts the agent passes
 // `models.<agent>`. Skills read the role from their `bdk config show` block, so a call whose text
 // does not name it silently runs the agent on its default model.

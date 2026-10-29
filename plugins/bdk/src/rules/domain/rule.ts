@@ -1,4 +1,4 @@
-// The rule file of the BDK pack (spec `rule-pack`, "Rule file"; design D2): YAML frontmatter and
+// The rule file of the BDK pack (ADR-0012): YAML frontmatter and
 // the rule text. The id is the file name and the language pack the `languages/<name>/` directory,
 // so neither can disagree with the file's place.
 

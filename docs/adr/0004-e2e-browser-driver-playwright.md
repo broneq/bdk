@@ -2,11 +2,13 @@
 status: accepted
 date: 2026-10-08
 decision-makers: broneq
+enforced-by:
+  - plugins/bdk/tests/browser-driver.test.ts
 ---
 
 # ADR-0004: e2e-check drives the browser with Playwright scripts the tester writes as it goes
 
-Supersedes decision D5 of the [Skills and agents decisions](../design/2026-10-07-v3-skills-decisions.md#d5-how-e2e-check-drives-a-browser).
+Supersedes decision D5 of the [Skills and agents decisions](https://github.com/broneq/bdk/blob/8dced46ec79df99ba0900d3a7b6dd650c12e6ecc/docs/design/2026-10-07-v3-skills-decisions.md#d5-how-e2e-check-drives-a-browser) (removed in #441).
 
 ## Context and Problem Statement
 

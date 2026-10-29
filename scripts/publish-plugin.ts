@@ -1,5 +1,5 @@
-// Publishes released plugins to the `release` branch (ADR-0002, design D2-D4 of
-// v3-172-repo-skeleton). Usage, from the root of a clone with tags fetched:
+// Publishes released plugins to the `release` branch (ADR-0002).
+// Usage, from the root of a clone with tags fetched:
 //
 //   node scripts/publish-plugin.ts [--remote <name>] [--branch <name>] <plugin>--v<version>...
 //
@@ -134,7 +134,7 @@ function commitToRelease(
     run("git", ["fetch", "--quiet", remote, `refs/heads/${branch}`], repo);
     run("git", ["worktree", "add", "--quiet", "--detach", target, "FETCH_HEAD"], repo);
   } else {
-    // First release: the branch starts with no history from main (design D4).
+    // First release: the branch starts with no history from main.
     run("git", ["worktree", "add", "--quiet", "--detach", target], repo);
     run("git", ["switch", "--quiet", "--orphan", `publish-${release.name}-${process.pid}`], target);
   }

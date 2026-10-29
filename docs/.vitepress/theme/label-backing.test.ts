@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 // happy-dom does no layout, so each text's box is stubbed; the drawn result is checked on the
-// rendered site (change v3-339, design D5).
+// rendered site (CONTRIBUTING.md, "Mermaid diagrams").
 
 import { describe, expect, it } from "vitest";
 import { backSequenceLabels } from "./label-backing.ts";

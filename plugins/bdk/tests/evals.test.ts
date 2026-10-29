@@ -17,7 +17,7 @@ import { checkResult } from "../src/plan/schema/check.ts";
 import { run } from "../src/shared/cli/index.ts";
 import { files } from "../src/shared/fs/index.ts";
 
-// Free checks specific to the bdk eval suite (spec skill-evals, design D6 of v3-189-eval-setup).
+// Free checks specific to the bdk eval suite (evals/README.md).
 // The loader and case-scaffold checks of every plugin's suite are in tests/eval-suites.test.ts.
 
 const PLUGIN = join(import.meta.dirname, "..");
@@ -286,7 +286,7 @@ describe("eval launcher", () => {
     expect(command).not.toContain('"Bash(cd *)"');
   });
 
-  it("keeps the rules for a paid run in the README (spec skill-evals, #403)", () => {
+  it("keeps the rules for a paid run in the README (#403)", () => {
     const readme = readFileSync(join(EVALS, "README.md"), "utf8");
     const part = readme
       .split(/^#{2,3} /m)

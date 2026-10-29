@@ -6,7 +6,7 @@ Notation in the diagrams: see the [glossary](./glossary.md#notation-in-the-diagr
 
 ## The `bdk` CLI
 
-The CLI computes and saves turns; it never decides the order of the work. Each command group is one vertical slice under `src/`, and a slice may import only the slices listed in `src/slices.ts`:
+The CLI computes and saves turns; it never decides the order of the work. Each command group is one vertical slice under `src/`, and a slice may import only the slices listed in `src/slices.ts` ([ADR-0009](../adr/0009-cli-vertical-slices.md)):
 
 ```mermaid
 flowchart LR
@@ -42,6 +42,8 @@ Which skill calls which command. Every skill that reads the configuration also r
 | `bdk diagnostics report` | `/bdk:diagnose-run` |
 | `bdk hooks session-start`, `bdk hooks pre-tool-use` | `hooks/hooks.json` only |
 
+**Output, for a script that calls `bdk`.** Every command prints its result on stdout and errors on stderr, with no colour and in a stable order. With `--json` it prints exactly one JSON document on stdout, the result or `{"error": {"code", "message", "hint"}}`, and nothing on stderr. Error codes read `<class>/<name>` and keep their meaning once released. Every command exits with one of five codes: 0 success; 1 the command ran and its answer is "no" (a red check, a plan fault), with the result printed as on success; 2 a usage error (`usage/*`); 3 something the command needs is missing (`env/*`); 4 a defect in the CLI (`internal/*`). No exit code means "you may not do this now": what a "no" means for the work is the calling skill's choice. A command reads stdin only for an explicit `-` argument and never waits for input ([ADR-0010](../adr/0010-cli-output-contract.md)). The exit codes of each command are in the [CLI reference](/reference/bdk/cli).
+
 The same calls along the stages (a stage box stands for its orchestrator and every block it runs; dashed boxes are `bdk` commands):
 
 ```mermaid
@@ -76,7 +78,7 @@ flowchart TB
 
 ## Configuration `.bdk/settings.yaml`
 
-Three layers merge, later over earlier; arrays of items merge by `id`. `bdk config show` prints each value with the layer it came from.
+Three layers merge, later over earlier; arrays of items merge by `id` ([ADR-0008](../adr/0008-configuration-layers-required.md)). `bdk config show` prints each value with the layer it came from.
 
 ```mermaid
 flowchart TB
@@ -184,6 +186,8 @@ flowchart TB
   C -->|"no (the default)"| OK
   C -->|"yes"| DENY["deny: leave the changes in the tree,<br/>the lead or the main thread commits"]
 ```
+
+**When a hook breaks.** Both hook commands speak the host's hook protocol, not the CLI's exit codes: they print the host's JSON and exit 0 for every decision, a denial included. A failure of the command itself (a missing bundle, a Node that is missing or too old, a defect) never blocks your work: the guard's line in `hooks.json` ends in `|| exit 1`, which the host reports and ignores, so the Bash call goes ahead; the session start's line ends in `|| exit 2`, which shows the error to you as one line. In a project that is not configured, or whose configuration is invalid, the guard allows and the session start warns.
 
 Without the guard, the rule still holds by instruction: the `implementer`, `conformer` and other worker agents are told never to run `git commit`, `add`, `stash`, `reset`, `merge` and the like, and `/bdk:execute-waves` stops when a commit it did not make shows in `git log`.
 

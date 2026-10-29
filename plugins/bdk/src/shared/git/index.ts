@@ -1,4 +1,4 @@
-// The git boundary (spec `bdk-cli`, "OS boundary"; design D7 of v3-186-git-groups-scope): runs
+// The git boundary (ADR-0009): runs
 // the user's git without a shell and returns its stdout. Paths stay byte-exact through
 // `core.quotepath=off`; callers that parse paths also pass `-z`.
 

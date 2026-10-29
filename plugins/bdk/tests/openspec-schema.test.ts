@@ -12,7 +12,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-// The BDK OpenSpec schema (spec `bdk-openspec-schema`, design D7 and D8 of v3-180) run through the
+// The BDK OpenSpec schema (ADR-0003) run through the
 // pinned OpenSpec CLI in a temporary project, the way `/bdk:setup` installs it: a copy of the
 // shipped directory into `openspec/schemas/bdk/`. A bump of `@fission-ai/openspec` that breaks
 // project schemas fails here.

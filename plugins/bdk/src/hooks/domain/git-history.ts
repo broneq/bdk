@@ -1,6 +1,6 @@
-// What the subagent-git guard counts as a git history change (spec `bdk-cli/hooks`, "Git history
-// changes"; design D5): the table of git subcommands and forms that make a commit or move,
-// create or delete a ref. Pure: the Bash command text in, the first matching `git <subcommand>`
+// What the subagent-git guard counts as a git history change (`docs/concepts/cli-config-hooks.md`):
+// the table of git subcommands and forms that make a commit or move, create or
+// delete a ref. Pure: the Bash command text in, the first matching `git <subcommand>`
 // (or undefined) out.
 
 import { basename, commandWords, readCommands } from "./shell.ts";

@@ -1,4 +1,4 @@
-// The `findings` slice (spec `bdk-cli/findings`): the event log of a review round.
+// The `findings` slice (the Concepts page "Findings"): the event log of a review round.
 import type { Group } from "../shared/cli/index.ts";
 import type { Files } from "../shared/fs/index.ts";
 import { add } from "./commands/add.ts";

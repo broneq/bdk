@@ -1,5 +1,5 @@
 // One session as diagnostics reports it: its agents with time, turns, tokens and cost share, the
-// stages of its main thread, and the host's cost (design D3, D9). Pure: the store hands in the
+// stages of its main thread, and the host's cost. Pure: the store hands in the
 // parsed transcripts and the subagents' meta files.
 
 import type { HostCost, Tokens, Transcript, ToolUse } from "./transcript.ts";
@@ -83,7 +83,7 @@ export interface Session {
 
 /**
  * Weights of a token kind relative to an input token: the ratios of Anthropic's list prices,
- * which hold across models. Only the share of the host's cost is computed from them (design D3).
+ * which hold across models. Only the share of the host's cost is computed from them.
  */
 export const WEIGHTS: Readonly<Record<keyof Tokens, number>> = {
   input: 1,

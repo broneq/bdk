@@ -1,4 +1,4 @@
-// The event lines of a findings log (spec `bdk-cli/findings`, "Event log"; design D1). The
+// The event lines of a findings log (the Concepts page "Findings"). The
 // fold validates every line against these schemas; the writers build events of these types.
 import { z } from "zod";
 

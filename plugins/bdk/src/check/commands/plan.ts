@@ -1,5 +1,5 @@
 // `bdk check plan <run-dir> <id> [--at <point>] [--changed <ref>] [--scope <path>]... [--tests <path>]... [--kind <kind>]...`
-// (spec `bdk-cli/check`, "Plan the checks").
+// (ADR-0011).
 
 import type { Command, Input } from "../../shared/cli/index.ts";
 import { renderPlan } from "../render/plan.ts";

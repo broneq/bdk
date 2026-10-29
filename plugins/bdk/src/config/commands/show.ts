@@ -1,4 +1,4 @@
-// `bdk config show [<key>]` (spec `bdk-cli/config`, "config show").
+// `bdk config show [<key>]` (ADR-0008).
 
 import type { Command } from "../../shared/cli/index.ts";
 import { renderShow } from "../render/show.ts";

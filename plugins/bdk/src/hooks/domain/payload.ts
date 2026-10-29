@@ -1,4 +1,4 @@
-// The host's hook payload (spec `bdk-cli/hooks`, "Hook payload input"), read without trusting its
+// The host's hook payload (`docs/concepts/cli-config-hooks.md`), read without trusting its
 // shape: a field that is absent or of another type is undefined, and the use cases decide what a
 // missing field means.
 

@@ -1,5 +1,5 @@
 // `bdk git groups`: the scope of a round split into reviewer groups, optionally recorded
-// (spec `bdk-cli/git`, "Review groups", "Recording a round"; design D3, D5).
+// (`docs/concepts/run-state.md`).
 
 import { resolve } from "node:path";
 

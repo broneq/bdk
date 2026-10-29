@@ -13,7 +13,7 @@ A rule is one short, concrete coding choice or fact, such as "descriptive identi
 
 A rule costs prompt space in every agent that reads it, and many rules a model already follows by itself. So the BDK pack holds a rule only while a measurement shows it changes the outcome: a review with the rule in its prompt finds a seeded violation measurably more often than without it, or a model answers the rule's question wrongly without it. The pack holds a few architecture, code quality and design pattern rules for every language, and packs for JavaScript, TypeScript and React; the [rules reference](/reference/bdk/rules) lists each one with its id.
 
-Your project's rules need no measurement: they are your team's choices.
+Your project's rules need no measurement: they are your team's choices ([ADR-0012](../adr/0012-rule-pack-admission-by-measurement.md)).
 
 ## Who reads them, and when
 
@@ -94,6 +94,8 @@ rules:
 ```
 
 This is the rule `API-1`: an implementer of a part that changes `src/api/users.ts` follows it, and a reviewer reports a handler that reads `req.body` with the finding's rule set to `API-1`.
+
+BDK reads project rules only from the settings: a rule file under `.bdk/rules/` is not read.
 
 A rule holds exactly one of `text` (the rule inline) and `file` (a Markdown file holding the text, such as a convention document you already keep). A leading `---` frontmatter block in the file is skipped. Every other field has a default:
 

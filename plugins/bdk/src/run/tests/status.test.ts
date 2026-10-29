@@ -6,8 +6,9 @@ import { statusResult } from "../schema/status.ts";
 import type { StatusResult } from "../schema/status.ts";
 import { memoryFiles, ROOT } from "./files.ts";
 
-// `bdk run status` through the frame, on in-memory project trees (spec `bdk-cli/run`): every row
-// of the resume table from real file names, the state file schemas, and both output forms.
+// `bdk run status` through the frame, on in-memory project trees (`docs/concepts/run-state.md`):
+// every row of the resume table from real file names, the state file schemas, and both output
+// forms.
 
 type Tree = Record<string, string>;
 

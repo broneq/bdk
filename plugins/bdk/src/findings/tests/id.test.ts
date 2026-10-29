@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { dedupeKey, findingId, normalise } from "../domain/id.ts";
 
-// Spec `bdk-cli/findings`, "Finding id and dedupe key".
+// The finding id and its dedupe key (`docs/concepts/findings.md`).
 
 describe("normalise", () => {
   it("folds case, Unicode forms, punctuation and spacing", () => {

@@ -1,4 +1,4 @@
-// The `openspec` command group (spec `bdk-cli/openspec`): installs the BDK OpenSpec schema the
+// The `openspec` command group (`docs/concepts/openspec-changes.md`): installs the BDK OpenSpec schema the
 // plugin ships into a project. OpenSpec itself stays the owner of the project's `openspec/`.
 
 import type { Group } from "../shared/cli/index.ts";

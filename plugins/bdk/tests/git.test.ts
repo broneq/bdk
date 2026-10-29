@@ -11,8 +11,8 @@ import { run } from "../src/shared/cli/index.ts";
 import { files } from "../src/shared/fs/index.ts";
 import { git } from "../src/shared/git/index.ts";
 
-// Spec `bdk-cli/git` end to end: the frame, the slice and both OS boundaries against real
-// temporary git repositories, the way `src/main.ts` wires them.
+// `bdk git` end to end (`docs/concepts/run-state.md`): the frame, the slice and both OS boundaries
+// against real temporary git repositories, the way `src/main.ts` wires them.
 
 let root: string;
 let repo: string;

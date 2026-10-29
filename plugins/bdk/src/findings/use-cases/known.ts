@@ -1,4 +1,4 @@
-// The check `level` and `decide` share: the id names a finding of the log (design D3).
+// The check `level` and `decide` share: the id names a finding of the log.
 import { CliError } from "../../shared/cli/index.ts";
 import type { Files } from "../../shared/fs/index.ts";
 import { fold } from "../domain/fold.ts";

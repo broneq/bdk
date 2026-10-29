@@ -1,6 +1,6 @@
 // `bdk openspec install`: copies the BDK OpenSpec schema the plugin ships into the project's
-// `openspec/schemas/bdk/` (spec `bdk-cli/openspec`). `/bdk:setup` calls it because the host asks
-// the user to approve `cp -R` even under an allow rule (design D7 of v3-181-bdk-setup).
+// `openspec/schemas/bdk/` (`docs/concepts/openspec-changes.md`). `/bdk:setup` calls it because the host asks
+// the user to approve `cp -R` even under an allow rule.
 
 import { join } from "node:path";
 

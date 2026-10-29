@@ -2,6 +2,11 @@
 status: accepted
 date: 2026-10-07
 decision-makers: broneq
+enforced-by:
+  - tests/release-components.test.ts
+  - tests/marketplace.test.ts
+  - scripts/publish-plugin.test.ts
+  - .github/workflows/release.yml
 ---
 
 # ADR-0002: v3 repository structure and release flow - one directory per plugin, builds on a `release` branch
@@ -10,7 +15,7 @@ decision-makers: broneq
 
 BDK v3 ships several Claude Code plugins (`bdk`, `bdk-craft`, `git-identity`, `bdk-skill-kit`) and built Node CLIs from one repository. An installed plugin is copied into the user's cache on its own, so its built CLI has to travel with it, and the installed files must match a released version. How is the repository laid out, and how does a built CLI reach an installed plugin?
 
-The full design, with diagrams, CI jobs and the risk register, is in [`docs/design/2026-10-07-v3-repo-structure-cicd.md`](../design/2026-10-07-v3-repo-structure-cicd.md).
+The full design, with diagrams, CI jobs and the risk register, was in [`docs/design/2026-10-07-v3-repo-structure-cicd.md`](https://github.com/broneq/bdk/blob/8dced46ec79df99ba0900d3a7b6dd650c12e6ecc/docs/design/2026-10-07-v3-repo-structure-cicd.md) (removed in #441). How the repository works today is in `CONTRIBUTING.md`.
 
 ## Decision Drivers
 

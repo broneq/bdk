@@ -1,4 +1,4 @@
-// The waste detectors of `bdk diagnostics report` (design D6): deterministic checks over the
+// The waste detectors of `bdk diagnostics report`: deterministic checks over the
 // events of one agent's transcript, and over the agents of a session. A finding cites
 // `<file>:<line>` lines that resolve, and its summary never quotes a tool's output.
 
@@ -30,7 +30,7 @@ export interface Finding {
   readonly cites: readonly string[];
 }
 
-/** Thresholds (design D8): constants until a measurement asks for a setting. */
+/** Thresholds: constants until a measurement asks for a setting. */
 export const REPEAT_READS = 3;
 export const OUTLIER_FACTOR = 3;
 export const OUTLIER_MIN_AGENTS = 3;

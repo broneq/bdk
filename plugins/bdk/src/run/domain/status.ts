@@ -1,4 +1,4 @@
-// The resume table of "Autopilot continuation" (spec `bdk-cli/run`) as pure rules: what a
+// The resume table of "Autopilot continuation" (`docs/concepts/run-state.md`) as pure rules: what a
 // Change's files say, in, and the open stage, out. The store gathers the snapshot.
 
 export const STAGES = [
@@ -36,7 +36,7 @@ export interface Part {
   readonly reason: string | null;
 }
 
-/** A wave of execute with its wave check state (spec `bdk-execute`, "Wave check"). */
+/** A wave of execute with its wave check state (docs/concepts/run-state.md, "Execute"). */
 export interface Wave {
   readonly n: number;
   readonly status: PartStatus;

@@ -1,5 +1,5 @@
-// The plan parts of a Change, `plan/parts/<NN>.md` (spec `bdk-cli/git`, "Review groups";
-// design D5; the format is #180's).
+// The plan parts of a Change, `plan/parts/<NN>.md` (`docs/concepts/run-state.md`;
+// the format is #180's).
 
 import { join } from "node:path";
 

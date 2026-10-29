@@ -1,4 +1,4 @@
-// Renders the Reference pages from the source model (v3-268-docs-site-user-docs, design D4).
+// Renders the Reference pages from the source model (ADR-0026).
 // Output is deterministic: the same sources give the same bytes, so the drift test can compare.
 
 import { Document, isMap, isScalar, isSeq } from "yaml";

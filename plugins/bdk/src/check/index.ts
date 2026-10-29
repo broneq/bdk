@@ -1,4 +1,4 @@
-// The `check` command group (spec `bdk-cli/check`): resolves the project's configured checks into
+// The `check` command group (ADR-0011): resolves the project's configured checks into
 // lines the agent runs itself, and records their result in the Change's run directory.
 
 import type { Group } from "../shared/cli/index.ts";

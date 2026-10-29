@@ -1,5 +1,5 @@
 // `bdk run status`: the run, the parts of the current Change and the derived stage of every
-// queued Change (spec `bdk-cli/run`).
+// queued Change (`docs/concepts/run-state.md`).
 
 import { join } from "node:path";
 
