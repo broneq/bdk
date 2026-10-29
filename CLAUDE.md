@@ -103,3 +103,17 @@ Never try a BDK skill inside this repository; run it in a separate test project 
 ## Plugin Reference Verification
 
 When implementing or modifying anything that depends on Claude Code plugin loader behaviour - directory layout, manifest fields, hook events, frontmatter, `${CLAUDE_PLUGIN_ROOT}`, skill discovery, MCP/LSP server config, etc. - fetch https://code.claude.com/docs/en/plugins-reference first and verify the convention against the current spec. Don't trust prior assumptions; the spec evolves. Cite the relevant section before recommending non-standard behaviour.
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues in `broneq/bdk`, following the SDLC section above. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: root `GLOSSARY.md` + `docs/adr/`. See `docs/agents/domain.md`.
