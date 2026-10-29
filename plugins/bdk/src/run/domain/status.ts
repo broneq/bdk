@@ -36,7 +36,7 @@ export interface Part {
   readonly reason: string | null;
 }
 
-/** A wave of execute with its wave check state (spec `bdk-execute`, "Wave check"). */
+/** A wave of execute with its wave check state (docs/concepts/run-state.md, "Execute"). */
 export interface Wave {
   readonly n: number;
   readonly status: PartStatus;

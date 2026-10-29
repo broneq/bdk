@@ -61,7 +61,7 @@ Points where the user decides, and the setting that skips them:
 
 ## Autopilot: `/bdk:run` over a queue
 
-`/bdk:run` writes only `.bdk/runs/run.json`. It calls the same stage skills a user would, one Change at a time, each Change on its own branch from the base (no stacking, [ADR-0007](../adr/0007-no-stacked-pull-requests.md)). It stops whenever a stage ends without moving its Change on.
+`/bdk:run` writes only `.bdk/runs/run.json`. It calls the same stage skills a user would, one Change at a time, each Change on its own branch from the base (no stacking, [ADR-0007](../adr/0007-no-stacked-pull-requests.md)). It stops whenever a stage ends without moving its Change on, and it never answers a question or passes a gate for you: how much a stage decides alone is set by `policy.questions` and `policy.gates.*` ([ADR-0018](../adr/0018-autopilot-adds-no-autonomy.md)).
 
 ```mermaid
 flowchart TB
@@ -90,6 +90,7 @@ flowchart TB
   MOVED -->|"no"| STOP2["stop the run:<br/>the stage waits<br/>for the user"]
 ```
 
+- Each Change's name is fixed when the queue is built (`<n>-<slug>` for an issue, or the name of its open Change directory) and passed to `/bdk:propose` with `--name`, so a resumed run finds the same branch and files.
 - A Change is done when `R/close/pr.md` exists. A blocker counts as merged only when `gh pr view` of its pull request says `MERGED`; a blocker outside the queue never makes a Change wait.
 - `/bdk:run` never carries one Change's files onto another branch: before it switches, uncommitted files stop the run, naming them and the branch they are on.
 - The stage stays `design` while `R/design/gate.md` is not approved, whatever `bdk run status` says.
